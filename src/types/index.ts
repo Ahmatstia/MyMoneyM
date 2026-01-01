@@ -39,12 +39,19 @@ export type RootStackParamList = {
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
+  // menambahkan parameter untuk edit mode
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;
   };
-  AddBudget: undefined;
-  AddSavings: undefined;
+  AddBudget: {
+    editMode?: boolean;
+    budgetData?: Budget;
+  };
+  AddSavings: {
+    editMode?: boolean;
+    savingsData?: Savings;
+  };
 };
 
 // Untuk deklarasi global

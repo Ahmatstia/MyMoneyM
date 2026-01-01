@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,23 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 import { useAppContext } from "../../context/AppContext";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import { budgetService } from "../../services/budgetService";
 import { formatCurrency } from "../../utils/calculations";
-import { RootStackParamList } from "../../types";
+import { RootStackParamList, Budget } from "../../types";
 
-type AddBudgetScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+type AddBudgetScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "AddBudget"
+>;
 
-const categories = [
+const AVAILABLE_CATEGORIES = [
   "Makanan & Minuman",
   "Transportasi",
   "Belanja",
@@ -31,14 +34,43 @@ const categories = [
   "Lainnya",
 ];
 
+// Type untuk route params
+type AddBudgetRouteParams = {
+  editMode?: boolean;
+  budgetData?: Budget;
+};
+
 const AddBudgetScreen: React.FC = () => {
   const navigation = useNavigation<AddBudgetScreenNavigationProp>();
-  const { refreshData } = useAppContext();
+  const route = useRoute();
 
-  const [category, setCategory] = useState("");
-  const [limit, setLimit] = useState("");
-  const [period, setPeriod] = useState<"monthly" | "weekly">("monthly");
+  // Type assertion dengan default value
+  const params = (route.params || {}) as AddBudgetRouteParams;
+  const isEditMode = params.editMode || false;
+  const budgetData = params.budgetData;
+
+  const { addBudget, editBudget, deleteBudget, state } = useAppContext();
+
+  const [category, setCategory] = useState(budgetData?.category || "");
+  const [limit, setLimit] = useState(budgetData?.limit.toString() || "");
+  const [period, setPeriod] = useState<"monthly" | "weekly">(
+    budgetData?.period || "monthly"
+  );
   const [loading, setLoading] = useState(false);
+
+  // Cek apakah kategori sudah digunakan (kecuali sedang edit kategori yang sama)
+  const isCategoryUsed = state.budgets.some(
+    (b) =>
+      b.category === category &&
+      (!isEditMode || (isEditMode && budgetData?.category !== category))
+  );
+
+  // Update title based on mode
+  useEffect(() => {
+    navigation.setOptions({
+      title: isEditMode ? "Edit Anggaran" : "Tambah Anggaran",
+    });
+  }, [isEditMode, navigation]);
 
   const handleSubmit = async () => {
     if (!category || !limit) {
@@ -52,52 +84,177 @@ const AddBudgetScreen: React.FC = () => {
       return;
     }
 
+    // Cek apakah kategori sudah digunakan (untuk mode tambah baru)
+    if (!isEditMode) {
+      const isDuplicate = state.budgets.some((b) => b.category === category);
+      if (isDuplicate) {
+        Alert.alert(
+          "Error",
+          `Kategori "${category}" sudah memiliki anggaran. Gunakan kategori lain atau edit anggaran yang sudah ada.`
+        );
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      await budgetService.addBudget({
-        category,
-        limit: limitNum,
-        period,
-      });
+      if (isEditMode && budgetData) {
+        // Edit mode
+        await editBudget(budgetData.id, {
+          category,
+          limit: limitNum,
+          period,
+        });
+      } else {
+        // Add mode
+        await addBudget({
+          category,
+          limit: limitNum,
+          period,
+        });
+      }
 
-      await refreshData();
       navigation.goBack();
     } catch (error) {
-      console.error("Error adding budget:", error);
-      Alert.alert("Error", "Gagal menambah anggaran");
+      console.error("Error saving budget:", error);
+      Alert.alert(
+        "Error",
+        `Gagal ${isEditMode ? "mengedit" : "menambah"} anggaran`
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDelete = () => {
+    if (!isEditMode || !budgetData) return;
+
+    Alert.alert(
+      "Hapus Anggaran",
+      `Apakah Anda yakin ingin menghapus anggaran "${budgetData.category}"?`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteBudget(budgetData.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Error deleting budget:", error);
+              Alert.alert("Error", "Gagal menghapus anggaran");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress > 100) return "#DC2626";
+    if (progress >= 80) return "#F59E0B";
+    return "#10B981";
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Card>
-        <Text style={styles.title}>Tambah Anggaran Baru</Text>
+        <Text style={styles.title}>
+          {isEditMode ? "Edit Anggaran" : "Tambah Anggaran Baru"}
+        </Text>
+
+        {/* Info jika edit mode */}
+        {isEditMode && budgetData && (
+          <Card style={styles.infoCard}>
+            <Text style={styles.infoTitle}>Informasi Anggaran Saat Ini</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Terpakai:</Text>
+              <Text style={styles.infoValue}>
+                {formatCurrency(budgetData.spent)}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Progress:</Text>
+              <Text
+                style={[
+                  styles.infoValue,
+                  {
+                    color: getProgressColor(
+                      (budgetData.spent / budgetData.limit) * 100
+                    ),
+                  },
+                ]}
+              >
+                {((budgetData.spent / budgetData.limit) * 100).toFixed(1)}%
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Sisa:</Text>
+              <Text
+                style={[
+                  styles.infoValue,
+                  budgetData.limit - budgetData.spent >= 0
+                    ? styles.positiveText
+                    : styles.negativeText,
+                ]}
+              >
+                {formatCurrency(budgetData.limit - budgetData.spent)}
+              </Text>
+            </View>
+          </Card>
+        )}
 
         {/* Category Selection */}
         <View style={styles.section}>
-          <Text style={styles.label}>Kategori</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.label}>Kategori</Text>
+            {isCategoryUsed && !isEditMode && (
+              <Text style={styles.warningTextSmall}>
+                Kategori sudah digunakan
+              </Text>
+            )}
+          </View>
           <View style={styles.categoryGrid}>
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.categoryButton,
-                  category === cat && styles.categoryButtonActive,
-                ]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text
+            {AVAILABLE_CATEGORIES.map((cat) => {
+              const isUsed = state.budgets.some(
+                (b) =>
+                  b.category === cat &&
+                  (!isEditMode || (isEditMode && budgetData?.category !== cat))
+              );
+
+              return (
+                <TouchableOpacity
+                  key={cat}
                   style={[
-                    styles.categoryText,
-                    category === cat && styles.categoryTextActive,
+                    styles.categoryButton,
+                    category === cat && styles.categoryButtonActive,
+                    isUsed && styles.categoryButtonDisabled,
                   ]}
+                  onPress={() => {
+                    if (!isUsed || isEditMode) {
+                      setCategory(cat);
+                    }
+                  }}
+                  disabled={isUsed && !isEditMode}
                 >
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.categoryButtonContent}>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        category === cat && styles.categoryTextActive,
+                        isUsed && styles.categoryTextDisabled,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                    {isUsed && !isEditMode && (
+                      <Text style={styles.usedBadge}>Terpakai</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -108,7 +265,8 @@ const AddBudgetScreen: React.FC = () => {
           value={limit}
           onChangeText={setLimit}
           keyboardType="numeric"
-          returnKeyType="done"
+          returnKeyType="next"
+          prefix="Rp"
         />
 
         {/* Period Selection */}
@@ -122,6 +280,13 @@ const AddBudgetScreen: React.FC = () => {
               ]}
               onPress={() => setPeriod("monthly")}
             >
+              <View style={styles.periodIconContainer}>
+                <Ionicons
+                  name="calendar"
+                  size={20}
+                  color={period === "monthly" ? "#4F46E5" : "#6B7280"}
+                />
+              </View>
               <Text
                 style={[
                   styles.periodText,
@@ -129,6 +294,9 @@ const AddBudgetScreen: React.FC = () => {
                 ]}
               >
                 Bulanan
+              </Text>
+              <Text style={styles.periodSubtext}>
+                Reset otomatis tiap bulan
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -138,6 +306,13 @@ const AddBudgetScreen: React.FC = () => {
               ]}
               onPress={() => setPeriod("weekly")}
             >
+              <View style={styles.periodIconContainer}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={period === "weekly" ? "#4F46E5" : "#6B7280"}
+                />
+              </View>
               <Text
                 style={[
                   styles.periodText,
@@ -146,16 +321,55 @@ const AddBudgetScreen: React.FC = () => {
               >
                 Mingguan
               </Text>
+              <Text style={styles.periodSubtext}>
+                Reset otomatis tiap minggu
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Submit Button */}
+        {/* Tips */}
+        <Card style={styles.tipsCard}>
+          <Text style={styles.tipsTitle}>💡 Tips Anggaran yang Efektif</Text>
+          <Text style={styles.tipText}>
+            • Mulai dari kategori pengeluaran terbesar
+          </Text>
+          <Text style={styles.tipText}>
+            • Sisakan 10-20% untuk pengeluaran tak terduga
+          </Text>
+          <Text style={styles.tipText}>
+            • Review anggaran Anda setiap bulan
+          </Text>
+          <Text style={styles.tipText}>
+            • Gunakan notifikasi untuk pengingat
+          </Text>
+        </Card>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          {isEditMode && (
+            <Button
+              title="Hapus"
+              onPress={handleDelete}
+              variant="danger"
+              style={styles.deleteButton}
+            />
+          )}
+          <Button
+            title={isEditMode ? "Simpan Perubahan" : "Simpan Anggaran"}
+            onPress={handleSubmit}
+            loading={loading}
+            style={styles.submitButton}
+            disabled={!category || !limit}
+          />
+        </View>
+
+        {/* Cancel Button */}
         <Button
-          title="Simpan Anggaran"
-          onPress={handleSubmit}
-          loading={loading}
-          style={styles.submitButton}
+          title="Batal"
+          onPress={() => navigation.goBack()}
+          variant="secondary"
+          style={styles.cancelButton}
         />
       </Card>
     </ScrollView>
@@ -175,14 +389,50 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: "center",
   },
+  infoCard: {
+    marginBottom: 24,
+    backgroundColor: "#F0F9FF",
+    borderWidth: 1,
+    borderColor: "#E0F2FE",
+    borderRadius: 8,
+    padding: 16,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0369A1",
+    marginBottom: 12,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  infoValue: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
   section: {
     marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 12,
     color: "#374151",
+  },
+  warningTextSmall: {
+    fontSize: 12,
+    color: "#DC2626",
   },
   categoryGrid: {
     flexDirection: "row",
@@ -194,52 +444,118 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     margin: 4,
     backgroundColor: "#F3F4F6",
-    borderRadius: 20,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
+    minWidth: "45%",
+    flex: 1,
   },
   categoryButtonActive: {
     backgroundColor: "#4F46E5",
     borderColor: "#4F46E5",
   },
+  categoryButtonDisabled: {
+    backgroundColor: "#F9FAFB",
+    borderColor: "#E5E7EB",
+    opacity: 0.7,
+  },
+  categoryButtonContent: {
+    alignItems: "center",
+  },
   categoryText: {
     fontSize: 12,
     color: "#6B7280",
+    textAlign: "center",
   },
   categoryTextActive: {
     color: "#FFFFFF",
     fontWeight: "500",
   },
+  categoryTextDisabled: {
+    color: "#9CA3AF",
+  },
+  usedBadge: {
+    fontSize: 10,
+    color: "#DC2626",
+    marginTop: 2,
+    fontWeight: "500",
+  },
   periodContainer: {
     flexDirection: "row",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    padding: 4,
+    gap: 12,
   },
   periodButton: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 16,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
     alignItems: "center",
-    borderRadius: 6,
   },
   periodButtonActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: "#EEF2FF",
+    borderColor: "#4F46E5",
+  },
+  periodIconContainer: {
+    marginBottom: 8,
   },
   periodText: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
     color: "#6B7280",
+    marginBottom: 4,
   },
   periodTextActive: {
     color: "#4F46E5",
   },
+  periodSubtext: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  tipsCard: {
+    marginBottom: 24,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#DCFCE7",
+    borderRadius: 8,
+    padding: 16,
+  },
+  tipsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#166534",
+    marginBottom: 8,
+  },
+  tipText: {
+    fontSize: 12,
+    color: "#166534",
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  deleteButton: {
+    flex: 1,
+  },
   submitButton: {
-    marginTop: 24,
+    flex: 2,
+  },
+  cancelButton: {
+    marginBottom: 32,
+  },
+  positiveText: {
+    color: "#10B981",
+  },
+  negativeText: {
+    color: "#DC2626",
+  },
+  warningText: {
+    color: "#F59E0B",
   },
 });
 

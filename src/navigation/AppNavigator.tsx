@@ -41,14 +41,16 @@ const HomeStack = () => (
       options={{ title: "Tambah Transaksi" }}
     />
     <Stack.Screen
-      name="AddBudget"
-      component={AddBudgetScreen}
-      options={{ title: "Tambah Anggaran" }}
-    />
-    <Stack.Screen
       name="AddSavings"
       component={AddSavingsScreen}
       options={{ title: "Tambah Target Tabungan" }}
+    />
+    <Stack.Screen
+      name="AddBudget"
+      component={AddBudgetScreen}
+      options={({ route }: any) => ({
+        title: route.params?.editMode ? "Edit Anggaran" : "Tambah Anggaran",
+      })}
     />
   </Stack.Navigator>
 );
@@ -77,7 +79,13 @@ const TransactionStack = () => (
         title: route.params?.editMode ? "Edit Transaksi" : "Tambah Transaksi",
       })}
     />
-    {/* HAPUS EditTransaction Screen karena sudah digabung */}
+    <Stack.Screen
+      name="AddBudget"
+      component={AddBudgetScreen}
+      options={({ route }: any) => ({
+        title: route.params?.editMode ? "Edit Anggaran" : "Tambah Anggaran",
+      })}
+    />
   </Stack.Navigator>
 );
 
@@ -126,7 +134,11 @@ const SavingsStack = () => (
     <Stack.Screen
       name="AddSavings"
       component={AddSavingsScreen}
-      options={{ title: "Tambah Target Tabungan" }}
+      options={({ route }: any) => ({
+        title: route.params?.editMode
+          ? "Edit Target Tabungan"
+          : "Tambah Target Tabungan",
+      })}
     />
   </Stack.Navigator>
 );
