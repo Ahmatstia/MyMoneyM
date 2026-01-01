@@ -8,28 +8,30 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 import { useAppContext } from "../../context/AppContext";
 import Card from "../../components/common/Card";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import { getCurrentDate } from "../../utils/calculations";
-import { Savings } from "../../types";
+import { RootStackParamList, Savings } from "../../types";
 
-type NavigationProps = {
-  navigate: (screen: string, params?: any) => void;
-  goBack: () => void;
-  setOptions: (options: any) => void;
-};
+type AddSavingsScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "AddSavings"
+>;
+
+type AddSavingsScreenRouteProp = RouteProp<RootStackParamList, "AddSavings">;
 
 const AddSavingsScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProps>();
-  const route = useRoute();
+  const navigation = useNavigation<AddSavingsScreenNavigationProp>();
+  const route = useRoute<AddSavingsScreenRouteProp>();
 
-  const params = route.params as any;
-  const isEditMode = params?.editMode || false;
-  const savingsData = params?.savingsData;
+  const params = route.params || {};
+  const isEditMode = params.editMode || false;
+  const savingsData = params.savingsData;
 
   const { addSavings, editSavings, deleteSavings } = useAppContext();
 
@@ -153,9 +155,12 @@ const AddSavingsScreen: React.FC = () => {
               <Text
                 style={[
                   styles.infoValue,
-                  savingsData.target - savingsData.current <= 0
-                    ? "#10B981"
-                    : "#111827",
+                  {
+                    color:
+                      savingsData.target - savingsData.current <= 0
+                        ? "#10B981"
+                        : "#4F46E5",
+                  },
                 ]}
               >
                 {savingsData.target - savingsData.current <= 0

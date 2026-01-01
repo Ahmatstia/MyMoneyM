@@ -7,6 +7,7 @@ export interface Transaction {
   category: string;
   description: string;
   date: string;
+  createdAt: string;
 }
 
 export interface Budget {
@@ -34,12 +35,13 @@ export interface AppState {
   balance: number;
 }
 
+// Navigation types - UPDATED WITH ANALYTICS
 export type RootStackParamList = {
   Home: undefined;
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
-  // menambahkan parameter untuk edit mode
+  Analytics: undefined; // NEW
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;

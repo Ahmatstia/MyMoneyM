@@ -17,8 +17,11 @@ import Input from "../../components/common/Input";
 import { getCurrentDate } from "../../utils/calculations";
 import { RootStackParamList, TransactionType } from "../../types";
 
-type AddTransactionScreenNavigationProp =
-  StackNavigationProp<RootStackParamList>;
+type AddTransactionScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "AddTransaction"
+>;
+
 type AddTransactionScreenRouteProp = RouteProp<
   RootStackParamList,
   "AddTransaction"
@@ -40,9 +43,10 @@ const AddTransactionScreen: React.FC = () => {
   const route = useRoute<AddTransactionScreenRouteProp>();
   const { addTransaction, editTransaction } = useAppContext();
 
-  // Check if we're in edit mode
-  const isEditMode = route.params?.editMode || false;
-  const transactionData = route.params?.transactionData;
+  // Gunakan default value untuk menghindari undefined
+  const params = route.params || {};
+  const isEditMode = params.editMode || false;
+  const transactionData = params.transactionData;
 
   const [type, setType] = useState<TransactionType>(
     transactionData?.type || "expense"

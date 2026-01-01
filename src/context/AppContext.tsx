@@ -16,7 +16,6 @@ interface AppContextType {
   editBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   resetBudget: (id: string, newLimit?: number) => Promise<void>;
-  updateBudgetSpent: () => Promise<void>;
 
   // Savings functions
   addSavings: (savings: Omit<Savings, "id">) => Promise<void>;
@@ -44,14 +43,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [state, setState] = useState<AppState>(defaultAppState);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
   const loadInitialData = async () => {
-    const data = await storageService.loadData();
-    setState(data);
+    try {
+      const data = await storageService.loadData();
+      setState(data);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setIsInitialized(true);
+    }
   };
 
   const refreshData = async () => {
@@ -63,6 +69,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(defaultAppState);
   };
 
+  // Helper function to update budgets based on transactions
+  const updateBudgetsFromTransactions = (
+    transactions: Transaction[],
+    budgets: Budget[]
+  ): Budget[] => {
+    return budgets.map((budget) => {
+      const categoryExpenses = transactions
+        .filter((t) => t.type === "expense" && t.category === budget.category)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      return { ...budget, spent: categoryExpenses };
+    });
+  };
+
   // ========== TRANSACTION FUNCTIONS ==========
   const addTransaction = async (transaction: Omit<Transaction, "id">) => {
     const newTransaction: Transaction = {
@@ -72,20 +92,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const updatedTransactions = [newTransaction, ...state.transactions];
     const totals = calculateTotals(updatedTransactions);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      state.budgets
+    );
 
     const newState: AppState = {
       ...state,
       transactions: updatedTransactions,
+      budgets: updatedBudgets,
       ...totals,
     };
 
     setState(newState);
     await storageService.saveData(newState);
-
-    // Update budget spent amount if expense
-    if (transaction.type === "expense") {
-      await updateBudgetSpent();
-    }
   };
 
   const editTransaction = async (id: string, updates: Partial<Transaction>) => {
@@ -94,43 +114,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     const totals = calculateTotals(updatedTransactions);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      state.budgets
+    );
 
     const newState: AppState = {
       ...state,
       transactions: updatedTransactions,
+      budgets: updatedBudgets,
       ...totals,
     };
 
     setState(newState);
     await storageService.saveData(newState);
-
-    // Update budget spent if expense amount changed
-    if (updates.type === "expense" || updates.amount !== undefined) {
-      await updateBudgetSpent();
-    }
   };
 
   const deleteTransaction = async (id: string) => {
     const transactionToDelete = state.transactions.find((t) => t.id === id);
+
+    if (!transactionToDelete) {
+      console.warn("Transaction not found:", id);
+      return;
+    }
+
     const updatedTransactions = state.transactions.filter(
       (transaction) => transaction.id !== id
     );
 
     const totals = calculateTotals(updatedTransactions);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      state.budgets
+    );
 
     const newState: AppState = {
       ...state,
       transactions: updatedTransactions,
+      budgets: updatedBudgets,
       ...totals,
     };
 
     setState(newState);
     await storageService.saveData(newState);
-
-    // Update budget spent if deleted transaction was an expense
-    if (transactionToDelete?.type === "expense") {
-      await updateBudgetSpent();
-    }
   };
 
   // ========== BUDGET FUNCTIONS ==========
@@ -179,24 +205,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     const newState: AppState = { ...state, budgets: updatedBudgets };
-    setState(newState);
-    await storageService.saveData(newState);
-  };
-
-  const updateBudgetSpent = async () => {
-    const updatedBudgets = state.budgets.map((budget) => {
-      const categoryExpenses = state.transactions
-        .filter((t) => t.type === "expense" && t.category === budget.category)
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      return { ...budget, spent: categoryExpenses };
-    });
-
-    const newState: AppState = {
-      ...state,
-      budgets: updatedBudgets,
-    };
-
     setState(newState);
     await storageService.saveData(newState);
   };
@@ -253,6 +261,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
   };
 
+  if (!isInitialized) {
+    return null; // atau loading screen
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -266,7 +278,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         editBudget,
         deleteBudget,
         resetBudget,
-        updateBudgetSpent,
         // Savings functions
         addSavings,
         editSavings,

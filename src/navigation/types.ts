@@ -34,16 +34,36 @@ export interface AppState {
   balance: number;
 }
 
-// Navigation types - SIMPLIFIED VERSION
+// Navigation types - COMPLETE VERSION
 export type RootStackParamList = {
   Home: undefined;
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
+  Analytics: undefined;
+
+  // Transaction routes
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;
   };
-  AddBudget: undefined;
-  AddSavings: undefined;
+
+  // Budget routes
+  AddBudget: {
+    editMode?: boolean;
+    budgetData?: Budget;
+  };
+
+  // Savings routes
+  AddSavings: {
+    editMode?: boolean;
+    savingsData?: Savings;
+  };
 };
+
+// Untuk deklarasi global
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}

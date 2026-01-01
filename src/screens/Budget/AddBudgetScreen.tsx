@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 import { useAppContext } from "../../context/AppContext";
@@ -23,6 +23,8 @@ type AddBudgetScreenNavigationProp = StackNavigationProp<
   "AddBudget"
 >;
 
+type AddBudgetScreenRouteProp = RouteProp<RootStackParamList, "AddBudget">;
+
 const AVAILABLE_CATEGORIES = [
   "Makanan & Minuman",
   "Transportasi",
@@ -34,18 +36,12 @@ const AVAILABLE_CATEGORIES = [
   "Lainnya",
 ];
 
-// Type untuk route params
-type AddBudgetRouteParams = {
-  editMode?: boolean;
-  budgetData?: Budget;
-};
-
 const AddBudgetScreen: React.FC = () => {
   const navigation = useNavigation<AddBudgetScreenNavigationProp>();
-  const route = useRoute();
+  const route = useRoute<AddBudgetScreenRouteProp>();
 
-  // Type assertion dengan default value
-  const params = (route.params || {}) as AddBudgetRouteParams;
+  // Gunakan default value untuk menghindari undefined
+  const params = route.params || {};
   const isEditMode = params.editMode || false;
   const budgetData = params.budgetData;
 

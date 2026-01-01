@@ -12,6 +12,7 @@ import {
 import { Swipeable } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 import Svg, { Circle } from "react-native-svg";
 
 import { useAppContext } from "../../context/AppContext";
@@ -23,20 +24,18 @@ import {
   calculateSavingsProgress,
 } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
-import { Savings } from "../../types";
+import { RootStackParamList, Savings } from "../../types";
 
-// Simple navigation type
-type NavigationProps = {
-  navigate: (screen: string, params?: any) => void;
-  goBack: () => void;
-  setOptions: (options: any) => void;
-};
+type SavingsScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "Savings"
+>;
 
 const { width } = Dimensions.get("window");
 
 const SavingsScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProps>();
-  const { state, deleteSavings, updateSavings, editSavings } = useAppContext();
+  const navigation = useNavigation<SavingsScreenNavigationProp>();
+  const { state, deleteSavings, updateSavings } = useAppContext();
 
   // State
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
@@ -45,20 +44,6 @@ const SavingsScreen: React.FC = () => {
   const [selectedSavings, setSelectedSavings] = useState<Savings | null>(null);
   const [amountToAdd, setAmountToAdd] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // Helper functions for colors
-  const getStatusColor = (statusColor: string) => {
-    switch (statusColor) {
-      case "#10B981":
-        return "#10B98120";
-      case "#F59E0B":
-        return "#F59E0B20";
-      case "#DC2626":
-        return "#DC262620";
-      default:
-        return "#E5E7EB";
-    }
-  };
 
   const getProgressColor = (progress: number) => {
     if (progress >= 100) return "#10B981";
@@ -222,13 +207,14 @@ const SavingsScreen: React.FC = () => {
     const daysRemaining = getDaysRemaining(savings.deadline);
     const progressColor = getProgressColor(progress);
 
-    // Determine card style - FIXED: tidak menggunakan array dengan boolean
-    const cardStyles = isCompleted
-      ? [styles.savingsCard, styles.completedCard]
-      : styles.savingsCard;
+    // Determine card style
+    let cardStyle = styles.savingsCard;
+    if (isCompleted) {
+      cardStyle = { ...styles.savingsCard, ...styles.completedCard };
+    }
 
     return (
-      <View key={savings.id} style={cardStyles}>
+      <View key={savings.id} style={cardStyle}>
         <View style={styles.savingsHeader}>
           <View style={styles.savingsTitle}>
             <Text style={styles.savingsName}>{savings.name}</Text>
@@ -500,7 +486,7 @@ const SavingsScreen: React.FC = () => {
             {filter === "all" && (
               <Button
                 title="Buat Target Tabungan"
-                onPress={() => navigation.navigate("AddSavings")}
+                onPress={() => navigation.navigate("AddSavings" as never)}
                 style={styles.emptyButton}
               />
             )}
@@ -620,7 +606,7 @@ const SavingsScreen: React.FC = () => {
       {/* Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate("AddSavings")}
+        onPress={() => navigation.navigate("AddSavings" as never)}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
@@ -745,12 +731,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   completedCard: {
-    marginBottom: 16,
-    padding: 16,
     backgroundColor: "#F0FDF4",
     borderWidth: 1,
     borderColor: "#DCFCE7",
-    borderRadius: 12,
   },
   savingsHeader: {
     flexDirection: "row",
