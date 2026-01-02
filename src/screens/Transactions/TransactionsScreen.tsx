@@ -2,21 +2,25 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Modal,
   Alert,
   RefreshControl,
+  Dimensions,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
+import { Calendar } from "react-native-calendars";
+import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency } from "../../utils/calculations";
-import { RootStackParamList, Transaction } from "../../types";
+import { Transaction } from "../../types";
+
+const { width } = Dimensions.get("window");
 
 const TransactionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -26,40 +30,71 @@ const TransactionsScreen: React.FC = () => {
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all"
   );
-  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [dateFilter, setDateFilter] = useState<
+    "all" | "week" | "month" | "custom"
+  >("all");
+  const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
+  const [customEndDate, setCustomEndDate] = useState<Date>(new Date());
+  const [showCalendar, setShowCalendar] = useState<"start" | "end" | null>(
+    null
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const swipeableRefs = React.useRef<{ [key: string]: Swipeable | null }>({});
 
-  // Debug log untuk memantau state
+  // Cleanup on unmount
   useEffect(() => {
-    console.log("📊 TransactionsScreen mounted");
-    console.log("Total transactions in state:", state.transactions.length);
-    console.log("First few transactions:", state.transactions.slice(0, 3));
+    return () => {
+      Object.values(swipeableRefs.current).forEach((ref) => {
+        if (ref) ref.close();
+      });
+    };
   }, []);
-
-  // Refresh data saat screen focus
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log("🔄 TransactionsScreen focused");
-      return () => {
-        // Close semua swipeable saat unfocus
-        Object.values(swipeableRefs.current).forEach((ref) => {
-          if (ref) ref.close();
-        });
-      };
-    }, [])
-  );
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     let filtered = [...state.transactions];
-    console.log(`🔍 Filtering ${filtered.length} transactions`);
 
     // Filter by type
     if (filterType !== "all") {
       filtered = filtered.filter((t) => t.type === filterType);
-      console.log(`After type filter (${filterType}): ${filtered.length}`);
+    }
+
+    // Filter by date
+    if (dateFilter !== "all") {
+      const now = new Date();
+      const startDate = new Date();
+
+      switch (dateFilter) {
+        case "week":
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case "month":
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case "custom":
+          if (customStartDate && customEndDate) {
+            filtered = filtered.filter((t) => {
+              const transDate = new Date(t.date);
+              const start = new Date(customStartDate);
+              const end = new Date(customEndDate);
+              start.setHours(0, 0, 0, 0);
+              end.setHours(23, 59, 59, 999);
+              transDate.setHours(0, 0, 0, 0);
+              return transDate >= start && transDate <= end;
+            });
+          }
+          break;
+      }
+
+      if (dateFilter !== "custom") {
+        filtered = filtered.filter((t) => {
+          const transDate = new Date(t.date);
+          return transDate >= startDate;
+        });
+      }
     }
 
     // Filter by search query
@@ -72,37 +107,39 @@ const TransactionsScreen: React.FC = () => {
           formatCurrency(t.amount).toLowerCase().includes(query) ||
           t.date.toLowerCase().includes(query)
       );
-      console.log(`After search filter: ${filtered.length}`);
     }
 
     // Sort by date (newest first)
-    const sorted = filtered.sort(
+    return filtered.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+  }, [
+    state.transactions,
+    filterType,
+    dateFilter,
+    searchQuery,
+    customStartDate,
+    customEndDate,
+  ]);
 
-    console.log(`✅ Final filtered: ${sorted.length} transactions`);
-    return sorted;
-  }, [state.transactions, filterType, searchQuery]);
-
-  // Group transactions by date
-  const groupedTransactions = useMemo(() => {
+  // Group transactions by date (day)
+  const groupedByDay = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
 
     filteredTransactions.forEach((transaction) => {
-      const date = new Date(transaction.date).toLocaleDateString("id-ID", {
-        weekday: "long",
+      const date = new Date(transaction.date);
+      const dayKey = date.toLocaleDateString("id-ID", {
         day: "numeric",
-        month: "long",
+        month: "short",
         year: "numeric",
       });
 
-      if (!groups[date]) {
-        groups[date] = [];
+      if (!groups[dayKey]) {
+        groups[dayKey] = [];
       }
-      groups[date].push(transaction);
+      groups[dayKey].push(transaction);
     });
 
-    console.log(`📅 Grouped into ${Object.keys(groups).length} date groups`);
     return groups;
   }, [filteredTransactions]);
 
@@ -118,55 +155,28 @@ const TransactionsScreen: React.FC = () => {
 
     const balance = totalIncome - totalExpense;
 
-    console.log(
-      `💰 Totals - Income: ${totalIncome}, Expense: ${totalExpense}, Balance: ${balance}`
-    );
     return { totalIncome, totalExpense, balance };
   }, [filteredTransactions]);
 
+  // Handle delete transaction
   const handleDelete = async (transactionId: string) => {
-    console.log(`🗑️ Attempting to delete transaction: ${transactionId}`);
-
-    // Close swipeable
     const swipeable = swipeableRefs.current[transactionId];
-    if (swipeable) {
-      swipeable.close();
-    }
-
-    // Cari transaction untuk debug
-    const transactionToDelete = state.transactions.find(
-      (t) => t.id === transactionId
-    );
-    console.log("Transaction to delete:", transactionToDelete);
+    if (swipeable) swipeable.close();
 
     Alert.alert(
       "Hapus Transaksi",
       "Apakah Anda yakin ingin menghapus transaksi ini?",
       [
-        {
-          text: "Batal",
-          style: "cancel",
-          onPress: () => {
-            console.log("❌ Deletion cancelled");
-          },
-        },
+        { text: "Batal", style: "cancel" },
         {
           text: "Hapus",
           style: "destructive",
           onPress: async () => {
-            console.log("✅ Confirm delete, calling deleteTransaction...");
             try {
-              setIsRefreshing(true);
               await deleteTransaction(transactionId);
-              console.log("✅ Transaction deleted successfully");
-
-              // Update refs
               delete swipeableRefs.current[transactionId];
             } catch (error) {
-              console.error("❌ Error deleting transaction:", error);
               Alert.alert("Error", "Gagal menghapus transaksi");
-            } finally {
-              setIsRefreshing(false);
             }
           },
         },
@@ -175,13 +185,8 @@ const TransactionsScreen: React.FC = () => {
   };
 
   const handleEdit = (transaction: Transaction) => {
-    console.log(`✏️ Editing transaction: ${transaction.id}`);
-
-    // Close swipeable
     const swipeable = swipeableRefs.current[transaction.id];
-    if (swipeable) {
-      swipeable.close();
-    }
+    if (swipeable) swipeable.close();
 
     navigation.navigate("AddTransaction", {
       editMode: true,
@@ -189,791 +194,614 @@ const TransactionsScreen: React.FC = () => {
     });
   };
 
+  // Render swipe actions
   const renderRightActions = (transaction: Transaction) => (
-    <View style={styles.swipeActions}>
+    <View style={tw`flex-row w-24 h-11/12 my-2 rounded-xl overflow-hidden`}>
       <TouchableOpacity
-        style={styles.editAction}
+        style={tw`flex-1 bg-blue-500 justify-center items-center`}
         onPress={() => handleEdit(transaction)}
       >
-        <Ionicons name="pencil" size={20} color="#FFFFFF" />
+        <Ionicons name="pencil" size={18} color="#FFFFFF" />
       </TouchableOpacity>
       <TouchableOpacity
-        style={styles.deleteAction}
+        style={tw`flex-1 bg-red-500 justify-center items-center`}
         onPress={() => handleDelete(transaction.id)}
       >
-        <Ionicons name="trash" size={20} color="#FFFFFF" />
+        <Ionicons name="trash" size={18} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
 
-  const formatTransactionDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
+  // Format date for display
+  const formatDisplayDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-      if (date.toDateString() === today.toDateString()) {
-        return "Hari Ini";
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        return "Kemarin";
-      } else {
-        return date.toLocaleDateString("id-ID", {
-          weekday: "short",
-          day: "numeric",
-          month: "short",
-        });
-      }
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return dateString;
+    if (date.toDateString() === today.toDateString()) {
+      return "Hari Ini";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Kemarin";
+    } else {
+      return date.toLocaleDateString("id-ID", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
     }
   };
 
-  const handleRefresh = async () => {
-    console.log("🔄 Manual refresh triggered");
-    // Anda bisa menambahkan refresh logic di sini jika diperlukan
+  // Category icons
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, string> = {
+      Makanan: "restaurant",
+      Transportasi: "car",
+      Belanja: "cart",
+      Hiburan: "film",
+      Kesehatan: "medical",
+      Pendidikan: "school",
+      Gaji: "cash",
+      Investasi: "trending-up",
+      Lainnya: "ellipsis-horizontal",
+    };
+    return icons[category] || "receipt";
   };
 
-  const handleClearSearch = () => {
-    console.log("🧹 Clearing search");
-    setSearchQuery("");
+  // Date filter label
+  const getDateFilterLabel = () => {
+    switch (dateFilter) {
+      case "week":
+        return "7 Hari";
+      case "month":
+        return "Bulan Ini";
+      case "custom":
+        if (customStartDate && customEndDate) {
+          return `${customStartDate.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+          })}-${customEndDate.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+          })}`;
+        }
+        return "Tanggal";
+      default:
+        return "Semua";
+    }
   };
 
-  const handleClearFilter = () => {
-    console.log("🧹 Clearing filter");
-    setFilterType("all");
+  // Handle calendar date select
+  const handleDateSelect = (day: any) => {
+    const selectedDate = new Date(day.dateString);
+
+    if (showCalendar === "start") {
+      setCustomStartDate(selectedDate);
+    } else if (showCalendar === "end") {
+      setCustomEndDate(selectedDate);
+    }
+
+    setShowCalendar(null);
+  };
+
+  // Reset date filter
+  const resetDateFilter = () => {
+    setDateFilter("all");
+    setCustomStartDate(new Date());
+    setCustomEndDate(new Date());
+  };
+
+  // Apply filter
+  const applyFilter = () => {
+    setShowFilterModal(false);
+  };
+
+  // Format date for Calendar markedDates
+  const formatDateForCalendar = (date: Date) => {
+    return date.toISOString().split("T")[0];
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Transaksi</Text>
-        <View style={styles.headerActions}>
+    <View style={tw`flex-1 bg-gray-50`}>
+      {/* Minimal Header */}
+      <View style={tw`bg-white px-4 pt-3 pb-3 border-b border-gray-100`}>
+        <View style={tw`flex-row justify-between items-center mb-3`}>
+          <View>
+            <Text style={tw`text-gray-900 text-lg font-bold`}>Transaksi</Text>
+            <Text style={tw`text-gray-500 text-xs mt-0.5`}>
+              {filteredTransactions.length} transaksi
+            </Text>
+          </View>
           <TouchableOpacity
-            style={[styles.headerButton, styles.debugButton]}
-            onPress={() => {
-              console.log("🔍 Current state:", {
-                totalTransactions: state.transactions.length,
-                filteredTransactions: filteredTransactions.length,
-                filterType,
-                searchQuery,
-                totals,
-              });
-            }}
-          >
-            <Ionicons name="bug" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.addButton}
+            style={tw`w-9 h-9 bg-indigo-100 rounded-lg justify-center items-center`}
             onPress={() => navigation.navigate("AddTransaction")}
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Ionicons name="add" size={18} color="#4F46E5" />
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Search and Filter */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Cari transaksi..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={handleClearSearch}>
-              <Ionicons name="close-circle" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filterType !== "all" && styles.filterButtonActive,
-          ]}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Ionicons
-            name="filter"
-            size={20}
-            color={filterType === "all" ? "#6B7280" : "#4F46E5"}
-          />
-          {filterType !== "all" && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>
-                {filterType === "income" ? "P" : "K"}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Stats Overview */}
-      <View style={styles.statsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.statCard,
-            filterType === "all" && styles.statCardActive,
-          ]}
-          onPress={() => setFilterType("all")}
-        >
-          <Text style={styles.statNumber}>{filteredTransactions.length}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-          {filterType === "all" && <View style={styles.activeIndicator} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.statCard,
-            filterType === "income" && styles.statCardActive,
-          ]}
-          onPress={() => setFilterType("income")}
-        >
-          <Text style={[styles.statNumber, styles.incomeStat]}>
-            {formatCurrency(totals.totalIncome)}
-          </Text>
-          <Text style={styles.statLabel}>Pemasukan</Text>
-          {filterType === "income" && <View style={styles.activeIndicator} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.statCard,
-            filterType === "expense" && styles.statCardActive,
-          ]}
-          onPress={() => setFilterType("expense")}
-        >
-          <Text style={[styles.statNumber, styles.expenseStat]}>
-            {formatCurrency(totals.totalExpense)}
-          </Text>
-          <Text style={styles.statLabel}>Pengeluaran</Text>
-          {filterType === "expense" && <View style={styles.activeIndicator} />}
-        </TouchableOpacity>
-      </View>
-
-      {/* Clear Filters Button */}
-      {(searchQuery || filterType !== "all") && (
-        <View style={styles.clearFiltersContainer}>
-          <TouchableOpacity
-            style={styles.clearFiltersButton}
-            onPress={() => {
-              handleClearSearch();
-              handleClearFilter();
-            }}
+        {/* Search Bar - Compact */}
+        <View style={tw`flex-row items-center mb-2`}>
+          <View
+            style={tw`flex-1 flex-row items-center bg-gray-100 rounded-lg px-3 py-2`}
           >
-            <Ionicons name="close-circle" size={16} color="#6B7280" />
-            <Text style={styles.clearFiltersText}>Bersihkan filter</Text>
+            <Ionicons name="search" size={16} color="#9CA3AF" />
+            <TextInput
+              style={tw`flex-1 text-gray-800 text-sm ml-2`}
+              placeholder="Cari transaksi..."
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              returnKeyType="search"
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={tw`ml-2 w-9 h-9 bg-gray-100 rounded-lg justify-center items-center`}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <Ionicons name="filter" size={16} color="#6B7280" />
           </TouchableOpacity>
         </View>
-      )}
 
-      {/* Transactions List */}
+        {/* Quick Filter Row */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={tw`-mx-1`}
+        >
+          <View style={tw`flex-row px-1`}>
+            <TouchableOpacity
+              style={tw`mr-2 px-3 py-1.5 rounded-full ${
+                filterType === "all" ? "bg-indigo-600" : "bg-gray-200"
+              }`}
+              onPress={() => setFilterType("all")}
+            >
+              <Text
+                style={tw`text-xs ${
+                  filterType === "all"
+                    ? "text-white font-medium"
+                    : "text-gray-700"
+                }`}
+              >
+                Semua
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center ${
+                filterType === "income"
+                  ? "bg-emerald-100 border border-emerald-200"
+                  : "bg-gray-200"
+              }`}
+              onPress={() => setFilterType("income")}
+            >
+              <Ionicons
+                name="arrow-down"
+                size={12}
+                color={filterType === "income" ? "#10B981" : "#6B7280"}
+              />
+              <Text
+                style={tw`text-xs ml-1 ${
+                  filterType === "income"
+                    ? "text-emerald-700 font-medium"
+                    : "text-gray-700"
+                }`}
+              >
+                Pemasukan
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center ${
+                filterType === "expense"
+                  ? "bg-red-100 border border-red-200"
+                  : "bg-gray-200"
+              }`}
+              onPress={() => setFilterType("expense")}
+            >
+              <Ionicons
+                name="arrow-up"
+                size={12}
+                color={filterType === "expense" ? "#EF4444" : "#6B7280"}
+              />
+              <Text
+                style={tw`text-xs ml-1 ${
+                  filterType === "expense"
+                    ? "text-red-700 font-medium"
+                    : "text-gray-700"
+                }`}
+              >
+                Pengeluaran
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Compact Summary Cards */}
+      <View style={tw`px-4 py-2 bg-white border-b border-gray-100`}>
+        <View style={tw`flex-row justify-between items-center`}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Saldo</Text>
+            <Text style={tw`text-gray-900 text-sm font-bold`}>
+              {formatCurrency(totals.balance)}
+            </Text>
+          </View>
+          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-emerald-600 text-xs mb-0.5`}>Pemasukan</Text>
+            <Text style={tw`text-emerald-600 text-sm font-bold`}>
+              {formatCurrency(totals.totalIncome)}
+            </Text>
+          </View>
+          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-red-600 text-xs mb-0.5`}>Pengeluaran</Text>
+            <Text style={tw`text-red-600 text-sm font-bold`}>
+              {formatCurrency(totals.totalExpense)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Transactions List - Minimal */}
       <ScrollView
-        style={styles.transactionsList}
+        style={tw`flex-1`}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={tw`pb-20`}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={handleRefresh}
+            onRefresh={() => setIsRefreshing(false)}
             colors={["#4F46E5"]}
-            tintColor="#4F46E5"
           />
         }
       >
-        {Object.entries(groupedTransactions).map(([date, transactions]) => (
-          <View key={date} style={styles.dateGroup}>
-            <View style={styles.dateHeader}>
-              <Text style={styles.dateTitle}>{date}</Text>
-              <Text style={styles.dateAmount}>
-                {formatCurrency(
-                  transactions.reduce((sum, t) => sum + t.amount, 0)
-                )}
-              </Text>
-            </View>
+        {Object.entries(groupedByDay).length > 0 ? (
+          Object.entries(groupedByDay).map(([day, transactions]) => (
+            <View key={day} style={tw`mb-3`}>
+              {/* Day Header */}
+              <View style={tw`px-4 mb-2 mt-3`}>
+                <View style={tw`flex-row justify-between items-center`}>
+                  <Text style={tw`text-gray-700 text-sm font-medium`}>
+                    {day}
+                  </Text>
+                </View>
+              </View>
 
-            {transactions.map((transaction) => (
-              <Swipeable
-                key={transaction.id}
-                ref={(ref) => {
-                  if (ref) {
-                    swipeableRefs.current[transaction.id] = ref;
-                  } else {
-                    delete swipeableRefs.current[transaction.id];
-                  }
-                }}
-                renderRightActions={() => renderRightActions(transaction)}
-                overshootRight={false}
-                friction={2}
-                containerStyle={styles.swipeableContainer}
-                onSwipeableWillOpen={() => {
-                  // Close other swipeables
-                  Object.keys(swipeableRefs.current).forEach((id) => {
-                    if (id !== transaction.id && swipeableRefs.current[id]) {
-                      swipeableRefs.current[id]?.close();
-                    }
-                  });
-                }}
-              >
-                <TouchableOpacity
-                  style={styles.transactionItem}
-                  activeOpacity={0.7}
-                  onPress={() => handleEdit(transaction)}
-                  onLongPress={() => {
-                    console.log("ℹ️ Transaction details:", transaction);
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.transactionIcon,
-                      transaction.type === "income"
-                        ? styles.incomeIcon
-                        : styles.expenseIcon,
-                    ]}
+              {/* Transactions */}
+              <View style={tw`px-2`}>
+                {transactions.map((transaction) => (
+                  <Swipeable
+                    key={transaction.id}
+                    ref={(ref) => {
+                      if (ref) {
+                        swipeableRefs.current[transaction.id] = ref;
+                      } else {
+                        delete swipeableRefs.current[transaction.id];
+                      }
+                    }}
+                    renderRightActions={() => renderRightActions(transaction)}
+                    overshootRight={false}
+                    friction={2}
+                    containerStyle={tw`mb-1.5 mx-1`}
+                    onSwipeableWillOpen={() => {
+                      Object.keys(swipeableRefs.current).forEach((id) => {
+                        if (
+                          id !== transaction.id &&
+                          swipeableRefs.current[id]
+                        ) {
+                          swipeableRefs.current[id]?.close();
+                        }
+                      });
+                    }}
                   >
-                    <Ionicons
-                      name={
-                        transaction.type === "income"
-                          ? "arrow-down"
-                          : "arrow-up"
-                      }
-                      size={20}
-                      color={
-                        transaction.type === "income" ? "#10B981" : "#DC2626"
-                      }
-                    />
-                  </View>
-
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionCategory} numberOfLines={1}>
-                      {transaction.category}
-                    </Text>
-                    <Text
-                      style={styles.transactionDescription}
-                      numberOfLines={1}
+                    <TouchableOpacity
+                      style={tw`bg-white p-3 rounded-xl border border-gray-100`}
+                      activeOpacity={0.7}
+                      onPress={() => handleEdit(transaction)}
                     >
-                      {transaction.description || "Tidak ada deskripsi"}
-                    </Text>
-                    <Text style={styles.transactionTime}>
-                      {formatTransactionDate(transaction.date)}
-                      {transaction.createdAt &&
-                        ` • ID: ${transaction.id.substring(0, 8)}`}
-                    </Text>
-                  </View>
+                      <View style={tw`flex-row items-center justify-between`}>
+                        <View style={tw`flex-row items-center flex-1`}>
+                          <View
+                            style={tw`w-10 h-10 rounded-lg justify-center items-center mr-3 ${
+                              transaction.type === "income"
+                                ? "bg-emerald-50"
+                                : "bg-red-50"
+                            }`}
+                          >
+                            <Ionicons
+                              name={
+                                getCategoryIcon(transaction.category) as any
+                              }
+                              size={18}
+                              color={
+                                transaction.type === "income"
+                                  ? "#10B981"
+                                  : "#EF4444"
+                              }
+                            />
+                          </View>
 
-                  <View style={styles.transactionAmountContainer}>
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        transaction.type === "income"
-                          ? styles.incomeAmount
-                          : styles.expenseAmount,
-                      ]}
-                    >
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </Swipeable>
-            ))}
-          </View>
-        ))}
-
-        {filteredTransactions.length === 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name={searchQuery ? "search-outline" : "receipt-outline"}
-              size={64}
-              color="#D1D5DB"
-            />
-            <Text style={styles.emptyTitle}>
-              {searchQuery ? "Tidak ditemukan" : "Belum ada transaksi"}
+                          <View style={tw`flex-1`}>
+                            <View
+                              style={tw`flex-row items-center justify-between mb-0.5`}
+                            >
+                              <Text
+                                style={tw`text-gray-800 text-sm font-medium`}
+                              >
+                                {transaction.category}
+                              </Text>
+                              <Text
+                                style={tw`text-sm font-medium ${
+                                  transaction.type === "income"
+                                    ? "text-emerald-600"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                {transaction.type === "income" ? "+" : "-"}
+                                {formatCurrency(transaction.amount)}
+                              </Text>
+                            </View>
+                            <Text
+                              style={tw`text-gray-500 text-xs mb-0.5`}
+                              numberOfLines={1}
+                            >
+                              {transaction.description || "Tidak ada deskripsi"}
+                            </Text>
+                            <View style={tw`flex-row items-center`}>
+                              <Text style={tw`text-gray-400 text-xs`}>
+                                {formatDisplayDate(transaction.date)}
+                              </Text>
+                              <View
+                                style={tw`w-1 h-1 bg-gray-300 rounded-full mx-2`}
+                              />
+                              <View
+                                style={tw`px-1.5 py-0.5 rounded-full ${
+                                  transaction.type === "income"
+                                    ? "bg-emerald-100"
+                                    : "bg-red-100"
+                                }`}
+                              >
+                                <Text
+                                  style={tw`text-xs ${
+                                    transaction.type === "income"
+                                      ? "text-emerald-700"
+                                      : "text-red-700"
+                                  }`}
+                                >
+                                  {transaction.type === "income"
+                                    ? "Masuk"
+                                    : "Keluar"}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  </Swipeable>
+                ))}
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={tw`items-center justify-center py-16 px-10`}>
+            <View
+              style={tw`w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4`}
+            >
+              <Ionicons
+                name={
+                  searchQuery || dateFilter !== "all"
+                    ? "search-outline"
+                    : "receipt-outline"
+                }
+                size={32}
+                color="#9CA3AF"
+              />
+            </View>
+            <Text
+              style={tw`text-gray-800 text-base font-medium text-center mb-1.5`}
+            >
+              {searchQuery || dateFilter !== "all"
+                ? "Transaksi tidak ditemukan"
+                : "Belum ada transaksi"}
             </Text>
-            <Text style={styles.emptyText}>
+            <Text style={tw`text-gray-500 text-sm text-center mb-5`}>
               {searchQuery
-                ? "Coba dengan kata kunci lain"
-                : "Tambahkan transaksi pertama Anda"}
+                ? "Coba kata kunci lain atau hapus filter"
+                : "Mulai catat transaksi pertama Anda"}
             </Text>
-            {!searchQuery && (
+            {!searchQuery && filterType === "all" && dateFilter === "all" && (
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg flex-row items-center`}
                 onPress={() => navigation.navigate("AddTransaction")}
               >
-                <Ionicons name="add" size={20} color="#FFFFFF" />
-                <Text style={styles.emptyButtonText}>Tambah Transaksi</Text>
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text style={tw`text-white text-sm font-medium ml-1.5`}>
+                  Tambah Transaksi
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         )}
-
-        {/* Debug Info */}
-        {__DEV__ && (
-          <View style={styles.debugInfo}>
-            <Text style={styles.debugText}>
-              Total: {state.transactions.length} | Filtered:{" "}
-              {filteredTransactions.length}
-            </Text>
-            <Text style={styles.debugText}>
-              Last updated: {new Date().toLocaleTimeString()}
-            </Text>
-          </View>
-        )}
       </ScrollView>
+
+      {/* Add FAB - Smaller */}
+      <TouchableOpacity
+        style={tw`absolute bottom-5 right-4 w-14 h-14 bg-indigo-600 rounded-xl justify-center items-center shadow-md`}
+        onPress={() => navigation.navigate("AddTransaction")}
+        activeOpacity={0.9}
+      >
+        <Ionicons name="add" size={22} color="#FFFFFF" />
+      </TouchableOpacity>
 
       {/* Filter Modal */}
       <Modal
         visible={showFilterModal}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowFilterModal(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowFilterModal(false)}
-        >
-          <View
-            style={styles.modalContent}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter Transaksi</Text>
+        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
+          <View style={tw`bg-white rounded-t-3xl p-5 max-h-96`}>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <Text style={tw`text-gray-800 text-lg font-bold`}>
+                Filter Tanggal
+              </Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+                <Ionicons name="close" size={22} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.filterOptions}>
-              {(["all", "income", "expense"] as const).map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.filterOption,
-                    filterType === type && styles.filterOptionActive,
-                  ]}
-                  onPress={() => {
-                    console.log(`Filter changed to: ${type}`);
-                    setFilterType(type);
-                    setShowFilterModal(false);
-                  }}
-                >
-                  <View style={styles.filterOptionIcon}>
-                    <Ionicons
-                      name={
-                        type === "all"
-                          ? "list"
-                          : type === "income"
-                          ? "arrow-down-circle"
-                          : "arrow-up-circle"
-                      }
-                      size={20}
-                      color={filterType === type ? "#FFFFFF" : "#6B7280"}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.filterOptionText,
-                      filterType === type && styles.filterOptionTextActive,
-                    ]}
-                  >
-                    {type === "all"
-                      ? "Semua"
-                      : type === "income"
-                      ? "Pemasukan"
-                      : "Pengeluaran"}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={tw`mb-4`}>
+                <Text style={tw`text-gray-600 text-sm mb-2`}>
+                  Rentang Waktu
+                </Text>
+                <View style={tw`flex-row flex-wrap gap-2`}>
+                  {[
+                    { key: "all", label: "Semua Waktu" },
+                    { key: "week", label: "7 Hari Terakhir" },
+                    { key: "month", label: "Bulan Ini" },
+                    { key: "custom", label: "Tanggal Kustom" },
+                  ].map((option) => (
+                    <TouchableOpacity
+                      key={option.key}
+                      style={tw`px-3 py-2 rounded-full ${
+                        dateFilter === option.key
+                          ? "bg-indigo-600"
+                          : "bg-gray-200"
+                      }`}
+                      onPress={() => setDateFilter(option.key as any)}
+                    >
+                      <Text
+                        style={tw`text-sm ${
+                          dateFilter === option.key
+                            ? "text-white font-medium"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {dateFilter === "custom" && (
+                <View style={tw`mb-4`}>
+                  <Text style={tw`text-gray-600 text-sm mb-2`}>
+                    Tanggal Kustom
                   </Text>
-                  {filterType === type && (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color="#FFFFFF"
-                      style={styles.filterCheckmark}
-                    />
-                  )}
+                  <View style={tw`flex-row gap-3`}>
+                    <View style={tw`flex-1`}>
+                      <Text style={tw`text-gray-400 text-xs mb-1`}>
+                        Dari Tanggal
+                      </Text>
+                      <TouchableOpacity
+                        style={tw`border border-gray-300 rounded-lg p-3`}
+                        onPress={() => setShowCalendar("start")}
+                      >
+                        <Text style={tw`text-gray-800`}>
+                          {customStartDate.toLocaleDateString("id-ID")}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={tw`flex-1`}>
+                      <Text style={tw`text-gray-400 text-xs mb-1`}>
+                        Sampai Tanggal
+                      </Text>
+                      <TouchableOpacity
+                        style={tw`border border-gray-300 rounded-lg p-3`}
+                        onPress={() => setShowCalendar("end")}
+                      >
+                        <Text style={tw`text-gray-800`}>
+                          {customEndDate.toLocaleDateString("id-ID")}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              <View style={tw`flex-row gap-3 mt-2`}>
+                <TouchableOpacity
+                  style={tw`flex-1 border border-gray-300 rounded-xl py-3 items-center`}
+                  onPress={resetDateFilter}
+                >
+                  <Text style={tw`text-gray-700`}>Reset</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+                <TouchableOpacity
+                  style={tw`flex-1 bg-indigo-600 rounded-xl py-3 items-center`}
+                  onPress={applyFilter}
+                >
+                  <Text style={tw`text-white font-medium`}>Terapkan</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
-        </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Calendar Modal */}
+      <Modal
+        visible={showCalendar !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCalendar(null)}
+      >
+        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
+          <View style={tw`bg-white rounded-t-3xl p-4`}>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <Text style={tw`text-gray-800 text-lg font-bold`}>
+                {showCalendar === "start"
+                  ? "Pilih Tanggal Mulai"
+                  : "Pilih Tanggal Akhir"}
+              </Text>
+              <TouchableOpacity onPress={() => setShowCalendar(null)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <Calendar
+              onDayPress={handleDateSelect}
+              markedDates={{
+                [formatDateForCalendar(
+                  showCalendar === "start" ? customStartDate : customEndDate
+                )]: {
+                  selected: true,
+                  selectedColor: "#4F46E5",
+                  selectedTextColor: "#FFFFFF",
+                },
+              }}
+              theme={{
+                backgroundColor: "#ffffff",
+                calendarBackground: "#ffffff",
+                textSectionTitleColor: "#6B7280",
+                selectedDayBackgroundColor: "#4F46E5",
+                selectedDayTextColor: "#ffffff",
+                todayTextColor: "#4F46E5",
+                dayTextColor: "#374151",
+                textDisabledColor: "#D1D5DB",
+                dotColor: "#4F46E5",
+                selectedDotColor: "#ffffff",
+                arrowColor: "#4F46E5",
+                monthTextColor: "#4F46E5",
+                textMonthFontWeight: "bold",
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+              }}
+            />
+          </View>
+        </View>
       </Modal>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#4F46E5",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  debugButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#111827",
-    marginLeft: 8,
-    marginRight: 8,
-  },
-  filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  filterButtonActive: {
-    backgroundColor: "#EEF2FF",
-  },
-  filterBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#4F46E5",
-    borderRadius: 10,
-    width: 16,
-    height: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  filterBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-  },
-  statCard: {
-    flex: 1,
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
-    marginHorizontal: 4,
-    position: "relative",
-  },
-  statCardActive: {
-    backgroundColor: "#EEF2FF",
-    borderWidth: 2,
-    borderColor: "#4F46E5",
-  },
-  activeIndicator: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#4F46E5",
-  },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  incomeStat: {
-    color: "#10B981",
-  },
-  expenseStat: {
-    color: "#DC2626",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  clearFiltersContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  clearFiltersButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 16,
-  },
-  clearFiltersText: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginLeft: 4,
-  },
-  transactionsList: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  dateGroup: {
-    marginTop: 20,
-  },
-  dateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  dateTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  dateAmount: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4F46E5",
-  },
-  swipeableContainer: {
-    marginHorizontal: 20,
-    marginBottom: 8,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  transactionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  incomeIcon: {
-    backgroundColor: "#D1FAE5",
-  },
-  expenseIcon: {
-    backgroundColor: "#FEE2E2",
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionCategory: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  transactionDescription: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  transactionTime: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-  transactionAmountContainer: {
-    alignItems: "flex-end",
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  incomeAmount: {
-    color: "#10B981",
-  },
-  expenseAmount: {
-    color: "#DC2626",
-  },
-  swipeActions: {
-    flexDirection: "row",
-    width: 120,
-    height: "88%",
-    marginVertical: 8,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  editAction: {
-    flex: 1,
-    backgroundColor: "#3B82F6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  deleteAction: {
-    flex: 1,
-    backgroundColor: "#DC2626",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyState: {
-    alignItems: "center",
-    padding: 48,
-    marginTop: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  emptyButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4F46E5",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  debugInfo: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    marginHorizontal: 20,
-  },
-  debugText: {
-    fontSize: 11,
-    color: "#6B7280",
-    fontFamily: "monospace",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  filterOptions: {
-    gap: 8,
-  },
-  filterOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: "#F9FAFB",
-  },
-  filterOptionActive: {
-    backgroundColor: "#4F46E5",
-  },
-  filterOptionIcon: {
-    marginRight: 12,
-  },
-  filterOptionText: {
-    fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "500",
-    flex: 1,
-  },
-  filterOptionTextActive: {
-    color: "#FFFFFF",
-  },
-  filterCheckmark: {
-    marginLeft: 8,
-  },
-});
 
 export default TransactionsScreen;

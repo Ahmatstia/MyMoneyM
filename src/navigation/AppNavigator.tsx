@@ -13,15 +13,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import {
   View,
-  StyleSheet,
   Text,
   TouchableOpacity,
   Dimensions,
-  StatusBar,
+  Platform,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Avatar } from "react-native-paper";
-import { CommonActions } from "@react-navigation/native";
+import tw from "twrnc";
 
 // Screens
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -32,16 +30,15 @@ import AnalyticsScreen from "../screens/Analytics/AnalyticsScreen";
 import AddTransactionScreen from "../screens/Transactions/AddTransactionScreen";
 import AddBudgetScreen from "../screens/Budget/AddBudgetScreen";
 import AddSavingsScreen from "../screens/Savings/AddSavingsScreen";
-import { RootStackParamList } from "../types/index"; // HANYA import RootStackParamList
+import { RootStackParamList } from "../types/index";
 
 const Stack = createStackNavigator<RootStackParamList>();
-// Buat Drawer dengan inline type
 const Drawer = createDrawerNavigator<{
   MainStack: undefined;
 }>();
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-// Custom Drawer Content dengan UI yang menarik
+// Custom Drawer Content Minimalis
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const [activeRoute, setActiveRoute] = useState<string>("Home");
 
@@ -51,122 +48,169 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       label: "Beranda",
       icon: "home-outline" as const,
       activeIcon: "home" as const,
+      color: "#4F46E5",
     },
     {
       name: "Transactions",
       label: "Transaksi",
       icon: "swap-horizontal-outline" as const,
       activeIcon: "swap-horizontal" as const,
+      color: "#10B981",
     },
     {
       name: "Analytics",
       label: "Analitik",
       icon: "stats-chart-outline" as const,
       activeIcon: "stats-chart" as const,
+      color: "#F59E0B",
     },
     {
       name: "Budget",
       label: "Anggaran",
       icon: "pie-chart-outline" as const,
       activeIcon: "pie-chart" as const,
+      color: "#8B5CF6",
     },
     {
       name: "Savings",
       label: "Tabungan",
       icon: "wallet-outline" as const,
       activeIcon: "wallet" as const,
+      color: "#EC4899",
     },
   ];
 
   const navigateToScreen = (screenName: keyof RootStackParamList) => {
     setActiveRoute(screenName);
-    // Navigasi ke screen yang dipilih
     props.navigation.navigate("MainStack", { screen: screenName });
   };
 
   return (
-    <DrawerContentScrollView
-      {...props}
-      contentContainerStyle={styles.drawerContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header Drawer */}
-      <LinearGradient
-        colors={["#4F46E5", "#6366F1"]}
-        style={styles.drawerHeader}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <View style={styles.profileContainer}>
+    <View style={tw`flex-1 bg-white`}>
+      {/* Header Minimalis */}
+      <View style={tw`pt-10 pb-6 px-6 bg-indigo-600`}>
+        <View style={tw`flex-row items-center`}>
           <Avatar.Icon
-            size={50}
-            icon="account"
-            style={styles.avatar}
+            size={44}
+            icon="currency-usd"
+            style={tw`bg-white`}
             color="#4F46E5"
           />
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>MyMoney App</Text>
-            <Text style={styles.profileEmail}>Keuangan Pribadi</Text>
+          <View style={tw`ml-4 flex-1`}>
+            <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
+            <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
+              Keuangan Pribadi
+            </Text>
           </View>
+          <TouchableOpacity>
+            <Ionicons name="settings-outline" size={20} color="white" />
+          </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
-      {/* Menu Items */}
-      <View style={styles.menuContainer}>
+      {/* Menu Items Minimalis */}
+      <DrawerContentScrollView
+        {...props}
+        contentContainerStyle={tw`pt-2`}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text
+          style={tw`text-gray-500 text-xs font-medium px-6 mb-2 uppercase tracking-wider`}
+        >
+          Menu
+        </Text>
+
         {menuItems.map((item) => {
           const isActive = activeRoute === item.name;
           return (
             <TouchableOpacity
               key={item.name}
-              style={[styles.menuItem, isActive && styles.menuItemActive]}
+              style={[
+                tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`,
+                isActive ? tw`bg-indigo-50` : tw``,
+              ]}
               onPress={() =>
                 navigateToScreen(item.name as keyof RootStackParamList)
               }
               activeOpacity={0.7}
             >
-              <View style={styles.menuIconContainer}>
+              <View
+                style={[
+                  tw`w-8 h-8 rounded-lg items-center justify-center mr-3`,
+                  isActive ? tw`bg-indigo-100` : tw`bg-gray-50`,
+                ]}
+              >
                 <Ionicons
                   name={isActive ? item.activeIcon : item.icon}
-                  size={24}
-                  color={isActive ? "#4F46E5" : "#6B7280"}
+                  size={18}
+                  color={isActive ? item.color : "#6B7280"}
                 />
-                {isActive && <View style={styles.activeIndicator} />}
               </View>
+
               <Text
-                style={[styles.menuLabel, isActive && styles.menuLabelActive]}
+                style={[
+                  tw`text-sm flex-1`,
+                  isActive
+                    ? tw`text-indigo-600 font-semibold`
+                    : tw`text-gray-700`,
+                ]}
               >
                 {item.label}
               </Text>
+
               {isActive && (
-                <View style={styles.activeArrow}>
-                  <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
-                </View>
+                <View style={tw`w-1.5 h-1.5 rounded-full bg-indigo-500`} />
               )}
             </TouchableOpacity>
           );
         })}
-      </View>
 
-      {/* Footer */}
-      <View style={styles.drawerFooter}>
-        <TouchableOpacity style={styles.footerItem}>
-          <Ionicons name="settings-outline" size={22} color="#6B7280" />
-          <Text style={styles.footerText}>Pengaturan</Text>
+        {/* Divider */}
+        <View style={tw`h-px bg-gray-100 my-4 mx-6`} />
+
+        {/* Additional Menu */}
+        <TouchableOpacity
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
+        >
+          <View
+            style={tw`w-8 h-8 rounded-lg bg-amber-50 items-center justify-center mr-3`}
+          >
+            <Ionicons name="help-circle-outline" size={18} color="#F59E0B" />
+          </View>
+          <Text style={tw`text-gray-700 text-sm flex-1`}>Bantuan & FAQ</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Ionicons name="help-circle-outline" size={22} color="#6B7280" />
-          <Text style={styles.footerText}>Bantuan</Text>
+
+        <TouchableOpacity
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg`}
+        >
+          <View
+            style={tw`w-8 h-8 rounded-lg bg-blue-50 items-center justify-center mr-3`}
+          >
+            <Ionicons name="document-text-outline" size={18} color="#3B82F6" />
+          </View>
+          <Text style={tw`text-gray-700 text-sm flex-1`}>Laporan</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Ionicons name="log-out-outline" size={22} color="#EF4444" />
-          <Text style={[styles.footerText, { color: "#EF4444" }]}>Keluar</Text>
+      </DrawerContentScrollView>
+
+      {/* Footer Minimalis */}
+      <View style={tw`border-t border-gray-100 p-4`}>
+        <TouchableOpacity style={tw`flex-row items-center`} activeOpacity={0.7}>
+          <View
+            style={tw`w-8 h-8 rounded-lg bg-red-50 items-center justify-center mr-3`}
+          >
+            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+          </View>
+          <View style={tw`flex-1`}>
+            <Text style={tw`text-gray-800 text-sm font-medium`}>Keluar</Text>
+            <Text style={tw`text-gray-500 text-xs`}>Keluar dari akun</Text>
+          </View>
         </TouchableOpacity>
       </View>
-    </DrawerContentScrollView>
+    </View>
   );
 };
 
-// Stack Navigator untuk semua screens
+// Stack Navigator dengan Header Fixed
 const MainStackNavigator = () => {
   return (
     <Stack.Navigator
@@ -175,18 +219,20 @@ const MainStackNavigator = () => {
           backgroundColor: "#4F46E5",
           elevation: 0,
           shadowOpacity: 0,
+          height: Platform.OS === "ios" ? 100 : 70, // Height disesuaikan platform
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
           fontWeight: "600",
           fontSize: 18,
         },
+        headerTitleAlign: "center" as const,
         headerLeft: () => (
           <TouchableOpacity
             onPress={() => navigation.openDrawer()}
-            style={{ marginLeft: 15 }}
+            style={tw`ml-4`}
           >
-            <Ionicons name="menu" size={28} color="#fff" />
+            <Ionicons name="menu" size={24} color="#fff" />
           </TouchableOpacity>
         ),
       })}
@@ -197,14 +243,6 @@ const MainStackNavigator = () => {
         component={HomeScreen}
         options={{
           title: "Beranda",
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => console.log("Notifikasi")}
-              style={{ marginRight: 15 }}
-            >
-              <Ionicons name="notifications-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -245,13 +283,13 @@ const MainStackNavigator = () => {
         name="AddTransaction"
         component={AddTransactionScreen}
         options={({ route, navigation }: any) => ({
-          title: route.params?.editMode ? "Edit Transaksi" : "Tambah Transaksi",
+          title: route.params?.editMode ? "Edit Transaksi" : "Transaksi Baru",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={{ marginLeft: 15 }}
+              style={tw`ml-4`}
             >
-              <Ionicons name="arrow-back" size={28} color="#fff" />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
           ),
         })}
@@ -261,13 +299,13 @@ const MainStackNavigator = () => {
         name="AddBudget"
         component={AddBudgetScreen}
         options={({ route, navigation }: any) => ({
-          title: route.params?.editMode ? "Edit Anggaran" : "Tambah Anggaran",
+          title: route.params?.editMode ? "Edit Anggaran" : "Anggaran Baru",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={{ marginLeft: 15 }}
+              style={tw`ml-4`}
             >
-              <Ionicons name="arrow-back" size={28} color="#fff" />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
           ),
         })}
@@ -277,13 +315,13 @@ const MainStackNavigator = () => {
         name="AddSavings"
         component={AddSavingsScreen}
         options={({ route, navigation }: any) => ({
-          title: route.params?.editMode ? "Edit Tabungan" : "Tambah Tabungan",
+          title: route.params?.editMode ? "Edit Tabungan" : "Tabungan Baru",
           headerLeft: () => (
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={{ marginLeft: 15 }}
+              style={tw`ml-4`}
             >
-              <Ionicons name="arrow-back" size={28} color="#fff" />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
           ),
         })}
@@ -298,7 +336,7 @@ const DrawerNavigator = () => (
     drawerContent={(props) => <CustomDrawerContent {...props} />}
     screenOptions={{
       drawerStyle: {
-        width: width * 0.8,
+        width: width * 0.75, // Lebih narrow
         backgroundColor: "transparent",
       },
       drawerType: "slide",
@@ -317,111 +355,6 @@ const DrawerNavigator = () => (
     />
   </Drawer.Navigator>
 );
-
-const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  drawerHeader: {
-    paddingTop: StatusBar.currentHeight || 40,
-    paddingBottom: 25,
-    paddingHorizontal: 20,
-    borderBottomRightRadius: 30,
-  },
-  profileContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 25,
-  },
-  avatar: {
-    backgroundColor: "#FFFFFF",
-    marginRight: 15,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
-  },
-  menuContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginVertical: 4,
-    borderRadius: 15,
-    backgroundColor: "transparent",
-  },
-  menuItemActive: {
-    backgroundColor: "rgba(79, 70, 229, 0.08)",
-    borderLeftWidth: 4,
-    borderLeftColor: "#4F46E5",
-  },
-  menuIconContainer: {
-    width: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  activeIndicator: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#4F46E5",
-  },
-  menuLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#374151",
-    marginLeft: 15,
-    flex: 1,
-  },
-  menuLabelActive: {
-    color: "#4F46E5",
-    fontWeight: "600",
-  },
-  activeArrow: {
-    marginLeft: 10,
-  },
-  drawerFooter: {
-    marginTop: "auto",
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6",
-  },
-  footerItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-  },
-  footerText: {
-    fontSize: 15,
-    color: "#6B7280",
-    marginLeft: 15,
-    fontWeight: "500",
-  },
-});
 
 const AppNavigator: React.FC = () => {
   return (

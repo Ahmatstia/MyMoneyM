@@ -1,15 +1,10 @@
 // File: src/screens/Home/HomeScreen.tsx
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency } from "../../utils/calculations";
@@ -93,49 +88,61 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={tw`px-5 pb-24`}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={tw`flex-row justify-between items-center pt-3 pb-3`}>
           <View>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.welcomeText}>Selamat datang kembali</Text>
+            <Text style={tw`text-gray-800 text-xl font-bold`}>
+              {getGreeting()}
+            </Text>
+            <Text style={tw`text-gray-500 text-sm mt-0.5`}>
+              Selamat datang kembali
+            </Text>
           </View>
           <TouchableOpacity
-            style={styles.notificationButton}
             onPress={() => console.log("Notification pressed")}
+            style={tw`relative`}
           >
             <Ionicons name="notifications-outline" size={22} color="#4B5563" />
-            <View style={styles.notificationDot} />
+            <View
+              style={tw`absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full`}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Date */}
-        <Text style={styles.dateText}>{getCurrentDate()}</Text>
+        <Text style={tw`text-gray-400 text-xs mb-6`}>{getCurrentDate()}</Text>
 
         {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>SALDO ANDA</Text>
-          <Text style={styles.balanceAmount}>
+        <View
+          style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}
+        >
+          <Text
+            style={tw`text-gray-500 text-xs font-medium uppercase tracking-wider mb-2`}
+          >
+            SALDO ANDA
+          </Text>
+          <Text style={tw`text-gray-800 text-2xl font-bold mb-5`}>
             {formatCurrency(state.balance)}
           </Text>
 
-          <View style={styles.balanceBreakdown}>
-            <View style={styles.breakdownItem}>
-              <Text style={styles.breakdownLabel}>Pemasukan</Text>
-              <Text style={[styles.breakdownValue, { color: "#10B981" }]}>
+          <View style={tw`flex-row items-center`}>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-gray-500 text-xs mb-1`}>Pemasukan</Text>
+              <Text style={tw`text-emerald-600 text-base font-semibold`}>
                 {formatCurrency(state.totalIncome)}
               </Text>
             </View>
 
-            <View style={styles.divider} />
+            <View style={tw`w-px h-10 bg-gray-200 mx-4`} />
 
-            <View style={styles.breakdownItem}>
-              <Text style={styles.breakdownLabel}>Pengeluaran</Text>
-              <Text style={[styles.breakdownValue, { color: "#EF4444" }]}>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-gray-500 text-xs mb-1`}>Pengeluaran</Text>
+              <Text style={tw`text-red-500 text-base font-semibold`}>
                 {formatCurrency(state.totalExpense)}
               </Text>
             </View>
@@ -143,49 +150,57 @@ const HomeScreen: React.FC = () => {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
+        <View style={tw`flex-row justify-between mb-8`}>
           {quickActions.map((action) => (
             <TouchableOpacity
               key={action.id}
-              style={styles.quickAction}
+              style={tw`items-center w-1/4`}
               onPress={action.onPress}
               activeOpacity={0.7}
             >
               <View
                 style={[
-                  styles.actionIcon,
+                  tw`w-12 h-12 rounded-xl items-center justify-center mb-2`,
                   { backgroundColor: `${action.color}15` },
                 ]}
               >
                 <Ionicons name={action.icon} size={20} color={action.color} />
               </View>
-              <Text style={styles.actionText}>{action.title}</Text>
+              <Text style={tw`text-gray-700 text-xs font-medium text-center`}>
+                {action.title}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Recent Transactions Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Transaksi Terbaru</Text>
+        <View style={tw`flex-row justify-between items-center mb-4`}>
+          <Text style={tw`text-gray-800 text-lg font-semibold`}>
+            Transaksi Terbaru
+          </Text>
           {state.transactions.length > 0 && (
             <TouchableOpacity
               onPress={() => navigation.navigate("Transactions")}
             >
-              <Text style={styles.seeAll}>Lihat Semua</Text>
+              <Text style={tw`text-indigo-600 text-sm font-medium`}>
+                Lihat Semua
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Transactions List */}
         {state.transactions.length > 0 ? (
-          <View style={styles.transactionsList}>
+          <View
+            style={tw`bg-white rounded-2xl mb-6 overflow-hidden border border-gray-100`}
+          >
             {state.transactions.slice(0, 5).map((transaction, index) => (
               <TouchableOpacity
                 key={transaction.id}
                 style={[
-                  styles.transactionItem,
-                  index === state.transactions.slice(0, 5).length - 1 &&
-                    styles.lastTransactionItem,
+                  tw`flex-row justify-between items-center p-4`,
+                  index < state.transactions.slice(0, 5).length - 1 &&
+                    tw`border-b border-gray-100`,
                 ]}
                 onPress={() =>
                   navigation.navigate("AddTransaction", {
@@ -195,16 +210,13 @@ const HomeScreen: React.FC = () => {
                 }
                 activeOpacity={0.7}
               >
-                <View style={styles.transactionLeft}>
+                <View style={tw`flex-row items-center flex-1`}>
                   <View
                     style={[
-                      styles.transactionIcon,
-                      {
-                        backgroundColor:
-                          transaction.type === "income"
-                            ? "rgba(16, 185, 129, 0.1)"
-                            : "rgba(239, 68, 68, 0.1)",
-                      },
+                      tw`w-10 h-10 rounded-lg items-center justify-center mr-3`,
+                      transaction.type === "income"
+                        ? tw`bg-emerald-50`
+                        : tw`bg-red-50`,
                     ]}
                   >
                     <Ionicons
@@ -215,14 +227,14 @@ const HomeScreen: React.FC = () => {
                       }
                     />
                   </View>
-                  <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionTitle}>
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-gray-800 text-sm font-medium mb-0.5`}>
                       {transaction.category}
                     </Text>
-                    <Text style={styles.transactionDescription}>
+                    <Text style={tw`text-gray-500 text-xs mb-1`}>
                       {transaction.description || "Tidak ada deskripsi"}
                     </Text>
-                    <Text style={styles.transactionDate}>
+                    <Text style={tw`text-gray-400 text-xs`}>
                       {new Date(transaction.date).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -234,10 +246,10 @@ const HomeScreen: React.FC = () => {
 
                 <Text
                   style={[
-                    styles.transactionAmount,
+                    tw`text-sm font-semibold`,
                     transaction.type === "income"
-                      ? styles.incomeAmount
-                      : styles.expenseAmount,
+                      ? tw`text-emerald-600`
+                      : tw`text-red-500`,
                   ]}
                 >
                   {transaction.type === "income" ? "+" : "-"}
@@ -247,62 +259,84 @@ const HomeScreen: React.FC = () => {
             ))}
           </View>
         ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
+          <View
+            style={tw`bg-white rounded-2xl p-8 items-center mb-6 border border-gray-100`}
+          >
+            <View
+              style={tw`w-16 h-16 rounded-xl bg-gray-50 items-center justify-center mb-4`}
+            >
+              <Ionicons name="receipt-outline" size={28} color="#9CA3AF" />
             </View>
-            <Text style={styles.emptyTitle}>Belum ada transaksi</Text>
-            <Text style={styles.emptyText}>Mulai catat keuangan Anda</Text>
+            <Text style={tw`text-gray-800 text-base font-semibold mb-1`}>
+              Belum ada transaksi
+            </Text>
+            <Text style={tw`text-gray-500 text-sm text-center mb-5`}>
+              Mulai catat keuangan Anda
+            </Text>
             <TouchableOpacity
-              style={styles.emptyButton}
+              style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg`}
               onPress={() => navigation.navigate("AddTransaction")}
             >
-              <Text style={styles.emptyButtonText}>Tambah Transaksi</Text>
+              <Text style={tw`text-white text-sm font-medium`}>
+                Tambah Transaksi
+              </Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Budget Summary (Minimal) */}
+        {/* Budget Summary */}
         {state.budgets.length > 0 && (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Anggaran</Text>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <Text style={tw`text-gray-800 text-lg font-semibold`}>
+                Anggaran
+              </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Budget")}>
-                <Text style={styles.seeAll}>Kelola</Text>
+                <Text style={tw`text-indigo-600 text-sm font-medium`}>
+                  Kelola
+                </Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.budgetSummary}>
+            <View
+              style={tw`bg-white rounded-2xl p-4 mb-6 border border-gray-100`}
+            >
               {state.budgets.slice(0, 3).map((budget) => {
                 const progress = (budget.spent / budget.limit) * 100;
+                const progressColor =
+                  progress > 90
+                    ? "#EF4444"
+                    : progress > 70
+                    ? "#F59E0B"
+                    : "#10B981";
+
                 return (
-                  <View key={budget.id} style={styles.budgetItem}>
-                    <View style={styles.budgetHeader}>
-                      <Text style={styles.budgetCategory}>
+                  <View key={budget.id} style={tw`mb-4 last:mb-0`}>
+                    <View
+                      style={tw`flex-row justify-between items-center mb-2`}
+                    >
+                      <Text style={tw`text-gray-700 text-sm font-medium`}>
                         {budget.category}
                       </Text>
-                      <Text style={styles.budgetAmount}>
+                      <Text style={tw`text-gray-500 text-xs`}>
                         {formatCurrency(budget.spent)} /{" "}
                         {formatCurrency(budget.limit)}
                       </Text>
                     </View>
-                    <View style={styles.progressBar}>
+                    <View
+                      style={tw`h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1`}
+                    >
                       <View
                         style={[
-                          styles.progressFill,
+                          tw`h-full rounded-full`,
                           {
                             width: `${Math.min(progress, 100)}%`,
-                            backgroundColor:
-                              progress > 90
-                                ? "#EF4444"
-                                : progress > 70
-                                ? "#F59E0B"
-                                : "#10B981",
+                            backgroundColor: progressColor,
                           },
                         ]}
                       />
                     </View>
-                    <Text style={styles.budgetPercentage}>
+                    <Text style={tw`text-gray-400 text-xs text-right`}>
                       {Math.round(progress)}%
                     </Text>
                   </View>
@@ -311,11 +345,14 @@ const HomeScreen: React.FC = () => {
             </View>
           </>
         )}
+
+        {/* Spacer untuk floating button */}
+        <View style={tw`h-16`} />
       </ScrollView>
 
       {/* Floating Add Button */}
       <TouchableOpacity
-        style={styles.addButton}
+        style={tw`absolute bottom-6 right-5 w-14 h-14 bg-indigo-600 rounded-2xl items-center justify-center shadow-lg`}
         onPress={() => navigation.navigate("AddTransaction")}
         activeOpacity={0.8}
       >
@@ -324,314 +361,5 @@ const HomeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 8,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  notificationButton: {
-    padding: 8,
-    position: "relative",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#EF4444",
-  },
-  dateText: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    marginBottom: 24,
-  },
-  balanceCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  balanceLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  balanceAmount: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 20,
-    letterSpacing: -0.5,
-  },
-  balanceBreakdown: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  breakdownItem: {
-    flex: 1,
-  },
-  breakdownIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  breakdownLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 2,
-  },
-  breakdownValue: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  divider: {
-    width: 1,
-    height: 40,
-    backgroundColor: "#E5E7EB",
-    marginHorizontal: 16,
-  },
-  quickActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 32,
-  },
-  quickAction: {
-    alignItems: "center",
-    width: "23%",
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#374151",
-    textAlign: "center",
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  seeAll: {
-    fontSize: 14,
-    color: "#4F46E5",
-    fontWeight: "500",
-  },
-  transactionsList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  transactionItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  lastTransactionItem: {
-    borderBottomWidth: 0,
-  },
-  transactionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  transactionDetails: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  transactionDescription: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  transactionDate: {
-    fontSize: 11,
-    color: "#9CA3AF",
-  },
-  transactionAmount: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  incomeAmount: {
-    color: "#10B981",
-  },
-  expenseAmount: {
-    color: "#EF4444",
-  },
-  emptyState: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: "#F9FAFB",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  emptyButton: {
-    backgroundColor: "#4F46E5",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emptyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  budgetSummary: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 24,
-  },
-  budgetItem: {
-    marginBottom: 16,
-  },
-  budgetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  budgetCategory: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  budgetAmount: {
-    fontSize: 13,
-    color: "#6B7280",
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  budgetPercentage: {
-    fontSize: 12,
-    color: "#6B7280",
-    textAlign: "right",
-  },
-  addButton: {
-    position: "absolute",
-    bottom: 24,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: "#4F46E5",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#4F46E5",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-});
 
 export default HomeScreen;

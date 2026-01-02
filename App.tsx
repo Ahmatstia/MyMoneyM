@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import React from "react";
-import { StatusBar } from "expo-status-bar";
+import { StatusBar, Platform } from "react-native"; // IMPORT DARI REACT-NATIVE
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider, DefaultTheme } from "react-native-paper";
@@ -26,8 +26,13 @@ export default function App() {
     <PaperProvider theme={theme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
+          {/* GANTI StatusBar dari expo ke react-native */}
+          <StatusBar
+            backgroundColor="#4F46E5"
+            barStyle="light-content"
+            translucent={false} // Jangan translucent
+          />
           <AppProvider>
-            <StatusBar style="auto" />
             <AppNavigator />
           </AppProvider>
         </SafeAreaProvider>
