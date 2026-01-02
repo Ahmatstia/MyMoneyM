@@ -1,3 +1,4 @@
+// File: src/utils/calculations.ts
 import { Transaction, Budget, Savings } from "../types";
 
 export const calculateTotals = (transactions: Transaction[]) => {
@@ -59,7 +60,6 @@ export const formatDate = (dateString: string): string => {
   }
 };
 
-// TAMBAHAN: Format tanggal reset
 export const formatResetDate = (dateString?: string): string => {
   if (!dateString) return "Belum pernah reset";
 

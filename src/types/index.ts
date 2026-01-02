@@ -1,3 +1,4 @@
+// File: src/types/index.ts
 export type TransactionType = "income" | "expense";
 
 export interface Transaction {
@@ -16,8 +17,8 @@ export interface Budget {
   limit: number;
   spent: number;
   period: "monthly" | "weekly";
-  lastResetDate?: string; // TAMBAHAN: Tanggal terakhir reset
-  createdAt: string; // TAMBAHAN: Tanggal budget dibuat
+  lastResetDate?: string;
+  createdAt: string;
 }
 
 export interface Savings {
@@ -28,6 +29,17 @@ export interface Savings {
   deadline?: string;
 }
 
+export interface SavingsTransaction {
+  id: string;
+  savingsId: string;
+  type: "deposit" | "withdrawal" | "adjustment";
+  amount: number;
+  date: string;
+  note?: string;
+  previousBalance: number;
+  newBalance: number;
+}
+
 export interface AppState {
   transactions: Transaction[];
   budgets: Budget[];
@@ -35,30 +47,36 @@ export interface AppState {
   totalIncome: number;
   totalExpense: number;
   balance: number;
+  savingsTransactions: SavingsTransaction[];
 }
 
-// Navigation types - UPDATED WITH ANALYTICS
+// Navigation types
 export type RootStackParamList = {
   Home: undefined;
+  MainTabs: undefined;
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
-  Analytics: undefined; // NEW
+  Analytics: undefined;
+  Calendar: undefined;
+  SavingsDetail: { savingsId: string };
+
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;
   };
+
   AddBudget: {
     editMode?: boolean;
     budgetData?: Budget;
   };
+
   AddSavings: {
     editMode?: boolean;
     savingsData?: Savings;
   };
 };
 
-// Untuk deklarasi global
 declare global {
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}

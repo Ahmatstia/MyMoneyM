@@ -50,12 +50,12 @@ export interface AppState {
 
 export type RootStackParamList = {
   Home: undefined;
+  MainTabs: undefined;
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
   Analytics: undefined;
   SavingsDetail: { savingsId: string };
-  SavingsTransactionHistory: { savingsId: string };
 
   AddTransaction: {
     editMode?: boolean;

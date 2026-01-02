@@ -1,10 +1,7 @@
-// File: src/navigation/AppNavigator.tsx
+// File: src/navigation/AppNavigator.tsx - DRAWER WITH NO SWIPE GESTURE
 import React, { useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import {
-  createStackNavigator,
-  StackNavigationOptions,
-} from "@react-navigation/stack";
+import { createStackNavigator } from "@react-navigation/stack";
 import {
   createDrawerNavigator,
   DrawerContentComponentProps,
@@ -31,20 +28,27 @@ import AnalyticsScreen from "../screens/Analytics/AnalyticsScreen";
 import AddTransactionScreen from "../screens/Transactions/AddTransactionScreen";
 import AddBudgetScreen from "../screens/Budget/AddBudgetScreen";
 import AddSavingsScreen from "../screens/Savings/AddSavingsScreen";
-import SavingsTransactionHistoryScreen from "../screens/Savings/SavingsTransactionHistoryScreen";
-import { RootStackParamList } from "../types/index";
+import CalendarScreen from "../screens/Calendar/CalendarScreen";
 
-const Stack = createStackNavigator<
-  RootStackParamList & {
-    SavingsDetail: { savingsId: string };
-  }
->();
-const Drawer = createDrawerNavigator<{
-  MainStack: undefined;
-}>();
-const { width, height } = Dimensions.get("window");
+// Types
+type StackParamList = {
+  Home: undefined;
+  Transactions: undefined;
+  Budget: undefined;
+  Savings: undefined;
+  Analytics: undefined;
+  Calendar: undefined;
+  SavingsDetail: { savingsId: string };
+  AddTransaction: { editMode?: boolean; transactionData?: any };
+  AddBudget: { editMode?: boolean; budgetData?: any };
+  AddSavings: { editMode?: boolean; savingsData?: any };
+};
 
-// Custom Drawer Content Minimalis
+const Stack = createStackNavigator<StackParamList>();
+const Drawer = createDrawerNavigator();
+const { width } = Dimensions.get("window");
+
+// Custom Drawer Content
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const [activeRoute, setActiveRoute] = useState<string>("Home");
 
@@ -62,6 +66,13 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       icon: "swap-horizontal-outline" as const,
       activeIcon: "swap-horizontal" as const,
       color: "#10B981",
+    },
+    {
+      name: "Calendar",
+      label: "Kalender",
+      icon: "calendar-outline" as const,
+      activeIcon: "calendar" as const,
+      color: "#EC4899",
     },
     {
       name: "Analytics",
@@ -86,14 +97,15 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     },
   ];
 
-  const navigateToScreen = (screenName: keyof RootStackParamList) => {
+  const navigateToScreen = (screenName: keyof StackParamList) => {
     setActiveRoute(screenName);
-    props.navigation.navigate("MainStack", { screen: screenName });
+    props.navigation.navigate(screenName);
+    props.navigation.closeDrawer(); // Tutup drawer setelah pilih menu
   };
 
   return (
     <View style={tw`flex-1 bg-white`}>
-      {/* Header Minimalis */}
+      {/* Header */}
       <View style={tw`pt-10 pb-6 px-6 bg-indigo-600`}>
         <View style={tw`flex-row items-center`}>
           <Avatar.Icon
@@ -108,13 +120,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
               Keuangan Pribadi
             </Text>
           </View>
-          <TouchableOpacity>
-            <Ionicons name="settings-outline" size={20} color="white" />
-          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Menu Items Minimalis */}
+      {/* Menu Items */}
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={tw`pt-2`}
@@ -136,7 +145,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                 isActive ? tw`bg-indigo-50` : tw``,
               ]}
               onPress={() =>
-                navigateToScreen(item.name as keyof RootStackParamList)
+                navigateToScreen(item.name as keyof StackParamList)
               }
               activeOpacity={0.7}
             >
@@ -177,6 +186,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {/* Additional Menu */}
         <TouchableOpacity
           style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
+          onPress={() => console.log("Bantuan")}
         >
           <View
             style={tw`w-8 h-8 rounded-lg bg-amber-50 items-center justify-center mr-3`}
@@ -185,22 +195,15 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           </View>
           <Text style={tw`text-gray-700 text-sm flex-1`}>Bantuan & FAQ</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg`}
-        >
-          <View
-            style={tw`w-8 h-8 rounded-lg bg-blue-50 items-center justify-center mr-3`}
-          >
-            <Ionicons name="document-text-outline" size={18} color="#3B82F6" />
-          </View>
-          <Text style={tw`text-gray-700 text-sm flex-1`}>Laporan</Text>
-        </TouchableOpacity>
       </DrawerContentScrollView>
 
-      {/* Footer Minimalis */}
+      {/* Footer */}
       <View style={tw`border-t border-gray-100 p-4`}>
-        <TouchableOpacity style={tw`flex-row items-center`} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={tw`flex-row items-center`}
+          activeOpacity={0.7}
+          onPress={() => console.log("Keluar")}
+        >
           <View
             style={tw`w-8 h-8 rounded-lg bg-red-50 items-center justify-center mr-3`}
           >
@@ -216,11 +219,11 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   );
 };
 
-// Stack Navigator dengan Header Fixed
+// Stack Navigator
 const MainStackNavigator = () => {
   return (
     <Stack.Navigator
-      screenOptions={({ navigation }: any) => ({
+      screenOptions={({ navigation, route }) => ({
         headerStyle: {
           backgroundColor: "#4F46E5",
           elevation: 0,
@@ -233,14 +236,27 @@ const MainStackNavigator = () => {
           fontSize: 18,
         },
         headerTitleAlign: "center" as const,
-        headerLeft: () => (
-          <TouchableOpacity
-            onPress={() => navigation.openDrawer()}
-            style={tw`ml-4`}
-          >
-            <Ionicons name="menu" size={24} color="#fff" />
-          </TouchableOpacity>
-        ),
+        // HAMBURGER MENU hanya untuk Home screen
+        headerLeft: () => {
+          if (route.name === "Home") {
+            return (
+              <TouchableOpacity
+                onPress={() => navigation.openDrawer()}
+                style={tw`ml-4`}
+              >
+                <Ionicons name="menu" size={24} color="#fff" />
+              </TouchableOpacity>
+            );
+          }
+          return (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={tw`ml-4`}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          );
+        },
       })}
     >
       {/* Main Screens */}
@@ -269,6 +285,14 @@ const MainStackNavigator = () => {
       />
 
       <Stack.Screen
+        name="Calendar"
+        component={CalendarScreen}
+        options={{
+          title: "Kalender Keuangan",
+        }}
+      />
+
+      <Stack.Screen
         name="Budget"
         component={BudgetScreen}
         options={{
@@ -284,76 +308,44 @@ const MainStackNavigator = () => {
         }}
       />
 
-      {/* NEW: Savings Detail Screen */}
+      {/* Detail Screens */}
       <Stack.Screen
         name="SavingsDetail"
         component={SavingsDetailScreen}
-        options={({ navigation }: any) => ({
+        options={{
           title: "Detail Tabungan",
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={tw`ml-4`}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        })}
+        }}
       />
 
-      {/* Modal/Form Screens */}
+      {/* Add/Edit Screens */}
       <Stack.Screen
         name="AddTransaction"
         component={AddTransactionScreen}
-        options={({ route, navigation }: any) => ({
+        options={({ route }: any) => ({
           title: route.params?.editMode ? "Edit Transaksi" : "Transaksi Baru",
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={tw`ml-4`}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
         })}
       />
 
       <Stack.Screen
         name="AddBudget"
         component={AddBudgetScreen}
-        options={({ route, navigation }: any) => ({
+        options={({ route }: any) => ({
           title: route.params?.editMode ? "Edit Anggaran" : "Anggaran Baru",
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={tw`ml-4`}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
         })}
       />
 
       <Stack.Screen
         name="AddSavings"
         component={AddSavingsScreen}
-        options={({ route, navigation }: any) => ({
+        options={({ route }: any) => ({
           title: route.params?.editMode ? "Edit Tabungan" : "Tabungan Baru",
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={tw`ml-4`}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
         })}
       />
     </Stack.Navigator>
   );
 };
 
-// Drawer Navigator
+// Drawer Navigator dengan NO SWIPE GESTURE
 const DrawerNavigator = () => (
   <Drawer.Navigator
     drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -362,20 +354,15 @@ const DrawerNavigator = () => (
         width: width * 0.75,
         backgroundColor: "transparent",
       },
-      drawerType: "slide",
+      drawerType: "front",
       overlayColor: "rgba(0,0,0,0.3)",
-      swipeEdgeWidth: width,
+      // KEY POINT: DISABLE SWIPE GESTURE
+      swipeEnabled: false, // ← INI YANG PERBAIKI MASALAH!
+      // swipeEdgeWidth: 0, // Hapus ini karena swipeEnabled sudah false
       headerShown: false,
-      swipeEnabled: true,
     }}
   >
-    <Drawer.Screen
-      name="MainStack"
-      component={MainStackNavigator}
-      options={{
-        drawerLabel: () => null,
-      }}
-    />
+    <Drawer.Screen name="MainStack" component={MainStackNavigator} />
   </Drawer.Navigator>
 );
 
