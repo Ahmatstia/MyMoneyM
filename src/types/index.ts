@@ -16,6 +16,8 @@ export interface Budget {
   limit: number;
   spent: number;
   period: "monthly" | "weekly";
+  lastResetDate?: string; // TAMBAHAN: Tanggal terakhir reset
+  createdAt: string; // TAMBAHAN: Tanggal budget dibuat
 }
 
 export interface Savings {

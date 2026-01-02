@@ -11,11 +11,12 @@ interface AppContextType {
   editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
-  // Budget functions
-  addBudget: (budget: Omit<Budget, "id" | "spent">) => Promise<void>;
+  // Budget functions - HAPUS resetBudget
+  addBudget: (
+    budget: Omit<Budget, "id" | "spent" | "createdAt">
+  ) => Promise<void>;
   editBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
-  resetBudget: (id: string, newLimit?: number) => Promise<void>;
 
   // Savings functions
   addSavings: (savings: Omit<Savings, "id">) => Promise<void>;
@@ -69,7 +70,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(defaultAppState);
   };
 
-  // Helper function to update budgets based on transactions
+  // SIMPLE: Hitung spent dari SEMUA transaksi kategori tersebut
   const updateBudgetsFromTransactions = (
     transactions: Transaction[],
     budgets: Budget[]
@@ -160,11 +161,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ========== BUDGET FUNCTIONS ==========
-  const addBudget = async (budget: Omit<Budget, "id" | "spent">) => {
+  const addBudget = async (
+    budget: Omit<Budget, "id" | "spent" | "createdAt">
+  ) => {
     const newBudget: Budget = {
       ...budget,
       id: generateId(),
       spent: 0,
+      createdAt: new Date().toISOString(),
     };
 
     const updatedBudgets = [...state.budgets, newBudget];
@@ -179,7 +183,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       budget.id === id ? { ...budget, ...updates } : budget
     );
 
-    const newState: AppState = { ...state, budgets: updatedBudgets };
+    // Recalculate spent setelah edit
+    const recalculatedBudgets = updateBudgetsFromTransactions(
+      state.transactions,
+      updatedBudgets
+    );
+
+    const newState: AppState = { ...state, budgets: recalculatedBudgets };
     setState(newState);
     await storageService.saveData(newState);
   };
@@ -188,23 +198,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const updatedBudgets = state.budgets.filter((budget) => budget.id !== id);
     const newState: AppState = { ...state, budgets: updatedBudgets };
 
-    setState(newState);
-    await storageService.saveData(newState);
-  };
-
-  const resetBudget = async (id: string, newLimit?: number) => {
-    const updatedBudgets = state.budgets.map((budget) => {
-      if (budget.id === id) {
-        return {
-          ...budget,
-          spent: 0,
-          limit: newLimit || budget.limit,
-        };
-      }
-      return budget;
-    });
-
-    const newState: AppState = { ...state, budgets: updatedBudgets };
     setState(newState);
     await storageService.saveData(newState);
   };
@@ -262,28 +255,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   if (!isInitialized) {
-    return null; // atau loading screen
+    return null;
   }
 
   return (
     <AppContext.Provider
       value={{
         state,
-        // Transaction functions
         addTransaction,
         editTransaction,
         deleteTransaction,
-        // Budget functions
         addBudget,
         editBudget,
         deleteBudget,
-        resetBudget,
-        // Savings functions
         addSavings,
         editSavings,
         deleteSavings,
         updateSavings,
-        // Utility functions
         refreshData,
         clearAllData,
       }}

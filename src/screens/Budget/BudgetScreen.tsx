@@ -1,37 +1,21 @@
 import React, { useState, useMemo } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
-import {
-  Button,
-  Text,
-  ProgressBar,
-  Modal,
-  Portal,
-  TextInput,
-} from "react-native-paper";
+import { View, ScrollView, Alert, TouchableOpacity } from "react-native";
+import { Text, ProgressBar } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency } from "../../utils/calculations";
+import { formatCurrency, formatDate } from "../../utils/calculations";
 import { Budget } from "../../types";
 
 const BudgetScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const { state, deleteBudget, resetBudget } = useAppContext();
+  const navigation = useNavigation<any>();
+  const { state, deleteBudget } = useAppContext();
 
   const [filter, setFilter] = useState<"all" | "over" | "warning" | "safe">(
     "all"
   );
-  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
-  const [resetAmount, setResetAmount] = useState("");
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
 
   // Calculate summary
   const summary = useMemo(() => {
@@ -73,6 +57,114 @@ const BudgetScreen: React.FC = () => {
     }
   }, [state.budgets, filter]);
 
+  // Helper: Hitung hari tersisa berdasarkan createdAt
+  const calculateDaysRemaining = (budget: Budget): number => {
+    const now = new Date();
+    const createdDate = new Date(budget.createdAt);
+
+    if (budget.period === "monthly") {
+      // Budget bulanan: 30 hari dari createdAt
+      const endDate = new Date(createdDate);
+      endDate.setDate(endDate.getDate() + 30);
+
+      // Hitung selisih hari
+      const diffTime = endDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return Math.max(0, diffDays);
+    }
+
+    if (budget.period === "weekly") {
+      // Budget mingguan: 7 hari dari createdAt
+      const endDate = new Date(createdDate);
+      endDate.setDate(endDate.getDate() + 7);
+
+      // Hitung selisih hari
+      const diffTime = endDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return Math.max(0, diffDays);
+    }
+
+    return 0;
+  };
+
+  // Helper: Hitung hari yang sudah berlalu
+  const calculateDaysPassed = (budget: Budget): number => {
+    const now = new Date();
+    const createdDate = new Date(budget.createdAt);
+
+    // Hitung selisih hari dari createdAt sampai sekarang
+    const diffTime = now.getTime() - createdDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    return Math.max(1, diffDays + 1); // Minimal 1 hari
+  };
+
+  // Helper: Hitung tanggal berakhir budget
+  const calculateEndDate = (budget: Budget): Date => {
+    const createdDate = new Date(budget.createdAt);
+
+    if (budget.period === "monthly") {
+      const endDate = new Date(createdDate);
+      endDate.setDate(endDate.getDate() + 30);
+      return endDate;
+    }
+
+    if (budget.period === "weekly") {
+      const endDate = new Date(createdDate);
+      endDate.setDate(endDate.getDate() + 7);
+      return endDate;
+    }
+
+    return createdDate;
+  };
+
+  // Helper: Hitung sisa harian (uang per hari)
+  const calculateDailyRemaining = (budget: Budget): number => {
+    const daysRemaining = calculateDaysRemaining(budget);
+    const remaining = budget.limit - budget.spent;
+
+    if (daysRemaining <= 0 || remaining <= 0) return 0;
+    return remaining / daysRemaining;
+  };
+
+  // Helper: Hitung rata-rata pengeluaran harian
+  const calculateDailyAverage = (budget: Budget): number => {
+    const daysPassed = calculateDaysPassed(budget);
+    return daysPassed > 0 ? budget.spent / daysPassed : 0;
+  };
+
+  // Helper: Format hari tersisa dengan label
+  const formatDaysRemaining = (days: number): string => {
+    if (days <= 0) return "Berakhir hari ini";
+    if (days === 1) return "1 hari lagi";
+    return `${days} hari lagi`;
+  };
+
+  // Helper: Format periode dengan informasi lengkap
+  const formatPeriodInfo = (budget: Budget): string => {
+    const daysRemaining = calculateDaysRemaining(budget);
+    const periodLabel = budget.period === "monthly" ? "Bulanan" : "Mingguan";
+    const endDate = calculateEndDate(budget);
+
+    if (daysRemaining <= 0) {
+      return `${periodLabel} • Berakhir ${formatDate(endDate.toISOString())}`;
+    }
+
+    return `${periodLabel} • ${formatDaysRemaining(daysRemaining)}`;
+  };
+
+  // Helper: Format info tanggal
+  const formatDateInfo = (budget: Budget): string => {
+    const createdDate = new Date(budget.createdAt);
+    const endDate = calculateEndDate(budget);
+
+    return `Mulai ${formatDate(budget.createdAt)} - ${formatDate(
+      endDate.toISOString()
+    )}`;
+  };
+
   const getStatusColor = (budget: Budget) => {
     const progress = (budget.spent / budget.limit) * 100;
     if (progress > 100) return "#DC2626";
@@ -81,213 +173,172 @@ const BudgetScreen: React.FC = () => {
   };
 
   const handleDelete = (budget: Budget) => {
-    Alert.alert("Hapus Anggaran", `Hapus anggaran "${budget.category}"?`, [
-      { text: "Batal", style: "cancel" },
-      {
-        text: "Hapus",
-        style: "destructive",
-        onPress: () => deleteBudget(budget.id),
-      },
-    ]);
-  };
-
-  const handleReset = async () => {
-    if (!selectedBudget) return;
-
-    const newLimitNum = resetAmount ? parseFloat(resetAmount) : undefined;
-
-    if (newLimitNum !== undefined && (isNaN(newLimitNum) || newLimitNum <= 0)) {
-      Alert.alert("Error", "Limit baru harus berupa angka positif");
-      return;
-    }
-
-    setResetLoading(true);
-    try {
-      await resetBudget(selectedBudget.id, newLimitNum);
-      setShowResetModal(false);
-      setSelectedBudget(null);
-      setResetAmount("");
-      Alert.alert("Sukses", "Anggaran berhasil direset");
-    } catch (error) {
-      console.error("Error resetting budget:", error);
-      Alert.alert("Error", "Gagal mereset anggaran");
-    } finally {
-      setResetLoading(false);
-    }
+    Alert.alert(
+      "Hapus Anggaran",
+      `Hapus anggaran "${budget.category}"?\n\nSemua transaksi dengan kategori ini tetap tersimpan.`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: () => {
+            deleteBudget(budget.id);
+            Alert.alert(
+              "✅ Berhasil Dihapus",
+              `Anggaran "${budget.category}" telah dihapus.\n\nUntuk membuat anggaran baru, tekan tombol +`,
+              [{ text: "OK" }]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const StatusBadge = ({ budget }: { budget: Budget }) => {
     const progress = (budget.spent / budget.limit) * 100;
-    const color = getStatusColor(budget);
     const text =
       progress > 100 ? "Melebihi" : progress >= 80 ? "Perhatian" : "Aman";
 
     return (
-      <View style={[styles.statusBadge, { backgroundColor: `${color}15` }]}>
-        <Text style={[styles.statusText, { color }]}>{text}</Text>
+      <View
+        style={[
+          tw`px-2 py-1 rounded-lg`,
+          progress > 100 && tw`bg-red-100`,
+          progress >= 80 && progress <= 100 && tw`bg-yellow-100`,
+          progress < 80 && tw`bg-emerald-100`,
+        ]}
+      >
+        <Text
+          style={[
+            tw`text-xs font-medium`,
+            progress > 100 && tw`text-red-600`,
+            progress >= 80 && progress <= 100 && tw`text-yellow-600`,
+            progress < 80 && tw`text-emerald-600`,
+          ]}
+        >
+          {text}
+        </Text>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      {/* Minimal Header */}
-      <View style={styles.header}>
+    <View style={tw`flex-1 bg-gray-50`}>
+      {/* Header */}
+      <View
+        style={tw`px-4 pt-3 pb-4 bg-white border-b border-gray-200 flex-row justify-between items-center`}
+      >
         <View>
-          <Text style={styles.headerTitle}>Anggaran</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={tw`text-2xl font-bold text-gray-900`}>Anggaran</Text>
+          <Text style={tw`text-sm text-gray-600 mt-0.5`}>
             {state.budgets.length} anggaran aktif
           </Text>
         </View>
         <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("AddBudget" as never)}
+          style={tw`w-10 h-10 rounded-full bg-indigo-600 justify-center items-center`}
+          onPress={() => navigation.navigate("AddBudget")}
         >
           <Ionicons name="add" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      {/* Summary Stats - Horizontal Row */}
-      <View style={styles.summaryRow}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {formatCurrency(summary.totalLimit)}
-          </Text>
-          <Text style={styles.statLabel}>Total Limit</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {formatCurrency(summary.totalSpent)}
-          </Text>
-          <Text style={styles.statLabel}>Total Terpakai</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text
-            style={[
-              styles.statValue,
-              { color: summary.totalRemaining >= 0 ? "#10B981" : "#DC2626" },
-            ]}
-          >
-            {formatCurrency(summary.totalRemaining)}
-          </Text>
-          <Text style={styles.statLabel}>Total Sisa</Text>
+      {/* Summary Stats */}
+      <View style={tw`bg-white py-4 px-4 border-b border-gray-200`}>
+        <View style={tw`flex-row justify-between items-center`}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Limit</Text>
+            <Text style={tw`text-base font-bold text-gray-900`}>
+              {formatCurrency(summary.totalLimit)}
+            </Text>
+          </View>
+          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Terpakai</Text>
+            <Text style={tw`text-base font-bold text-gray-900`}>
+              {formatCurrency(summary.totalSpent)}
+            </Text>
+          </View>
+          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Sisa</Text>
+            <Text
+              style={[
+                tw`text-base font-bold`,
+                summary.totalRemaining >= 0
+                  ? tw`text-emerald-600`
+                  : tw`text-red-600`,
+              ]}
+            >
+              {formatCurrency(summary.totalRemaining)}
+            </Text>
+          </View>
         </View>
       </View>
 
-      {/* Filter Tabs - Scrollable Horizontal */}
+      {/* Filter Tabs - Simple */}
+      <View style={tw`bg-white border-b border-gray-200 py-2 px-4`}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={tw`flex-row gap-2`}
+        >
+          {[
+            { key: "all", label: "Semua", count: state.budgets.length },
+            { key: "safe", label: "Aman", count: summary.safeBudgets },
+            {
+              key: "warning",
+              label: "Perhatian",
+              count: summary.warningBudgets,
+            },
+            { key: "over", label: "Melebihi", count: summary.overBudgets },
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                tw`px-3 py-1.5 rounded-full`,
+                filter === tab.key ? tw`bg-indigo-100` : tw`bg-gray-100`,
+              ]}
+              onPress={() => setFilter(tab.key as any)}
+            >
+              <Text
+                style={[
+                  tw`text-xs font-medium`,
+                  filter === tab.key ? tw`text-indigo-700` : tw`text-gray-700`,
+                ]}
+              >
+                {tab.label} ({tab.count})
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Budget List */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScrollContainer}
-        contentContainerStyle={styles.filterContent}
-      >
-        <TouchableOpacity
-          style={[styles.filterTab, filter === "all" && styles.filterTabActive]}
-          onPress={() => setFilter("all")}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === "all" && styles.filterTextActive,
-            ]}
-          >
-            Semua ({state.budgets.length})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === "safe" && styles.filterTabActive,
-          ]}
-          onPress={() => setFilter("safe")}
-        >
-          <Ionicons
-            name="checkmark-circle"
-            size={16}
-            color={filter === "safe" ? "#FFFFFF" : "#10B981"}
-          />
-          <Text
-            style={[
-              styles.filterText,
-              filter === "safe" && styles.filterTextActive,
-            ]}
-          >
-            Aman ({summary.safeBudgets})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === "warning" && styles.filterTabActive,
-          ]}
-          onPress={() => setFilter("warning")}
-        >
-          <Ionicons
-            name="alert-circle"
-            size={16}
-            color={filter === "warning" ? "#FFFFFF" : "#F59E0B"}
-          />
-          <Text
-            style={[
-              styles.filterText,
-              filter === "warning" && styles.filterTextActive,
-            ]}
-          >
-            Perhatian ({summary.warningBudgets})
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === "over" && styles.filterTabActive,
-          ]}
-          onPress={() => setFilter("over")}
-        >
-          <Ionicons
-            name="warning"
-            size={16}
-            color={filter === "over" ? "#FFFFFF" : "#DC2626"}
-          />
-          <Text
-            style={[
-              styles.filterText,
-              filter === "over" && styles.filterTextActive,
-            ]}
-          >
-            Melebihi ({summary.overBudgets})
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Budget List - Simple Scroll */}
-      <ScrollView
-        style={styles.listContainer}
-        contentContainerStyle={styles.listContent}
+        style={tw`flex-1`}
+        contentContainerStyle={tw`p-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
         {filteredBudgets.length === 0 ? (
-          <View style={styles.emptyState}>
+          <View style={tw`items-center py-12`}>
             <Ionicons name="pie-chart-outline" size={48} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>
+            <Text
+              style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2 text-center`}
+            >
               {filter === "all" ? "Belum ada anggaran" : "Tidak ada anggaran"}
             </Text>
-            <Text style={styles.emptyText}>
+            <Text style={tw`text-sm text-gray-600 text-center mb-6 leading-5`}>
               {filter === "all"
                 ? "Mulai dengan membuat anggaran pertama Anda"
                 : `Tidak ada anggaran dengan status "${filter}"`}
             </Text>
             {filter === "all" && (
               <TouchableOpacity
-                style={styles.createButton}
-                onPress={() => navigation.navigate("AddBudget" as never)}
+                style={tw`flex-row items-center bg-indigo-600 px-5 py-3 rounded-lg gap-2`}
+                onPress={() => navigation.navigate("AddBudget")}
               >
                 <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-                <Text style={styles.createButtonText}>
+                <Text style={tw`text-sm font-semibold text-white`}>
                   Buat Anggaran Pertama
                 </Text>
               </TouchableOpacity>
@@ -298,18 +349,36 @@ const BudgetScreen: React.FC = () => {
             const progress = (budget.spent / budget.limit) * 100;
             const remaining = budget.limit - budget.spent;
             const statusColor = getStatusColor(budget);
+            const normalizedProgress = Math.min(progress / 100, 1);
+
+            // Hitung statistik
+            const daysRemaining = calculateDaysRemaining(budget);
+            const daysPassed = calculateDaysPassed(budget);
+            const dailyRemaining = calculateDailyRemaining(budget);
+            const dailyAverage = calculateDailyAverage(budget);
+            const endDate = calculateEndDate(budget);
+
+            // Format informasi
+            const periodInfo = formatPeriodInfo(budget);
+            const dateInfo = formatDateInfo(budget);
+            const daysRemainingText = formatDaysRemaining(daysRemaining);
 
             return (
-              <View key={budget.id} style={styles.budgetCard}>
+              <View
+                key={budget.id}
+                style={tw`bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100`}
+              >
                 {/* Card Header */}
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardTitle}>
-                    <Text style={styles.category}>{budget.category}</Text>
+                <View style={tw`flex-row justify-between items-start mb-3`}>
+                  <View style={tw`flex-row items-center gap-2`}>
+                    <Text style={tw`text-base font-semibold text-gray-900`}>
+                      {budget.category}
+                    </Text>
                     <StatusBadge budget={budget} />
                   </View>
-                  <View style={styles.cardActions}>
+                  <View style={tw`flex-row gap-2`}>
                     <TouchableOpacity
-                      style={styles.iconButton}
+                      style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
                       onPress={() => {
                         navigation.navigate("AddBudget", {
                           editMode: true,
@@ -320,7 +389,7 @@ const BudgetScreen: React.FC = () => {
                       <Ionicons name="pencil" size={18} color="#4F46E5" />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.iconButton}
+                      style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
                       onPress={() => handleDelete(budget)}
                     >
                       <Ionicons
@@ -332,56 +401,133 @@ const BudgetScreen: React.FC = () => {
                   </View>
                 </View>
 
-                {/* Period */}
-                <View style={styles.periodRow}>
-                  <Text style={styles.periodText}>
-                    {budget.period === "monthly" ? "Bulanan" : "Mingguan"}
-                  </Text>
-                  <Text style={styles.progressPercent}>
-                    {progress.toFixed(0)}%
-                  </Text>
+                {/* Period Info */}
+                <View style={tw`mb-3`}>
+                  <Text style={tw`text-xs text-gray-600 mb-1`}>{dateInfo}</Text>
+                  <View style={tw`flex-row justify-between items-center`}>
+                    <View style={tw`flex-row items-center gap-2`}>
+                      <Text
+                        style={tw`text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-lg`}
+                      >
+                        {periodInfo}
+                      </Text>
+                      {daysRemaining > 0 && (
+                        <View style={tw`px-2 py-1 bg-blue-100 rounded-lg`}>
+                          <Text style={tw`text-xs font-medium text-blue-700`}>
+                            {daysRemainingText}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={tw`text-sm font-semibold text-indigo-600`}>
+                      {progress.toFixed(0)}%
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Daily Stats Card */}
+                <View
+                  style={tw`mb-3 bg-gray-50 p-3 rounded-lg border border-gray-200`}
+                >
+                  <View style={tw`flex-row justify-between items-center mb-2`}>
+                    <View style={tw`flex-row items-center gap-1`}>
+                      <Ionicons name="calendar" size={12} color="#6B7280" />
+                      <Text style={tw`text-xs font-medium text-gray-700`}>
+                        Progress Harian
+                      </Text>
+                    </View>
+                    <Text style={tw`text-xs text-gray-500`}>
+                      Hari ke-{daysPassed} dari{" "}
+                      {budget.period === "monthly" ? "30" : "7"} hari
+                    </Text>
+                  </View>
+
+                  <View style={tw`flex-row justify-between`}>
+                    <View style={tw`flex-1 pr-2`}>
+                      <Text style={tw`text-xs text-gray-600 mb-0.5`}>
+                        Rata-rata/Hari
+                      </Text>
+                      <Text style={tw`text-sm font-semibold text-gray-900`}>
+                        {formatCurrency(dailyAverage)}
+                      </Text>
+                      <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                        dari {daysPassed} hari
+                      </Text>
+                    </View>
+
+                    <View style={tw`w-px bg-gray-300`} />
+
+                    <View style={tw`flex-1 pl-2`}>
+                      <Text style={tw`text-xs text-gray-600 mb-0.5`}>
+                        {daysRemaining > 0 ? "Sisa/Hari" : "Kelebihan/Hari"}
+                      </Text>
+                      <Text
+                        style={[
+                          tw`text-sm font-semibold`,
+                          dailyRemaining >= 0
+                            ? tw`text-emerald-600`
+                            : tw`text-red-600`,
+                        ]}
+                      >
+                        {formatCurrency(dailyRemaining)}
+                      </Text>
+                      <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                        {daysRemaining > 0
+                          ? `untuk ${daysRemaining} hari`
+                          : "melebihi batas"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
                 {/* Progress Bar */}
-                <View style={styles.progressContainer}>
-                  <ProgressBar
-                    progress={Math.min(progress / 100, 1)}
-                    color={statusColor}
-                    style={styles.progressBar}
-                  />
-                  <View style={styles.progressLabels}>
-                    <Text style={styles.progressLabel}>Rp0</Text>
-                    <Text style={styles.progressLabel}>
+                <View style={tw`mb-4`}>
+                  <View style={tw`flex-row justify-between items-center mb-1`}>
+                    <Text style={tw`text-xs text-gray-600`}>
+                      {formatCurrency(budget.spent)} /{" "}
                       {formatCurrency(budget.limit)}
                     </Text>
+                    <Text style={tw`text-sm font-semibold text-indigo-600`}>
+                      {progress.toFixed(0)}%
+                    </Text>
                   </View>
-                  <View style={styles.spentIndicator}>
-                    <Text style={styles.spentIndicatorText}>
-                      {formatCurrency(budget.spent)}
+                  <ProgressBar
+                    progress={normalizedProgress}
+                    color={statusColor}
+                    style={tw`h-2 rounded-full`}
+                  />
+                  <View style={tw`flex-row justify-between mt-1`}>
+                    <Text style={tw`text-xs text-gray-400`}>Rp0</Text>
+                    <Text style={tw`text-xs text-gray-400`}>
+                      {formatCurrency(budget.limit)}
                     </Text>
                   </View>
                 </View>
 
-                {/* Details */}
-                <View style={styles.detailsRow}>
-                  <View style={styles.detailColumn}>
-                    <Text style={styles.detailLabel}>Terpakai</Text>
-                    <Text style={styles.detailValue}>
+                {/* Details Row */}
+                <View style={tw`flex-row mb-2 pt-3 border-t border-gray-200`}>
+                  <View style={tw`flex-1 items-center`}>
+                    <Text style={tw`text-xs text-gray-600 mb-1`}>Terpakai</Text>
+                    <Text style={tw`text-sm font-semibold text-gray-900`}>
                       {formatCurrency(budget.spent)}
                     </Text>
                   </View>
-                  <View style={styles.detailColumn}>
-                    <Text style={styles.detailLabel}>Limit</Text>
-                    <Text style={styles.detailValue}>
+                  <View style={tw`flex-1 items-center`}>
+                    <Text style={tw`text-xs text-gray-600 mb-1`}>Limit</Text>
+                    <Text style={tw`text-sm font-semibold text-gray-900`}>
                       {formatCurrency(budget.limit)}
                     </Text>
                   </View>
-                  <View style={styles.detailColumn}>
-                    <Text style={styles.detailLabel}>Sisa</Text>
+                  <View style={tw`flex-1 items-center`}>
+                    <Text style={tw`text-xs text-gray-600 mb-1`}>
+                      Sisa Total
+                    </Text>
                     <Text
                       style={[
-                        styles.detailValue,
-                        { color: remaining >= 0 ? "#10B981" : "#DC2626" },
+                        tw`text-sm font-semibold`,
+                        remaining >= 0
+                          ? tw`text-emerald-600`
+                          : tw`text-red-600`,
                       ]}
                     >
                       {formatCurrency(remaining)}
@@ -389,378 +535,50 @@ const BudgetScreen: React.FC = () => {
                   </View>
                 </View>
 
-                {/* Reset Button */}
-                <TouchableOpacity
-                  style={styles.resetButton}
-                  onPress={() => {
-                    setSelectedBudget(budget);
-                    setResetAmount(budget.limit.toString());
-                    setShowResetModal(true);
-                  }}
-                >
-                  <Ionicons name="refresh" size={16} color="#4F46E5" />
-                  <Text style={styles.resetButtonText}>Reset Anggaran</Text>
-                </TouchableOpacity>
+                {/* Info Message */}
+                {dailyRemaining > 0 ? (
+                  <View
+                    style={tw`mt-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100`}
+                  >
+                    <Text style={tw`text-xs text-emerald-800 text-center`}>
+                      🟢 Target harian:{" "}
+                      <Text style={tw`font-bold`}>
+                        {formatCurrency(dailyRemaining)}
+                      </Text>{" "}
+                      per hari selama{" "}
+                      <Text style={tw`font-bold`}>{daysRemaining} hari</Text>{" "}
+                      lagi
+                    </Text>
+                  </View>
+                ) : dailyRemaining < 0 ? (
+                  <View
+                    style={tw`mt-2 p-2 bg-red-50 rounded-lg border border-red-100`}
+                  >
+                    <Text style={tw`text-xs text-red-800 text-center`}>
+                      🔴 Kelebihan:{" "}
+                      <Text style={tw`font-bold`}>
+                        {formatCurrency(Math.abs(dailyRemaining))}
+                      </Text>{" "}
+                      per hari. Kurangi pengeluaran!
+                    </Text>
+                  </View>
+                ) : (
+                  <View
+                    style={tw`mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-100`}
+                  >
+                    <Text style={tw`text-xs text-yellow-800 text-center`}>
+                      ⚠️ Budget berakhir hari ini! Buat budget baru untuk
+                      periode berikutnya.
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })
         )}
       </ScrollView>
-
-      {/* Reset Modal - Simple */}
-      <Portal>
-        <Modal
-          visible={showResetModal}
-          onDismiss={() => setShowResetModal(false)}
-          contentContainerStyle={styles.modalContainer}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Reset Anggaran</Text>
-            <Text style={styles.modalText}>
-              Atur ulang pengeluaran untuk periode berikutnya.
-            </Text>
-
-            <TextInput
-              label="Limit Baru (opsional)"
-              value={resetAmount}
-              onChangeText={setResetAmount}
-              keyboardType="numeric"
-              mode="outlined"
-              left={<TextInput.Affix text="Rp" />}
-              style={styles.modalInput}
-            />
-
-            <View style={styles.modalButtons}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowResetModal(false)}
-                style={styles.modalButton}
-              >
-                Batal
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleReset}
-                loading={resetLoading}
-                style={styles.modalButton}
-              >
-                Reset
-              </Button>
-            </View>
-          </View>
-        </Modal>
-      </Portal>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#4F46E5",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  // Summary Row
-  summaryRow: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  // Filter Scroll Container
-  filterScrollContainer: {
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    maxHeight: 52,
-  },
-  filterContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  filterTab: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  filterTabActive: {
-    backgroundColor: "#4F46E5",
-  },
-  filterText: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  filterTextActive: {
-    color: "#FFFFFF",
-  },
-  // List
-  listContainer: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  // Budget Card
-  budgetCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  cardTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  category: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "500",
-  },
-  cardActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  periodRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  periodText: {
-    fontSize: 12,
-    color: "#6B7280",
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  progressPercent: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#4F46E5",
-  },
-  progressContainer: {
-    marginBottom: 16,
-    position: "relative",
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 8,
-  },
-  progressLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  progressLabel: {
-    fontSize: 10,
-    color: "#9CA3AF",
-  },
-  spentIndicator: {
-    position: "absolute",
-    top: -8,
-    alignItems: "center",
-    transform: [{ translateX: -25 }],
-    left: "50%",
-  },
-  spentIndicatorText: {
-    fontSize: 10,
-    color: "#6B7280",
-    fontWeight: "500",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  detailsRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  detailColumn: {
-    flex: 1,
-    alignItems: "center",
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  resetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    gap: 8,
-  },
-  resetButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#4F46E5",
-  },
-  // Empty State
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 48,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  createButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4F46E5",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  createButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  // Modal
-  modalContainer: {
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  modalText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  modalInput: {
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-  },
-});
 
 export default BudgetScreen;
