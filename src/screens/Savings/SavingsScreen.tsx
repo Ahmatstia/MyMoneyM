@@ -1,8 +1,8 @@
+// File: src/screens/Savings/SavingsScreen.tsx
 import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import Svg, { Circle } from "react-native-svg";
+import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import Card from "../../components/common/Card";
@@ -27,7 +28,7 @@ import { formatDate } from "../../utils/formatters";
 import { RootStackParamList, Savings } from "../../types";
 
 type SavingsScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
+  RootStackParamList & { SavingsDetail: { savingsId: string } },
   "Savings"
 >;
 
@@ -128,6 +129,10 @@ const SavingsScreen: React.FC = () => {
     setShowAddModal(true);
   };
 
+  const handleViewDetail = (savings: Savings) => {
+    navigation.navigate("SavingsDetail", { savingsId: savings.id });
+  };
+
   const confirmAddAmount = async () => {
     if (!selectedSavings || !amountToAdd) return;
 
@@ -191,8 +196,8 @@ const SavingsScreen: React.FC = () => {
             origin={`${size / 2}, ${size / 2}`}
           />
         </Svg>
-        <View style={[StyleSheet.absoluteFillObject, styles.progressCenter]}>
-          <Text style={styles.progressPercentage}>
+        <View style={[tw`absolute inset-0 justify-center items-center`]}>
+          <Text style={tw`text-sm font-semibold text-gray-900`}>
             {Math.min(progress, 100).toFixed(0)}%
           </Text>
         </View>
@@ -207,208 +212,249 @@ const SavingsScreen: React.FC = () => {
     const daysRemaining = getDaysRemaining(savings.deadline);
     const progressColor = getProgressColor(progress);
 
-    // Determine card style
-    let cardStyle = styles.savingsCard;
-    if (isCompleted) {
-      cardStyle = { ...styles.savingsCard, ...styles.completedCard };
-    }
-
     return (
-      <View key={savings.id} style={cardStyle}>
-        <View style={styles.savingsHeader}>
-          <View style={styles.savingsTitle}>
-            <Text style={styles.savingsName}>{savings.name}</Text>
-            {isCompleted && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="trophy" size={12} color="#FFFFFF" />
-                <Text style={styles.completedBadgeText}>Selesai!</Text>
+      <TouchableOpacity
+        key={savings.id}
+        onPress={() => handleViewDetail(savings)}
+        activeOpacity={0.7}
+      >
+        <View
+          style={[
+            tw`mb-4 p-4 bg-white rounded-xl shadow-sm`,
+            isCompleted && tw`bg-green-50 border border-green-100`,
+          ]}
+        >
+          <View style={tw`flex-row justify-between items-start mb-4`}>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-lg font-semibold text-gray-900 mb-1`}>
+                {savings.name}
+              </Text>
+              {isCompleted && (
+                <View
+                  style={tw`flex-row items-center bg-green-500 px-2 py-1 rounded-full self-start`}
+                >
+                  <Ionicons name="trophy" size={12} color="#FFFFFF" />
+                  <Text style={tw`text-white text-xs font-medium ml-1`}>
+                    Selesai!
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={tw`flex-row gap-2`}>
+              <TouchableOpacity
+                style={tw`p-1`}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleAddAmount(savings);
+                }}
+              >
+                <Ionicons name="add-circle" size={20} color="#10B981" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`p-1`}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleEdit(savings);
+                }}
+              >
+                <Ionicons name="pencil" size={18} color="#3B82F6" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`p-1`}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleDelete(savings);
+                }}
+              >
+                <Ionicons name="trash" size={18} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Progress Section */}
+          <View style={tw`flex-row items-center mb-4`}>
+            <CircularProgress progress={progress} />
+
+            <View style={tw`flex-1 ml-4`}>
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-xs text-gray-500`}>Terkumpul</Text>
+                <Text
+                  style={[
+                    tw`text-sm font-semibold`,
+                    isCompleted && tw`text-green-500`,
+                  ]}
+                >
+                  {formatCurrency(savings.current)}
+                </Text>
+              </View>
+
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={tw`text-xs text-gray-500`}>Target</Text>
+                <Text style={tw`text-sm font-semibold text-gray-900`}>
+                  {formatCurrency(savings.target)}
+                </Text>
+              </View>
+
+              <View style={tw`flex-row justify-between items-center`}>
+                <Text style={tw`text-xs text-gray-500`}>Sisa</Text>
+                <Text
+                  style={[
+                    tw`text-sm font-semibold`,
+                    isCompleted ? tw`text-green-500` : tw`text-indigo-600`,
+                  ]}
+                >
+                  {formatCurrency(remaining)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={tw`mb-4`}>
+            <View style={tw`h-2 bg-gray-200 rounded-full overflow-hidden mb-1`}>
+              <View
+                style={[
+                  tw`h-full rounded-full`,
+                  {
+                    width: `${Math.min(progress, 100)}%`,
+                    backgroundColor: progressColor,
+                  },
+                ]}
+              />
+            </View>
+            <View style={tw`flex-row justify-between`}>
+              <Text style={tw`text-xs text-gray-400`}>0%</Text>
+              <Text style={tw`text-xs text-gray-400`}>100%</Text>
+            </View>
+          </View>
+
+          {/* Deadline & Quick Actions */}
+          <View
+            style={tw`flex-row justify-between items-center pt-3 border-t border-gray-200`}
+          >
+            {savings.deadline && (
+              <View style={tw`flex-row items-center flex-1`}>
+                <Ionicons name="calendar" size={14} color="#6B7280" />
+                <Text style={tw`text-xs text-gray-500 ml-1`}>
+                  Target: {formatDate(savings.deadline)}
+                  {daysRemaining !== null && (
+                    <Text style={tw`text-red-500 font-medium`}>
+                      {" "}
+                      ({daysRemaining} hari lagi)
+                    </Text>
+                  )}
+                </Text>
               </View>
             )}
-          </View>
 
-          <View style={styles.savingsActions}>
             <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleAddAmount(savings)}
+              style={[
+                tw`flex-row items-center bg-indigo-600 px-3 py-2 rounded-lg ml-3`,
+                isCompleted && tw`bg-gray-200`,
+              ]}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleAddAmount(savings);
+              }}
+              disabled={isCompleted}
             >
-              <Ionicons name="add-circle" size={20} color="#10B981" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleEdit(savings)}
-            >
-              <Ionicons name="pencil" size={18} color="#3B82F6" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleDelete(savings)}
-            >
-              <Ionicons name="trash" size={18} color="#DC2626" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Progress Section */}
-        <View style={styles.progressSection}>
-          <CircularProgress progress={progress} />
-
-          <View style={styles.savingsDetails}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Terkumpul</Text>
+              <Ionicons
+                name="add"
+                size={16}
+                color={isCompleted ? "#9CA3AF" : "#FFFFFF"}
+              />
               <Text
                 style={[
-                  styles.detailValue,
-                  isCompleted && styles.completedText,
+                  tw`text-white text-xs font-medium ml-1`,
+                  isCompleted && tw`text-gray-400`,
                 ]}
               >
-                {formatCurrency(savings.current)}
+                Tambah
               </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Target</Text>
-              <Text style={styles.detailValue}>
-                {formatCurrency(savings.target)}
-              </Text>
-            </View>
-
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Sisa</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  isCompleted ? styles.completedText : styles.remainingText,
-                ]}
-              >
-                {formatCurrency(remaining)}
-              </Text>
-            </View>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Progress Bar */}
-        <View style={styles.linearProgressContainer}>
-          <View style={styles.progressBackground}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.min(progress, 100)}%`,
-                  backgroundColor: progressColor,
-                },
-              ]}
-            />
-          </View>
-          <View style={styles.progressLabels}>
-            <Text style={styles.progressLabel}>0%</Text>
-            <Text style={styles.progressLabel}>100%</Text>
-          </View>
-        </View>
-
-        {/* Deadline & Quick Actions */}
-        <View style={styles.footer}>
-          {savings.deadline && (
-            <View style={styles.deadlineContainer}>
-              <Ionicons name="calendar" size={14} color="#6B7280" />
-              <Text style={styles.deadlineText}>
-                Target: {formatDate(savings.deadline)}
-                {daysRemaining !== null && (
-                  <Text style={styles.daysRemaining}>
-                    {" "}
-                    ({daysRemaining} hari lagi)
-                  </Text>
-                )}
-              </Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.addButton, isCompleted && styles.addButtonDisabled]}
-            onPress={() => handleAddAmount(savings)}
-            disabled={isCompleted}
-          >
-            <Ionicons
-              name="add"
-              size={16}
-              color={isCompleted ? "#9CA3AF" : "#FFFFFF"}
-            />
-            <Text
-              style={[
-                styles.addButtonText,
-                isCompleted && styles.addButtonTextDisabled,
-              ]}
-            >
-              Tambah
+          {/* View Detail Hint */}
+          <View style={tw`mt-3 pt-2 border-t border-gray-100`}>
+            <Text style={tw`text-xs text-gray-400 text-center`}>
+              Ketuk untuk lihat detail
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1 bg-gray-50`}>
       {/* Stats Summary */}
-      <Card style={styles.statsCard}>
-        <View style={styles.statsHeader}>
-          <Text style={styles.statsTitle}>Ringkasan Tabungan</Text>
-          <Text style={styles.statsSubtitle}>
+      <Card style={tw`m-4 mb-2`}>
+        <View style={tw`mb-4`}>
+          <Text style={tw`text-base font-semibold text-gray-900`}>
+            Ringkasan Tabungan
+          </Text>
+          <Text style={tw`text-sm text-gray-500 mt-1`}>
             Total: {formatCurrency(savingsStats.totalCurrent)} /{" "}
             {formatCurrency(savingsStats.totalTarget)}
           </Text>
         </View>
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{savingsStats.totalSavings}</Text>
-            <Text style={styles.statLabel}>Total Target</Text>
+        <View style={tw`flex-row justify-between mb-4`}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={tw`text-xl font-bold text-gray-900 mb-1`}>
+              {savingsStats.totalSavings}
+            </Text>
+            <Text style={tw`text-xs text-gray-500`}>Total Target</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, styles.activeStat]}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={[tw`text-xl font-bold mb-1`, tw`text-indigo-600`]}>
               {savingsStats.activeSavings}
             </Text>
-            <Text style={styles.statLabel}>Aktif</Text>
+            <Text style={tw`text-xs text-gray-500`}>Aktif</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, styles.completedStat]}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={[tw`text-xl font-bold mb-1`, tw`text-green-500`]}>
               {savingsStats.completedSavings}
             </Text>
-            <Text style={styles.statLabel}>Selesai</Text>
+            <Text style={tw`text-xs text-gray-500`}>Selesai</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statNumber, styles.progressStat]}>
+          <View style={tw`items-center flex-1`}>
+            <Text style={[tw`text-xl font-bold mb-1`, tw`text-amber-500`]}>
               {savingsStats.overallProgress.toFixed(0)}%
             </Text>
-            <Text style={styles.statLabel}>Progress</Text>
+            <Text style={tw`text-xs text-gray-500`}>Progress</Text>
           </View>
         </View>
 
-        <View style={styles.overallProgress}>
-          <Text style={styles.overallLabel}>Sisa yang perlu ditabung: </Text>
-          <Text style={styles.overallValue}>
+        <View style={tw`flex-row items-center pt-3 border-t border-gray-200`}>
+          <Text style={tw`text-sm text-gray-500`}>
+            Sisa yang perlu ditabung:
+          </Text>
+          <Text style={tw`text-base font-semibold text-gray-900 ml-1`}>
             {formatCurrency(savingsStats.remaining)}
           </Text>
         </View>
       </Card>
 
       {/* Filter Buttons */}
-      <View style={styles.filterContainer}>
+      <View style={tw`px-4 mb-2`}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
+          contentContainerStyle={tw`py-1`}
         >
           <TouchableOpacity
             style={[
-              styles.filterChip,
-              filter === "all" && styles.filterChipActive,
+              tw`flex-row items-center bg-gray-100 px-3 py-1.5 rounded-full mr-2 border border-gray-200`,
+              filter === "all" && tw`bg-indigo-600 border-indigo-600`,
             ]}
             onPress={() => setFilter("all")}
           >
             <Text
               style={[
-                styles.filterChipText,
-                filter === "all" && styles.filterChipTextActive,
+                tw`text-xs text-gray-600`,
+                filter === "all" && tw`text-white font-medium`,
               ]}
             >
               Semua
@@ -417,8 +463,8 @@ const SavingsScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[
-              styles.filterChip,
-              filter === "active" && styles.filterChipActive,
+              tw`flex-row items-center bg-gray-100 px-3 py-1.5 rounded-full mr-2 border border-gray-200`,
+              filter === "active" && tw`bg-indigo-600 border-indigo-600`,
             ]}
             onPress={() => setFilter("active")}
           >
@@ -429,8 +475,8 @@ const SavingsScreen: React.FC = () => {
             />
             <Text
               style={[
-                styles.filterChipText,
-                filter === "active" && styles.filterChipTextActive,
+                tw`text-xs text-gray-600 ml-1`,
+                filter === "active" && tw`text-white font-medium`,
               ]}
             >
               Aktif
@@ -439,8 +485,8 @@ const SavingsScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[
-              styles.filterChip,
-              filter === "completed" && styles.filterChipActive,
+              tw`flex-row items-center bg-gray-100 px-3 py-1.5 rounded-full mr-2 border border-gray-200`,
+              filter === "completed" && tw`bg-green-500 border-green-500`,
             ]}
             onPress={() => setFilter("completed")}
           >
@@ -451,8 +497,8 @@ const SavingsScreen: React.FC = () => {
             />
             <Text
               style={[
-                styles.filterChipText,
-                filter === "completed" && styles.filterChipTextActive,
+                tw`text-xs text-gray-600 ml-1`,
+                filter === "completed" && tw`text-white font-medium`,
               ]}
             >
               Selesai
@@ -462,21 +508,20 @@ const SavingsScreen: React.FC = () => {
       </View>
 
       {/* Savings List */}
-      <ScrollView
-        style={styles.savingsList}
-        contentContainerStyle={styles.listContent}
-      >
+      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4 pb-20`}>
         {filteredSavings.map(renderSavingsItem)}
 
         {filteredSavings.length === 0 && (
-          <Card style={styles.emptyCard}>
+          <Card style={tw`items-center p-8 mt-10`}>
             <Ionicons name="wallet-outline" size={64} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>
+            <Text
+              style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2 text-center`}
+            >
               {filter === "all"
                 ? "Belum ada target tabungan"
                 : `Tidak ada tabungan dengan status "${filter}"`}
             </Text>
-            <Text style={styles.emptyText}>
+            <Text style={tw`text-sm text-gray-500 text-center mb-6 leading-5`}>
               {filter === "all"
                 ? "Buat target tabungan pertama Anda untuk membantu mencapai tujuan keuangan"
                 : filter === "completed"
@@ -487,7 +532,7 @@ const SavingsScreen: React.FC = () => {
               <Button
                 title="Buat Target Tabungan"
                 onPress={() => navigation.navigate("AddSavings" as never)}
-                style={styles.emptyButton}
+                style={tw`w-4/5`}
               />
             )}
           </Card>
@@ -501,13 +546,15 @@ const SavingsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setShowAddModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <Card style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+        <View style={tw`flex-1 bg-black/50 justify-center p-5`}>
+          <Card style={tw`p-5 bg-white rounded-xl`}>
+            <Text
+              style={tw`text-xl font-semibold text-gray-900 mb-3 text-center`}
+            >
               Tambah ke {selectedSavings?.name}
             </Text>
 
-            <Text style={styles.modalSubtitle}>
+            <Text style={tw`text-sm text-gray-500 text-center mb-6`}>
               Saat ini: {formatCurrency(selectedSavings?.current || 0)} /{" "}
               {formatCurrency(selectedSavings?.target || 0)}
             </Text>
@@ -522,18 +569,18 @@ const SavingsScreen: React.FC = () => {
               autoFocus
             />
 
-            <View style={styles.modalActions}>
+            <View style={tw`flex-row gap-3 mt-4`}>
               <Button
                 title="Batal"
                 variant="secondary"
                 onPress={() => setShowAddModal(false)}
-                style={styles.modalButton}
+                style={tw`flex-1`}
               />
               <Button
                 title="Tambahkan"
                 onPress={confirmAddAmount}
                 loading={loading}
-                style={styles.modalButton}
+                style={tw`flex-1`}
                 disabled={!amountToAdd}
               />
             </View>
@@ -548,18 +595,22 @@ const SavingsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setShowEditModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <Card style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Target Tabungan</Text>
+        <View style={tw`flex-1 bg-black/50 justify-center p-5`}>
+          <Card style={tw`p-5 bg-white rounded-xl`}>
+            <Text
+              style={tw`text-xl font-semibold text-gray-900 mb-3 text-center`}
+            >
+              Edit Target Tabungan
+            </Text>
 
-            <Text style={styles.modalText}>
+            <Text style={tw`text-sm text-gray-500 text-center mb-6 leading-5`}>
               Fitur edit lengkap akan segera tersedia. Untuk sekarang, Anda
               bisa:
             </Text>
 
-            <View style={styles.editOptions}>
+            <View style={tw`mb-6`}>
               <TouchableOpacity
-                style={styles.editOption}
+                style={tw`flex-row items-center p-4 bg-gray-50 rounded-xl mb-3 border border-gray-200`}
                 onPress={() => {
                   setShowEditModal(false);
                   if (selectedSavings) {
@@ -571,14 +622,18 @@ const SavingsScreen: React.FC = () => {
                 }}
               >
                 <Ionicons name="create-outline" size={24} color="#4F46E5" />
-                <Text style={styles.editOptionText}>Edit Detail</Text>
-                <Text style={styles.editOptionSubtext}>
-                  Ubah nama, target, deadline
-                </Text>
+                <View style={tw`ml-3 flex-1`}>
+                  <Text style={tw`text-base font-medium text-gray-900`}>
+                    Edit Detail
+                  </Text>
+                  <Text style={tw`text-xs text-gray-500`}>
+                    Ubah nama, target, deadline
+                  </Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.editOption}
+                style={tw`flex-row items-center p-4 bg-gray-50 rounded-xl border border-gray-200`}
                 onPress={() => {
                   setShowEditModal(false);
                   if (selectedSavings) {
@@ -587,10 +642,34 @@ const SavingsScreen: React.FC = () => {
                 }}
               >
                 <Ionicons name="add-circle-outline" size={24} color="#10B981" />
-                <Text style={styles.editOptionText}>Tambah Saldo</Text>
-                <Text style={styles.editOptionSubtext}>
-                  Tambahkan jumlah tabungan
-                </Text>
+                <View style={tw`ml-3 flex-1`}>
+                  <Text style={tw`text-base font-medium text-gray-900`}>
+                    Tambah Saldo
+                  </Text>
+                  <Text style={tw`text-xs text-gray-500`}>
+                    Tambahkan jumlah tabungan
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={tw`flex-row items-center p-4 bg-gray-50 rounded-xl mt-3 border border-gray-200`}
+                onPress={() => {
+                  setShowEditModal(false);
+                  if (selectedSavings) {
+                    handleViewDetail(selectedSavings);
+                  }
+                }}
+              >
+                <Ionicons name="eye-outline" size={24} color="#8B5CF6" />
+                <View style={tw`ml-3 flex-1`}>
+                  <Text style={tw`text-base font-medium text-gray-900`}>
+                    Lihat Detail Lengkap
+                  </Text>
+                  <Text style={tw`text-xs text-gray-500`}>
+                    Lihat statistik dan riwayat
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -605,7 +684,7 @@ const SavingsScreen: React.FC = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={styles.fab}
+        style={tw`absolute bottom-5 right-5 w-14 h-14 rounded-full bg-indigo-600 justify-center items-center shadow-lg`}
         onPress={() => navigation.navigate("AddSavings" as never)}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
@@ -613,372 +692,5 @@ const SavingsScreen: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  statsCard: {
-    margin: 16,
-    marginBottom: 8,
-  },
-  statsHeader: {
-    marginBottom: 16,
-  },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  statsSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 4,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  activeStat: {
-    color: "#4F46E5",
-  },
-  completedStat: {
-    color: "#10B981",
-  },
-  progressStat: {
-    color: "#F59E0B",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  overallProgress: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  overallLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  overallValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginLeft: 4,
-  },
-  filterContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  filterContent: {
-    paddingVertical: 4,
-  },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  filterChipActive: {
-    backgroundColor: "#4F46E5",
-    borderColor: "#4F46E5",
-  },
-  filterChipText: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginLeft: 4,
-  },
-  filterChipTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "500",
-  },
-  savingsList: {
-    flex: 1,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 80,
-  },
-  savingsCard: {
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  completedCard: {
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1,
-    borderColor: "#DCFCE7",
-  },
-  savingsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  savingsTitle: {
-    flex: 1,
-  },
-  savingsName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  completedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#10B981",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: "flex-start",
-    gap: 4,
-  },
-  completedBadgeText: {
-    fontSize: 10,
-    color: "#FFFFFF",
-    fontWeight: "500",
-  },
-  savingsActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    padding: 4,
-  },
-  progressSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  progressCenter: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  progressPercentage: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  savingsDetails: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  completedText: {
-    color: "#10B981",
-  },
-  remainingText: {
-    color: "#4F46E5",
-  },
-  linearProgressContainer: {
-    marginBottom: 16,
-  },
-  progressBackground: {
-    height: 8,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  progressLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  progressLabel: {
-    fontSize: 10,
-    color: "#9CA3AF",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  deadlineContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  deadlineText: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginLeft: 4,
-  },
-  daysRemaining: {
-    color: "#DC2626",
-    fontWeight: "500",
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4F46E5",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginLeft: 12,
-  },
-  addButtonDisabled: {
-    backgroundColor: "#E5E7EB",
-  },
-  addButtonText: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    fontWeight: "500",
-    marginLeft: 4,
-  },
-  addButtonTextDisabled: {
-    color: "#9CA3AF",
-  },
-  emptyCard: {
-    alignItems: "center",
-    padding: 32,
-    marginTop: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  emptyButton: {
-    width: "80%",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: {
-    padding: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  modalText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-  },
-  modalButton: {
-    flex: 1,
-  },
-  editOptions: {
-    marginBottom: 24,
-  },
-  editOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  editOptionText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
-    marginLeft: 12,
-  },
-  editOptionSubtext: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginLeft: 12,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#4F46E5",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-});
 
 export default SavingsScreen;

@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import tw from "twrnc"; // TAMBAHKAN IMPORT
 
 import { useAppContext } from "../../context/AppContext";
 import Card from "../../components/common/Card";
@@ -124,21 +118,25 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={tw`flex-1 bg-gray-50 p-4`}>
       <Card>
-        <Text style={styles.title}>
+        <Text style={tw`text-xl font-semibold text-gray-900 mb-6 text-center`}>
           {isEditMode ? "Edit Target Tabungan" : "Tambah Target Tabungan"}
         </Text>
 
         {/* Info jika edit mode */}
         {isEditMode && savingsData && (
-          <Card style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Informasi Saat Ini</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Progress:</Text>
+          <Card
+            style={tw`mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4`}
+          >
+            <Text style={tw`text-sm font-semibold text-blue-700 mb-3`}>
+              Informasi Saat Ini
+            </Text>
+            <View style={tw`flex-row justify-between mb-2`}>
+              <Text style={tw`text-xs text-gray-600`}>Progress:</Text>
               <Text
                 style={[
-                  styles.infoValue,
+                  tw`text-xs font-semibold`,
                   {
                     color:
                       savingsData.current / savingsData.target >= 1
@@ -150,11 +148,11 @@ const AddSavingsScreen: React.FC = () => {
                 {((savingsData.current / savingsData.target) * 100).toFixed(1)}%
               </Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Sisa:</Text>
+            <View style={tw`flex-row justify-between`}>
+              <Text style={tw`text-xs text-gray-600`}>Sisa:</Text>
               <Text
                 style={[
-                  styles.infoValue,
+                  tw`text-xs font-semibold`,
                   {
                     color:
                       savingsData.target - savingsData.current <= 0
@@ -211,40 +209,46 @@ const AddSavingsScreen: React.FC = () => {
           returnKeyType="done"
         />
 
-        <Text style={styles.dateHint}>
+        <Text style={tw`text-xs text-gray-400 -mt-2 mb-6 italic`}>
           Contoh: {getCurrentDate()} atau kosongkan jika tidak ada deadline
         </Text>
 
         {/* Tips */}
-        <Card style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>💡 Tips Menabung yang Efektif</Text>
-          <Text style={styles.tipText}>
+        <Card
+          style={tw`mb-6 bg-green-50 border border-green-100 rounded-lg p-4`}
+        >
+          <Text style={tw`text-sm font-semibold text-green-800 mb-2`}>
+            💡 Tips Menabung yang Efektif
+          </Text>
+          <Text style={tw`text-xs text-green-800 mb-1`}>
             • Tetapkan target yang realistis dan terukur
           </Text>
-          <Text style={styles.tipText}>
+          <Text style={tw`text-xs text-green-800 mb-1`}>
             • Otomatiskan transfer tabungan setiap bulan
           </Text>
-          <Text style={styles.tipText}>
+          <Text style={tw`text-xs text-green-800 mb-1`}>
             • Prioritaskan tabungan sebelum pengeluaran lainnya
           </Text>
-          <Text style={styles.tipText}>• Review progress secara berkala</Text>
+          <Text style={tw`text-xs text-green-800`}>
+            • Review progress secara berkala
+          </Text>
         </Card>
 
         {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
+        <View style={tw`flex-row gap-3 mb-3`}>
           {isEditMode && (
             <Button
               title="Hapus"
               onPress={handleDelete}
               variant="danger"
-              style={styles.deleteButton}
+              style={tw`flex-1`}
             />
           )}
           <Button
             title={isEditMode ? "Simpan Perubahan" : "Simpan Target"}
             onPress={handleSubmit}
             loading={loading}
-            style={styles.submitButton}
+            style={isEditMode ? tw`flex-2` : tw`flex-1`}
           />
         </View>
 
@@ -253,94 +257,11 @@ const AddSavingsScreen: React.FC = () => {
           title="Batal"
           onPress={() => navigation.goBack()}
           variant="secondary"
-          style={styles.cancelButton}
+          style={tw`mb-8`}
         />
       </Card>
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-    padding: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  infoCard: {
-    marginBottom: 24,
-    backgroundColor: "#F0F9FF",
-    borderWidth: 1,
-    borderColor: "#E0F2FE",
-    borderRadius: 8,
-    padding: 16,
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0369A1",
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  infoValue: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  dateHint: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: -8,
-    marginBottom: 24,
-    fontStyle: "italic",
-  },
-  tipsCard: {
-    marginBottom: 24,
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1,
-    borderColor: "#DCFCE7",
-    borderRadius: 8,
-    padding: 16,
-  },
-  tipsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#166534",
-    marginBottom: 8,
-  },
-  tipText: {
-    fontSize: 12,
-    color: "#166534",
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
-  },
-  deleteButton: {
-    flex: 1,
-  },
-  submitButton: {
-    flex: 2,
-  },
-  cancelButton: {
-    marginBottom: 32,
-  },
-});
 
 export default AddSavingsScreen;

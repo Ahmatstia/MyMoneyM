@@ -26,13 +26,19 @@ import HomeScreen from "../screens/Home/HomeScreen";
 import TransactionsScreen from "../screens/Transactions/TransactionsScreen";
 import BudgetScreen from "../screens/Budget/BudgetScreen";
 import SavingsScreen from "../screens/Savings/SavingsScreen";
+import SavingsDetailScreen from "../screens/Savings/SavingsDetailScreen";
 import AnalyticsScreen from "../screens/Analytics/AnalyticsScreen";
 import AddTransactionScreen from "../screens/Transactions/AddTransactionScreen";
 import AddBudgetScreen from "../screens/Budget/AddBudgetScreen";
 import AddSavingsScreen from "../screens/Savings/AddSavingsScreen";
+import SavingsTransactionHistoryScreen from "../screens/Savings/SavingsTransactionHistoryScreen";
 import { RootStackParamList } from "../types/index";
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<
+  RootStackParamList & {
+    SavingsDetail: { savingsId: string };
+  }
+>();
 const Drawer = createDrawerNavigator<{
   MainStack: undefined;
 }>();
@@ -219,7 +225,7 @@ const MainStackNavigator = () => {
           backgroundColor: "#4F46E5",
           elevation: 0,
           shadowOpacity: 0,
-          height: Platform.OS === "ios" ? 100 : 70, // Height disesuaikan platform
+          height: Platform.OS === "ios" ? 100 : 70,
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -276,6 +282,23 @@ const MainStackNavigator = () => {
         options={{
           title: "Tabungan",
         }}
+      />
+
+      {/* NEW: Savings Detail Screen */}
+      <Stack.Screen
+        name="SavingsDetail"
+        component={SavingsDetailScreen}
+        options={({ navigation }: any) => ({
+          title: "Detail Tabungan",
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={tw`ml-4`}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
+        })}
       />
 
       {/* Modal/Form Screens */}
@@ -336,7 +359,7 @@ const DrawerNavigator = () => (
     drawerContent={(props) => <CustomDrawerContent {...props} />}
     screenOptions={{
       drawerStyle: {
-        width: width * 0.75, // Lebih narrow
+        width: width * 0.75,
         backgroundColor: "transparent",
       },
       drawerType: "slide",

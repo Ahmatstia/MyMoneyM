@@ -1,3 +1,4 @@
+// File: src/components/common/Button.tsx
 import React from "react";
 import {
   TouchableOpacity,
@@ -20,6 +21,7 @@ interface ButtonProps {
   variant?: "primary" | "secondary" | "danger" | "outline" | "ghost";
   icon?: string;
   iconPosition?: "left" | "right";
+  size?: "small" | "medium" | "large"; // TAMBAHKAN INI
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -32,6 +34,7 @@ const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   icon,
   iconPosition = "left",
+  size = "medium", // DEFAULT VALUE
 }) => {
   const getVariantStyle = () => {
     switch (variant) {
@@ -63,11 +66,34 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const getSizeStyle = () => {
+    switch (size) {
+      case "small":
+        return styles.small;
+      case "large":
+        return styles.large;
+      default:
+        return styles.medium;
+    }
+  };
+
+  const getTextSizeStyle = () => {
+    switch (size) {
+      case "small":
+        return styles.smallText;
+      case "large":
+        return styles.largeText;
+      default:
+        return styles.mediumText;
+    }
+  };
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
         getVariantStyle(),
+        getSizeStyle(),
         disabled && styles.disabled,
         style,
       ]}
@@ -82,18 +108,25 @@ const Button: React.FC<ButtonProps> = ({
           {icon && iconPosition === "left" && (
             <Ionicons
               name={icon as any}
-              size={20}
+              size={size === "small" ? 16 : 20}
               color={getTextVariantStyle().color}
               style={styles.iconLeft}
             />
           )}
-          <Text style={[styles.text, getTextVariantStyle(), textStyle]}>
+          <Text
+            style={[
+              styles.text,
+              getTextVariantStyle(),
+              getTextSizeStyle(),
+              textStyle,
+            ]}
+          >
             {title}
           </Text>
           {icon && iconPosition === "right" && (
             <Ionicons
               name={icon as any}
-              size={20}
+              size={size === "small" ? 16 : 20}
               color={getTextVariantStyle().color}
               style={styles.iconRight}
             />
@@ -106,19 +139,42 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  // Size styles
+  small: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minHeight: 40,
+  },
+  medium: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    minHeight: 48,
+  },
+  large: {
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-    flexDirection: "row",
+    minHeight: 56,
   },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  // Text size styles
+  text: {
+    fontWeight: "600",
+    textAlign: "center",
   },
+  smallText: {
+    fontSize: 14,
+  },
+  mediumText: {
+    fontSize: 16,
+  },
+  largeText: {
+    fontSize: 18,
+  },
+  // Variant styles (keep existing)
   primary: {
     backgroundColor: "#4F46E5",
   },
@@ -139,10 +195,10 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
-  text: {
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   primaryText: {
     color: "#FFFFFF",
