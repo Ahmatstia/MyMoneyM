@@ -4,7 +4,6 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider, DefaultTheme } from "react-native-paper";
-
 import { AppProvider } from "./src/context/AppContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 
