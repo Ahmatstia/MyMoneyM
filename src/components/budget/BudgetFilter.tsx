@@ -25,16 +25,31 @@ const BudgetFilter: React.FC<BudgetFilterProps> = ({
   counts,
 }) => {
   const filters = [
-    { key: "all", label: "Semua", icon: "list" },
-    { key: "safe", label: "Aman", icon: "checkmark-circle", color: "#10B981" },
     {
-      key: "warning",
+      key: "all" as const,
+      label: "Semua",
+      icon: "list" as const,
+      color: "#6B7280", // ✅ TAMBAHKAN color untuk "all"
+    },
+    {
+      key: "safe" as const,
+      label: "Aman",
+      icon: "checkmark-circle" as const,
+      color: "#10B981",
+    },
+    {
+      key: "warning" as const,
       label: "Perhatian",
-      icon: "alert-circle",
+      icon: "alert-circle" as const,
       color: "#F59E0B",
     },
-    { key: "over", label: "Melebihi", icon: "warning", color: "#DC2626" },
-  ] as const;
+    {
+      key: "over" as const,
+      label: "Melebihi",
+      icon: "warning" as const,
+      color: "#DC2626",
+    },
+  ];
 
   return (
     <ScrollView
@@ -53,9 +68,9 @@ const BudgetFilter: React.FC<BudgetFilterProps> = ({
           onPress={() => onFilterChange(item.key)}
         >
           <Ionicons
-            name={item.icon as any}
+            name={item.icon}
             size={16}
-            color={filter === item.key ? "#FFFFFF" : item.color || "#6B7280"}
+            color={filter === item.key ? "#FFFFFF" : item.color} // ✅ Sekarang semua item punya color
           />
           <Text
             style={[

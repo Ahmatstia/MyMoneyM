@@ -1,26 +1,66 @@
-// File: src/screens/Home/HomeScreen.tsx - VERSION 2.0
+// File: src/screens/HomeScreen.tsx
 import React, { useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, getCurrentMonth } from "../../utils/calculations";
+import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 
-type IconName = keyof typeof Ionicons.glyphMap;
+// Type untuk icon yang aman
+type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { state } = useAppContext();
+  const { state, isLoading } = useAppContext();
 
-  // ANALYTICS FOR INSIGHTS
-  const transactionAnalytics = useMemo(
-    () => calculateTransactionAnalytics(state.transactions, "month"),
-    [state.transactions]
-  );
+  // Helper untuk mendapatkan icon yang aman
+  const getSafeIcon = (iconName: string): SafeIconName => {
+    const defaultIcon: SafeIconName = "receipt-outline";
+    if (iconName in Ionicons.glyphMap) {
+      return iconName as SafeIconName;
+    }
+    return defaultIcon;
+  };
+
+  // ANALYTICS FOR INSIGHTS with safe values
+  const transactionAnalytics = useMemo(() => {
+    const analytics = calculateTransactionAnalytics(
+      state.transactions,
+      "month"
+    );
+    return {
+      ...analytics,
+      totalIncome: safeNumber(analytics.totalIncome),
+      totalExpense: safeNumber(analytics.totalExpense),
+      netSavings: safeNumber(analytics.netSavings),
+      savingsRate: safeNumber(analytics.savingsRate),
+      avgDailyExpense: safeNumber(analytics.avgDailyExpense),
+    };
+  }, [state.transactions]);
+
+  // PERBAIKAN: Conditional return HARUS DI BAWAH semua hooks
+  if (isLoading) {
+    return (
+      <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+        <View style={tw`flex-1 items-center justify-center`}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+          <Text style={tw`mt-4 text-gray-600 text-center px-8`}>
+            Memuat data keuangan Anda...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // 1. PERSONALIZED GREETING (Phase 1)
   const getPersonalizedGreeting = () => {
@@ -33,13 +73,16 @@ const HomeScreen: React.FC = () => {
     else greeting = "Selamat Malam";
 
     // Add financial milestone if any
-    if (transactionAnalytics.savingsRate >= 30) {
+    if (safeNumber(transactionAnalytics.savingsRate) >= 30) {
       greeting += "! 💰 Tabungan Luar Biasa";
-    } else if (state.balance > state.totalIncome * 0.5) {
+    } else if (
+      safeNumber(state.balance) >
+      safeNumber(state.totalIncome) * 0.5
+    ) {
       greeting += "! 🌟 Saldo Sehat";
     } else if (
       state.budgets.length > 0 &&
-      state.budgets.every((b) => b.spent <= b.limit)
+      state.budgets.every((b) => safeNumber(b.spent) <= safeNumber(b.limit))
     ) {
       greeting += "! ✅ Semua Anggaran Aman";
     }
@@ -47,34 +90,36 @@ const HomeScreen: React.FC = () => {
     return greeting;
   };
 
-  // 2. FINANCIAL HEALTH SCORE (Phase 1)
+  // 2. FINANCIAL HEALTH SCORE (Phase 1) - FIXED for NaN
   const calculateHealthScore = () => {
     let score = 50; // Base score
 
-    // 1. Savings Rate (0-30 points)
-    const savingsRatePoints = Math.min(
-      transactionAnalytics.savingsRate * 1.5,
-      30
-    );
+    // 1. Savings Rate (0-30 points) - FIXED
+    const safeSavingsRate = safeNumber(transactionAnalytics.savingsRate);
+    const savingsRatePoints = Math.min(safeSavingsRate * 1.5, 30);
     score += savingsRatePoints;
 
-    // 2. Budget Adherence (0-25 points)
+    // 2. Budget Adherence (0-25 points) - FIXED
     if (state.budgets.length > 0) {
       const onBudgetCount = state.budgets.filter(
-        (b) => b.spent <= b.limit
+        (b) => safeNumber(b.spent) <= safeNumber(b.limit)
       ).length;
       const budgetPoints = (onBudgetCount / state.budgets.length) * 25;
-      score += budgetPoints;
+      score += safeNumber(budgetPoints);
     }
 
-    // 3. Emergency Fund (0-20 points)
-    const emergencyMonths = state.balance / (state.totalExpense / 30); // Months covered
-    const emergencyPoints = Math.min(emergencyMonths * 5, 20); // 4 months = 20 points
+    // 3. Emergency Fund (0-20 points) - FIXED division by zero
+    const safeTotalExpense = safeNumber(state.totalExpense);
+    const emergencyMonths =
+      safeTotalExpense > 0
+        ? safeNumber(state.balance) / (safeTotalExpense / 30)
+        : 0;
+    const emergencyPoints = Math.min(safeNumber(emergencyMonths) * 5, 20);
     score += emergencyPoints;
 
     // 4. Transaction Consistency (0-15 points)
     const avgTransactionsPerDay = state.transactions.length / 30;
-    const consistencyPoints = Math.min(avgTransactionsPerDay * 5, 15); // 3 trans/day = 15 points
+    const consistencyPoints = Math.min(avgTransactionsPerDay * 5, 15);
     score += consistencyPoints;
 
     // 5. Income Stability Bonus (0-10 points)
@@ -82,35 +127,52 @@ const HomeScreen: React.FC = () => {
       score += 10;
     }
 
-    return Math.min(Math.round(score), 100);
+    return Math.min(Math.round(safeNumber(score)), 100);
   };
 
   const healthScore = calculateHealthScore();
   const getHealthStatus = (score: number) => {
-    if (score >= 80)
-      return { label: "Sangat Sehat", color: "#10B981", icon: "heart" };
-    if (score >= 60)
-      return { label: "Sehat", color: "#F59E0B", icon: "checkmark-circle" };
-    if (score >= 40)
-      return { label: "Perhatian", color: "#F59E0B", icon: "alert-circle" };
-    return { label: "Kritis", color: "#EF4444", icon: "warning" };
+    const safeScore = safeNumber(score);
+    if (safeScore >= 80)
+      return {
+        label: "Sangat Sehat",
+        color: "#10B981",
+        icon: "heart-outline" as SafeIconName,
+      };
+    if (safeScore >= 60)
+      return {
+        label: "Sehat",
+        color: "#F59E0B",
+        icon: "checkmark-circle-outline" as SafeIconName,
+      };
+    if (safeScore >= 40)
+      return {
+        label: "Perhatian",
+        color: "#F59E0B",
+        icon: "alert-circle-outline" as SafeIconName,
+      };
+    return {
+      label: "Kritis",
+      color: "#EF4444",
+      icon: "warning-outline" as SafeIconName,
+    };
   };
 
   const healthStatus = getHealthStatus(healthScore);
 
-  // 3. SMART INSIGHTS (Phase 2)
+  // 3. SMART INSIGHTS (Phase 2) - FIXED percentage calculations
   const getSmartInsights = () => {
     const insights = [];
 
-    // Insight 1: Savings Rate
+    // Insight 1: Savings Rate - FIXED
     if (transactionAnalytics.savingsRate < 10) {
       insights.push({
         type: "warning",
         title: "Rasio Tabungan Rendah",
-        message: `Hanya ${transactionAnalytics.savingsRate.toFixed(
+        message: `Hanya ${safeNumber(transactionAnalytics.savingsRate).toFixed(
           1
         )}% dari pemasukan disimpan`,
-        icon: "trending-down",
+        icon: "trending-down-outline" as SafeIconName,
         color: "#EF4444",
         action: "Tingkatkan ke 20%",
         onPress: () => navigation.navigate("Analytics"),
@@ -119,29 +181,32 @@ const HomeScreen: React.FC = () => {
       insights.push({
         type: "success",
         title: "Rasio Tabungan Baik!",
-        message: `${transactionAnalytics.savingsRate.toFixed(
+        message: `${safeNumber(transactionAnalytics.savingsRate).toFixed(
           1
         )}% pemasukan berhasil disimpan`,
-        icon: "trending-up",
+        icon: "trending-up-outline" as SafeIconName,
         color: "#10B981",
         action: "Pertahankan!",
         onPress: () => navigation.navigate("Analytics"),
       });
     }
 
-    // Insight 2: Spending Concentration
+    // Insight 2: Spending Concentration - FIXED division by zero
     if (transactionAnalytics.topCategories.length > 0) {
       const [topCategory, topAmount] = transactionAnalytics.topCategories[0];
-      const percentage = (topAmount / transactionAnalytics.totalExpense) * 100;
+      const safeTopAmount = safeNumber(topAmount);
+      const safeTotalExpense = safeNumber(transactionAnalytics.totalExpense);
+      const percentage =
+        safeTotalExpense > 0 ? (safeTopAmount / safeTotalExpense) * 100 : 0;
 
       if (percentage > 40) {
         insights.push({
           type: "warning",
           title: `Konsentrasi Pengeluaran Tinggi`,
-          message: `${topCategory} menghabiskan ${percentage.toFixed(
-            0
-          )}% dari total pengeluaran`,
-          icon: "pie-chart",
+          message: `${topCategory} menghabiskan ${safeNumber(
+            percentage
+          ).toFixed(0)}% dari total pengeluaran`,
+          icon: "pie-chart-outline" as SafeIconName,
           color: "#F59E0B",
           action: "Diversifikasi",
           onPress: () =>
@@ -153,14 +218,14 @@ const HomeScreen: React.FC = () => {
     // Insight 3: Budget Status
     if (state.budgets.length > 0) {
       const overBudgetCount = state.budgets.filter(
-        (b) => b.spent > b.limit
+        (b) => safeNumber(b.spent) > safeNumber(b.limit)
       ).length;
       if (overBudgetCount > 0) {
         insights.push({
           type: "warning",
           title: `${overBudgetCount} Anggaran Melebihi Limit`,
           message: "Beberapa kategori pengeluaran melebihi batas",
-          icon: "alert-circle",
+          icon: "alert-circle-outline" as SafeIconName,
           color: "#EF4444",
           action: "Review Anggaran",
           onPress: () => navigation.navigate("Budget"),
@@ -168,17 +233,23 @@ const HomeScreen: React.FC = () => {
       }
     }
 
-    // Insight 4: Savings Progress
+    // Insight 4: Savings Progress - FIXED division by zero
     if (state.savings.length > 0) {
-      const nearingCompletion = state.savings.filter(
-        (s) => s.current / s.target >= 0.8 && s.current < s.target
-      );
+      const nearingCompletion = state.savings.filter((s) => {
+        const safeCurrent = safeNumber(s.current);
+        const safeTarget = safeNumber(s.target);
+        return (
+          safeTarget > 0 &&
+          safeCurrent / safeTarget >= 0.8 &&
+          safeCurrent < safeTarget
+        );
+      });
       if (nearingCompletion.length > 0) {
         insights.push({
           type: "success",
           title: `${nearingCompletion.length} Target Hampir Tercapai!`,
           message: "Tabungan Anda hampir mencapai target",
-          icon: "trophy",
+          icon: "trophy-outline" as SafeIconName,
           color: "#8B5CF6",
           action: "Lihat Progress",
           onPress: () => navigation.navigate("Savings"),
@@ -192,7 +263,7 @@ const HomeScreen: React.FC = () => {
         type: "info",
         title: "Keuangan Stabil",
         message: "Semua indikator dalam kondisi baik",
-        icon: "checkmark-circle",
+        icon: "checkmark-circle-outline" as SafeIconName,
         color: "#4F46E5",
         action: "Pantau Terus",
         onPress: () => navigation.navigate("Analytics"),
@@ -214,7 +285,7 @@ const HomeScreen: React.FC = () => {
     actions.push({
       id: 1,
       title: "Transaksi",
-      icon: "swap-horizontal" as IconName,
+      icon: "swap-horizontal-outline" as SafeIconName,
       color: "#4F46E5",
       onPress: () => navigation.navigate("Transactions"),
     });
@@ -222,7 +293,7 @@ const HomeScreen: React.FC = () => {
     actions.push({
       id: 2,
       title: "Analitik",
-      icon: "stats-chart" as IconName,
+      icon: "stats-chart-outline" as SafeIconName,
       color: "#10B981",
       onPress: () => navigation.navigate("Analytics"),
     });
@@ -233,7 +304,7 @@ const HomeScreen: React.FC = () => {
       actions.push({
         id: 3,
         title: "Review Hari",
-        icon: "calendar" as IconName,
+        icon: "calendar-outline" as SafeIconName,
         color: "#F59E0B",
         onPress: () => navigation.navigate("Budget"),
       });
@@ -242,7 +313,7 @@ const HomeScreen: React.FC = () => {
       actions.push({
         id: 3,
         title: "Catat Hari",
-        icon: "checkmark-circle" as IconName,
+        icon: "checkmark-circle-outline" as SafeIconName,
         color: "#EC4899",
         onPress: () => navigation.navigate("AddTransaction"),
       });
@@ -251,7 +322,7 @@ const HomeScreen: React.FC = () => {
       actions.push({
         id: 3,
         title: "Anggaran",
-        icon: "pie-chart" as IconName,
+        icon: "pie-chart-outline" as SafeIconName,
         color: "#F59E0B",
         onPress: () => navigation.navigate("Budget"),
       });
@@ -262,7 +333,7 @@ const HomeScreen: React.FC = () => {
       actions.push({
         id: 4,
         title: "Review Minggu",
-        icon: "document-text" as IconName,
+        icon: "document-text-outline" as SafeIconName,
         color: "#8B5CF6",
         onPress: () => navigation.navigate("Analytics"),
       });
@@ -271,7 +342,7 @@ const HomeScreen: React.FC = () => {
       actions.push({
         id: 4,
         title: "Tabungan",
-        icon: "wallet" as IconName,
+        icon: "wallet-outline" as SafeIconName,
         color: "#8B5CF6",
         onPress: () => navigation.navigate("Savings"),
       });
@@ -282,7 +353,7 @@ const HomeScreen: React.FC = () => {
       actions[0] = {
         id: 0,
         title: "Mulai Catat",
-        icon: "add-circle" as IconName,
+        icon: "add-circle-outline" as SafeIconName,
         color: "#EC4899",
         onPress: () => navigation.navigate("AddTransaction"),
       };
@@ -293,7 +364,7 @@ const HomeScreen: React.FC = () => {
 
   const dynamicQuickActions = getDynamicQuickActions();
 
-  // 5. MONTHLY PROGRESS INDICATOR (Phase 1)
+  // 5. MONTHLY PROGRESS INDICATOR (Phase 1) - FIXED division by zero
   const getMonthlyProgress = () => {
     const today = new Date();
     const currentDay = today.getDate();
@@ -302,22 +373,26 @@ const HomeScreen: React.FC = () => {
       today.getMonth() + 1,
       0
     ).getDate();
-    const progress = (currentDay / daysInMonth) * 100;
+    const progress = safeNumber((currentDay / daysInMonth) * 100);
 
-    // Projected end-of-month balance
-    const dailyAvgExpense = state.totalExpense / currentDay;
-    const daysRemaining = daysInMonth - currentDay;
-    const projectedExpense =
-      state.totalExpense + dailyAvgExpense * daysRemaining;
-    const projectedBalance = state.totalIncome - projectedExpense;
+    // Projected end-of-month balance - FIXED division by zero
+    const dailyAvgExpense =
+      currentDay > 0 ? safeNumber(state.totalExpense) / currentDay : 0;
+    const daysRemaining = Math.max(0, daysInMonth - currentDay);
+    const projectedExpense = safeNumber(
+      safeNumber(state.totalExpense) + dailyAvgExpense * daysRemaining
+    );
+    const projectedBalance = safeNumber(
+      safeNumber(state.totalIncome) - projectedExpense
+    );
 
     return {
       currentDay,
       daysInMonth,
-      progress,
-      dailyAvgExpense,
+      progress: isNaN(progress) ? 0 : progress,
+      dailyAvgExpense: safeNumber(dailyAvgExpense),
       daysRemaining,
-      projectedBalance,
+      projectedBalance: isNaN(projectedBalance) ? 0 : projectedBalance,
       status:
         projectedBalance > 0
           ? "surplus"
@@ -329,23 +404,38 @@ const HomeScreen: React.FC = () => {
 
   const monthlyProgress = getMonthlyProgress();
 
-  // 6. GOALS PREVIEW (Phase 2)
+  // 6. GOALS PREVIEW (Phase 2) - FIXED division by zero
   const getGoalsPreview = () => {
     if (state.savings.length === 0) return [];
 
     return state.savings
-      .filter((s) => s.current < s.target) // Only active goals
-      .sort((a, b) => b.current / b.target - a.current / a.target) // Sort by progress
-      .slice(0, 3); // Top 3
+      .filter((s) => {
+        const safeCurrent = safeNumber(s.current);
+        const safeTarget = safeNumber(s.target);
+        return safeTarget > 0 && safeCurrent < safeTarget;
+      })
+      .sort((a, b) => {
+        const aProgress =
+          safeNumber(a.target) > 0
+            ? safeNumber(a.current) / safeNumber(a.target)
+            : 0;
+        const bProgress =
+          safeNumber(b.target) > 0
+            ? safeNumber(b.current) / safeNumber(b.target)
+            : 0;
+        return bProgress - aProgress;
+      })
+      .slice(0, 3);
   };
 
   const goalsPreview = getGoalsPreview();
 
-  // 7. QUICK STATS (Phase 2)
+  // 7. QUICK STATS (Phase 2) - FIXED all calculations
   const getQuickStats = () => {
     // Calculate days without shopping expense
     const today = new Date();
-    const sevenDaysAgo = new Date(today.setDate(today.getDate() - 7));
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
 
     const shoppingTransactions = state.transactions.filter(
       (t) =>
@@ -354,13 +444,16 @@ const HomeScreen: React.FC = () => {
         new Date(t.date) >= sevenDaysAgo
     );
 
-    const daysWithoutShopping =
+    const daysWithoutShopping = Math.max(
+      0,
       7 -
-      new Set(shoppingTransactions.map((t) => new Date(t.date).toDateString()))
-        .size;
+        new Set(
+          shoppingTransactions.map((t) => new Date(t.date).toDateString())
+        ).size
+    );
 
-    // Average daily expense
-    const avgDailyExpense = state.totalExpense / 30;
+    // Average daily expense - FIXED
+    const avgDailyExpense = safeNumber(state.totalExpense / 30);
 
     // Transactions this month
     const thisMonthTransactions = state.transactions.filter((t) => {
@@ -368,7 +461,7 @@ const HomeScreen: React.FC = () => {
       return transDate.getMonth() === new Date().getMonth();
     }).length;
 
-    // Month-over-month comparison
+    // Month-over-month comparison - FIXED division by zero
     const lastMonthTransactions = state.transactions.filter((t) => {
       const transDate = new Date(t.date);
       const lastMonth = new Date().getMonth() - 1;
@@ -377,9 +470,11 @@ const HomeScreen: React.FC = () => {
 
     const transactionGrowth =
       lastMonthTransactions > 0
-        ? ((thisMonthTransactions - lastMonthTransactions) /
-            lastMonthTransactions) *
-          100
+        ? safeNumber(
+            ((thisMonthTransactions - lastMonthTransactions) /
+              lastMonthTransactions) *
+              100
+          )
         : 100;
 
     return [
@@ -423,7 +518,7 @@ const HomeScreen: React.FC = () => {
     return now.toLocaleDateString("id-ID", options);
   };
 
-  const transactionIcons: Record<string, IconName> = {
+  const transactionIcons: Record<string, SafeIconName> = {
     Makanan: "restaurant-outline",
     Transportasi: "car-outline",
     Belanja: "cart-outline",
@@ -435,8 +530,9 @@ const HomeScreen: React.FC = () => {
     Lainnya: "ellipsis-horizontal-outline",
   };
 
-  const getTransactionIcon = (category: string): IconName => {
-    return transactionIcons[category] || "receipt-outline";
+  const getTransactionIcon = (category: string): SafeIconName => {
+    const icon = transactionIcons[category];
+    return icon ? getSafeIcon(icon) : "receipt-outline";
   };
 
   return (
@@ -466,7 +562,7 @@ const HomeScreen: React.FC = () => {
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
-                name={healthStatus.icon as IconName}
+                name={healthStatus.icon}
                 size={16}
                 color={healthStatus.color}
               />
@@ -506,7 +602,7 @@ const HomeScreen: React.FC = () => {
                     ]}
                   >
                     <Ionicons
-                      name={insight.icon as IconName}
+                      name={insight.icon}
                       size={16}
                       color={insight.color}
                     />
@@ -557,7 +653,7 @@ const HomeScreen: React.FC = () => {
           </View>
 
           <Text style={tw`text-gray-800 text-2xl font-bold mb-5`}>
-            {formatCurrency(state.balance)}
+            {formatCurrency(safeNumber(state.balance))}
           </Text>
 
           {/* Monthly Progress Bar */}
@@ -565,14 +661,19 @@ const HomeScreen: React.FC = () => {
             <View style={tw`flex-row justify-between items-center mb-1`}>
               <Text style={tw`text-gray-600 text-xs`}>Progress Bulan Ini</Text>
               <Text style={tw`text-gray-600 text-xs font-medium`}>
-                {monthlyProgress.progress.toFixed(0)}%
+                {safeNumber(monthlyProgress.progress).toFixed(0)}%
               </Text>
             </View>
             <View style={tw`h-1.5 bg-gray-100 rounded-full overflow-hidden`}>
               <View
                 style={[
                   tw`h-full rounded-full`,
-                  { width: `${monthlyProgress.progress}%` },
+                  {
+                    width: `${Math.max(
+                      0,
+                      Math.min(safeNumber(monthlyProgress.progress), 100)
+                    )}%`,
+                  },
                   monthlyProgress.status === "surplus" && tw`bg-emerald-500`,
                   monthlyProgress.status === "warning" && tw`bg-yellow-500`,
                   monthlyProgress.status === "deficit" && tw`bg-red-500`,
@@ -585,7 +686,7 @@ const HomeScreen: React.FC = () => {
             <View style={tw`flex-1`}>
               <Text style={tw`text-gray-500 text-xs mb-1`}>Pemasukan</Text>
               <Text style={tw`text-emerald-600 text-base font-semibold`}>
-                {formatCurrency(state.totalIncome)}
+                {formatCurrency(safeNumber(state.totalIncome))}
               </Text>
             </View>
 
@@ -594,10 +695,11 @@ const HomeScreen: React.FC = () => {
             <View style={tw`flex-1`}>
               <Text style={tw`text-gray-500 text-xs mb-1`}>Pengeluaran</Text>
               <Text style={tw`text-red-500 text-base font-semibold`}>
-                {formatCurrency(state.totalExpense)}
+                {formatCurrency(safeNumber(state.totalExpense))}
               </Text>
               <Text style={tw`text-gray-400 text-xs`}>
-                {formatCurrency(monthlyProgress.dailyAvgExpense)}/hari
+                {formatCurrency(safeNumber(monthlyProgress.dailyAvgExpense))}
+                /hari
               </Text>
             </View>
           </View>
@@ -617,7 +719,7 @@ const HomeScreen: React.FC = () => {
                     : tw`text-red-600`,
                 ]}
               >
-                {formatCurrency(monthlyProgress.projectedBalance)}
+                {formatCurrency(safeNumber(monthlyProgress.projectedBalance))}
               </Text>
             </View>
           )}
@@ -763,7 +865,7 @@ const HomeScreen: React.FC = () => {
                     ]}
                   >
                     {transaction.type === "income" ? "+" : "-"}
-                    {formatCurrency(transaction.amount)}
+                    {formatCurrency(safeNumber(transaction.amount))}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -827,14 +929,17 @@ const HomeScreen: React.FC = () => {
               style={tw`bg-white rounded-2xl p-4 mb-6 border border-gray-100`}
             >
               <View style={tw`flex-row`}>
-                {/* LEFT COLUMN: BUDGET SUMMARY */}
+                {/* LEFT COLUMN: BUDGET SUMMARY - FIXED division by zero */}
                 {state.budgets.length > 0 && (
                   <View style={tw`flex-1 pr-3 border-r border-gray-200`}>
                     <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
                       Anggaran ({state.budgets.slice(0, 3).length})
                     </Text>
                     {state.budgets.slice(0, 3).map((budget) => {
-                      const progress = (budget.spent / budget.limit) * 100;
+                      const safeSpent = safeNumber(budget.spent);
+                      const safeLimit = safeNumber(budget.limit);
+                      const progress =
+                        safeLimit > 0 ? (safeSpent / safeLimit) * 100 : 0;
                       const progressColor =
                         progress > 90
                           ? "#EF4444"
@@ -851,7 +956,7 @@ const HomeScreen: React.FC = () => {
                               {budget.category}
                             </Text>
                             <Text style={tw`text-gray-400 text-xs`}>
-                              {Math.round(progress)}%
+                              {Math.round(safeNumber(progress))}%
                             </Text>
                           </View>
                           <View
@@ -861,15 +966,18 @@ const HomeScreen: React.FC = () => {
                               style={[
                                 tw`h-full rounded-full`,
                                 {
-                                  width: `${Math.min(progress, 100)}%`,
+                                  width: `${Math.max(
+                                    0,
+                                    Math.min(safeNumber(progress), 100)
+                                  )}%`,
                                   backgroundColor: progressColor,
                                 },
                               ]}
                             />
                           </View>
                           <Text style={tw`text-gray-400 text-xs mt-1`}>
-                            {formatCurrency(budget.spent)} /{" "}
-                            {formatCurrency(budget.limit)}
+                            {formatCurrency(safeSpent)} /{" "}
+                            {formatCurrency(safeLimit)}
                           </Text>
                         </View>
                       );
@@ -877,14 +985,17 @@ const HomeScreen: React.FC = () => {
                   </View>
                 )}
 
-                {/* RIGHT COLUMN: GOALS PREVIEW */}
+                {/* RIGHT COLUMN: GOALS PREVIEW - FIXED division by zero */}
                 {goalsPreview.length > 0 && (
                   <View style={tw`flex-1 pl-3`}>
                     <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
                       Tabungan ({goalsPreview.length})
                     </Text>
                     {goalsPreview.slice(0, 3).map((goal) => {
-                      const progress = (goal.current / goal.target) * 100;
+                      const safeCurrent = safeNumber(goal.current);
+                      const safeTarget = safeNumber(goal.target);
+                      const progress =
+                        safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
                       return (
                         <TouchableOpacity
                           key={goal.id}
@@ -899,7 +1010,7 @@ const HomeScreen: React.FC = () => {
                               {goal.name}
                             </Text>
                             <Text style={tw`text-gray-400 text-xs`}>
-                              {Math.round(progress)}%
+                              {Math.round(safeNumber(progress))}%
                             </Text>
                           </View>
                           <View
@@ -909,7 +1020,10 @@ const HomeScreen: React.FC = () => {
                               style={[
                                 tw`h-full rounded-full`,
                                 {
-                                  width: `${Math.min(progress, 100)}%`,
+                                  width: `${Math.max(
+                                    0,
+                                    Math.min(safeNumber(progress), 100)
+                                  )}%`,
                                   backgroundColor:
                                     progress >= 80
                                       ? "#10B981"
@@ -921,8 +1035,8 @@ const HomeScreen: React.FC = () => {
                             />
                           </View>
                           <Text style={tw`text-gray-400 text-xs mt-1`}>
-                            {formatCurrency(goal.current)} /{" "}
-                            {formatCurrency(goal.target)}
+                            {formatCurrency(safeCurrent)} /{" "}
+                            {formatCurrency(safeTarget)}
                           </Text>
                         </TouchableOpacity>
                       );

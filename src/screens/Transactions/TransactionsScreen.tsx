@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+// File: src/screens/TransactionsScreen.tsx
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -17,10 +18,13 @@ import { Calendar } from "react-native-calendars";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency } from "../../utils/calculations";
+import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Transaction } from "../../types";
 
 const { width } = Dimensions.get("window");
+
+// Type untuk icon yang aman
+type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 const TransactionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -42,18 +46,52 @@ const TransactionsScreen: React.FC = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  const swipeableRefs = React.useRef<{ [key: string]: Swipeable | null }>({});
+  const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
-  // Cleanup on unmount
+  // Cleanup on unmount - FIXED
   useEffect(() => {
     return () => {
+      // Close all swipeables
       Object.values(swipeableRefs.current).forEach((ref) => {
-        if (ref) ref.close();
+        if (ref) {
+          try {
+            ref.close();
+          } catch (error) {
+            // Ignore errors on cleanup
+          }
+        }
       });
+      // Clear refs
+      swipeableRefs.current = {};
     };
   }, []);
 
-  // Filter transactions
+  // Helper untuk mendapatkan icon yang aman
+  const getSafeIcon = (iconName: string): SafeIconName => {
+    const defaultIcon: SafeIconName = "receipt-outline";
+    if (iconName in Ionicons.glyphMap) {
+      return iconName as SafeIconName;
+    }
+    return defaultIcon;
+  };
+
+  // Category icons - FIXED dengan icon yang valid
+  const getCategoryIcon = (category: string): SafeIconName => {
+    const icons: Record<string, SafeIconName> = {
+      Makanan: "restaurant-outline",
+      Transportasi: "car-outline",
+      Belanja: "cart-outline",
+      Hiburan: "film-outline",
+      Kesehatan: "medical-outline",
+      Pendidikan: "school-outline",
+      Gaji: "cash-outline",
+      Investasi: "trending-up-outline",
+      Lainnya: "ellipsis-horizontal-outline",
+    };
+    return icons[category] || "receipt-outline";
+  };
+
+  // Filter transactions - FIXED logic
   const filteredTransactions = useMemo(() => {
     let filtered = [...state.transactions];
 
@@ -62,57 +100,82 @@ const TransactionsScreen: React.FC = () => {
       filtered = filtered.filter((t) => t.type === filterType);
     }
 
-    // Filter by date
+    // Filter by date - FIXED logic
     if (dateFilter !== "all") {
       const now = new Date();
-      const startDate = new Date();
+      now.setHours(23, 59, 59, 999); // End of day
+
+      let startDate = new Date();
 
       switch (dateFilter) {
         case "week":
-          startDate.setDate(now.getDate() - 7);
+          startDate.setDate(now.getDate() - 6); // 7 hari termasuk hari ini
+          startDate.setHours(0, 0, 0, 0);
           break;
         case "month":
-          startDate.setMonth(now.getMonth() - 1);
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate.setHours(0, 0, 0, 0);
           break;
         case "custom":
           if (customStartDate && customEndDate) {
+            const start = new Date(customStartDate);
+            const end = new Date(customEndDate);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+
             filtered = filtered.filter((t) => {
-              const transDate = new Date(t.date);
-              const start = new Date(customStartDate);
-              const end = new Date(customEndDate);
-              start.setHours(0, 0, 0, 0);
-              end.setHours(23, 59, 59, 999);
-              transDate.setHours(0, 0, 0, 0);
-              return transDate >= start && transDate <= end;
+              try {
+                const transDate = new Date(t.date);
+                transDate.setHours(0, 0, 0, 0);
+                return transDate >= start && transDate <= end;
+              } catch (error) {
+                return false; // Skip invalid dates
+              }
             });
+            return filtered;
           }
           break;
       }
 
       if (dateFilter !== "custom") {
         filtered = filtered.filter((t) => {
-          const transDate = new Date(t.date);
-          return transDate >= startDate;
+          try {
+            const transDate = new Date(t.date);
+            transDate.setHours(0, 0, 0, 0);
+            return transDate >= startDate && transDate <= now;
+          } catch (error) {
+            return false; // Skip invalid dates
+          }
         });
       }
     }
 
-    // Filter by search query
+    // Filter by search query - FIXED
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (t) =>
-          t.category.toLowerCase().includes(query) ||
-          t.description.toLowerCase().includes(query) ||
-          formatCurrency(t.amount).toLowerCase().includes(query) ||
-          t.date.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((t) => {
+        try {
+          const amountString = safeNumber(t.amount).toString();
+          return (
+            t.category.toLowerCase().includes(query) ||
+            (t.description && t.description.toLowerCase().includes(query)) ||
+            amountString.includes(query) ||
+            t.date.toLowerCase().includes(query)
+          );
+        } catch (error) {
+          return false; // Skip jika ada error
+        }
+      });
     }
 
     // Sort by date (newest first)
-    return filtered.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    return filtered.sort((a, b) => {
+      try {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } catch (error) {
+        return 0; // Jika error date, tetap di posisi
+      }
+    });
   }, [
     state.transactions,
     filterType,
@@ -122,46 +185,65 @@ const TransactionsScreen: React.FC = () => {
     customEndDate,
   ]);
 
-  // Group transactions by date (day)
+  // Group transactions by date (day) - FIXED dengan error handling
   const groupedByDay = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
 
     filteredTransactions.forEach((transaction) => {
-      const date = new Date(transaction.date);
-      const dayKey = date.toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+      try {
+        const date = new Date(transaction.date);
+        if (isNaN(date.getTime())) {
+          console.warn("Invalid date in transaction:", transaction.date);
+          return;
+        }
 
-      if (!groups[dayKey]) {
-        groups[dayKey] = [];
+        const dayKey = date.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+
+        if (!groups[dayKey]) {
+          groups[dayKey] = [];
+        }
+        groups[dayKey].push(transaction);
+      } catch (error) {
+        console.warn("Error grouping transaction:", error);
       }
-      groups[dayKey].push(transaction);
     });
 
     return groups;
   }, [filteredTransactions]);
 
-  // Calculate totals
+  // Calculate totals - FIXED dengan safeNumber
   const totals = useMemo(() => {
     const totalIncome = filteredTransactions
       .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
     const totalExpense = filteredTransactions
       .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-    const balance = totalIncome - totalExpense;
+    const balance = safeNumber(totalIncome - totalExpense);
 
-    return { totalIncome, totalExpense, balance };
+    return {
+      totalIncome: safeNumber(totalIncome),
+      totalExpense: safeNumber(totalExpense),
+      balance,
+    };
   }, [filteredTransactions]);
 
-  // Handle delete transaction
+  // Handle delete transaction - IMPROVED
   const handleDelete = async (transactionId: string) => {
     const swipeable = swipeableRefs.current[transactionId];
-    if (swipeable) swipeable.close();
+    if (swipeable) {
+      try {
+        swipeable.close();
+      } catch (error) {
+        // Ignore close errors
+      }
+    }
 
     Alert.alert(
       "Hapus Transaksi",
@@ -176,6 +258,7 @@ const TransactionsScreen: React.FC = () => {
               await deleteTransaction(transactionId);
               delete swipeableRefs.current[transactionId];
             } catch (error) {
+              console.error("Delete transaction error:", error);
               Alert.alert("Error", "Gagal menghapus transaksi");
             }
           },
@@ -186,7 +269,13 @@ const TransactionsScreen: React.FC = () => {
 
   const handleEdit = (transaction: Transaction) => {
     const swipeable = swipeableRefs.current[transaction.id];
-    if (swipeable) swipeable.close();
+    if (swipeable) {
+      try {
+        swipeable.close();
+      } catch (error) {
+        // Ignore close errors
+      }
+    }
 
     navigation.navigate("AddTransaction", {
       editMode: true,
@@ -194,61 +283,53 @@ const TransactionsScreen: React.FC = () => {
     });
   };
 
-  // Render swipe actions
+  // Render swipe actions - FIXED styling
   const renderRightActions = (transaction: Transaction) => (
     <View style={tw`flex-row w-24 h-11/12 my-2 rounded-xl overflow-hidden`}>
       <TouchableOpacity
         style={tw`flex-1 bg-blue-500 justify-center items-center`}
         onPress={() => handleEdit(transaction)}
       >
-        <Ionicons name="pencil" size={18} color="#FFFFFF" />
+        <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
       </TouchableOpacity>
       <TouchableOpacity
         style={tw`flex-1 bg-red-500 justify-center items-center`}
         onPress={() => handleDelete(transaction.id)}
       >
-        <Ionicons name="trash" size={18} color="#FFFFFF" />
+        <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
 
-  // Format date for display
+  // Format date for display - FIXED dengan error handling
   const formatDisplayDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Hari Ini";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Kemarin";
-    } else {
-      return date.toLocaleDateString("id-ID", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-      });
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (date.toDateString() === today.toDateString()) {
+        return "Hari Ini";
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return "Kemarin";
+      } else {
+        return date.toLocaleDateString("id-ID", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        });
+      }
+    } catch (error) {
+      return dateString;
     }
   };
 
-  // Category icons
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      Makanan: "restaurant",
-      Transportasi: "car",
-      Belanja: "cart",
-      Hiburan: "film",
-      Kesehatan: "medical",
-      Pendidikan: "school",
-      Gaji: "cash",
-      Investasi: "trending-up",
-      Lainnya: "ellipsis-horizontal",
-    };
-    return icons[category] || "receipt";
-  };
-
-  // Date filter label
+  // Date filter label - FIXED
   const getDateFilterLabel = () => {
     switch (dateFilter) {
       case "week":
@@ -257,13 +338,17 @@ const TransactionsScreen: React.FC = () => {
         return "Bulan Ini";
       case "custom":
         if (customStartDate && customEndDate) {
-          return `${customStartDate.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          })}-${customEndDate.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-          })}`;
+          try {
+            return `${customStartDate.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            })}-${customEndDate.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "short",
+            })}`;
+          } catch (error) {
+            return "Tanggal";
+          }
         }
         return "Tanggal";
       default:
@@ -271,34 +356,74 @@ const TransactionsScreen: React.FC = () => {
     }
   };
 
-  // Handle calendar date select
+  // Handle calendar date select - FIXED
   const handleDateSelect = (day: any) => {
-    const selectedDate = new Date(day.dateString);
+    try {
+      const selectedDate = new Date(day.dateString);
+      if (isNaN(selectedDate.getTime())) {
+        Alert.alert("Error", "Tanggal tidak valid");
+        return;
+      }
 
-    if (showCalendar === "start") {
-      setCustomStartDate(selectedDate);
-    } else if (showCalendar === "end") {
-      setCustomEndDate(selectedDate);
+      if (showCalendar === "start") {
+        setCustomStartDate(selectedDate);
+        // Jika end date sebelum start date, update end date
+        if (selectedDate > customEndDate) {
+          setCustomEndDate(selectedDate);
+        }
+      } else if (showCalendar === "end") {
+        setCustomEndDate(selectedDate);
+        // Jika start date setelah end date, update start date
+        if (selectedDate < customStartDate) {
+          setCustomStartDate(selectedDate);
+        }
+      }
+    } catch (error) {
+      console.error("Date select error:", error);
+      Alert.alert("Error", "Gagal memilih tanggal");
+    } finally {
+      setShowCalendar(null);
     }
-
-    setShowCalendar(null);
   };
 
   // Reset date filter
   const resetDateFilter = () => {
     setDateFilter("all");
-    setCustomStartDate(new Date());
-    setCustomEndDate(new Date());
+    const today = new Date();
+    setCustomStartDate(today);
+    setCustomEndDate(today);
   };
 
   // Apply filter
   const applyFilter = () => {
+    if (dateFilter === "custom") {
+      if (customStartDate > customEndDate) {
+        Alert.alert("Error", "Tanggal mulai tidak boleh setelah tanggal akhir");
+        return;
+      }
+    }
     setShowFilterModal(false);
   };
 
-  // Format date for Calendar markedDates
-  const formatDateForCalendar = (date: Date) => {
-    return date.toISOString().split("T")[0];
+  // Format date for Calendar markedDates - FIXED
+  const formatDateForCalendar = (date: Date): string => {
+    try {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      return new Date().toISOString().split("T")[0];
+    }
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Simulate refresh
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
   };
 
   return (
@@ -325,7 +450,7 @@ const TransactionsScreen: React.FC = () => {
           <View
             style={tw`flex-1 flex-row items-center bg-gray-100 rounded-lg px-3 py-2`}
           >
-            <Ionicons name="search" size={16} color="#9CA3AF" />
+            <Ionicons name="search-outline" size={16} color="#9CA3AF" />
             <TextInput
               style={tw`flex-1 text-gray-800 text-sm ml-2`}
               placeholder="Cari transaksi..."
@@ -335,6 +460,7 @@ const TransactionsScreen: React.FC = () => {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               returnKeyType="search"
+              clearButtonMode="while-editing"
             />
             {searchQuery ? (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
@@ -346,7 +472,7 @@ const TransactionsScreen: React.FC = () => {
             style={tw`ml-2 w-9 h-9 bg-gray-100 rounded-lg justify-center items-center`}
             onPress={() => setShowFilterModal(true)}
           >
-            <Ionicons name="filter" size={16} color="#6B7280" />
+            <Ionicons name="filter-outline" size={16} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
@@ -382,7 +508,7 @@ const TransactionsScreen: React.FC = () => {
               onPress={() => setFilterType("income")}
             >
               <Ionicons
-                name="arrow-down"
+                name="arrow-down-outline"
                 size={12}
                 color={filterType === "income" ? "#10B981" : "#6B7280"}
               />
@@ -405,7 +531,7 @@ const TransactionsScreen: React.FC = () => {
               onPress={() => setFilterType("expense")}
             >
               <Ionicons
-                name="arrow-up"
+                name="arrow-up-outline"
                 size={12}
                 color={filterType === "expense" ? "#EF4444" : "#6B7280"}
               />
@@ -457,8 +583,9 @@ const TransactionsScreen: React.FC = () => {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => setIsRefreshing(false)}
+            onRefresh={handleRefresh}
             colors={["#4F46E5"]}
+            tintColor="#4F46E5"
           />
         }
       >
@@ -491,12 +618,17 @@ const TransactionsScreen: React.FC = () => {
                     friction={2}
                     containerStyle={tw`mb-1.5 mx-1`}
                     onSwipeableWillOpen={() => {
+                      // Close other swipeables
                       Object.keys(swipeableRefs.current).forEach((id) => {
                         if (
                           id !== transaction.id &&
                           swipeableRefs.current[id]
                         ) {
-                          swipeableRefs.current[id]?.close();
+                          try {
+                            swipeableRefs.current[id]?.close();
+                          } catch (error) {
+                            // Ignore close errors
+                          }
                         }
                       });
                     }}
@@ -505,6 +637,8 @@ const TransactionsScreen: React.FC = () => {
                       style={tw`bg-white p-3 rounded-xl border border-gray-100`}
                       activeOpacity={0.7}
                       onPress={() => handleEdit(transaction)}
+                      onLongPress={() => handleDelete(transaction.id)}
+                      delayLongPress={500}
                     >
                       <View style={tw`flex-row items-center justify-between`}>
                         <View style={tw`flex-row items-center flex-1`}>
@@ -516,9 +650,7 @@ const TransactionsScreen: React.FC = () => {
                             }`}
                           >
                             <Ionicons
-                              name={
-                                getCategoryIcon(transaction.category) as any
-                              }
+                              name={getCategoryIcon(transaction.category)}
                               size={18}
                               color={
                                 transaction.type === "income"
@@ -545,7 +677,7 @@ const TransactionsScreen: React.FC = () => {
                                 }`}
                               >
                                 {transaction.type === "income" ? "+" : "-"}
-                                {formatCurrency(transaction.amount)}
+                                {formatCurrency(safeNumber(transaction.amount))}
                               </Text>
                             </View>
                             <Text
@@ -597,7 +729,7 @@ const TransactionsScreen: React.FC = () => {
             >
               <Ionicons
                 name={
-                  searchQuery || dateFilter !== "all"
+                  searchQuery || filterType !== "all" || dateFilter !== "all"
                     ? "search-outline"
                     : "receipt-outline"
                 }
@@ -608,12 +740,12 @@ const TransactionsScreen: React.FC = () => {
             <Text
               style={tw`text-gray-800 text-base font-medium text-center mb-1.5`}
             >
-              {searchQuery || dateFilter !== "all"
+              {searchQuery || filterType !== "all" || dateFilter !== "all"
                 ? "Transaksi tidak ditemukan"
                 : "Belum ada transaksi"}
             </Text>
             <Text style={tw`text-gray-500 text-sm text-center mb-5`}>
-              {searchQuery
+              {searchQuery || filterType !== "all" || dateFilter !== "all"
                 ? "Coba kata kunci lain atau hapus filter"
                 : "Mulai catat transaksi pertama Anda"}
             </Text>
@@ -628,13 +760,28 @@ const TransactionsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             )}
+            {(searchQuery || filterType !== "all" || dateFilter !== "all") && (
+              <TouchableOpacity
+                style={tw`mt-3 border border-gray-300 px-4 py-2 rounded-lg flex-row items-center`}
+                onPress={() => {
+                  setSearchQuery("");
+                  setFilterType("all");
+                  resetDateFilter();
+                }}
+              >
+                <Ionicons name="close-outline" size={16} color="#6B7280" />
+                <Text style={tw`text-gray-700 text-sm font-medium ml-1.5`}>
+                  Hapus Filter
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
 
       {/* Add FAB - Smaller */}
       <TouchableOpacity
-        style={tw`absolute bottom-5 right-4 w-14 h-14 bg-indigo-600 rounded-xl justify-center items-center shadow-md`}
+        style={tw`absolute bottom-5 right-4 w-14 h-14 bg-indigo-600 rounded-xl justify-center items-center shadow-lg`}
         onPress={() => navigation.navigate("AddTransaction")}
         activeOpacity={0.9}
       >
@@ -649,17 +796,20 @@ const TransactionsScreen: React.FC = () => {
         onRequestClose={() => setShowFilterModal(false)}
       >
         <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View style={tw`bg-white rounded-t-3xl p-5 max-h-96`}>
+          <View style={tw`bg-white rounded-t-3xl p-5 max-h-3/4`}>
             <View style={tw`flex-row justify-between items-center mb-4`}>
               <Text style={tw`text-gray-800 text-lg font-bold`}>
                 Filter Tanggal
               </Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close" size={22} color="#6B7280" />
+                <Ionicons name="close-outline" size={22} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={tw`max-h-64`}
+            >
               <View style={tw`mb-4`}>
                 <Text style={tw`text-gray-600 text-sm mb-2`}>
                   Rentang Waktu
@@ -730,12 +880,17 @@ const TransactionsScreen: React.FC = () => {
                 </View>
               )}
 
-              <View style={tw`flex-row gap-3 mt-2`}>
+              <View style={tw`flex-row gap-3 mt-4 mb-2`}>
                 <TouchableOpacity
                   style={tw`flex-1 border border-gray-300 rounded-xl py-3 items-center`}
-                  onPress={resetDateFilter}
+                  onPress={() => {
+                    resetDateFilter();
+                    setShowFilterModal(false);
+                  }}
                 >
-                  <Text style={tw`text-gray-700`}>Reset</Text>
+                  <Text style={tw`text-gray-700 font-medium`}>
+                    Reset & Tutup
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={tw`flex-1 bg-indigo-600 rounded-xl py-3 items-center`}
@@ -765,7 +920,7 @@ const TransactionsScreen: React.FC = () => {
                   : "Pilih Tanggal Akhir"}
               </Text>
               <TouchableOpacity onPress={() => setShowCalendar(null)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+                <Ionicons name="close-outline" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -779,6 +934,16 @@ const TransactionsScreen: React.FC = () => {
                   selectedTextColor: "#FFFFFF",
                 },
               }}
+              minDate={
+                showCalendar === "end"
+                  ? formatDateForCalendar(customStartDate)
+                  : undefined
+              }
+              maxDate={
+                showCalendar === "start"
+                  ? formatDateForCalendar(customEndDate)
+                  : undefined
+              }
               theme={{
                 backgroundColor: "#ffffff",
                 calendarBackground: "#ffffff",
@@ -795,6 +960,14 @@ const TransactionsScreen: React.FC = () => {
                 textMonthFontWeight: "bold",
                 textDayFontSize: 16,
                 textMonthFontSize: 18,
+                "stylesheet.calendar.main": {
+                  week: {
+                    marginTop: 0,
+                    marginBottom: 0,
+                    flexDirection: "row",
+                    justifyContent: "space-around",
+                  },
+                },
               }}
             />
           </View>

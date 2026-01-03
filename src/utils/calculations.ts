@@ -1,28 +1,45 @@
 // File: src/utils/calculations.ts
 import { Transaction, Budget, Savings } from "../types";
 
+// Safe number helper
+export const safeNumber = (num: any): number => {
+  if (num === undefined || num === null) return 0;
+  const parsed = Number(num);
+  return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed);
+};
+
 export const calculateTotals = (transactions: Transaction[]) => {
   const totalIncome = transactions
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
   const totalExpense = transactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-  const balance = totalIncome - totalExpense;
+  const balance = safeNumber(totalIncome - totalExpense);
 
   return { totalIncome, totalExpense, balance };
 };
 
 export const calculateBudgetProgress = (budget: Budget) => {
-  const percentage = (budget.spent / budget.limit) * 100;
-  return Math.min(percentage, 100);
+  const safeSpent = safeNumber(budget.spent);
+  const safeLimit = safeNumber(budget.limit);
+
+  if (safeLimit <= 0) return 0;
+
+  const percentage = (safeSpent / safeLimit) * 100;
+  return Math.min(Math.max(0, percentage), 100);
 };
 
 export const calculateSavingsProgress = (savings: Savings) => {
-  const percentage = (savings.current / savings.target) * 100;
-  return Math.min(percentage, 100);
+  const safeCurrent = safeNumber(savings.current);
+  const safeTarget = safeNumber(savings.target);
+
+  if (safeTarget <= 0) return 0;
+
+  const percentage = (safeCurrent / safeTarget) * 100;
+  return Math.min(Math.max(0, percentage), 100);
 };
 
 export const formatCurrency = (amount: number): string => {
@@ -30,7 +47,7 @@ export const formatCurrency = (amount: number): string => {
     style: "currency",
     currency: "IDR",
     minimumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeNumber(amount));
 };
 
 export const getCurrentMonth = (): string => {
@@ -46,25 +63,15 @@ export const getCurrentDate = (): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    };
-    return date.toLocaleDateString("id-ID", options);
-  } catch (error) {
-    return dateString;
-  }
-};
-
 export const formatResetDate = (dateString?: string): string => {
   if (!dateString) return "Belum pernah reset";
 
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -81,4 +88,16 @@ export const formatResetDate = (dateString?: string): string => {
   } catch (error) {
     return dateString;
   }
+};
+
+// Helper untuk percentage yang aman
+export const getSafePercentage = (part: number, total: number): number => {
+  const safePart = safeNumber(part);
+  const safeTotal = safeNumber(total);
+
+  if (safeTotal <= 0) return 0;
+
+  const percentage = (safePart / safeTotal) * 100;
+  const result = isNaN(percentage) ? 0 : percentage;
+  return Math.max(0, Math.min(result, 100));
 };

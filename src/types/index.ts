@@ -7,8 +7,8 @@ export interface Transaction {
   type: TransactionType;
   category: string;
   description: string;
-  date: string;
-  createdAt: string;
+  date: string; // Format: YYYY-MM-DD
+  createdAt: string; // ISO string
 }
 
 export interface Budget {
@@ -16,9 +16,11 @@ export interface Budget {
   category: string;
   limit: number;
   spent: number;
-  period: "monthly" | "weekly";
-  lastResetDate?: string;
-  createdAt: string;
+  period: "custom" | "weekly" | "monthly" | "yearly"; // ✨ UPDATE: tambah "yearly" dan "custom"
+  startDate: string; // ✨ TAMBAH: tanggal mulai periode
+  endDate: string; // ✨ TAMBAH: tanggal akhir periode
+  lastResetDate?: string; // Format: YYYY-MM-DD
+  createdAt: string; // ISO string
 }
 
 export interface Savings {
@@ -26,7 +28,8 @@ export interface Savings {
   name: string;
   target: number;
   current: number;
-  deadline?: string;
+  deadline?: string; // Format: YYYY-MM-DD
+  createdAt?: string; // ISO string
 }
 
 export interface SavingsTransaction {
@@ -47,7 +50,7 @@ export interface AppState {
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  savingsTransactions: SavingsTransaction[];
+  savingsTransactions?: SavingsTransaction[]; // Optional
 }
 
 // Navigation types

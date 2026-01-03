@@ -15,8 +15,15 @@ import {
   calculateSavingsAnalytics,
   generateFinancialInsights,
 } from "../../utils/analytics";
-import { formatCurrency, getCurrentMonth } from "../../utils/calculations";
-import { Savings } from "../../types";
+import {
+  formatCurrency,
+  getCurrentMonth,
+  getSafePercentage,
+  safeNumber,
+} from "../../utils/calculations";
+
+// Type untuk icon yang aman
+type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 const AnalyticsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -29,11 +36,30 @@ const AnalyticsScreen: React.FC = () => {
     "summary" | "trends" | "categories" | "insights"
   >("summary");
 
-  // Analytics calculations
-  const transactionAnalytics = useMemo(
-    () => calculateTransactionAnalytics(state.transactions, timeRange),
-    [state.transactions, timeRange]
-  );
+  // Safe icon helper
+  const getSafeIcon = (iconName: string): SafeIconName => {
+    const defaultIcon: SafeIconName = "alert-circle-outline";
+    if (iconName in Ionicons.glyphMap) {
+      return iconName as SafeIconName;
+    }
+    return defaultIcon;
+  };
+
+  // Analytics calculations with safe values
+  const transactionAnalytics = useMemo(() => {
+    const analytics = calculateTransactionAnalytics(
+      state.transactions,
+      timeRange
+    );
+    return {
+      ...analytics,
+      totalIncome: safeNumber(analytics.totalIncome),
+      totalExpense: safeNumber(analytics.totalExpense),
+      netSavings: safeNumber(analytics.netSavings),
+      savingsRate: safeNumber(analytics.savingsRate),
+      avgDailyExpense: safeNumber(analytics.avgDailyExpense),
+    };
+  }, [state.transactions, timeRange]);
 
   const budgetAnalytics = useMemo(
     () => calculateBudgetAnalytics(state.budgets),
@@ -55,18 +81,23 @@ const AnalyticsScreen: React.FC = () => {
     [transactionAnalytics, budgetAnalytics, savingsAnalytics]
   );
 
-  // Calculate vs last month (comparative analysis)
+  // Calculate vs last month (comparative analysis) with safe values
   const getComparativeData = () => {
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    // Simplified comparison - in real app would filter by date
     const lastMonthTransactions = state.transactions.filter((t) => {
-      const transDate = new Date(t.date);
-      return (
-        transDate.getMonth() === lastMonth.getMonth() &&
-        transDate.getFullYear() === lastMonth.getFullYear()
-      );
+      try {
+        const transDate = new Date(t.date);
+        if (isNaN(transDate.getTime())) return false;
+
+        return (
+          transDate.getMonth() === lastMonth.getMonth() &&
+          transDate.getFullYear() === lastMonth.getFullYear()
+        );
+      } catch (error) {
+        return false;
+      }
     });
 
     const lastMonthAnalytics = calculateTransactionAnalytics(
@@ -74,33 +105,44 @@ const AnalyticsScreen: React.FC = () => {
       "month"
     );
 
+    const incomeChange = safeNumber(
+      transactionAnalytics.totalIncome - lastMonthAnalytics.totalIncome
+    );
+    const expenseChange = safeNumber(
+      transactionAnalytics.totalExpense - lastMonthAnalytics.totalExpense
+    );
+    const savingsRateChange = safeNumber(
+      transactionAnalytics.savingsRate - lastMonthAnalytics.savingsRate
+    );
+
     return {
       current: transactionAnalytics,
-      previous: lastMonthAnalytics,
-      incomeChange:
-        transactionAnalytics.totalIncome - lastMonthAnalytics.totalIncome,
-      expenseChange:
-        transactionAnalytics.totalExpense - lastMonthAnalytics.totalExpense,
-      savingsRateChange:
-        transactionAnalytics.savingsRate - lastMonthAnalytics.savingsRate,
+      previous: {
+        ...lastMonthAnalytics,
+        savingsRate: safeNumber(lastMonthAnalytics.savingsRate),
+      },
+      incomeChange,
+      expenseChange,
+      savingsRateChange,
     };
   };
 
   const comparativeData = getComparativeData();
 
-  // Cash flow forecast
+  // Cash flow forecast with safe values
   const getCashFlowForecast = () => {
-    const dailyAvgSpending = transactionAnalytics.avgDailyExpense;
-    const daysRemaining = 30 - new Date().getDate();
-    const forecast =
-      transactionAnalytics.netSavings - dailyAvgSpending * daysRemaining;
+    const dailyAvgSpending = safeNumber(transactionAnalytics.avgDailyExpense);
+    const daysRemaining = Math.max(0, 30 - new Date().getDate());
+    const forecast = safeNumber(
+      transactionAnalytics.netSavings - dailyAvgSpending * daysRemaining
+    );
 
     return {
       dailyAvg: dailyAvgSpending,
       daysRemaining,
       forecast,
       status:
-        forecast > 0 ? "safe" : forecast > -1000000 ? "warning" : "danger",
+        forecast > 100000 ? "safe" : forecast > -100000 ? "warning" : "danger",
     };
   };
 
@@ -108,18 +150,18 @@ const AnalyticsScreen: React.FC = () => {
 
   // Type-safe category benchmarks
   type CategoryPercentages = {
-    Makanan: number;
-    Transportasi: number;
-    Belanja: number;
-    Hiburan: number;
-    Tagihan: number;
-    Lainnya: number;
-    [key: string]: number; // Add index signature
+    [key: string]: number;
   };
 
-  // Ganti fungsi getCategoryBenchmarks() dengan ini:
+  type BenchmarkItem = {
+    category: string;
+    yourPercentage: number;
+    avgPercentage: number;
+    difference: number;
+    status: "above" | "below" | "normal";
+  };
+
   const getCategoryBenchmarks = (): BenchmarkItem[] => {
-    // Simulated average data
     const averagePercentages: CategoryPercentages = {
       Makanan: 30,
       Transportasi: 20,
@@ -131,14 +173,13 @@ const AnalyticsScreen: React.FC = () => {
 
     return transactionAnalytics.topCategories.map(
       ([category, amount]): BenchmarkItem => {
-        const yourPercentage =
-          transactionAnalytics.totalExpense > 0
-            ? (amount / transactionAnalytics.totalExpense) * 100
-            : 0;
+        const yourPercentage = getSafePercentage(
+          amount,
+          transactionAnalytics.totalExpense
+        );
         const avgPercentage = averagePercentages[category] || 15;
-        const difference = yourPercentage - avgPercentage;
+        const difference = safeNumber(yourPercentage - avgPercentage);
 
-        // Tentukan status dengan type literal yang tepat
         let status: "above" | "below" | "normal";
         if (difference > 5) {
           status = "above";
@@ -153,7 +194,7 @@ const AnalyticsScreen: React.FC = () => {
           yourPercentage,
           avgPercentage,
           difference,
-          status, // sekarang type-nya sudah literal
+          status,
         };
       }
     );
@@ -163,7 +204,7 @@ const AnalyticsScreen: React.FC = () => {
 
   // Quick wins analysis
   type QuickWin = {
-    icon: string;
+    icon: SafeIconName;
     title: string;
     description: string;
     tip: string;
@@ -178,9 +219,9 @@ const AnalyticsScreen: React.FC = () => {
       ([cat]) => cat === "Makanan"
     );
     if (foodSpending && foodSpending[1] > 1000000) {
-      const potentialSavings = Math.round(foodSpending[1] * 0.3);
+      const potentialSavings = safeNumber(Math.round(foodSpending[1] * 0.3));
       wins.push({
-        icon: "restaurant",
+        icon: "restaurant-outline",
         title: "Pengeluaran Makan",
         description: `Rp ${(foodSpending[1] / 1000000).toFixed(1)}jt/bulan`,
         tip: `Masak 3x/minggu bisa hemat Rp ${(potentialSavings / 1000).toFixed(
@@ -198,9 +239,9 @@ const AnalyticsScreen: React.FC = () => {
     ).length;
 
     if (subscriptionCount > 2) {
-      const potentialSavings = 150000 * subscriptionCount;
+      const potentialSavings = safeNumber(150000 * subscriptionCount);
       wins.push({
-        icon: "play-circle",
+        icon: "play-circle-outline",
         title: "Langganan Streaming",
         description: `${subscriptionCount} layanan aktif`,
         tip: `Rotasi layanan bisa hemat Rp ${(potentialSavings / 1000).toFixed(
@@ -210,7 +251,7 @@ const AnalyticsScreen: React.FC = () => {
       });
     }
 
-    return wins.slice(0, 3); // Max 3 quick wins
+    return wins.slice(0, 3);
   };
 
   const quickWins = getQuickWins();
@@ -223,10 +264,14 @@ const AnalyticsScreen: React.FC = () => {
   } | null;
 
   const getBudgetSuggestions = (): BudgetSuggestion => {
-    if (budgetAnalytics.budgetsAtRisk.length === 0) return null;
+    if (
+      !budgetAnalytics.budgetsAtRisk ||
+      budgetAnalytics.budgetsAtRisk.length === 0
+    )
+      return null;
 
     const totalOver = budgetAnalytics.budgetsAtRisk.reduce((sum, b) => {
-      const over = b.spent - b.limit;
+      const over = safeNumber(b.spent) - safeNumber(b.limit);
       return over > 0 ? sum + over : sum;
     }, 0);
 
@@ -250,14 +295,14 @@ const AnalyticsScreen: React.FC = () => {
 PEMASUKAN: ${formatCurrency(transactionAnalytics.totalIncome)}
 PENGELUARAN: ${formatCurrency(transactionAnalytics.totalExpense)}
 TABUNGAN BERSIH: ${formatCurrency(transactionAnalytics.netSavings)}
-RASIO TABUNGAN: ${transactionAnalytics.savingsRate.toFixed(1)}%
+RASIO TABUNGAN: ${safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
 
 📈 TREN: ${comparativeData.incomeChange >= 0 ? "+" : ""}${formatCurrency(
         comparativeData.incomeChange
       )} vs bulan lalu
 ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
         comparativeData.savingsRateChange >= 0 ? "naik" : "turun"
-      } ${Math.abs(comparativeData.savingsRateChange).toFixed(1)}%
+      } ${Math.abs(safeNumber(comparativeData.savingsRateChange)).toFixed(1)}%
 
 💡 INSIGHT: ${insights[0]?.message || "Keuangan dalam kondisi stabil"}
 
@@ -283,8 +328,9 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
   // Format change indicator
   const formatChange = (value: number, isPercent = false) => {
-    const absValue = Math.abs(value);
-    const prefix = value >= 0 ? "+" : "-";
+    const safeValue = safeNumber(value);
+    const absValue = Math.abs(safeValue);
+    const prefix = safeValue >= 0 ? "+" : "-";
 
     if (isPercent) {
       return `${prefix}${absValue.toFixed(1)}%`;
@@ -302,14 +348,6 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
   };
 
   // Render category benchmark item
-  type BenchmarkItem = {
-    category: string;
-    yourPercentage: number;
-    avgPercentage: number;
-    difference: number;
-    status: "above" | "below" | "normal";
-  };
-
   const renderBenchmarkItem = (item: BenchmarkItem) => (
     <View key={item.category} style={tw`mb-3`}>
       <View style={tw`flex-row justify-between items-center mb-1`}>
@@ -422,15 +460,23 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
             {
               key: "summary",
               label: "Ringkasan",
-              icon: "stats-chart" as const,
+              icon: "stats-chart-outline" as SafeIconName,
             },
-            { key: "trends", label: "Tren", icon: "trending-up" as const },
+            {
+              key: "trends",
+              label: "Tren",
+              icon: "trending-up-outline" as SafeIconName,
+            },
             {
               key: "categories",
               label: "Kategori",
-              icon: "pricetags" as const,
+              icon: "pricetags-outline" as SafeIconName,
             },
-            { key: "insights", label: "Tips", icon: "bulb" as const },
+            {
+              key: "insights",
+              label: "Tips",
+              icon: "bulb-outline" as SafeIconName,
+            },
           ].map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -530,7 +576,13 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   </Text>
                 </View>
                 <ProgressBar
-                  progress={transactionAnalytics.savingsRate / 100}
+                  progress={Math.max(
+                    0,
+                    Math.min(
+                      safeNumber(transactionAnalytics.savingsRate) / 100,
+                      1
+                    )
+                  )}
                   color={
                     transactionAnalytics.savingsRate >= 20
                       ? "#10B981"
@@ -553,7 +605,11 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   style={tw`mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200`}
                 >
                   <View style={tw`flex-row items-center mb-2`}>
-                    <Ionicons name="calendar" size={16} color="#6B7280" />
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color="#6B7280"
+                    />
                     <Text style={tw`text-sm font-medium text-gray-700 ml-2`}>
                       Proyeksi Akhir Bulan
                     </Text>
@@ -630,7 +686,6 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               Tren {timeRange}
             </Text>
 
-            {/* GANTI: space-y-4 dengan mb-4 manual */}
             <View>
               {/* Spending Trend */}
               <View style={tw`mb-4`}>
@@ -650,10 +705,14 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   </Text>
                 </View>
                 <ProgressBar
-                  progress={Math.min(
-                    transactionAnalytics.totalExpense /
-                      (transactionAnalytics.totalIncome * 1.5),
-                    1
+                  progress={Math.max(
+                    0,
+                    Math.min(
+                      safeNumber(transactionAnalytics.totalExpense) /
+                        (safeNumber(transactionAnalytics.totalIncome) * 1.5 ||
+                          1),
+                      1
+                    )
                   )}
                   color="#EF4444"
                   style={tw`h-2 rounded-full`}
@@ -678,10 +737,14 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   </Text>
                 </View>
                 <ProgressBar
-                  progress={Math.min(
-                    transactionAnalytics.totalIncome /
-                      (comparativeData.previous.totalIncome * 1.3),
-                    1
+                  progress={Math.max(
+                    0,
+                    Math.min(
+                      safeNumber(transactionAnalytics.totalIncome) /
+                        (safeNumber(comparativeData.previous.totalIncome) *
+                          1.3 || 1),
+                      1
+                    )
                   )}
                   color="#10B981"
                   style={tw`h-2 rounded-full`}
@@ -704,21 +767,34 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                     {comparativeData.savingsRateChange >= 0
                       ? "Membaik"
                       : "Memburuk"}{" "}
-                    {Math.abs(comparativeData.savingsRateChange).toFixed(1)}%
+                    {Math.abs(
+                      safeNumber(comparativeData.savingsRateChange)
+                    ).toFixed(1)}
+                    %
                   </Text>
                 </View>
                 <ProgressBar
-                  progress={transactionAnalytics.savingsRate / 100}
+                  progress={Math.max(
+                    0,
+                    Math.min(
+                      safeNumber(transactionAnalytics.savingsRate) / 100,
+                      1
+                    )
+                  )}
                   color="#4F46E5"
                   style={tw`h-2 rounded-full`}
                 />
                 <View style={tw`flex-row justify-between mt-1`}>
                   <Text style={tw`text-xs text-gray-400`}>
                     Bulan lalu:{" "}
-                    {comparativeData.previous.savingsRate.toFixed(1)}%
+                    {safeNumber(comparativeData.previous.savingsRate).toFixed(
+                      1
+                    )}
+                    %
                   </Text>
                   <Text style={tw`text-xs text-gray-400`}>
-                    Sekarang: {transactionAnalytics.savingsRate.toFixed(1)}%
+                    Sekarang:{" "}
+                    {safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
                   </Text>
                 </View>
               </View>
@@ -778,7 +854,11 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                     style={tw`p-3 bg-amber-50 rounded-lg border border-amber-200`}
                   >
                     <View style={tw`flex-row items-start mb-2`}>
-                      <Ionicons name="alert-circle" size={20} color="#F59E0B" />
+                      <Ionicons
+                        name="alert-circle-outline"
+                        size={20}
+                        color="#F59E0B"
+                      />
                       <Text
                         style={tw`text-sm font-medium text-amber-900 ml-2 flex-1`}
                       >
@@ -797,23 +877,26 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
                 {/* Top Spending Alert */}
                 {transactionAnalytics.topCategories[0] &&
-                  transactionAnalytics.topCategories[0][1] >
-                    transactionAnalytics.totalExpense * 0.4 && (
+                  safeNumber(transactionAnalytics.topCategories[0][1]) >
+                    safeNumber(transactionAnalytics.totalExpense) * 0.4 && (
                     <View
                       style={tw`mt-3 p-3 bg-red-50 rounded-lg border border-red-200`}
                     >
                       <View style={tw`flex-row items-center mb-1`}>
-                        <Ionicons name="warning" size={16} color="#DC2626" />
+                        <Ionicons
+                          name="warning-outline"
+                          size={16}
+                          color="#DC2626"
+                        />
                         <Text style={tw`text-sm font-medium text-red-900 ml-2`}>
                           Konsentrasi Pengeluaran Tinggi
                         </Text>
                       </View>
                       <Text style={tw`text-red-800 text-sm`}>
                         {transactionAnalytics.topCategories[0][0]} menghabiskan{" "}
-                        {(
-                          (transactionAnalytics.topCategories[0][1] /
-                            transactionAnalytics.totalExpense) *
-                          100
+                        {getSafePercentage(
+                          transactionAnalytics.topCategories[0][1],
+                          transactionAnalytics.totalExpense
                         ).toFixed(0)}
                         % dari total pengeluaran
                       </Text>
@@ -858,21 +941,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   >
                     <View style={tw`flex-row items-start`}>
                       <Ionicons
-                        name={
-                          insight.icon === "checkmark"
-                            ? "checkmark-circle"
-                            : insight.icon === "warning"
-                            ? "warning"
-                            : insight.icon === "pie-chart"
-                            ? "pie-chart"
-                            : insight.icon === "alert"
-                            ? "alert-circle"
-                            : insight.icon === "trophy"
-                            ? "trophy"
-                            : insight.icon === "trending-up"
-                            ? "trending-up"
-                            : "information-circle"
-                        }
+                        name={getSafeIcon(insight.icon)}
                         size={20}
                         color={
                           insight.type === "success"
@@ -926,11 +995,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                       <View
                         style={tw`w-10 h-10 rounded-lg bg-indigo-100 justify-center items-center mr-3`}
                       >
-                        <Ionicons
-                          name={win.icon as any}
-                          size={20}
-                          color="#4F46E5"
-                        />
+                        <Ionicons name={win.icon} size={20} color="#4F46E5" />
                       </View>
                       <View style={tw`flex-1`}>
                         <Text
@@ -1034,7 +1099,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
               onPress={() => navigation.navigate("AddTransaction")}
             >
-              <Ionicons name="add-circle" size={24} color="#4F46E5" />
+              <Ionicons name="add-circle-outline" size={24} color="#4F46E5" />
               <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
                 Transaksi Baru
               </Text>
@@ -1044,7 +1109,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
               onPress={() => navigation.navigate("Budget")}
             >
-              <Ionicons name="pie-chart" size={24} color="#8B5CF6" />
+              <Ionicons name="pie-chart-outline" size={24} color="#8B5CF6" />
               <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
                 Cek Anggaran
               </Text>
@@ -1054,7 +1119,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
               onPress={() => navigation.navigate("Savings")}
             >
-              <Ionicons name="wallet" size={24} color="#EC4899" />
+              <Ionicons name="wallet-outline" size={24} color="#EC4899" />
               <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
                 Progress Tabungan
               </Text>

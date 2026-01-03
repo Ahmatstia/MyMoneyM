@@ -1,18 +1,20 @@
+// File: src/utils/analytics.ts
 import { Transaction, Budget, Savings } from "../types";
-import { getMonthRange } from "./formatters";
+import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
 
 // Calculate analytics data for transactions
 export const calculateTransactionAnalytics = (
   transactions: Transaction[],
   timeRange: "week" | "month" | "year" = "month"
 ) => {
-  const now = new Date();
-  let startDate = new Date();
-  let endDate = new Date();
+  let startDate: Date;
+  let endDate: Date;
 
   switch (timeRange) {
     case "week":
-      startDate.setDate(now.getDate() - 7);
+      const weekRange = getWeekRange();
+      startDate = weekRange.start;
+      endDate = weekRange.end;
       break;
     case "month":
       const monthRange = getMonthRange();
@@ -20,25 +22,34 @@ export const calculateTransactionAnalytics = (
       endDate = monthRange.end;
       break;
     case "year":
-      startDate = new Date(now.getFullYear(), 0, 1);
-      endDate = new Date(now.getFullYear(), 11, 31);
+      const yearRange = getYearRange();
+      startDate = yearRange.start;
+      endDate = yearRange.end;
       break;
+    default:
+      const defaultRange = getMonthRange();
+      startDate = defaultRange.start;
+      endDate = defaultRange.end;
   }
 
   // Filter transactions by date range
   const filteredTransactions = transactions.filter((t) => {
-    const transactionDate = new Date(t.date);
-    return transactionDate >= startDate && transactionDate <= endDate;
+    try {
+      const transactionDate = new Date(t.date);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    } catch (error) {
+      return false;
+    }
   });
 
   // Calculate totals
   const totalIncome = filteredTransactions
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const totalExpense = filteredTransactions
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
@@ -56,11 +67,11 @@ export const calculateTransactionAnalytics = (
 
     const dayIncome = dayTransactions
       .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
 
     const dayExpense = dayTransactions
       .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
 
     dailyTrends.push({
       date: dateStr,
@@ -75,7 +86,7 @@ export const calculateTransactionAnalytics = (
     .filter((t) => t.type === "expense")
     .forEach((t) => {
       categorySpending[t.category] =
-        (categorySpending[t.category] || 0) + t.amount;
+        (categorySpending[t.category] || 0) + (t.amount || 0);
     });
 
   // Sort categories by spending
@@ -84,10 +95,11 @@ export const calculateTransactionAnalytics = (
     .slice(0, 5);
 
   // Calculate average daily spending
-  const daysInRange = Math.ceil(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  const daysInRange = Math.max(
+    1,
+    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
   );
-  const avgDailyExpense = daysInRange > 0 ? totalExpense / daysInRange : 0;
+  const avgDailyExpense = totalExpense / daysInRange;
 
   return {
     timeRange,
@@ -112,7 +124,7 @@ export const calculateTransactionAnalytics = (
 
 // Calculate budget utilization analytics
 export const calculateBudgetAnalytics = (budgets: Budget[]) => {
-  if (budgets.length === 0) {
+  if (!budgets || budgets.length === 0) {
     return {
       totalBudget: 0,
       totalSpent: 0,
@@ -123,17 +135,25 @@ export const calculateBudgetAnalytics = (budgets: Budget[]) => {
     };
   }
 
-  const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const totalBudget = budgets.reduce((sum, b) => sum + (b.limit || 0), 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (b.spent || 0), 0);
   const utilizationRate =
     totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  const overBudgetCount = budgets.filter((b) => b.spent > b.limit).length;
-  const underBudgetCount = budgets.filter((b) => b.spent <= b.limit).length;
+  const overBudgetCount = budgets.filter(
+    (b) => (b.spent || 0) > (b.limit || 0)
+  ).length;
+  const underBudgetCount = budgets.filter(
+    (b) => (b.spent || 0) <= (b.limit || 0)
+  ).length;
 
   const budgetsAtRisk = budgets
-    .filter((b) => b.spent > b.limit * 0.8) // More than 80% spent
-    .sort((a, b) => b.spent / b.limit - a.spent / a.limit);
+    .filter((b) => (b.spent || 0) > (b.limit || 0) * 0.8)
+    .sort((a, b) => {
+      const ratioA = (a.limit || 0) > 0 ? (a.spent || 0) / (a.limit || 0) : 0;
+      const ratioB = (b.limit || 0) > 0 ? (b.spent || 0) / (b.limit || 0) : 0;
+      return ratioB - ratioA;
+    });
 
   return {
     totalBudget,
@@ -147,7 +167,7 @@ export const calculateBudgetAnalytics = (budgets: Budget[]) => {
 
 // Calculate savings progress analytics
 export const calculateSavingsAnalytics = (savings: Savings[]) => {
-  if (savings.length === 0) {
+  if (!savings || savings.length === 0) {
     return {
       totalTarget: 0,
       totalCurrent: 0,
@@ -158,17 +178,31 @@ export const calculateSavingsAnalytics = (savings: Savings[]) => {
     };
   }
 
-  const totalTarget = savings.reduce((sum, s) => sum + s.target, 0);
-  const totalCurrent = savings.reduce((sum, s) => sum + s.current, 0);
+  const totalTarget = savings.reduce((sum, s) => sum + (s.target || 0), 0);
+  const totalCurrent = savings.reduce((sum, s) => sum + (s.current || 0), 0);
   const overallProgress =
     totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
-  const completedSavings = savings.filter((s) => s.current >= s.target).length;
-  const activeSavings = savings.filter((s) => s.current < s.target).length;
+  const completedSavings = savings.filter(
+    (s) => (s.current || 0) >= (s.target || 0)
+  ).length;
+  const activeSavings = savings.filter(
+    (s) => (s.current || 0) < (s.target || 0)
+  ).length;
 
   const nearingCompletion = savings
-    .filter((s) => s.current / s.target >= 0.8 && s.current < s.target)
-    .sort((a, b) => b.current / b.target - a.current / a.target);
+    .filter((s) => {
+      const target = s.target || 0;
+      const current = s.current || 0;
+      return target > 0 && current / target >= 0.8 && current < target;
+    })
+    .sort((a, b) => {
+      const ratioA =
+        (a.target || 0) > 0 ? (a.current || 0) / (a.target || 0) : 0;
+      const ratioB =
+        (b.target || 0) > 0 ? (b.current || 0) / (b.target || 0) : 0;
+      return ratioB - ratioA;
+    });
 
   return {
     totalTarget,
@@ -189,7 +223,9 @@ export const generateFinancialInsights = (
   const insights = [];
 
   // Transaction insights
-  if (transactionAnalytics.savingsRate < 0) {
+  const savingsRate = transactionAnalytics.savingsRate || 0;
+
+  if (savingsRate < 0) {
     insights.push({
       type: "warning",
       title: "Defisit Terdeteksi",
@@ -197,7 +233,7 @@ export const generateFinancialInsights = (
       icon: "warning",
       color: "#DC2626",
     });
-  } else if (transactionAnalytics.savingsRate < 20) {
+  } else if (savingsRate < 20) {
     insights.push({
       type: "info",
       title: "Rasio Tabungan Rendah",

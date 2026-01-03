@@ -1,28 +1,49 @@
+// File: src/components/common/Card.tsx
 import React from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
+import { View, ViewProps } from "react-native";
+import tw from "twrnc";
 
-interface CardProps {
+interface CardProps extends ViewProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  elevated?: boolean;
+  padding?: "none" | "small" | "medium" | "large";
 }
 
-const Card: React.FC<CardProps> = ({ children, style }) => {
-  return <View style={[styles.card, style]}>{children}</View>;
-};
+const Card: React.FC<CardProps> = ({
+  children,
+  elevated = true,
+  padding = "medium",
+  style,
+  ...props
+}) => {
+  const getPadding = () => {
+    switch (padding) {
+      case "none":
+        return tw`p-0`;
+      case "small":
+        return tw`p-3`;
+      case "medium":
+        return tw`p-4`;
+      case "large":
+        return tw`p-6`;
+      default:
+        return tw`p-4`;
+    }
+  };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-});
+  return (
+    <View
+      style={[
+        tw`bg-white rounded-xl`,
+        elevated && tw`shadow-sm border border-gray-100`,
+        getPadding(),
+        style,
+      ]}
+      {...props}
+    >
+      {children}
+    </View>
+  );
+};
 
 export default Card;

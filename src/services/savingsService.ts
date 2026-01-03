@@ -4,14 +4,14 @@ import { generateId } from "../utils/idGenerator";
 
 export const savingsService = {
   async addSavings(
-    savings: Omit<Savings, "id" | "createdAt">
+    savings: Omit<Savings, "id"> // ✅ Hapus "| 'createdAt'" karena Savings tidak punya createdAt
   ): Promise<AppState> {
     const currentData = await storageService.loadData();
 
     const newSavings: Savings = {
       ...savings,
       id: generateId(),
-      createdAt: new Date().toISOString(),
+      // ✅ HAPUS createdAt karena interface Savings tidak memilikinya
     };
 
     const updatedSavings = [...currentData.savings, newSavings];
