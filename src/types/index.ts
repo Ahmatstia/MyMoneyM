@@ -1,4 +1,3 @@
-// File: src/types/index.ts
 export type TransactionType = "income" | "expense";
 
 export interface Transaction {
@@ -16,7 +15,7 @@ export interface Budget {
   category: string;
   limit: number;
   spent: number;
-  period: "custom" | "weekly" | "monthly" | "yearly"; // ✨ UPDATE: tambah "yearly" dan "custom"
+  period: "custom" | "weekly" | "monthly" | "yearly";
   startDate: string; // ✨ TAMBAH: tanggal mulai periode
   endDate: string; // ✨ TAMBAH: tanggal akhir periode
   lastResetDate?: string; // Format: YYYY-MM-DD
@@ -28,29 +27,34 @@ export interface Savings {
   name: string;
   target: number;
   current: number;
-  deadline?: string; // Format: YYYY-MM-DD
-  createdAt?: string; // ISO string
+  deadline?: string;
+  category: string; // Tambahkan
+  priority: "low" | "medium" | "high"; // Tambahkan
+  description: string; // Tambahkan
+  icon: string; // Tambahkan
+  createdAt: string; // Tambahkan
 }
 
 export interface SavingsTransaction {
   id: string;
   savingsId: string;
-  type: "deposit" | "withdrawal" | "adjustment";
+  type: "deposit" | "withdrawal" | "initial" | "adjustment";
   amount: number;
   date: string;
   note?: string;
   previousBalance: number;
   newBalance: number;
+  createdAt: string; // Tambahkan
 }
 
 export interface AppState {
   transactions: Transaction[];
   budgets: Budget[];
   savings: Savings[];
+  savingsTransactions: SavingsTransaction[];
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  savingsTransactions?: SavingsTransaction[]; // Optional
 }
 
 // Navigation types
@@ -78,6 +82,8 @@ export type RootStackParamList = {
     editMode?: boolean;
     savingsData?: Savings;
   };
+  SavingsHistory: { savingsId: string };
+  AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
 };
 
 declare global {

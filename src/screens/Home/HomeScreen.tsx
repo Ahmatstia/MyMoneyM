@@ -32,8 +32,31 @@ const HomeScreen: React.FC = () => {
     return defaultIcon;
   };
 
+  // Check if user has any financial data
+  const hasFinancialData = useMemo(() => {
+    return (
+      state.transactions.length > 0 ||
+      state.budgets.length > 0 ||
+      state.savings.length > 0
+    );
+  }, [state.transactions, state.budgets, state.savings]);
+
   // ANALYTICS FOR INSIGHTS with safe values
   const transactionAnalytics = useMemo(() => {
+    if (!hasFinancialData) {
+      return {
+        totalIncome: 0,
+        totalExpense: 0,
+        netSavings: 0,
+        savingsRate: 0,
+        avgDailyExpense: 0,
+        topCategories: [],
+        transactionCount: 0,
+        incomeTransactionCount: 0,
+        expenseTransactionCount: 0,
+      };
+    }
+
     const analytics = calculateTransactionAnalytics(
       state.transactions,
       "month"
@@ -46,7 +69,7 @@ const HomeScreen: React.FC = () => {
       savingsRate: safeNumber(analytics.savingsRate),
       avgDailyExpense: safeNumber(analytics.avgDailyExpense),
     };
-  }, [state.transactions]);
+  }, [state.transactions, hasFinancialData]);
 
   // PERBAIKAN: Conditional return HARUS DI BAWAH semua hooks
   if (isLoading) {
@@ -62,7 +85,7 @@ const HomeScreen: React.FC = () => {
     );
   }
 
-  // 1. PERSONALIZED GREETING (Phase 1)
+  // 1. PERSONALIZED GREETING (Phase 1) - IMPROVED
   const getPersonalizedGreeting = () => {
     const hour = new Date().getHours();
     let greeting = "";
@@ -72,26 +95,39 @@ const HomeScreen: React.FC = () => {
     else if (hour < 19) greeting = "Selamat Sore";
     else greeting = "Selamat Malam";
 
+    // Different greeting for new users
+    if (!hasFinancialData) {
+      greeting += "! 👋";
+      return greeting;
+    }
+
     // Add financial milestone if any
     if (safeNumber(transactionAnalytics.savingsRate) >= 30) {
-      greeting += "! 💰 Tabungan Luar Biasa";
+      greeting += "! Tabungan Luar Biasa";
     } else if (
       safeNumber(state.balance) >
       safeNumber(state.totalIncome) * 0.5
     ) {
-      greeting += "! 🌟 Saldo Sehat";
+      greeting += "! Saldo Sehat";
     } else if (
       state.budgets.length > 0 &&
       state.budgets.every((b) => safeNumber(b.spent) <= safeNumber(b.limit))
     ) {
       greeting += "! ✅ Semua Anggaran Aman";
+    } else {
+      greeting += "! 📊";
     }
 
     return greeting;
   };
 
-  // 2. FINANCIAL HEALTH SCORE (Phase 1) - FIXED for NaN
+  // 2. FINANCIAL HEALTH SCORE - IMPROVED FOR NEW USERS
   const calculateHealthScore = () => {
+    // Jika tidak ada data sama sekali, return null (tidak ada skor)
+    if (!hasFinancialData) {
+      return null;
+    }
+
     let score = 50; // Base score
 
     // 1. Savings Rate (0-30 points) - FIXED
@@ -131,7 +167,16 @@ const HomeScreen: React.FC = () => {
   };
 
   const healthScore = calculateHealthScore();
-  const getHealthStatus = (score: number) => {
+  const getHealthStatus = (score: number | null) => {
+    // Jika tidak ada skor (belum ada data)
+    if (score === null) {
+      return {
+        label: "Belum Ada Data",
+        color: "#6B7280",
+        icon: "help-circle-outline" as SafeIconName,
+      };
+    }
+
     const safeScore = safeNumber(score);
     if (safeScore >= 80)
       return {
@@ -160,9 +205,26 @@ const HomeScreen: React.FC = () => {
 
   const healthStatus = getHealthStatus(healthScore);
 
-  // 3. SMART INSIGHTS (Phase 2) - FIXED percentage calculations
+  // 3. SMART INSIGHTS (Phase 2) - IMPROVED FOR NEW USERS
   const getSmartInsights = () => {
     const insights = [];
+
+    // Special insight for new users
+    if (!hasFinancialData) {
+      insights.push({
+        type: "info",
+        title: "Mulai Catat Keuangan",
+        message:
+          "Tambahkan transaksi pertama Anda untuk melihat analisis keuangan",
+        icon: "add-circle-outline" as SafeIconName,
+        color: "#4F46E5",
+        action: "Tambah Transaksi",
+        onPress: () => navigation.navigate("AddTransaction"),
+      });
+
+      // Limit to just one insight for new users
+      return insights;
+    }
 
     // Insight 1: Savings Rate - FIXED
     if (transactionAnalytics.savingsRate < 10) {
@@ -275,7 +337,7 @@ const HomeScreen: React.FC = () => {
 
   const smartInsights = getSmartInsights();
 
-  // 4. DYNAMIC QUICK ACTIONS (Phase 1)
+  // 4. DYNAMIC QUICK ACTIONS (Phase 1) - IMPROVED FOR NEW USERS
   const getDynamicQuickActions = () => {
     const hour = new Date().getHours();
     const isWeekend = [0, 6].includes(new Date().getDay());
@@ -348,15 +410,38 @@ const HomeScreen: React.FC = () => {
       });
     }
 
-    // Special action for new users
-    if (state.transactions.length === 0) {
-      actions[0] = {
-        id: 0,
-        title: "Mulai Catat",
-        icon: "add-circle-outline" as SafeIconName,
-        color: "#EC4899",
-        onPress: () => navigation.navigate("AddTransaction"),
-      };
+    // Special action for new users - more prominent
+    if (!hasFinancialData) {
+      return [
+        {
+          id: 0,
+          title: "Mulai Catat",
+          icon: "add-circle-outline" as SafeIconName,
+          color: "#4F46E5",
+          onPress: () => navigation.navigate("AddTransaction"),
+        },
+        {
+          id: 1,
+          title: "Tutorial",
+          icon: "help-circle-outline" as SafeIconName,
+          color: "#10B981",
+          onPress: () => navigation.navigate("Analytics"),
+        },
+        {
+          id: 2,
+          title: "Anggaran",
+          icon: "pie-chart-outline" as SafeIconName,
+          color: "#F59E0B",
+          onPress: () => navigation.navigate("Budget"),
+        },
+        {
+          id: 3,
+          title: "Tabungan",
+          icon: "wallet-outline" as SafeIconName,
+          color: "#8B5CF6",
+          onPress: () => navigation.navigate("Savings"),
+        },
+      ];
     }
 
     return actions.slice(0, 4); // Max 4 actions
@@ -432,6 +517,35 @@ const HomeScreen: React.FC = () => {
 
   // 7. QUICK STATS (Phase 2) - FIXED all calculations
   const getQuickStats = () => {
+    // Jika tidak ada data, tampilkan stats yang lebih informatif
+    if (!hasFinancialData) {
+      return [
+        {
+          id: 1,
+          label: "Mulai Dengan",
+          value: "Transaksi",
+          unit: "Pertama",
+          trend: "✨",
+          color: "#4F46E5",
+        },
+        {
+          id: 2,
+          label: "Pantau",
+          value: "Pengeluaran",
+          trend: "📊",
+          color: "#10B981",
+        },
+        {
+          id: 3,
+          label: "Buat",
+          value: "Target",
+          unit: "Tabungan",
+          trend: "🎯",
+          color: "#F59E0B",
+        },
+      ];
+    }
+
     // Calculate days without shopping expense
     const today = new Date();
     const sevenDaysAgo = new Date(today);
@@ -552,28 +666,45 @@ const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Health Score Badge */}
-          <TouchableOpacity
-            style={[
-              tw`px-3 py-2 rounded-xl items-center justify-center`,
-              { backgroundColor: `${healthStatus.color}15` },
-            ]}
-            onPress={() => navigation.navigate("Analytics")}
-          >
-            <View style={tw`flex-row items-center`}>
-              <Ionicons
-                name={healthStatus.icon}
-                size={16}
-                color={healthStatus.color}
-              />
-              <Text style={[tw`ml-1 font-bold`, { color: healthStatus.color }]}>
-                {healthScore}
+          {/* Health Score Badge - IMPROVED */}
+          {healthScore !== null ? (
+            <TouchableOpacity
+              style={[
+                tw`px-3 py-2 rounded-xl items-center justify-center`,
+                { backgroundColor: `${healthStatus.color}15` },
+              ]}
+              onPress={() => navigation.navigate("Analytics")}
+            >
+              <View style={tw`flex-row items-center`}>
+                <Ionicons
+                  name={healthStatus.icon}
+                  size={16}
+                  color={healthStatus.color}
+                />
+                <Text
+                  style={[tw`ml-1 font-bold`, { color: healthStatus.color }]}
+                >
+                  {healthScore}
+                </Text>
+              </View>
+              <Text style={[tw`text-xs mt-0.5`, { color: healthStatus.color }]}>
+                {healthStatus.label}
               </Text>
-            </View>
-            <Text style={[tw`text-xs mt-0.5`, { color: healthStatus.color }]}>
-              {healthStatus.label}
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={tw`px-3 py-2 rounded-xl items-center justify-center bg-gray-100`}
+              onPress={() => navigation.navigate("AddTransaction")}
+            >
+              <View style={tw`flex-row items-center`}>
+                <Ionicons name="add-circle-outline" size={16} color="#4F46E5" />
+                <Text style={tw`ml-1 text-xs font-medium text-gray-700`}>
+                  Mulai
+                </Text>
+              </View>
+              <Text style={tw`text-xs mt-0.5 text-gray-500`}>Tambah Data</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* SMART INSIGHTS CARDS */}
@@ -642,26 +773,33 @@ const HomeScreen: React.FC = () => {
             <Text
               style={tw`text-gray-500 text-xs font-medium uppercase tracking-wider`}
             >
-              SALDO ANDA
+              {hasFinancialData ? "SALDO ANDA" : "SELAMAT DATANG"}
             </Text>
             <View style={tw`px-2 py-1 bg-gray-100 rounded-full`}>
               <Text style={tw`text-gray-600 text-xs font-medium`}>
-                Hari ke-{monthlyProgress.currentDay} dari{" "}
-                {monthlyProgress.daysInMonth}
+                {hasFinancialData
+                  ? `Hari ke-${monthlyProgress.currentDay} dari ${monthlyProgress.daysInMonth}`
+                  : "Hari Pertama"}
               </Text>
             </View>
           </View>
 
           <Text style={tw`text-gray-800 text-2xl font-bold mb-5`}>
-            {formatCurrency(safeNumber(state.balance))}
+            {hasFinancialData
+              ? formatCurrency(safeNumber(state.balance))
+              : "Rp 0"}
           </Text>
 
           {/* Monthly Progress Bar */}
           <View style={tw`mb-4`}>
             <View style={tw`flex-row justify-between items-center mb-1`}>
-              <Text style={tw`text-gray-600 text-xs`}>Progress Bulan Ini</Text>
+              <Text style={tw`text-gray-600 text-xs`}>
+                {hasFinancialData ? "Progress Bulan Ini" : "Siap Memulai?"}
+              </Text>
               <Text style={tw`text-gray-600 text-xs font-medium`}>
-                {safeNumber(monthlyProgress.progress).toFixed(0)}%
+                {hasFinancialData
+                  ? `${safeNumber(monthlyProgress.progress).toFixed(0)}%`
+                  : "0%"}
               </Text>
             </View>
             <View style={tw`h-1.5 bg-gray-100 rounded-full overflow-hidden`}>
@@ -674,9 +812,12 @@ const HomeScreen: React.FC = () => {
                       Math.min(safeNumber(monthlyProgress.progress), 100)
                     )}%`,
                   },
-                  monthlyProgress.status === "surplus" && tw`bg-emerald-500`,
-                  monthlyProgress.status === "warning" && tw`bg-yellow-500`,
-                  monthlyProgress.status === "deficit" && tw`bg-red-500`,
+                  hasFinancialData
+                    ? (monthlyProgress.status === "surplus" &&
+                        tw`bg-emerald-500`,
+                      monthlyProgress.status === "warning" && tw`bg-yellow-500`,
+                      monthlyProgress.status === "deficit" && tw`bg-red-500`)
+                    : tw`bg-gray-300`,
                 ]}
               />
             </View>
@@ -698,14 +839,17 @@ const HomeScreen: React.FC = () => {
                 {formatCurrency(safeNumber(state.totalExpense))}
               </Text>
               <Text style={tw`text-gray-400 text-xs`}>
-                {formatCurrency(safeNumber(monthlyProgress.dailyAvgExpense))}
-                /hari
+                {hasFinancialData
+                  ? `${formatCurrency(
+                      safeNumber(monthlyProgress.dailyAvgExpense)
+                    )}/hari`
+                  : "Belum ada data"}
               </Text>
             </View>
           </View>
 
           {/* Projected Balance */}
-          {monthlyProgress.daysRemaining > 0 && (
+          {hasFinancialData && monthlyProgress.daysRemaining > 0 && (
             <View style={tw`mt-3 pt-3 border-t border-gray-100`}>
               <Text style={tw`text-gray-500 text-xs mb-1`}>
                 Proyeksi akhir bulan ({monthlyProgress.daysRemaining} hari
@@ -778,14 +922,22 @@ const HomeScreen: React.FC = () => {
         {/* RECENT TRANSACTIONS HEADER */}
         <View style={tw`flex-row justify-between items-center mb-4`}>
           <Text style={tw`text-gray-800 text-lg font-semibold`}>
-            Transaksi Terbaru
+            {hasFinancialData ? "Transaksi Terbaru" : "Mulai Catat Keuangan"}
           </Text>
-          {state.transactions.length > 0 && (
+          {state.transactions.length > 0 ? (
             <TouchableOpacity
               onPress={() => navigation.navigate("Transactions")}
             >
               <Text style={tw`text-indigo-600 text-sm font-medium`}>
                 Lihat Semua
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AddTransaction")}
+            >
+              <Text style={tw`text-indigo-600 text-sm font-medium`}>
+                Mulai Sekarang
               </Text>
             </TouchableOpacity>
           )}
@@ -875,185 +1027,198 @@ const HomeScreen: React.FC = () => {
             style={tw`bg-white rounded-2xl p-8 items-center mb-6 border border-gray-100`}
           >
             <View
-              style={tw`w-16 h-16 rounded-xl bg-gray-50 items-center justify-center mb-4`}
+              style={tw`w-16 h-16 rounded-xl bg-indigo-50 items-center justify-center mb-4`}
             >
-              <Ionicons name="receipt-outline" size={28} color="#9CA3AF" />
+              <Ionicons name="wallet-outline" size={28} color="#4F46E5" />
             </View>
             <Text style={tw`text-gray-800 text-base font-semibold mb-1`}>
-              Belum ada transaksi
+              Selamat Datang di MyMoney!
             </Text>
-            <Text style={tw`text-gray-500 text-sm text-center mb-5`}>
-              Mulai catat keuangan Anda
+            <Text style={tw`text-gray-500 text-sm text-center mb-5 leading-5`}>
+              Mulai kelola keuangan Anda dengan mencatat transaksi pertama
             </Text>
             <TouchableOpacity
-              style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg`}
+              style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg flex-row items-center`}
               onPress={() => navigation.navigate("AddTransaction")}
             >
+              <Ionicons
+                name="add-circle"
+                size={20}
+                color="#FFFFFF"
+                style={tw`mr-2`}
+              />
               <Text style={tw`text-white text-sm font-medium`}>
-                Tambah Transaksi
+                Tambah Transaksi Pertama
               </Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* COMBINED: BUDGET + GOALS IN ONE CARD */}
-        {(state.budgets.length > 0 || goalsPreview.length > 0) && (
-          <>
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={tw`text-gray-800 text-lg font-semibold`}>
-                Progress & Target
-              </Text>
-              <View style={tw`flex-row gap-3`}>
-                {state.budgets.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Budget")}
-                  >
-                    <Text style={tw`text-indigo-600 text-sm font-medium`}>
-                      Anggaran
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                {goalsPreview.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate("Savings")}
-                  >
-                    <Text style={tw`text-emerald-600 text-sm font-medium`}>
-                      Tabungan
-                    </Text>
-                  </TouchableOpacity>
-                )}
+        {hasFinancialData &&
+          (state.budgets.length > 0 || goalsPreview.length > 0) && (
+            <>
+              <View style={tw`flex-row justify-between items-center mb-4`}>
+                <Text style={tw`text-gray-800 text-lg font-semibold`}>
+                  Progress & Target
+                </Text>
+                <View style={tw`flex-row gap-3`}>
+                  {state.budgets.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("Budget")}
+                    >
+                      <Text style={tw`text-indigo-600 text-sm font-medium`}>
+                        Anggaran
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {goalsPreview.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate("Savings")}
+                    >
+                      <Text style={tw`text-emerald-600 text-sm font-medium`}>
+                        Tabungan
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
 
-            <View
-              style={tw`bg-white rounded-2xl p-4 mb-6 border border-gray-100`}
-            >
-              <View style={tw`flex-row`}>
-                {/* LEFT COLUMN: BUDGET SUMMARY - FIXED division by zero */}
-                {state.budgets.length > 0 && (
-                  <View style={tw`flex-1 pr-3 border-r border-gray-200`}>
-                    <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
-                      Anggaran ({state.budgets.slice(0, 3).length})
-                    </Text>
-                    {state.budgets.slice(0, 3).map((budget) => {
-                      const safeSpent = safeNumber(budget.spent);
-                      const safeLimit = safeNumber(budget.limit);
-                      const progress =
-                        safeLimit > 0 ? (safeSpent / safeLimit) * 100 : 0;
-                      const progressColor =
-                        progress > 90
-                          ? "#EF4444"
-                          : progress > 70
-                          ? "#F59E0B"
-                          : "#10B981";
+              <View
+                style={tw`bg-white rounded-2xl p-4 mb-6 border border-gray-100`}
+              >
+                <View style={tw`flex-row`}>
+                  {/* LEFT COLUMN: BUDGET SUMMARY - FIXED division by zero */}
+                  {state.budgets.length > 0 && (
+                    <View style={tw`flex-1 pr-3 border-r border-gray-200`}>
+                      <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
+                        Anggaran ({state.budgets.slice(0, 3).length})
+                      </Text>
+                      {state.budgets.slice(0, 3).map((budget) => {
+                        const safeSpent = safeNumber(budget.spent);
+                        const safeLimit = safeNumber(budget.limit);
+                        const progress =
+                          safeLimit > 0 ? (safeSpent / safeLimit) * 100 : 0;
+                        const progressColor =
+                          progress > 90
+                            ? "#EF4444"
+                            : progress > 70
+                            ? "#F59E0B"
+                            : "#10B981";
 
-                      return (
-                        <View key={budget.id} style={tw`mb-3 last:mb-0`}>
-                          <View
-                            style={tw`flex-row justify-between items-center mb-1`}
-                          >
-                            <Text style={tw`text-gray-700 text-xs font-medium`}>
-                              {budget.category}
-                            </Text>
-                            <Text style={tw`text-gray-400 text-xs`}>
-                              {Math.round(safeNumber(progress))}%
+                        return (
+                          <View key={budget.id} style={tw`mb-3 last:mb-0`}>
+                            <View
+                              style={tw`flex-row justify-between items-center mb-1`}
+                            >
+                              <Text
+                                style={tw`text-gray-700 text-xs font-medium`}
+                              >
+                                {budget.category}
+                              </Text>
+                              <Text style={tw`text-gray-400 text-xs`}>
+                                {Math.round(safeNumber(progress))}%
+                              </Text>
+                            </View>
+                            <View
+                              style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
+                            >
+                              <View
+                                style={[
+                                  tw`h-full rounded-full`,
+                                  {
+                                    width: `${Math.max(
+                                      0,
+                                      Math.min(safeNumber(progress), 100)
+                                    )}%`,
+                                    backgroundColor: progressColor,
+                                  },
+                                ]}
+                              />
+                            </View>
+                            <Text style={tw`text-gray-400 text-xs mt-1`}>
+                              {formatCurrency(safeSpent)} /{" "}
+                              {formatCurrency(safeLimit)}
                             </Text>
                           </View>
-                          <View
-                            style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  {/* RIGHT COLUMN: GOALS PREVIEW - FIXED division by zero */}
+                  {goalsPreview.length > 0 && (
+                    <View style={tw`flex-1 pl-3`}>
+                      <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
+                        Tabungan ({goalsPreview.length})
+                      </Text>
+                      {goalsPreview.slice(0, 3).map((goal) => {
+                        const safeCurrent = safeNumber(goal.current);
+                        const safeTarget = safeNumber(goal.target);
+                        const progress =
+                          safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
+                        return (
+                          <TouchableOpacity
+                            key={goal.id}
+                            style={tw`mb-3 last:mb-0`}
+                            onPress={() => navigation.navigate("Savings")}
+                            activeOpacity={0.7}
                           >
                             <View
-                              style={[
-                                tw`h-full rounded-full`,
-                                {
-                                  width: `${Math.max(
-                                    0,
-                                    Math.min(safeNumber(progress), 100)
-                                  )}%`,
-                                  backgroundColor: progressColor,
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text style={tw`text-gray-400 text-xs mt-1`}>
-                            {formatCurrency(safeSpent)} /{" "}
-                            {formatCurrency(safeLimit)}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-
-                {/* RIGHT COLUMN: GOALS PREVIEW - FIXED division by zero */}
-                {goalsPreview.length > 0 && (
-                  <View style={tw`flex-1 pl-3`}>
-                    <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
-                      Tabungan ({goalsPreview.length})
-                    </Text>
-                    {goalsPreview.slice(0, 3).map((goal) => {
-                      const safeCurrent = safeNumber(goal.current);
-                      const safeTarget = safeNumber(goal.target);
-                      const progress =
-                        safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
-                      return (
-                        <TouchableOpacity
-                          key={goal.id}
-                          style={tw`mb-3 last:mb-0`}
-                          onPress={() => navigation.navigate("Savings")}
-                          activeOpacity={0.7}
-                        >
-                          <View
-                            style={tw`flex-row justify-between items-center mb-1`}
-                          >
-                            <Text style={tw`text-gray-700 text-xs font-medium`}>
-                              {goal.name}
-                            </Text>
-                            <Text style={tw`text-gray-400 text-xs`}>
-                              {Math.round(safeNumber(progress))}%
-                            </Text>
-                          </View>
-                          <View
-                            style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
-                          >
+                              style={tw`flex-row justify-between items-center mb-1`}
+                            >
+                              <Text
+                                style={tw`text-gray-700 text-xs font-medium`}
+                              >
+                                {goal.name}
+                              </Text>
+                              <Text style={tw`text-gray-400 text-xs`}>
+                                {Math.round(safeNumber(progress))}%
+                              </Text>
+                            </View>
                             <View
-                              style={[
-                                tw`h-full rounded-full`,
-                                {
-                                  width: `${Math.max(
-                                    0,
-                                    Math.min(safeNumber(progress), 100)
-                                  )}%`,
-                                  backgroundColor:
-                                    progress >= 80
-                                      ? "#10B981"
-                                      : progress >= 50
-                                      ? "#F59E0B"
-                                      : "#4F46E5",
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text style={tw`text-gray-400 text-xs mt-1`}>
-                            {formatCurrency(safeCurrent)} /{" "}
-                            {formatCurrency(safeTarget)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
+                              style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
+                            >
+                              <View
+                                style={[
+                                  tw`h-full rounded-full`,
+                                  {
+                                    width: `${Math.max(
+                                      0,
+                                      Math.min(safeNumber(progress), 100)
+                                    )}%`,
+                                    backgroundColor:
+                                      progress >= 80
+                                        ? "#10B981"
+                                        : progress >= 50
+                                        ? "#F59E0B"
+                                        : "#4F46E5",
+                                  },
+                                ]}
+                              />
+                            </View>
+                            <Text style={tw`text-gray-400 text-xs mt-1`}>
+                              {formatCurrency(safeCurrent)} /{" "}
+                              {formatCurrency(safeTarget)}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          </>
-        )}
+            </>
+          )}
 
         {/* MOTIVATIONAL QUOTE (Bonus) */}
         <View
           style={tw`bg-indigo-50 rounded-2xl p-4 mb-6 border border-indigo-100`}
         >
           <Text style={tw`text-indigo-800 text-sm italic mb-1`}>
-            "Keuangan yang sehat dimulai dari kebiasaan kecil yang konsisten."
+            {hasFinancialData
+              ? "Keuangan yang sehat dimulai dari kebiasaan kecil yang konsisten."
+              : "Langkah pertama menuju kebebasan finansial dimulai dari pencatatan yang baik."}
           </Text>
           <Text style={tw`text-indigo-600 text-xs`}>#MyMoneyTips</Text>
         </View>

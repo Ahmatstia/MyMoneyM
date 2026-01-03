@@ -1,6 +1,12 @@
 // File: src/utils/storage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppState, Transaction, Budget, Savings } from "../types";
+import {
+  AppState,
+  Transaction,
+  Budget,
+  Savings,
+  SavingsTransaction,
+} from "../types";
 import { calculateTotals } from "./calculations";
 
 const STORAGE_KEY = "@mymoney_app_data_v3";
@@ -9,6 +15,7 @@ const defaultAppState: AppState = {
   transactions: [],
   budgets: [],
   savings: [],
+  savingsTransactions: [],
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
@@ -145,10 +152,47 @@ const validateSavings = (obj: any): Savings | null => {
       target: Math.max(0, obj.target || 0),
       current: Math.max(0, obj.current || 0),
       deadline: obj.deadline,
+      description: obj.description || "",
+      category: obj.category || "other",
+      priority: obj.priority || "medium",
+      icon: obj.icon || "wallet",
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
     console.warn("Savings validation error:", error);
+    return null;
+  }
+};
+
+// 🟢 NEW: Fungsi untuk validasi savings transactions
+const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
+  if (!obj || typeof obj !== "object") return null;
+
+  try {
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.savingsId !== "string" ||
+      typeof obj.amount !== "number" ||
+      !["deposit", "withdrawal", "initial", "adjustment"].includes(
+        obj.type || "deposit"
+      )
+    ) {
+      return null;
+    }
+
+    return {
+      id: obj.id,
+      savingsId: obj.savingsId,
+      type: obj.type || "deposit",
+      amount: Math.max(0, obj.amount || 0),
+      date: obj.date || new Date().toISOString().split("T")[0],
+      note: obj.note || "",
+      previousBalance: Math.max(0, obj.previousBalance || 0),
+      newBalance: Math.max(0, obj.newBalance || 0),
+      createdAt: obj.createdAt || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn("Savings transaction validation error:", error);
     return null;
   }
 };
@@ -172,6 +216,10 @@ export const storageService = {
           .filter((s) => s && typeof s === "object" && s.id)
           .map((s) => validateSavings(s))
           .filter(Boolean) as Savings[],
+        savingsTransactions: data.savingsTransactions
+          .filter((st) => st && typeof st === "object" && st.id)
+          .map((st) => validateSavingsTransaction(st))
+          .filter(Boolean) as SavingsTransaction[],
         totalIncome: Math.max(0, data.totalIncome || 0),
         totalExpense: Math.max(0, data.totalExpense || 0),
         balance: data.balance || 0,
@@ -182,9 +230,13 @@ export const storageService = {
       console.log(
         "✅ Data disimpan:",
         validatedData.transactions.length,
-        "transaksi",
+        "transaksi,",
         validatedData.budgets.length,
-        "budgets"
+        "budgets,",
+        validatedData.savings.length,
+        "savings,",
+        validatedData.savingsTransactions.length,
+        "savings transactions"
       );
     } catch (error) {
       console.error("❌ Error menyimpan data:", error);
@@ -259,6 +311,17 @@ export const storageService = {
         });
       }
 
+      // 🟢 NEW: Validasi savings transactions
+      const validatedSavingsTransactions: SavingsTransaction[] = [];
+      if (Array.isArray(loadedData.savingsTransactions)) {
+        loadedData.savingsTransactions.forEach((st: any) => {
+          const validTransaction = validateSavingsTransaction(st);
+          if (validTransaction) {
+            validatedSavingsTransactions.push(validTransaction);
+          }
+        });
+      }
+
       // Hitung ulang totals untuk memastikan konsistensi
       const totals = calculateTotals(validatedTransactions);
 
@@ -266,6 +329,7 @@ export const storageService = {
         transactions: validatedTransactions,
         budgets: validatedBudgets,
         savings: validatedSavings,
+        savingsTransactions: validatedSavingsTransactions, // 🟢 INI DIPERBAIKI
         ...totals,
       };
 
@@ -273,6 +337,10 @@ export const storageService = {
       console.log("   - Transaksi:", finalData.transactions.length);
       console.log("   - Budgets:", finalData.budgets.length);
       console.log("   - Savings:", finalData.savings.length);
+      console.log(
+        "   - Savings Transactions:",
+        finalData.savingsTransactions.length
+      );
       console.log("   - Saldo:", finalData.balance);
 
       // Debug: Tampilkan info tanggal budgets
@@ -318,6 +386,11 @@ export const storageService = {
         const data = JSON.parse(jsonValue);
         console.log("- Transaksi:", data.transactions?.length || 0);
         console.log("- Budgets:", data.budgets?.length || 0);
+        console.log("- Savings:", data.savings?.length || 0);
+        console.log(
+          "- Savings Transactions:",
+          data.savingsTransactions?.length || 0
+        );
         console.log("- Saldo:", data.balance);
         console.log("- Budgets sample:", {
           count: data.budgets?.length || 0,

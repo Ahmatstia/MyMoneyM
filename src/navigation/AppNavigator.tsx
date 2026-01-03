@@ -29,6 +29,8 @@ import AddTransactionScreen from "../screens/Transactions/AddTransactionScreen";
 import AddBudgetScreen from "../screens/Budget/AddBudgetScreen";
 import AddSavingsScreen from "../screens/Savings/AddSavingsScreen";
 import CalendarScreen from "../screens/Calendar/CalendarScreen";
+import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
+import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 
 // Types
 type StackParamList = {
@@ -39,9 +41,11 @@ type StackParamList = {
   Analytics: undefined;
   Calendar: undefined;
   SavingsDetail: { savingsId: string };
+  SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
   AddBudget: { editMode?: boolean; budgetData?: any };
   AddSavings: { editMode?: boolean; savingsData?: any };
+  AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
 };
 
 const Stack = createStackNavigator<StackParamList>();
@@ -317,6 +321,14 @@ const MainStackNavigator = () => {
         }}
       />
 
+      <Stack.Screen
+        name="SavingsHistory"
+        component={SavingsHistoryScreen}
+        options={{
+          title: "Riwayat Transaksi",
+        }}
+      />
+
       {/* Add/Edit Screens */}
       <Stack.Screen
         name="AddTransaction"
@@ -341,6 +353,17 @@ const MainStackNavigator = () => {
           title: route.params?.editMode ? "Edit Tabungan" : "Tabungan Baru",
         })}
       />
+
+      <Stack.Screen
+        name="AddSavingsTransaction"
+        component={AddSavingsTransactionScreen}
+        options={({ route }: any) => ({
+          title:
+            route.params?.type === "deposit"
+              ? "Tambah Setoran"
+              : "Penarikan Dana",
+        })}
+      />
     </Stack.Navigator>
   );
 };
@@ -358,7 +381,6 @@ const DrawerNavigator = () => (
       overlayColor: "rgba(0,0,0,0.3)",
       // KEY POINT: DISABLE SWIPE GESTURE
       swipeEnabled: false, // ← INI YANG PERBAIKI MASALAH!
-      // swipeEdgeWidth: 0, // Hapus ini karena swipeEnabled sudah false
       headerShown: false,
     }}
   >

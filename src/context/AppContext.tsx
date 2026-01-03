@@ -6,13 +6,20 @@ import React, {
   useEffect,
   useRef,
 } from "react";
-import { AppState, Transaction, Budget, Savings } from "../types";
+import {
+  AppState,
+  Transaction,
+  Budget,
+  Savings,
+  SavingsTransaction,
+} from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
 import {
   generateTransactionId,
   generateBudgetId,
   generateSavingsId,
+  generateId,
 } from "../utils/idGenerator";
 
 /* ======================================================
@@ -43,7 +50,16 @@ interface AppContextType {
   addSavings: (savings: Omit<Savings, "id" | "createdAt">) => Promise<void>;
   editSavings: (id: string, updates: Partial<Savings>) => Promise<void>;
   deleteSavings: (id: string) => Promise<void>;
-  updateSavings: (id: string, amount: number) => Promise<void>;
+  addSavingsTransaction: (
+    savingsId: string,
+    transaction: {
+      type: "deposit" | "withdrawal";
+      amount: number;
+      date: string;
+      note?: string;
+    }
+  ) => Promise<void>;
+  getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
   // 🔹 SYSTEM
   refreshData: () => Promise<void>;
@@ -60,6 +76,7 @@ const defaultAppState: AppState = {
   transactions: [],
   budgets: [],
   savings: [],
+  savingsTransactions: [],
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
@@ -162,6 +179,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const validateSavings = (savings: any): Savings => {
+    try {
+      return {
+        id: savings.id || generateSavingsId(),
+        name: savings.name || "Tabungan Baru",
+        target: Math.max(0, savings.target || 0),
+        current: Math.max(0, savings.current || 0),
+        deadline: savings.deadline,
+        category: savings.category || "other", // TAMBAHKAN
+        priority: savings.priority || "medium", // TAMBAHKAN
+        description: savings.description || "", // TAMBAHKAN
+        icon: savings.icon || "wallet", // TAMBAHKAN
+        createdAt: savings.createdAt || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error validating savings:", error);
+      // 🟢 PERBAIKAN: Return default savings dengan SEMUA properti
+      return {
+        id: generateSavingsId(),
+        name: "Tabungan Baru",
+        target: 0,
+        current: 0,
+        deadline: undefined,
+        category: "other", // TAMBAHKAN
+        priority: "medium", // TAMBAHKAN
+        description: "", // TAMBAHKAN
+        icon: "wallet", // TAMBAHKAN
+        createdAt: new Date().toISOString(),
+      };
+    }
+  };
+
+  // 🟢 PERBAIKAN: Fungsi untuk validasi savings transactions
+  const validateSavingsTransaction = (transaction: any): SavingsTransaction => {
+    try {
+      return {
+        id: transaction.id || generateId(),
+        savingsId: transaction.savingsId,
+        type: transaction.type || "deposit",
+        amount: Math.max(0, transaction.amount || 0),
+        date: transaction.date || new Date().toISOString().split("T")[0],
+        note: transaction.note || "",
+        previousBalance: Math.max(0, transaction.previousBalance || 0),
+        newBalance: Math.max(0, transaction.newBalance || 0),
+        createdAt: transaction.createdAt || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error validating savings transaction:", error);
+      return {
+        id: generateId(),
+        savingsId: transaction.savingsId || "",
+        type: "deposit",
+        amount: 0,
+        date: new Date().toISOString().split("T")[0],
+        previousBalance: 0,
+        newBalance: 0,
+        createdAt: new Date().toISOString(),
+      };
+    }
+  };
+
   // 🟢 PERBAIKAN: Update budgets dari transactions (PERTAHANKAN TANGGAL)
   const updateBudgetsFromTransactions = (
     transactions: Transaction[],
@@ -223,10 +301,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         Array.isArray(data.budgets) ? data.budgets : []
       ).map(validateAndSetupBudget);
 
+      // 🟢 PERBAIKAN: Validasi semua savings
+      const validatedSavings = (
+        Array.isArray(data.savings) ? data.savings : []
+      ).map(validateSavings);
+
+      // 🟢 PERBAIKAN: Validasi savings transactions
+      const validatedSavingsTransactions = (
+        Array.isArray(data.savingsTransactions) ? data.savingsTransactions : []
+      ).map(validateSavingsTransaction);
+
       const validatedState: AppState = {
         transactions: Array.isArray(data.transactions) ? data.transactions : [],
         budgets: validatedBudgets,
-        savings: Array.isArray(data.savings) ? data.savings : [],
+        savings: validatedSavings,
+        savingsTransactions: validatedSavingsTransactions,
         totalIncome: safeNumber(data.totalIncome),
         totalExpense: safeNumber(data.totalExpense),
         balance: safeNumber(data.balance),
@@ -250,14 +339,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("✅ Data loaded successfully:", {
         transactions: finalState.transactions.length,
         budgets: finalState.budgets.length,
-        budgetDetails: finalState.budgets.map((b) => ({
-          category: b.category,
-          period: b.period,
-          startDate: b.startDate,
-          endDate: b.endDate,
-          spent: b.spent,
-          limit: b.limit,
-        })),
+        savings: finalState.savings.length,
+        savingsTransactions: finalState.savingsTransactions.length,
       });
     } catch (error) {
       console.error("❌ Error loading initial data:", error);
@@ -461,7 +544,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     SAVINGS
+     SAVINGS - COMPLETE FUNCTIONS - FIXED
   ====================================================== */
   const addSavings = async (savings: Omit<Savings, "id" | "createdAt">) => {
     const newSavings: Savings = {
@@ -470,49 +553,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: new Date().toISOString(),
     };
 
+    // Create initial transaction jika ada saldo awal
+    let initialTransaction: SavingsTransaction | null = null;
+    if (safeNumber(newSavings.current) > 0) {
+      initialTransaction = {
+        id: generateId(),
+        savingsId: newSavings.id,
+        type: "initial",
+        amount: safeNumber(newSavings.current),
+        date: new Date().toISOString().split("T")[0],
+        note: "Saldo awal",
+        previousBalance: 0,
+        newBalance: safeNumber(newSavings.current),
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     const newState: AppState = {
       ...state,
       savings: [...state.savings, newSavings],
+      savingsTransactions: initialTransaction
+        ? [...state.savingsTransactions, initialTransaction]
+        : state.savingsTransactions,
     };
 
     setState(newState);
     await storageService.saveData(newState);
+
+    console.log("✅ Savings added:", {
+      name: newSavings.name,
+      target: newSavings.target,
+      current: newSavings.current,
+      category: newSavings.category,
+    });
   };
 
   const editSavings = async (id: string, updates: Partial<Savings>) => {
-    const newState: AppState = {
-      ...state,
-      savings: state.savings.map((s) =>
-        s.id === id ? { ...s, ...updates } : s
-      ),
-    };
+    console.log("✏️ Edit savings:", { id, updates });
 
-    setState(newState);
-    await storageService.saveData(newState);
-  };
-
-  const deleteSavings = async (id: string) => {
-    const newState: AppState = {
-      ...state,
-      savings: state.savings.filter((s) => s.id !== id),
-    };
-
-    setState(newState);
-    await storageService.saveData(newState);
-  };
-
-  const updateSavings = async (id: string, amount: number) => {
-    const safeAmount = safeNumber(amount);
-    const updatedSavings = state.savings.map((s) => {
-      if (s.id === id) {
-        const newCurrent = Math.min(
-          safeNumber(s.current) + safeAmount,
-          safeNumber(s.target)
-        );
-        return { ...s, current: Math.max(0, newCurrent) };
-      }
-      return s;
-    });
+    const updatedSavings = state.savings.map((s) =>
+      s.id === id ? { ...s, ...updates } : s
+    );
 
     const newState: AppState = {
       ...state,
@@ -521,6 +602,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+
+    console.log("✅ Savings edited:", {
+      id,
+      name: updates.name,
+      target: updates.target,
+    });
+  };
+
+  const deleteSavings = async (id: string) => {
+    const newState: AppState = {
+      ...state,
+      savings: state.savings.filter((s) => s.id !== id),
+      savingsTransactions: state.savingsTransactions.filter(
+        (st) => st.savingsId !== id
+      ),
+    };
+
+    setState(newState);
+    await storageService.saveData(newState);
+
+    console.log("✅ Savings deleted:", { id });
+  };
+
+  const addSavingsTransaction = async (
+    savingsId: string,
+    transaction: {
+      type: "deposit" | "withdrawal";
+      amount: number;
+      date: string;
+      note?: string;
+    }
+  ) => {
+    const saving = state.savings.find((s) => s.id === savingsId);
+    if (!saving) throw new Error("Tabungan tidak ditemukan");
+
+    const previousBalance = safeNumber(saving.current);
+    const amount = safeNumber(transaction.amount);
+
+    if (transaction.type === "withdrawal" && amount > previousBalance) {
+      throw new Error("Saldo tidak mencukupi");
+    }
+
+    const newBalance =
+      transaction.type === "deposit"
+        ? previousBalance + amount
+        : previousBalance - amount;
+
+    // Update savings
+    const updatedSavings = state.savings.map((s) =>
+      s.id === savingsId ? { ...s, current: newBalance } : s
+    );
+
+    // Create transaction record
+    const newTransaction: SavingsTransaction = {
+      id: generateId(),
+      savingsId,
+      type: transaction.type,
+      amount,
+      date: transaction.date,
+      note: transaction.note,
+      previousBalance,
+      newBalance,
+      createdAt: new Date().toISOString(),
+    };
+
+    const newState: AppState = {
+      ...state,
+      savings: updatedSavings,
+      savingsTransactions: [...state.savingsTransactions, newTransaction],
+    };
+
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const getSavingsTransactions = (savingsId: string): SavingsTransaction[] => {
+    return state.savingsTransactions
+      .filter((st) => st.savingsId === savingsId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   /* ======================================================
@@ -549,7 +709,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         addSavings,
         editSavings,
         deleteSavings,
-        updateSavings,
+        addSavingsTransaction,
+        getSavingsTransactions,
 
         refreshData,
         clearAllData,
