@@ -1,4 +1,3 @@
-// File: src/utils/storage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AppState,
@@ -6,12 +5,20 @@ import {
   Budget,
   Savings,
   SavingsTransaction,
+  User,
 } from "../types";
 import { calculateTotals } from "./calculations";
+
+// Key generator untuk data per user
+const getUserKey = (userId: string, dataType: string): string => {
+  return `@mymoney_user_${userId}_${dataType}`;
+};
 
 const STORAGE_KEY = "@mymoney_app_data_v3";
 
 const defaultAppState: AppState = {
+  currentUser: null,
+  users: [],
   transactions: [],
   budgets: [],
   savings: [],
@@ -204,6 +211,8 @@ export const storageService = {
 
       // Pastikan data valid sebelum disimpan
       const validatedData: AppState = {
+        currentUser: null,
+        users: [],
         transactions: data.transactions
           .filter((t) => t && typeof t === "object" && t.id)
           .map((t) => validateTransaction(t))
@@ -326,6 +335,8 @@ export const storageService = {
       const totals = calculateTotals(validatedTransactions);
 
       const finalData: AppState = {
+        currentUser: null,
+        users: [],
         transactions: validatedTransactions,
         budgets: validatedBudgets,
         savings: validatedSavings,

@@ -1,5 +1,5 @@
 // File: src/navigation/AppNavigator.tsx - DRAWER WITH NO SWIPE GESTURE
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -14,11 +14,14 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Avatar } from "react-native-paper";
 import tw from "twrnc";
 
 // Screens
+import UserSelectScreen from "../screens/Onboarding/UserSelectScreen";
+import WelcomeScreen from "../screens/Onboarding/WelcomeScreen";
 import HomeScreen from "../screens/Home/HomeScreen";
 import TransactionsScreen from "../screens/Transactions/TransactionsScreen";
 import BudgetScreen from "../screens/Budget/BudgetScreen";
@@ -32,8 +35,16 @@ import CalendarScreen from "../screens/Calendar/CalendarScreen";
 import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 
-// Types
+// Import user manager
+import { hasUsers, getCurrentUser } from "../utils/userManager";
+import { User } from "../types";
+
+// Types - UPDATE: Tambah MainDrawer dan MainStack
 type StackParamList = {
+  Welcome: undefined;
+  UserSelect: undefined;
+  MainDrawer: undefined; // TAMBAH INI
+  MainStack: undefined; // TAMBAH INI
   Home: undefined;
   Transactions: undefined;
   Budget: undefined;
@@ -55,6 +66,16 @@ const { width } = Dimensions.get("window");
 // Custom Drawer Content
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const [activeRoute, setActiveRoute] = useState<string>("Home");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, []);
+
+  const loadCurrentUser = async () => {
+    const user = await getCurrentUser();
+    setCurrentUser(user);
+  };
 
   const menuItems = [
     {
@@ -104,7 +125,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const navigateToScreen = (screenName: keyof StackParamList) => {
     setActiveRoute(screenName);
     props.navigation.navigate(screenName);
-    props.navigation.closeDrawer(); // Tutup drawer setelah pilih menu
+    props.navigation.closeDrawer();
   };
 
   return (
@@ -121,7 +142,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           <View style={tw`ml-4 flex-1`}>
             <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
             <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
-              Keuangan Pribadi
+              {currentUser ? `Halo, ${currentUser.name}!` : "Keuangan Pribadi"}
             </Text>
           </View>
         </View>
@@ -187,6 +208,19 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {/* Divider */}
         <View style={tw`h-px bg-gray-100 my-4 mx-6`} />
 
+        {/* TAMBAH Menu Profil */}
+        <TouchableOpacity
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
+          onPress={() => console.log("Buka pengaturan profil")}
+        >
+          <View
+            style={tw`w-8 h-8 rounded-lg bg-blue-50 items-center justify-center mr-3`}
+          >
+            <Ionicons name="person-outline" size={18} color="#3B82F6" />
+          </View>
+          <Text style={tw`text-gray-700 text-sm flex-1`}>Profil Saya</Text>
+        </TouchableOpacity>
+
         {/* Additional Menu */}
         <TouchableOpacity
           style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
@@ -223,7 +257,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   );
 };
 
-// Stack Navigator
+// Stack Navigator untuk Main App
 const MainStackNavigator = () => {
   return (
     <Stack.Navigator
@@ -368,7 +402,7 @@ const MainStackNavigator = () => {
   );
 };
 
-// Drawer Navigator dengan NO SWIPE GESTURE
+// Drawer Navigator
 const DrawerNavigator = () => (
   <Drawer.Navigator
     drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -379,8 +413,7 @@ const DrawerNavigator = () => (
       },
       drawerType: "front",
       overlayColor: "rgba(0,0,0,0.3)",
-      // KEY POINT: DISABLE SWIPE GESTURE
-      swipeEnabled: false, // ← INI YANG PERBAIKI MASALAH!
+      swipeEnabled: false,
       headerShown: false,
     }}
   >
@@ -388,12 +421,61 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-const AppNavigator: React.FC = () => {
+// ROOT Navigator
+const RootNavigator: React.FC = () => {
+  const [hasExistingUsers, setHasExistingUsers] = useState<boolean | null>(
+    null
+  );
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    checkUsers();
+  }, []);
+
+  const checkUsers = async () => {
+    try {
+      const usersExist = await hasUsers();
+      setHasExistingUsers(usersExist);
+    } catch (error) {
+      console.error("Error checking users:", error);
+      setHasExistingUsers(false);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  if (isChecking) {
+    return (
+      <View style={tw`flex-1 bg-gray-50 items-center justify-center`}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+        <Text style={tw`mt-4 text-gray-600`}>Memeriksa data...</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <DrawerNavigator />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!hasExistingUsers ? (
+          // First time: Welcome → MainDrawer
+          <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+          </>
+        ) : (
+          // Already have users: UserSelect → MainDrawer
+          <>
+            <Stack.Screen name="UserSelect" component={UserSelectScreen} />
+            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+          </>
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
+};
+
+const AppNavigator: React.FC = () => {
+  return <RootNavigator />;
 };
 
 export default AppNavigator;

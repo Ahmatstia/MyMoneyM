@@ -1,3 +1,6 @@
+export type { User } from "./user";
+import { User } from "./user";
+
 export type TransactionType = "income" | "expense";
 
 export interface Transaction {
@@ -8,6 +11,7 @@ export interface Transaction {
   description: string;
   date: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
+  userId?: string;
 }
 
 export interface Budget {
@@ -20,6 +24,7 @@ export interface Budget {
   endDate: string; // ✨ TAMBAH: tanggal akhir periode
   lastResetDate?: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
+  userId?: string;
 }
 
 export interface Savings {
@@ -33,6 +38,7 @@ export interface Savings {
   description: string; // Tambahkan
   icon: string; // Tambahkan
   createdAt: string; // Tambahkan
+  userId?: string;
 }
 
 export interface SavingsTransaction {
@@ -45,13 +51,21 @@ export interface SavingsTransaction {
   previousBalance: number;
   newBalance: number;
   createdAt: string; // Tambahkan
+  userId?: string;
 }
 
 export interface AppState {
+  // User management
+  currentUser: User | null;
+  users: User[];
+
+  // Financial data
   transactions: Transaction[];
   budgets: Budget[];
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];
+
+  // Calculated totals
   totalIncome: number;
   totalExpense: number;
   balance: number;

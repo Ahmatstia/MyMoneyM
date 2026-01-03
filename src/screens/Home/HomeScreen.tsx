@@ -21,7 +21,7 @@ type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { state, isLoading } = useAppContext();
+  const { state, isLoading, currentUser } = useAppContext();
 
   // Helper untuk mendapatkan icon yang aman
   const getSafeIcon = (iconName: string): SafeIconName => {
@@ -94,12 +94,6 @@ const HomeScreen: React.FC = () => {
     else if (hour < 15) greeting = "Selamat Siang";
     else if (hour < 19) greeting = "Selamat Sore";
     else greeting = "Selamat Malam";
-
-    // Different greeting for new users
-    if (!hasFinancialData) {
-      greeting += "! 👋";
-      return greeting;
-    }
 
     // Add financial milestone if any
     if (safeNumber(transactionAnalytics.savingsRate) >= 30) {
@@ -655,14 +649,34 @@ const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tw`px-5 pb-24`}
       >
-        {/* HEADER WITH HEALTH SCORE */}
         <View style={tw`flex-row justify-between items-center pt-3 pb-3`}>
           <View style={tw`flex-1`}>
-            <Text style={tw`text-gray-800 text-xl font-bold`}>
-              {getPersonalizedGreeting()}
-            </Text>
-            <Text style={tw`text-gray-500 text-sm mt-0.5`}>
+            <View style={tw`flex-row items-center mb-0.5`}>
+              <Text style={tw`text-gray-800 text-xl font-bold mr-2`}>
+                {getPersonalizedGreeting()}
+              </Text>
+              {/* Tampilkan avatar user kecil */}
+              {currentUser && (
+                <View
+                  style={[
+                    tw`w-6 h-6 rounded-full items-center justify-center`,
+                    { backgroundColor: `${currentUser.color || "#4F46E5"}20` },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      tw`text-xs`,
+                      { color: currentUser.color || "#4F46E5" },
+                    ]}
+                  >
+                    {currentUser.avatar || "👤"}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={tw`text-gray-500 text-sm`}>
               {getCurrentDate()}
+              {currentUser && ` • ${currentUser.name}`}
             </Text>
           </View>
 
@@ -706,7 +720,6 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           )}
         </View>
-
         {/* SMART INSIGHTS CARDS */}
         {smartInsights.length > 0 && (
           <ScrollView
@@ -764,7 +777,6 @@ const HomeScreen: React.FC = () => {
             ))}
           </ScrollView>
         )}
-
         {/* BALANCE CARD WITH MONTHLY PROGRESS */}
         <View
           style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}
@@ -868,7 +880,6 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
         </View>
-
         {/* DYNAMIC QUICK ACTIONS */}
         <View style={tw`flex-row justify-between mb-8`}>
           {dynamicQuickActions.map((action) => (
@@ -892,7 +903,6 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           ))}
         </View>
-
         {/* QUICK STATS - HORIZONTAL COMPACT */}
         <View style={tw`bg-white rounded-xl p-3 mb-6 border border-gray-100`}>
           <View style={tw`flex-row justify-between`}>
@@ -918,7 +928,6 @@ const HomeScreen: React.FC = () => {
             ))}
           </View>
         </View>
-
         {/* RECENT TRANSACTIONS HEADER */}
         <View style={tw`flex-row justify-between items-center mb-4`}>
           <Text style={tw`text-gray-800 text-lg font-semibold`}>
@@ -1053,7 +1062,6 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         )}
-
         {/* COMBINED: BUDGET + GOALS IN ONE CARD */}
         {hasFinancialData &&
           (state.budgets.length > 0 || goalsPreview.length > 0) && (
@@ -1210,7 +1218,6 @@ const HomeScreen: React.FC = () => {
               </View>
             </>
           )}
-
         {/* MOTIVATIONAL QUOTE (Bonus) */}
         <View
           style={tw`bg-indigo-50 rounded-2xl p-4 mb-6 border border-indigo-100`}

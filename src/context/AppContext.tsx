@@ -12,6 +12,7 @@ import {
   Budget,
   Savings,
   SavingsTransaction,
+  User,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -21,16 +22,27 @@ import {
   generateSavingsId,
   generateId,
 } from "../utils/idGenerator";
+import {
+  createUser,
+  getCurrentUser,
+  setCurrentUser,
+  loadUsers,
+  saveUsers,
+} from "../utils/userManager"; // TAMBAH IMPORT
 
 /* ======================================================
-   CONTEXT TYPE
+   CONTEXT TYPE - TAMBAH FUNGSI USER
 ====================================================== */
 interface AppContextType {
   state: AppState;
   isLoading: boolean;
 
-  // 🔹 UX FLAGS
-  hasFinancialData: boolean;
+  // 🔹 USER MANAGEMENT - BARU
+  currentUser: User | null;
+  allUsers: User[];
+  initializeUser: (name: string) => Promise<User>;
+  switchToUser: (userId: string) => Promise<void>;
+  refreshUserList: () => Promise<void>;
 
   // 🔹 TRANSACTIONS
   addTransaction: (
@@ -70,9 +82,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 /* ======================================================
-   DEFAULT STATE
+   DEFAULT STATE - TAMBAH USER
 ====================================================== */
 const defaultAppState: AppState = {
+  currentUser: null,
+  users: [],
   transactions: [],
   budgets: [],
   savings: [],
@@ -90,10 +104,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [isLoading, setIsLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState<User[]>([]); // TAMBAH STATE
   const isMounted = useRef(true);
 
   /* ======================================================
-     HELPER FUNCTIONS
+     HELPER FUNCTIONS (SAMA seperti sebelumnya)
   ====================================================== */
 
   // 🟢 PERBAIKAN: Fungsi untuk validasi tanggal
@@ -101,28 +116,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       if (!dateStr || typeof dateStr !== "string") return false;
       const date = new Date(dateStr);
-      return !isNaN(date.getTime()) && dateStr.length === 10; // YYYY-MM-DD
+      return !isNaN(date.getTime()) && dateStr.length === 10;
     } catch {
       return false;
     }
   };
 
-  // 🟢 PERBAIKAN: Fungsi untuk validasi dan setup budget (PERTAHANKAN TANGGAL)
+  // 🟢 PERBAIKAN: Fungsi untuk validasi dan setup budget
   const validateAndSetupBudget = (budget: any): Budget => {
     try {
-      // Pertahankan tanggal yang sudah ada jika valid
       let startDate = budget.startDate;
       let endDate = budget.endDate;
       const createdAt = budget.createdAt || new Date().toISOString();
       const createdDate = createdAt.split("T")[0];
 
-      // 🟢 PERBAIKAN CRITICAL: Validasi tanggal
       if (!isValidDateString(startDate)) {
         startDate = createdDate;
       }
 
       if (!isValidDateString(endDate)) {
-        // Jika endDate tidak valid, hitung berdasarkan period
         const start = new Date(startDate);
         let end = new Date(start);
 
@@ -130,21 +142,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
         switch (period) {
           case "weekly":
-            end.setDate(end.getDate() + 6); // 7 hari
+            end.setDate(end.getDate() + 6);
             break;
           case "monthly":
-            end.setDate(end.getDate() + 29); // 30 hari
+            end.setDate(end.getDate() + 29);
             break;
           case "yearly":
             end.setFullYear(end.getFullYear() + 1);
             end.setDate(end.getDate() - 1);
             break;
           case "custom":
-            // Untuk custom tanpa tanggal, default 30 hari
             end.setDate(end.getDate() + 29);
             break;
           default:
-            end.setDate(end.getDate() + 29); // default 30 hari
+            end.setDate(end.getDate() + 29);
         }
 
         endDate = end.toISOString().split("T")[0];
@@ -156,14 +167,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         limit: Math.max(0, budget.limit || 0),
         spent: Math.max(0, budget.spent || 0),
         period: budget.period || "monthly",
-        startDate, // 🟢 TANGGAL DI PERTAHANKAN
-        endDate, // 🟢 TANGGAL DI PERTAHANKAN
+        startDate,
+        endDate,
         lastResetDate: budget.lastResetDate,
         createdAt: budget.createdAt || new Date().toISOString(),
       };
     } catch (error) {
       console.error("Error validating budget:", error);
-      // Return default budget jika error
       const now = new Date();
       const today = now.toISOString().split("T")[0];
       return {
@@ -187,60 +197,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         target: Math.max(0, savings.target || 0),
         current: Math.max(0, savings.current || 0),
         deadline: savings.deadline,
-        category: savings.category || "other", // TAMBAHKAN
-        priority: savings.priority || "medium", // TAMBAHKAN
-        description: savings.description || "", // TAMBAHKAN
-        icon: savings.icon || "wallet", // TAMBAHKAN
+        category: savings.category || "other",
+        priority: savings.priority || "medium",
+        description: savings.description || "",
+        icon: savings.icon || "wallet",
         createdAt: savings.createdAt || new Date().toISOString(),
       };
     } catch (error) {
       console.error("Error validating savings:", error);
-      // 🟢 PERBAIKAN: Return default savings dengan SEMUA properti
       return {
         id: generateSavingsId(),
         name: "Tabungan Baru",
         target: 0,
         current: 0,
         deadline: undefined,
-        category: "other", // TAMBAHKAN
-        priority: "medium", // TAMBAHKAN
-        description: "", // TAMBAHKAN
-        icon: "wallet", // TAMBAHKAN
+        category: "other",
+        priority: "medium",
+        description: "",
+        icon: "wallet",
         createdAt: new Date().toISOString(),
       };
     }
   };
 
-  // 🟢 PERBAIKAN: Fungsi untuk validasi savings transactions
-  const validateSavingsTransaction = (transaction: any): SavingsTransaction => {
-    try {
-      return {
-        id: transaction.id || generateId(),
-        savingsId: transaction.savingsId,
-        type: transaction.type || "deposit",
-        amount: Math.max(0, transaction.amount || 0),
-        date: transaction.date || new Date().toISOString().split("T")[0],
-        note: transaction.note || "",
-        previousBalance: Math.max(0, transaction.previousBalance || 0),
-        newBalance: Math.max(0, transaction.newBalance || 0),
-        createdAt: transaction.createdAt || new Date().toISOString(),
-      };
-    } catch (error) {
-      console.error("Error validating savings transaction:", error);
-      return {
-        id: generateId(),
-        savingsId: transaction.savingsId || "",
-        type: "deposit",
-        amount: 0,
-        date: new Date().toISOString().split("T")[0],
-        previousBalance: 0,
-        newBalance: 0,
-        createdAt: new Date().toISOString(),
-      };
-    }
-  };
-
-  // 🟢 PERBAIKAN: Update budgets dari transactions (PERTAHANKAN TANGGAL)
+  // 🟢 PERBAIKAN: Update budgets dari transactions
   const updateBudgetsFromTransactions = (
     transactions: Transaction[],
     budgets: Budget[]
@@ -252,12 +232,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const startDate = budget.startDate;
         const endDate = budget.endDate;
 
-        // Filter transaksi dalam periode yang ditentukan
         const spent = transactions
           .filter((t) => {
             if (t.type !== "expense") return false;
             if (t.category !== budget.category) return false;
-
             const transDate = t.date;
             return transDate >= startDate && transDate <= endDate;
           })
@@ -275,7 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     LOAD INITIAL DATA
+     LOAD INITIAL DATA - UPDATE UNTUK USER
   ====================================================== */
   useEffect(() => {
     console.log("🔄 AppProvider: Initial load started");
@@ -287,61 +265,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
+  // FUNGSI BARU: Load data untuk user tertentu
+  const loadUserData = async (user: User) => {
+    try {
+      const data = await storageService.loadData(); // Masih load semua data dulu
+
+      // Validasi data
+      const validatedBudgets = (
+        Array.isArray(data.budgets) ? data.budgets : []
+      ).map(validateAndSetupBudget);
+
+      const validatedSavings = (
+        Array.isArray(data.savings) ? data.savings : []
+      ).map(validateSavings);
+
+      // Recalculate budgets
+      const recalculatedBudgets = updateBudgetsFromTransactions(
+        data.transactions || [],
+        validatedBudgets
+      );
+
+      const userState: AppState = {
+        currentUser: user,
+        users: allUsers,
+        transactions: Array.isArray(data.transactions) ? data.transactions : [],
+        budgets: recalculatedBudgets,
+        savings: validatedSavings,
+        savingsTransactions: Array.isArray(data.savingsTransactions)
+          ? data.savingsTransactions
+          : [],
+        totalIncome: safeNumber(data.totalIncome),
+        totalExpense: safeNumber(data.totalExpense),
+        balance: safeNumber(data.balance),
+      };
+
+      if (isMounted.current) {
+        setState(userState);
+      }
+
+      console.log(`✅ Data loaded for user: ${user.name}`);
+      return userState;
+    } catch (error) {
+      console.error(`Error loading data for user ${user.name}:`, error);
+      return null;
+    }
+  };
+
   const loadInitialData = async () => {
     if (!isMounted.current) return;
 
     try {
       console.log("📥 Loading initial data...");
 
-      await storageService.migrateFromOldStorage();
-      const data = await storageService.loadData();
+      // Load semua user
+      const users = await loadUsers();
+      setAllUsers(users);
 
-      // 🟢 PERBAIKAN: Validasi semua budgets dengan mempertahankan tanggal
-      const validatedBudgets = (
-        Array.isArray(data.budgets) ? data.budgets : []
-      ).map(validateAndSetupBudget);
+      // Load current user
+      const currentUser = await getCurrentUser();
 
-      // 🟢 PERBAIKAN: Validasi semua savings
-      const validatedSavings = (
-        Array.isArray(data.savings) ? data.savings : []
-      ).map(validateSavings);
-
-      // 🟢 PERBAIKAN: Validasi savings transactions
-      const validatedSavingsTransactions = (
-        Array.isArray(data.savingsTransactions) ? data.savingsTransactions : []
-      ).map(validateSavingsTransaction);
-
-      const validatedState: AppState = {
-        transactions: Array.isArray(data.transactions) ? data.transactions : [],
-        budgets: validatedBudgets,
-        savings: validatedSavings,
-        savingsTransactions: validatedSavingsTransactions,
-        totalIncome: safeNumber(data.totalIncome),
-        totalExpense: safeNumber(data.totalExpense),
-        balance: safeNumber(data.balance),
-      };
-
-      // Hitung ulang spent untuk semua budgets
-      const recalculatedBudgets = updateBudgetsFromTransactions(
-        validatedState.transactions,
-        validatedState.budgets
-      );
-
-      const finalState: AppState = {
-        ...validatedState,
-        budgets: recalculatedBudgets,
-      };
-
-      if (isMounted.current) {
-        setState(finalState);
+      if (currentUser) {
+        // Load data untuk current user
+        await loadUserData(currentUser);
+      } else if (users.length > 0) {
+        // Jika ada user tapi tidak ada current user, pilih user pertama
+        await switchToUser(users[0].id);
+      } else {
+        // Tidak ada user sama sekali
+        setState({
+          ...defaultAppState,
+          users: [],
+        });
       }
-
-      console.log("✅ Data loaded successfully:", {
-        transactions: finalState.transactions.length,
-        budgets: finalState.budgets.length,
-        savings: finalState.savings.length,
-        savingsTransactions: finalState.savingsTransactions.length,
-      });
     } catch (error) {
       console.error("❌ Error loading initial data:", error);
       if (isMounted.current) {
@@ -356,16 +351,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
+     USER MANAGEMENT FUNCTIONS - BARU
+  ====================================================== */
+  const initializeUser = async (name: string): Promise<User> => {
+    const newUser = await createUser(name);
+
+    // Set sebagai current user
+    await setCurrentUser(newUser);
+
+    // Refresh user list
+    const users = await loadUsers();
+    setAllUsers(users);
+
+    // Load data untuk user baru
+    await loadUserData(newUser);
+
+    return newUser;
+  };
+
+  const switchToUser = async (userId: string) => {
+    try {
+      const users = await loadUsers();
+      const user = users.find((u) => u.id === userId);
+
+      if (user) {
+        await setCurrentUser(user);
+        await loadUserData(user);
+      }
+    } catch (error) {
+      console.error("Error switching user:", error);
+    }
+  };
+
+  const refreshUserList = async () => {
+    const users = await loadUsers();
+    setAllUsers(users);
+  };
+
+  /* ======================================================
      SYSTEM FUNCTIONS
   ====================================================== */
   const refreshData = async () => {
-    setIsLoading(true);
-    await loadInitialData();
+    if (state.currentUser) {
+      await loadUserData(state.currentUser);
+    }
   };
 
   const clearAllData = async () => {
     await storageService.clearData();
-    setState(defaultAppState);
+    if (state.currentUser) {
+      await loadUserData(state.currentUser);
+    }
   };
 
   const debugStorage = async () => {
@@ -373,7 +409,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     TRANSACTIONS
+     TRANSACTIONS (SAMA seperti sebelumnya)
   ====================================================== */
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt">
@@ -457,7 +493,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     BUDGETS - PERBAIKAN TANGGAL
+     BUDGETS (SAMA seperti sebelumnya)
   ====================================================== */
   const addBudget = async (
     budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
@@ -496,12 +532,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       startDate: newBudget.startDate,
       endDate: newBudget.endDate,
       limit: newBudget.limit,
-      days:
-        Math.ceil(
-          (new Date(newBudget.endDate).getTime() -
-            new Date(newBudget.startDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ) + 1,
     });
   };
 
@@ -528,8 +558,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("✅ Budget edited:", {
       id,
       category: updates.category,
-      startDate: updates.startDate,
-      endDate: updates.endDate,
     });
   };
 
@@ -544,7 +572,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     SAVINGS - COMPLETE FUNCTIONS - FIXED
+     SAVINGS (SAMA seperti sebelumnya)
   ====================================================== */
   const addSavings = async (savings: Omit<Savings, "id" | "createdAt">) => {
     const newSavings: Savings = {
@@ -584,7 +612,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       name: newSavings.name,
       target: newSavings.target,
       current: newSavings.current,
-      category: newSavings.category,
     });
   };
 
@@ -606,7 +633,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("✅ Savings edited:", {
       id,
       name: updates.name,
-      target: updates.target,
     });
   };
 
@@ -684,11 +710,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     UX FLAG
-  ====================================================== */
-  const hasFinancialData = state.transactions.length > 0;
-
-  /* ======================================================
      PROVIDER VALUE
   ====================================================== */
   return (
@@ -696,22 +717,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         state,
         isLoading,
-        hasFinancialData,
 
+        // User Management
+        currentUser: state.currentUser,
+        allUsers,
+        initializeUser,
+        switchToUser,
+        refreshUserList,
+
+        // Data Operations
         addTransaction,
         editTransaction,
         deleteTransaction,
-
         addBudget,
         editBudget,
         deleteBudget,
-
         addSavings,
         editSavings,
         deleteSavings,
         addSavingsTransaction,
         getSavingsTransactions,
 
+        // System
         refreshData,
         clearAllData,
         debugStorage,
