@@ -1,4 +1,4 @@
-// File: src/context/AppContext.tsx
+// File: src/context/AppContext.tsx - UPDATE UNTUK STORAGE PER USER
 import React, {
   createContext,
   useState,
@@ -28,7 +28,7 @@ import {
   setCurrentUser,
   loadUsers,
   saveUsers,
-} from "../utils/userManager"; // TAMBAH IMPORT
+} from "../utils/userManager";
 
 /* ======================================================
    CONTEXT TYPE - TAMBAH FUNGSI USER
@@ -46,20 +46,25 @@ interface AppContextType {
 
   // 🔹 TRANSACTIONS
   addTransaction: (
-    transaction: Omit<Transaction, "id" | "createdAt">
+    transaction: Omit<Transaction, "id" | "createdAt" | "userId">
   ) => Promise<void>;
   editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
   // 🔹 BUDGETS
   addBudget: (
-    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
+    budget: Omit<
+      Budget,
+      "id" | "spent" | "createdAt" | "lastResetDate" | "userId"
+    >
   ) => Promise<void>;
   editBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
 
   // 🔹 SAVINGS
-  addSavings: (savings: Omit<Savings, "id" | "createdAt">) => Promise<void>;
+  addSavings: (
+    savings: Omit<Savings, "id" | "createdAt" | "userId">
+  ) => Promise<void>;
   editSavings: (id: string, updates: Partial<Savings>) => Promise<void>;
   deleteSavings: (id: string) => Promise<void>;
   addSavingsTransaction: (
@@ -108,7 +113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const isMounted = useRef(true);
 
   /* ======================================================
-     HELPER FUNCTIONS (SAMA seperti sebelumnya)
+     HELPER FUNCTIONS (DIPERBAIKI untuk userId)
   ====================================================== */
 
   // 🟢 PERBAIKAN: Fungsi untuk validasi tanggal
@@ -122,8 +127,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // 🟢 PERBAIKAN: Fungsi untuk validasi dan setup budget
-  const validateAndSetupBudget = (budget: any): Budget => {
+  // 🟢 PERBAIKAN: Fungsi untuk validasi dan setup budget - DITAMBAH userId
+  const validateAndSetupBudget = (budget: any, userId: string): Budget => {
     try {
       let startDate = budget.startDate;
       let endDate = budget.endDate;
@@ -171,6 +176,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         endDate,
         lastResetDate: budget.lastResetDate,
         createdAt: budget.createdAt || new Date().toISOString(),
+        userId,
       };
     } catch (error) {
       console.error("Error validating budget:", error);
@@ -185,11 +191,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         startDate: today,
         endDate: today,
         createdAt: new Date().toISOString(),
+        userId,
       };
     }
   };
 
-  const validateSavings = (savings: any): Savings => {
+  // 🟢 PERBAIKAN: Validate savings - DITAMBAH userId
+  const validateSavings = (savings: any, userId: string): Savings => {
     try {
       return {
         id: savings.id || generateSavingsId(),
@@ -202,6 +210,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         description: savings.description || "",
         icon: savings.icon || "wallet",
         createdAt: savings.createdAt || new Date().toISOString(),
+        userId,
       };
     } catch (error) {
       console.error("Error validating savings:", error);
@@ -216,14 +225,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         description: "",
         icon: "wallet",
         createdAt: new Date().toISOString(),
+        userId,
       };
     }
   };
 
-  // 🟢 PERBAIKAN: Update budgets dari transactions
+  // 🟢 PERBAIKAN: Update budgets dari transactions - FILTER by userId
   const updateBudgetsFromTransactions = (
     transactions: Transaction[],
-    budgets: Budget[]
+    budgets: Budget[],
+    userId: string
   ): Budget[] => {
     if (!budgets.length) return budgets;
 
@@ -234,6 +245,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const spent = transactions
           .filter((t) => {
+            if (t.userId !== userId) return false; // Hanya transaksi user ini
             if (t.type !== "expense") return false;
             if (t.category !== budget.category) return false;
             const transDate = t.date;
@@ -265,38 +277,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // FUNGSI BARU: Load data untuk user tertentu
+  // FUNGSI BARU: Load data untuk user tertentu - PAKAI storageService.loadUserData
   const loadUserData = async (user: User) => {
     try {
-      const data = await storageService.loadData(); // Masih load semua data dulu
+      console.log(`📥 Loading data for user: ${user.name} (${user.id})`);
 
-      // Validasi data
+      // Load data user dari storage per user
+      const userData = await storageService.loadUserData(user.id);
+
+      // Validasi data dengan userId
       const validatedBudgets = (
-        Array.isArray(data.budgets) ? data.budgets : []
-      ).map(validateAndSetupBudget);
+        Array.isArray(userData.budgets) ? userData.budgets : []
+      ).map((budget) => validateAndSetupBudget(budget, user.id));
 
       const validatedSavings = (
-        Array.isArray(data.savings) ? data.savings : []
-      ).map(validateSavings);
+        Array.isArray(userData.savings) ? userData.savings : []
+      ).map((savings) => validateSavings(savings, user.id));
 
-      // Recalculate budgets
+      // Recalculate budgets dengan filter userId
       const recalculatedBudgets = updateBudgetsFromTransactions(
-        data.transactions || [],
-        validatedBudgets
+        userData.transactions || [],
+        validatedBudgets,
+        user.id
       );
 
       const userState: AppState = {
         currentUser: user,
         users: allUsers,
-        transactions: Array.isArray(data.transactions) ? data.transactions : [],
-        budgets: recalculatedBudgets,
-        savings: validatedSavings,
-        savingsTransactions: Array.isArray(data.savingsTransactions)
-          ? data.savingsTransactions
+        transactions: Array.isArray(userData.transactions)
+          ? userData.transactions.filter(
+              (t: Transaction) => t.userId === user.id
+            )
           : [],
-        totalIncome: safeNumber(data.totalIncome),
-        totalExpense: safeNumber(data.totalExpense),
-        balance: safeNumber(data.balance),
+        budgets: recalculatedBudgets.filter((b) => b.userId === user.id),
+        savings: validatedSavings.filter((s) => s.userId === user.id),
+        savingsTransactions: Array.isArray(userData.savingsTransactions)
+          ? userData.savingsTransactions.filter(
+              (st: SavingsTransaction) => st.userId === user.id
+            )
+          : [],
+        totalIncome: safeNumber(userData.totalIncome),
+        totalExpense: safeNumber(userData.totalExpense),
+        balance: safeNumber(userData.balance),
       };
 
       if (isMounted.current) {
@@ -304,10 +326,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       console.log(`✅ Data loaded for user: ${user.name}`);
+      console.log(`   - ${userState.transactions.length} transactions`);
+      console.log(`   - ${userState.budgets.length} budgets`);
+      console.log(`   - ${userState.savings.length} savings`);
+
       return userState;
     } catch (error) {
       console.error(`Error loading data for user ${user.name}:`, error);
-      return null;
+
+      // Return default state jika error
+      const defaultUserState: AppState = {
+        currentUser: user,
+        users: allUsers,
+        transactions: [],
+        budgets: [],
+        savings: [],
+        savingsTransactions: [],
+        totalIncome: 0,
+        totalExpense: 0,
+        balance: 0,
+      };
+
+      if (isMounted.current) {
+        setState(defaultUserState);
+      }
+
+      return defaultUserState;
     }
   };
 
@@ -389,7 +433,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     SYSTEM FUNCTIONS
+     SYSTEM FUNCTIONS - UPDATE untuk userId
   ====================================================== */
   const refreshData = async () => {
     if (state.currentUser) {
@@ -398,8 +442,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const clearAllData = async () => {
-    await storageService.clearData();
     if (state.currentUser) {
+      await storageService.clearUserData(state.currentUser.id);
       await loadUserData(state.currentUser);
     }
   };
@@ -409,22 +453,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     TRANSACTIONS (SAMA seperti sebelumnya)
+     TRANSACTIONS - UPDATE dengan userId
   ====================================================== */
   const addTransaction = async (
-    transaction: Omit<Transaction, "id" | "createdAt">
+    transaction: Omit<Transaction, "id" | "createdAt" | "userId">
   ) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const newTransaction: Transaction = {
       ...transaction,
       id: generateTransactionId(),
       createdAt: new Date().toISOString(),
+      userId: state.currentUser.id, // Tambahkan userId
     };
 
     const updatedTransactions = [newTransaction, ...state.transactions];
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
+      state.currentUser.id
     );
 
     const newState: AppState = {
@@ -435,10 +486,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+
+    // Simpan dengan userId
+    await storageService.saveUserData(state.currentUser.id, {
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
+    });
   };
 
   const editTransaction = async (id: string, updates: Partial<Transaction>) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const updatedTransactions = state.transactions.map((t) =>
       t.id === id ? { ...t, ...updates } : t
     );
@@ -446,7 +508,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
+      state.currentUser.id
     );
 
     const newState: AppState = {
@@ -457,10 +520,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
+    });
   };
 
   const deleteTransaction = async (id: string) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     console.log(`🗑️  Menghapus transaksi: ${id}`);
 
     const transactionToDelete = state.transactions.find((t) => t.id === id);
@@ -474,7 +546,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
+      state.currentUser.id
     );
 
     const newState: AppState = {
@@ -485,7 +558,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
+    });
 
     console.log(
       `✅ Transaksi dihapus. Sisa: ${updatedTransactions.length} transaksi`
@@ -493,17 +570,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /* ======================================================
-     BUDGETS (SAMA seperti sebelumnya)
+     BUDGETS - UPDATE dengan userId
   ====================================================== */
   const addBudget = async (
-    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
+    budget: Omit<
+      Budget,
+      "id" | "spent" | "createdAt" | "lastResetDate" | "userId"
+    >
   ) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const newBudget: Budget = {
       ...budget,
       id: generateBudgetId(),
       spent: 0,
       createdAt: new Date().toISOString(),
       lastResetDate: new Date().toISOString(),
+      userId: state.currentUser.id, // Tambahkan userId
     };
 
     console.log("➕ Menambahkan budget baru:", {
@@ -511,12 +597,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       startDate: newBudget.startDate,
       endDate: newBudget.endDate,
       period: newBudget.period,
+      userId: newBudget.userId,
     });
 
-    const updatedBudgets = updateBudgetsFromTransactions(state.transactions, [
-      ...state.budgets,
-      newBudget,
-    ]);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      state.transactions,
+      [...state.budgets, newBudget],
+      state.currentUser.id
+    );
 
     const newState: AppState = {
       ...state,
@@ -524,7 +612,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      budgets: updatedBudgets,
+    });
 
     console.log("✅ Budget added:", {
       category: newBudget.category,
@@ -532,10 +622,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       startDate: newBudget.startDate,
       endDate: newBudget.endDate,
       limit: newBudget.limit,
+      userId: newBudget.userId,
     });
   };
 
   const editBudget = async (id: string, updates: Partial<Budget>) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     console.log("✏️ Edit budget:", { id, updates });
 
     const updatedBudgets = state.budgets.map((b) =>
@@ -544,7 +640,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const recalculated = updateBudgetsFromTransactions(
       state.transactions,
-      updatedBudgets
+      updatedBudgets,
+      state.currentUser.id
     );
 
     const newState: AppState = {
@@ -553,7 +650,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      budgets: recalculated,
+    });
 
     console.log("✅ Budget edited:", {
       id,
@@ -562,23 +661,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteBudget = async (id: string) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const newState: AppState = {
       ...state,
       budgets: state.budgets.filter((b) => b.id !== id),
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      budgets: newState.budgets,
+    });
   };
 
   /* ======================================================
-     SAVINGS (SAMA seperti sebelumnya)
+     SAVINGS - UPDATE dengan userId
   ====================================================== */
-  const addSavings = async (savings: Omit<Savings, "id" | "createdAt">) => {
+  const addSavings = async (
+    savings: Omit<Savings, "id" | "createdAt" | "userId">
+  ) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const newSavings: Savings = {
       ...savings,
       id: generateSavingsId(),
       createdAt: new Date().toISOString(),
+      userId: state.currentUser.id, // Tambahkan userId
     };
 
     // Create initial transaction jika ada saldo awal
@@ -594,6 +708,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         previousBalance: 0,
         newBalance: safeNumber(newSavings.current),
         createdAt: new Date().toISOString(),
+        userId: state.currentUser.id, // Tambahkan userId
       };
     }
 
@@ -606,16 +721,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      savings: newState.savings,
+      savingsTransactions: newState.savingsTransactions,
+    });
 
     console.log("✅ Savings added:", {
       name: newSavings.name,
       target: newSavings.target,
       current: newSavings.current,
+      userId: newSavings.userId,
     });
   };
 
   const editSavings = async (id: string, updates: Partial<Savings>) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     console.log("✏️ Edit savings:", { id, updates });
 
     const updatedSavings = state.savings.map((s) =>
@@ -628,7 +752,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      savings: updatedSavings,
+    });
 
     console.log("✅ Savings edited:", {
       id,
@@ -637,6 +763,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteSavings = async (id: string) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      return;
+    }
+
     const newState: AppState = {
       ...state,
       savings: state.savings.filter((s) => s.id !== id),
@@ -646,7 +777,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      savings: newState.savings,
+      savingsTransactions: newState.savingsTransactions,
+    });
 
     console.log("✅ Savings deleted:", { id });
   };
@@ -660,6 +794,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       note?: string;
     }
   ) => {
+    if (!state.currentUser) {
+      console.error("❌ Tidak ada user yang aktif");
+      throw new Error("User tidak ditemukan");
+    }
+
     const saving = state.savings.find((s) => s.id === savingsId);
     if (!saving) throw new Error("Tabungan tidak ditemukan");
 
@@ -691,6 +830,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       previousBalance,
       newBalance,
       createdAt: new Date().toISOString(),
+      userId: state.currentUser.id, // Tambahkan userId
     };
 
     const newState: AppState = {
@@ -700,12 +840,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     setState(newState);
-    await storageService.saveData(newState);
+    await storageService.saveUserData(state.currentUser.id, {
+      savings: updatedSavings,
+      savingsTransactions: newState.savingsTransactions,
+    });
   };
 
   const getSavingsTransactions = (savingsId: string): SavingsTransaction[] => {
     return state.savingsTransactions
-      .filter((st) => st.savingsId === savingsId)
+      .filter(
+        (st) =>
+          st.savingsId === savingsId && st.userId === state.currentUser?.id
+      ) // Filter by userId
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
