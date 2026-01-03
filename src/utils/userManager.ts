@@ -1,3 +1,4 @@
+// File: src/utils/userManager.ts - TAMBAH FUNGSI LOGOUT
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "../types";
 
@@ -48,6 +49,16 @@ export const getCurrentUser = async (): Promise<User | null> => {
   } catch (error) {
     console.error("Error getting current user:", error);
     return null;
+  }
+};
+
+// Hapus current user (logout)
+export const clearCurrentUser = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(CURRENT_USER_KEY);
+  } catch (error) {
+    console.error("Error clearing current user:", error);
+    throw error;
   }
 };
 

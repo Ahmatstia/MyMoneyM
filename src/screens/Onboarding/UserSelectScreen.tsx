@@ -1,4 +1,4 @@
-// File: src/screens/Onboarding/UserSelectScreen.tsx
+// File: src/screens/Onboarding/UserSelectScreen.tsx - VERSI DIPERBAIKI
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -17,6 +17,14 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { User } from "../../types";
+import {
+  createUser,
+  getCurrentUser,
+  setCurrentUser,
+  clearCurrentUser,
+  loadUsers,
+  saveUsers,
+} from "../../utils/userManager";
 
 const UserSelectScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -34,6 +42,53 @@ const UserSelectScreen: React.FC = () => {
   );
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUserName, setNewUserName] = useState("");
+
+  // ✅ FUNGSI RESET DATA SEMUA USER
+  const handleResetAllData = async () => {
+    Alert.alert(
+      "Reset Semua Data",
+      "Tindakan ini akan:\n• Hapus SEMUA transaksi\n• Hapus SEMUA budget\n• Hapus SEMUA tabungan\n• User tetap ada (kosong)",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Reset Data",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Import storageService
+              const { storageService } = require("../../utils/storage");
+
+              // Untuk setiap user, clear datanya
+              for (const user of allUsers) {
+                await storageService.clearUserData(user.id);
+              }
+
+              // Hapus current user (logout)
+              await clearCurrentUser();
+
+              Alert.alert(
+                "✅ Berhasil",
+                "Semua data telah direset. User tetap tersimpan.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      // Refresh dan reset selection
+                      refreshUserList();
+                      setSelectedUserId(null);
+                    },
+                  },
+                ]
+              );
+            } catch (error) {
+              console.error("❌ Error reset data:", error);
+              Alert.alert("Error", "Gagal reset data");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -170,6 +225,21 @@ const UserSelectScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={tw`mt-4`}>
+          {/* ✅ TOMBOL RESET DATA - HANYA JIKA ADA USER */}
+          {allUsers.length > 0 && (
+            <TouchableOpacity
+              style={tw`bg-red-50 border border-red-200 rounded-xl py-3 items-center mb-3`}
+              onPress={handleResetAllData} // ✅ BENAR: panggil fungsi yang ada
+            >
+              <Text style={tw`text-red-600 text-base font-medium`}>
+                Reset Semua Data
+              </Text>
+              <Text style={tw`text-red-500 text-xs mt-1`}>
+                Hapus transaksi, budget, tabungan
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={tw`bg-white border border-indigo-600 rounded-xl py-3 items-center mb-3`}
             onPress={handleAddNewUser}

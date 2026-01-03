@@ -1,4 +1,3 @@
-// File: src/navigation/AppNavigator.tsx - DRAWER WITH NO SWIPE GESTURE
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -15,6 +14,7 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Avatar } from "react-native-paper";
 import tw from "twrnc";
@@ -35,16 +35,20 @@ import CalendarScreen from "../screens/Calendar/CalendarScreen";
 import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 
-// Import user manager
-import { hasUsers, getCurrentUser } from "../utils/userManager";
+// Import user manager - ✅ UPDATE IMPORT
+import {
+  hasUsers,
+  getCurrentUser,
+  clearCurrentUser, // ✅ INI YANG PERLU DITAMBAH
+} from "../utils/userManager";
 import { User } from "../types";
 
-// Types - UPDATE: Tambah MainDrawer dan MainStack
+// Types
 type StackParamList = {
   Welcome: undefined;
   UserSelect: undefined;
-  MainDrawer: undefined; // TAMBAH INI
-  MainStack: undefined; // TAMBAH INI
+  MainDrawer: undefined;
+  MainStack: undefined;
   Home: undefined;
   Transactions: undefined;
   Budget: undefined;
@@ -75,6 +79,59 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const loadCurrentUser = async () => {
     const user = await getCurrentUser();
     setCurrentUser(user);
+  };
+
+  // FUNGSI LOGOUT
+  const handleLogout = async () => {
+    Alert.alert(
+      "Keluar",
+      "Apakah Anda yakin ingin keluar dari akun saat ini?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Keluar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearCurrentUser();
+              props.navigation.closeDrawer();
+
+              // Navigate ke UserSelect
+              props.navigation.navigate("UserSelect");
+
+              console.log("✅ Logout berhasil");
+            } catch (error) {
+              console.error("❌ Error logout:", error);
+              Alert.alert("Error", "Gagal keluar dari akun");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // FUNGSI UNTUK BUKA PROFIL USER
+  const handleOpenProfile = () => {
+    Alert.alert(
+      "Profil Pengguna",
+      `Nama: ${currentUser?.name}\nID: ${currentUser?.id}\nDibuat: ${
+        currentUser?.createdAt
+          ? new Date(currentUser.createdAt).toLocaleDateString("id-ID")
+          : "-"
+      }`,
+      [
+        { text: "Tutup", style: "cancel" },
+        {
+          text: "Ganti Pengguna",
+          onPress: () => {
+            props.navigation.reset({
+              index: 0,
+              routes: [{ name: "UserSelect" }],
+            });
+          },
+        },
+      ]
+    );
   };
 
   const menuItems = [
@@ -133,12 +190,13 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       {/* Header */}
       <View style={tw`pt-10 pb-6 px-6 bg-indigo-600`}>
         <View style={tw`flex-row items-center`}>
-          <Avatar.Icon
-            size={44}
-            icon="currency-usd"
-            style={tw`bg-white`}
-            color="#4F46E5"
-          />
+          <TouchableOpacity onPress={handleOpenProfile}>
+            <View
+              style={tw`w-14 h-14 bg-white rounded-full items-center justify-center`}
+            >
+              <Text style={tw`text-2xl`}>{currentUser?.avatar || "👤"}</Text>
+            </View>
+          </TouchableOpacity>
           <View style={tw`ml-4 flex-1`}>
             <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
             <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
@@ -208,10 +266,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {/* Divider */}
         <View style={tw`h-px bg-gray-100 my-4 mx-6`} />
 
-        {/* TAMBAH Menu Profil */}
+        {/* Menu Profil */}
         <TouchableOpacity
           style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
-          onPress={() => console.log("Buka pengaturan profil")}
+          onPress={handleOpenProfile}
         >
           <View
             style={tw`w-8 h-8 rounded-lg bg-blue-50 items-center justify-center mr-3`}
@@ -221,10 +279,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           <Text style={tw`text-gray-700 text-sm flex-1`}>Profil Saya</Text>
         </TouchableOpacity>
 
-        {/* Additional Menu */}
+        {/* Bantuan */}
         <TouchableOpacity
           style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
-          onPress={() => console.log("Bantuan")}
+          onPress={() => Alert.alert("Bantuan", "Hubungi: support@mymoney.app")}
         >
           <View
             style={tw`w-8 h-8 rounded-lg bg-amber-50 items-center justify-center mr-3`}
@@ -235,12 +293,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         </TouchableOpacity>
       </DrawerContentScrollView>
 
-      {/* Footer */}
+      {/* Footer - LOGOUT */}
       <View style={tw`border-t border-gray-100 p-4`}>
         <TouchableOpacity
           style={tw`flex-row items-center`}
           activeOpacity={0.7}
-          onPress={() => console.log("Keluar")}
+          onPress={handleLogout}
         >
           <View
             style={tw`w-8 h-8 rounded-lg bg-red-50 items-center justify-center mr-3`}
@@ -248,8 +306,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             <Ionicons name="log-out-outline" size={18} color="#EF4444" />
           </View>
           <View style={tw`flex-1`}>
-            <Text style={tw`text-gray-800 text-sm font-medium`}>Keluar</Text>
-            <Text style={tw`text-gray-500 text-xs`}>Keluar dari akun</Text>
+            <Text style={tw`text-gray-800 text-sm font-medium`}>
+              Keluar dari {currentUser?.name || "Akun"}
+            </Text>
+            <Text style={tw`text-gray-500 text-xs`}>Pilih pengguna lain</Text>
           </View>
         </TouchableOpacity>
       </View>
