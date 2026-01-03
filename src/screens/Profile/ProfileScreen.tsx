@@ -1,4 +1,4 @@
-// File: src/screens/Profile/ProfileScreen.tsx
+// File: src/screens/Profile/ProfileScreen.tsx - DIPERBAIKI
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -21,6 +21,7 @@ import {
   clearCurrentUser,
   saveUsers,
   loadUsers,
+  deleteUser,
 } from "../../utils/userManager";
 
 const ProfileScreen: React.FC = () => {
@@ -74,7 +75,7 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // ✅ HAPUS AKUN SENDIRI
+  // ✅ HAPUS AKUN SENDIRI - DIPERBAIKI
   const handleDeleteAccount = async () => {
     if (!currentUser) return;
 
@@ -93,18 +94,15 @@ const ProfileScreen: React.FC = () => {
               // 1. Hapus data user dari storage
               await storageService.clearUserData(currentUser.id);
 
-              // 2. Hapus user dari daftar users
-              const updatedUsers = allUsers.filter(
-                (u) => u.id !== currentUser.id
-              );
-              await saveUsers(updatedUsers);
+              // 2. Gunakan fungsi deleteUser dari userManager
+              await deleteUser(currentUser.id);
 
-              // 3. Clear current user
-              await clearCurrentUser();
+              // 🔴 PERBAIKAN: Refresh user list di AppContext
+              await refreshUserList();
 
               setIsLoading(false);
 
-              // 4. Navigasi ke UserSelectScreen
+              // 3. Navigasi ke UserSelectScreen
               navigation.reset({
                 index: 0,
                 routes: [{ name: "UserSelect" }],
@@ -125,7 +123,7 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
-  // ✅ EDIT NAMA USER
+  // ✅ EDIT NAMA USER - DIPERBAIKI
   const handleEditName = async () => {
     if (!currentUser || !newName.trim()) return;
 
@@ -142,13 +140,14 @@ const ProfileScreen: React.FC = () => {
       // Update current user
       const updatedUser = { ...currentUser, name: newName.trim() };
 
-      // Jika user ini sedang aktif, update currentUser
-      if (currentUser.id === updatedUser.id) {
-        const {
-          setCurrentUser: updateCurrentUser,
-        } = require("../../utils/userManager");
-        await updateCurrentUser(updatedUser);
-      }
+      // Update current user di AsyncStorage
+      const {
+        setCurrentUser: updateCurrentUser,
+      } = require("../../utils/userManager");
+      await updateCurrentUser(updatedUser);
+
+      // 🔴 PERBAIKAN: Panggil switchToUser untuk refresh context
+      await switchToUser(currentUser.id);
 
       // Refresh user list
       await refreshUserList();

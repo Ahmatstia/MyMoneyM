@@ -1,4 +1,4 @@
-// File: src/screens/Onboarding/UserSelectScreen.tsx - DENGAN FITUR HAPUS AKUN
+// File: src/screens/Onboarding/UserSelectScreen.tsx - DENGAN FITUR HAPUS AKUN DIPERBAIKI
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -24,6 +24,7 @@ import {
   clearCurrentUser,
   loadUsers,
   saveUsers,
+  deleteUser,
 } from "../../utils/userManager";
 
 const UserSelectScreen: React.FC = () => {
@@ -43,7 +44,17 @@ const UserSelectScreen: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUserName, setNewUserName] = useState("");
 
-  // ✅ FUNGSI HAPUS AKUN TERTENTU
+  useEffect(() => {
+    if (allUsers.length === 0) {
+      console.log("📭 Tidak ada user, redirect ke WelcomeScreen");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Welcome" }],
+      });
+    }
+  }, [allUsers.length, navigation]);
+
+  // ✅ FUNGSI HAPUS AKUN TERTENTU - DIPERBAIKI
   const handleDeleteUser = async (user: User) => {
     Alert.alert(
       "Hapus Akun",
@@ -59,22 +70,16 @@ const UserSelectScreen: React.FC = () => {
               const { storageService } = require("../../utils/storage");
               await storageService.clearUserData(user.id);
 
-              // 2. Hapus user dari daftar users
-              const updatedUsers = allUsers.filter((u) => u.id !== user.id);
-              await saveUsers(updatedUsers);
+              // 2. Gunakan fungsi deleteUser dari userManager
+              await deleteUser(user.id);
 
-              // 3. Jika user yang dihapus adalah currentUser, clear currentUser
-              if (currentUser?.id === user.id) {
-                await clearCurrentUser();
-              }
+              // 3. Refresh daftar user
+              await refreshUserList();
 
               // 4. Jika user yang dihapus sedang dipilih, reset selection
               if (selectedUserId === user.id) {
                 setSelectedUserId(null);
               }
-
-              // 5. Refresh daftar user
-              await refreshUserList();
 
               Alert.alert("✅ Berhasil", `Akun "${user.name}" telah dihapus`, [
                 { text: "OK" },
@@ -99,6 +104,7 @@ const UserSelectScreen: React.FC = () => {
     setSelectedUserId(user.id);
   };
 
+  // ✅ KONFIRMASI PILIH USER - DIPERBAIKI
   const handleConfirmSelection = async () => {
     if (!selectedUserId) {
       Alert.alert("Pilih Pengguna", "Silakan pilih pengguna terlebih dahulu");
@@ -106,6 +112,15 @@ const UserSelectScreen: React.FC = () => {
     }
 
     try {
+      // 🔴 PERBAIKAN: Validasi user masih ada
+      const selectedUser = allUsers.find((u) => u.id === selectedUserId);
+      if (!selectedUser) {
+        Alert.alert("Akun tidak ditemukan", "Akun ini mungkin telah dihapus");
+        await refreshUserList(); // Refresh daftar
+        setSelectedUserId(null);
+        return;
+      }
+
       await switchToUser(selectedUserId);
       navigation.reset({
         index: 0,

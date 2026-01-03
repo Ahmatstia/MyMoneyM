@@ -444,10 +444,32 @@ export const storageService = {
     await saveUserDataToStorage(userId, data);
   },
 
-  // ✅ BARU: Muat data untuk user tertentu
+  // ✅ BARU: Muat data untuk user tertentu - DIPERBAIKI
   async loadUserData(userId: string): Promise<AppState> {
     try {
       console.log(`📥 Memuat data untuk user: ${userId}`);
+
+      // 🔴 PERBAIKAN: Cek apakah user masih ada di daftar users
+      const usersJson = await AsyncStorage.getItem(GLOBAL_KEYS.USERS);
+      if (usersJson) {
+        const users: User[] = JSON.parse(usersJson);
+        const userExists = users.some((u) => u.id === userId);
+        if (!userExists) {
+          console.warn(`⚠️ User ${userId} tidak ditemukan di daftar users`);
+          // Return default state KOSONG (bukan dengan data default user)
+          return {
+            currentUser: null,
+            users: [],
+            transactions: [],
+            budgets: [],
+            savings: [],
+            savingsTransactions: [],
+            totalIncome: 0,
+            totalExpense: 0,
+            balance: 0,
+          };
+        }
+      }
 
       // Cek apakah data sudah dimigrasi
       const isMigrated = await AsyncStorage.getItem(GLOBAL_KEYS.MIGRATION_FLAG);
@@ -527,11 +549,17 @@ export const storageService = {
     } catch (error) {
       console.error(`❌ Error memuat data untuk user ${userId}:`, error);
 
-      // Return default state jika error
+      // 🔴 PERBAIKAN: Return state KOSONG, bukan default user state
       return {
         currentUser: null,
         users: [],
-        ...getDefaultUserState(userId),
+        transactions: [],
+        budgets: [],
+        savings: [],
+        savingsTransactions: [],
+        totalIncome: 0,
+        totalExpense: 0,
+        balance: 0,
       };
     }
   },

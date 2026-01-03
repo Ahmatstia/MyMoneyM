@@ -421,6 +421,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (user) {
         await setCurrentUser(user);
         await loadUserData(user);
+      } else {
+        console.warn(`User ${userId} tidak ditemukan`);
+        // Jika user tidak ditemukan, reset ke default
+        setState(defaultAppState);
       }
     } catch (error) {
       console.error("Error switching user:", error);
@@ -431,7 +435,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const users = await loadUsers();
     setAllUsers(users);
   };
-
   /* ======================================================
      SYSTEM FUNCTIONS - UPDATE untuk userId
   ====================================================== */

@@ -84,9 +84,6 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     setCurrentUser(user);
   };
 
-  // ✅ HAPUS fungsi handleOpenProfile yang duplicate
-  // HANYA SIMPAN SATU FUNGSI handleOpenProfile
-
   // FUNGSI LOGOUT
   const handleLogout = async () => {
     Alert.alert(
@@ -483,7 +480,7 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// ROOT Navigator
+// 🔴 PERBAIKAN: HANYA SATU RootNavigator, tidak ada duplikasi
 const RootNavigator: React.FC = () => {
   const [hasExistingUsers, setHasExistingUsers] = useState<boolean | null>(
     null
@@ -529,6 +526,8 @@ const RootNavigator: React.FC = () => {
           <>
             <Stack.Screen name="UserSelect" component={UserSelectScreen} />
             <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+            {/* 🔴 TAMBAHKAN: Backup jika semua user dihapus */}
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -536,6 +535,7 @@ const RootNavigator: React.FC = () => {
   );
 };
 
+// 🔴 PERBAIKAN: Export RootNavigator sebagai AppNavigator
 const AppNavigator: React.FC = () => {
   return <RootNavigator />;
 };

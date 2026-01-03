@@ -1,4 +1,4 @@
-// File: src/utils/userManager.ts - TAMBAH FUNGSI LOGOUT
+// File: src/utils/userManager.ts - TAMBAH FUNGSI LOGOUT DAN DELETE USER
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User } from "../types";
 
@@ -58,6 +58,26 @@ export const clearCurrentUser = async (): Promise<void> => {
     await AsyncStorage.removeItem(CURRENT_USER_KEY);
   } catch (error) {
     console.error("Error clearing current user:", error);
+    throw error;
+  }
+};
+
+// 🔴 PERBAIKAN: Tambah fungsi delete user
+export const deleteUser = async (userId: string): Promise<void> => {
+  try {
+    const users = await loadUsers();
+    const updatedUsers = users.filter((user) => user.id !== userId);
+    await saveUsers(updatedUsers);
+
+    // Cek jika user yang dihapus adalah current user
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id === userId) {
+      await clearCurrentUser();
+    }
+
+    console.log(`✅ User ${userId} deleted`);
+  } catch (error) {
+    console.error("Error deleting user:", error);
     throw error;
   }
 };
