@@ -1,3 +1,4 @@
+// File: src/navigation/AppNavigator.tsx - VERSI DIPERBAIKI
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -34,16 +35,17 @@ import AddSavingsScreen from "../screens/Savings/AddSavingsScreen";
 import CalendarScreen from "../screens/Calendar/CalendarScreen";
 import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
+import ProfileScreen from "../screens/Profile/ProfileScreen";
 
-// Import user manager - ✅ UPDATE IMPORT
+// Import user manager
 import {
   hasUsers,
   getCurrentUser,
-  clearCurrentUser, // ✅ INI YANG PERLU DITAMBAH
+  clearCurrentUser,
 } from "../utils/userManager";
 import { User } from "../types";
 
-// Types
+// Types - ✅ TAMBAH 'Profile' ke StackParamList
 type StackParamList = {
   Welcome: undefined;
   UserSelect: undefined;
@@ -55,6 +57,7 @@ type StackParamList = {
   Savings: undefined;
   Analytics: undefined;
   Calendar: undefined;
+  Profile: undefined; // ✅ TAMBAH INI
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -81,6 +84,9 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     setCurrentUser(user);
   };
 
+  // ✅ HAPUS fungsi handleOpenProfile yang duplicate
+  // HANYA SIMPAN SATU FUNGSI handleOpenProfile
+
   // FUNGSI LOGOUT
   const handleLogout = async () => {
     Alert.alert(
@@ -93,11 +99,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           style: "destructive",
           onPress: async () => {
             try {
+              // Hapus current user dari storage
               await clearCurrentUser();
-              props.navigation.closeDrawer();
 
-              // Navigate ke UserSelect
-              props.navigation.navigate("UserSelect");
+              // Navigasi ke UserSelectScreen
+              props.navigation.reset({
+                index: 0,
+                routes: [{ name: "UserSelect" }],
+              });
 
               console.log("✅ Logout berhasil");
             } catch (error) {
@@ -110,28 +119,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     );
   };
 
-  // FUNGSI UNTUK BUKA PROFIL USER
+  // ✅ SATU-SATUNYA FUNGSI handleOpenProfile
   const handleOpenProfile = () => {
-    Alert.alert(
-      "Profil Pengguna",
-      `Nama: ${currentUser?.name}\nID: ${currentUser?.id}\nDibuat: ${
-        currentUser?.createdAt
-          ? new Date(currentUser.createdAt).toLocaleDateString("id-ID")
-          : "-"
-      }`,
-      [
-        { text: "Tutup", style: "cancel" },
-        {
-          text: "Ganti Pengguna",
-          onPress: () => {
-            props.navigation.reset({
-              index: 0,
-              routes: [{ name: "UserSelect" }],
-            });
-          },
-        },
-      ]
-    );
+    props.navigation.navigate("Profile");
+    props.navigation.closeDrawer();
   };
 
   const menuItems = [
@@ -189,21 +180,23 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     <View style={tw`flex-1 bg-white`}>
       {/* Header */}
       <View style={tw`pt-10 pb-6 px-6 bg-indigo-600`}>
-        <View style={tw`flex-row items-center`}>
-          <TouchableOpacity onPress={handleOpenProfile}>
+        <TouchableOpacity onPress={handleOpenProfile}>
+          <View style={tw`flex-row items-center`}>
             <View
               style={tw`w-14 h-14 bg-white rounded-full items-center justify-center`}
             >
               <Text style={tw`text-2xl`}>{currentUser?.avatar || "👤"}</Text>
             </View>
-          </TouchableOpacity>
-          <View style={tw`ml-4 flex-1`}>
-            <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
-            <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
-              {currentUser ? `Halo, ${currentUser.name}!` : "Keuangan Pribadi"}
-            </Text>
+            <View style={tw`ml-4 flex-1`}>
+              <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
+              <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
+                {currentUser
+                  ? `Halo, ${currentUser.name}!`
+                  : "Keuangan Pribadi"}
+              </Text>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Menu Items */}
@@ -403,6 +396,15 @@ const MainStackNavigator = () => {
         component={SavingsScreen}
         options={{
           title: "Tabungan",
+        }}
+      />
+
+      {/* ✅ PROFILE SCREEN */}
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: "Profil Saya",
         }}
       />
 

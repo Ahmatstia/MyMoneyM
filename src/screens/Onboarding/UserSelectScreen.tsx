@@ -1,4 +1,4 @@
-// File: src/screens/Onboarding/UserSelectScreen.tsx - VERSI DIPERBAIKI
+// File: src/screens/Onboarding/UserSelectScreen.tsx - DENGAN FITUR HAPUS AKUN
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -43,46 +43,45 @@ const UserSelectScreen: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUserName, setNewUserName] = useState("");
 
-  // ✅ FUNGSI RESET DATA SEMUA USER
-  const handleResetAllData = async () => {
+  // ✅ FUNGSI HAPUS AKUN TERTENTU
+  const handleDeleteUser = async (user: User) => {
     Alert.alert(
-      "Reset Semua Data",
-      "Tindakan ini akan:\n• Hapus SEMUA transaksi\n• Hapus SEMUA budget\n• Hapus SEMUA tabungan\n• User tetap ada (kosong)",
+      "Hapus Akun",
+      `Apakah Anda yakin ingin menghapus akun "${user.name}"?\n\nSemua data transaksi, budget, dan tabungan akun ini akan dihapus permanen.`,
       [
         { text: "Batal", style: "cancel" },
         {
-          text: "Reset Data",
+          text: "Hapus",
           style: "destructive",
           onPress: async () => {
             try {
-              // Import storageService
+              // 1. Hapus data user dari storage
               const { storageService } = require("../../utils/storage");
+              await storageService.clearUserData(user.id);
 
-              // Untuk setiap user, clear datanya
-              for (const user of allUsers) {
-                await storageService.clearUserData(user.id);
+              // 2. Hapus user dari daftar users
+              const updatedUsers = allUsers.filter((u) => u.id !== user.id);
+              await saveUsers(updatedUsers);
+
+              // 3. Jika user yang dihapus adalah currentUser, clear currentUser
+              if (currentUser?.id === user.id) {
+                await clearCurrentUser();
               }
 
-              // Hapus current user (logout)
-              await clearCurrentUser();
+              // 4. Jika user yang dihapus sedang dipilih, reset selection
+              if (selectedUserId === user.id) {
+                setSelectedUserId(null);
+              }
 
-              Alert.alert(
-                "✅ Berhasil",
-                "Semua data telah direset. User tetap tersimpan.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      // Refresh dan reset selection
-                      refreshUserList();
-                      setSelectedUserId(null);
-                    },
-                  },
-                ]
-              );
+              // 5. Refresh daftar user
+              await refreshUserList();
+
+              Alert.alert("✅ Berhasil", `Akun "${user.name}" telah dihapus`, [
+                { text: "OK" },
+              ]);
             } catch (error) {
-              console.error("❌ Error reset data:", error);
-              Alert.alert("Error", "Gagal reset data");
+              console.error("❌ Error menghapus akun:", error);
+              Alert.alert("Error", "Gagal menghapus akun");
             }
           },
         },
@@ -141,46 +140,58 @@ const UserSelectScreen: React.FC = () => {
     }
   };
 
+  // ✅ RENDER USER ITEM DENGAN TOMBOL HAPUS
   const renderUserItem = ({ item: user }: { item: User }) => (
-    <TouchableOpacity
-      style={[
-        tw`flex-row items-center p-4 rounded-xl mb-3 border`,
-        selectedUserId === user.id
-          ? tw`bg-indigo-50 border-indigo-200`
-          : tw`bg-white border-gray-200`,
-      ]}
-      onPress={() => handleSelectUser(user)}
-      activeOpacity={0.7}
-    >
-      <View
+    <View style={tw`flex-row items-center mb-3`}>
+      <TouchableOpacity
         style={[
-          tw`w-12 h-12 rounded-full items-center justify-center mr-4`,
-          { backgroundColor: `${user.color || "#4F46E5"}20` },
+          tw`flex-1 flex-row items-center p-4 rounded-xl border`,
+          selectedUserId === user.id
+            ? tw`bg-indigo-50 border-indigo-200`
+            : tw`bg-white border-gray-200`,
         ]}
+        onPress={() => handleSelectUser(user)}
+        activeOpacity={0.7}
       >
-        <Text style={[tw`text-2xl`, { color: user.color || "#4F46E5" }]}>
-          {user.avatar || "👤"}
-        </Text>
-      </View>
+        <View
+          style={[
+            tw`w-12 h-12 rounded-full items-center justify-center mr-4`,
+            { backgroundColor: `${user.color || "#4F46E5"}20` },
+          ]}
+        >
+          <Text style={[tw`text-2xl`, { color: user.color || "#4F46E5" }]}>
+            {user.avatar || "👤"}
+          </Text>
+        </View>
 
-      <View style={tw`flex-1`}>
-        <Text style={tw`text-gray-900 text-base font-semibold`}>
-          {user.name}
-          {currentUser?.id === user.id && (
-            <Text style={tw`text-indigo-600 text-xs font-normal ml-2`}>
-              (Sedang Aktif)
-            </Text>
-          )}
-        </Text>
-        <Text style={tw`text-gray-500 text-xs mt-0.5`}>
-          Dibuat: {new Date(user.createdAt).toLocaleDateString("id-ID")}
-        </Text>
-      </View>
+        <View style={tw`flex-1`}>
+          <Text style={tw`text-gray-900 text-base font-semibold`}>
+            {user.name}
+            {currentUser?.id === user.id && (
+              <Text style={tw`text-indigo-600 text-xs font-normal ml-2`}>
+                (Sedang Aktif)
+              </Text>
+            )}
+          </Text>
+          <Text style={tw`text-gray-500 text-xs mt-0.5`}>
+            ID: {user.id.substring(0, 8)}... • Dibuat:{" "}
+            {new Date(user.createdAt).toLocaleDateString("id-ID")}
+          </Text>
+        </View>
 
-      {selectedUserId === user.id && (
-        <Ionicons name="checkmark-circle" size={24} color="#4F46E5" />
-      )}
-    </TouchableOpacity>
+        {selectedUserId === user.id && (
+          <Ionicons name="checkmark-circle" size={24} color="#4F46E5" />
+        )}
+      </TouchableOpacity>
+
+      {/* ✅ TOMBOL HAPUS AKUN */}
+      <TouchableOpacity
+        style={tw`ml-2 p-3 bg-red-50 rounded-xl`}
+        onPress={() => handleDeleteUser(user)}
+      >
+        <Ionicons name="trash-outline" size={20} color="#DC2626" />
+      </TouchableOpacity>
+    </View>
   );
 
   return (
@@ -193,6 +204,9 @@ const UserSelectScreen: React.FC = () => {
           </Text>
           <Text style={tw`text-gray-600 mt-1`}>
             Pilih profil untuk melanjutkan
+          </Text>
+          <Text style={tw`text-gray-400 text-xs mt-1`}>
+            {allUsers.length} pengguna terdaftar
           </Text>
         </View>
 
@@ -225,21 +239,7 @@ const UserSelectScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={tw`mt-4`}>
-          {/* ✅ TOMBOL RESET DATA - HANYA JIKA ADA USER */}
-          {allUsers.length > 0 && (
-            <TouchableOpacity
-              style={tw`bg-red-50 border border-red-200 rounded-xl py-3 items-center mb-3`}
-              onPress={handleResetAllData} // ✅ BENAR: panggil fungsi yang ada
-            >
-              <Text style={tw`text-red-600 text-base font-medium`}>
-                Reset Semua Data
-              </Text>
-              <Text style={tw`text-red-500 text-xs mt-1`}>
-                Hapus transaksi, budget, tabungan
-              </Text>
-            </TouchableOpacity>
-          )}
-
+          {/* ✅ TOMBOL TAMBAH USER */}
           <TouchableOpacity
             style={tw`bg-white border border-indigo-600 rounded-xl py-3 items-center mb-3`}
             onPress={handleAddNewUser}
@@ -249,6 +249,7 @@ const UserSelectScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
 
+          {/* ✅ TOMBOL LANJUTKAN */}
           <TouchableOpacity
             style={[
               tw`rounded-xl py-3 items-center`,
@@ -301,6 +302,9 @@ const UserSelectScreen: React.FC = () => {
                 autoFocus
                 maxLength={30}
               />
+              <Text style={tw`text-gray-400 text-xs mt-2`}>
+                Maksimal 30 karakter
+              </Text>
             </View>
 
             <View style={tw`flex-row gap-3`}>
