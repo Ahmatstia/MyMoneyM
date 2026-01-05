@@ -1,4 +1,3 @@
-// File: src/screens/TransactionsScreen.tsx
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
@@ -91,7 +90,7 @@ const TransactionsScreen: React.FC = () => {
     return icons[category] || "receipt-outline";
   };
 
-  // Filter transactions - FIXED logic
+  // Filter transactions - SINGLE USER VERSION (tidak perlu filter userId)
   const filteredTransactions = useMemo(() => {
     let filtered = [...state.transactions];
 
@@ -234,7 +233,7 @@ const TransactionsScreen: React.FC = () => {
     };
   }, [filteredTransactions]);
 
-  // Handle delete transaction - IMPROVED
+  // Handle delete transaction - SINGLE USER VERSION (tidak perlu cek userId)
   const handleDelete = async (transactionId: string) => {
     const swipeable = swipeableRefs.current[transactionId];
     if (swipeable) {
@@ -243,6 +242,13 @@ const TransactionsScreen: React.FC = () => {
       } catch (error) {
         // Ignore close errors
       }
+    }
+
+    // ✅ SINGLE USER: Tidak perlu cek userId
+    const transaction = state.transactions.find((t) => t.id === transactionId);
+    if (!transaction) {
+      Alert.alert("Error", "Transaksi tidak ditemukan");
+      return;
     }
 
     Alert.alert(

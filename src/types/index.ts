@@ -1,4 +1,3 @@
-// File: src/types.ts - UPDATE DENGAN userId
 export type TransactionType = "income" | "expense";
 
 export interface Transaction {
@@ -9,7 +8,7 @@ export interface Transaction {
   description: string;
   date: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
-  userId?: string; // ✅ TAMBAH: untuk identifikasi user
+  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface Budget {
@@ -22,7 +21,7 @@ export interface Budget {
   endDate: string; // ✨ TAMBAH: tanggal akhir periode
   lastResetDate?: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
-  userId?: string; // ✅ TAMBAH: untuk identifikasi user
+  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface Savings {
@@ -36,7 +35,7 @@ export interface Savings {
   description: string; // Tambahkan
   icon: string; // Tambahkan
   createdAt: string; // Tambahkan
-  userId?: string; // ✅ TAMBAH: untuk identifikasi user
+  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface SavingsTransaction {
@@ -49,21 +48,13 @@ export interface SavingsTransaction {
   previousBalance: number;
   newBalance: number;
   createdAt: string; // Tambahkan
-  userId?: string; // ✅ TAMBAH: untuk identifikasi user
-}
-
-export interface User {
-  id: string;
-  name: string;
-  createdAt: string;
-  avatar?: string; // Opsional: emoji seperti "👤"
-  color?: string; // Opsional: warna tema
+  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface AppState {
-  // User management
-  currentUser: User | null;
-  users: User[];
+  // HAPUS user management
+  // currentUser: User | null;
+  // users: User[];
 
   // Financial data
   transactions: Transaction[];

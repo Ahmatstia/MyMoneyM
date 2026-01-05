@@ -1,5 +1,4 @@
-// File: src/screens/AddTransactionScreen.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -46,7 +45,8 @@ const CATEGORIES = [
 const AddTransactionScreen: React.FC = () => {
   const navigation = useNavigation<AddTransactionScreenNavigationProp>();
   const route = useRoute<AddTransactionScreenRouteProp>();
-  const { addTransaction, editTransaction } = useAppContext();
+  const { addTransaction, editTransaction, deleteTransaction } =
+    useAppContext();
 
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
@@ -61,6 +61,44 @@ const AddTransactionScreen: React.FC = () => {
   const params = route.params || {};
   const isEditMode = params.editMode || false;
   const transactionData = params.transactionData;
+
+  // ✅ FIX CRITICAL: Buat delete handler dengan useCallback
+  const handleDeleteTransaction = useCallback(async () => {
+    if (!transactionData?.id) {
+      Alert.alert("Error", "Data transaksi tidak valid");
+      return;
+    }
+
+    try {
+      console.log("🗑️  Deleting transaction:", transactionData.id);
+      await deleteTransaction(transactionData.id);
+      navigation.goBack();
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Gagal menghapus transaksi. Silakan coba lagi."
+      );
+    }
+  }, [transactionData, deleteTransaction, navigation]);
+
+  // ✅ FIX CRITICAL: Show delete confirmation (tidak ada hooks violation)
+  const showDeleteConfirmation = useCallback(() => {
+    if (!isEditMode || !transactionData) return;
+
+    Alert.alert(
+      "Hapus Transaksi",
+      "Apakah Anda yakin ingin menghapus transaksi ini?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: handleDeleteTransaction, // ✅ Gunakan handler yang sudah dibuat
+        },
+      ]
+    );
+  }, [isEditMode, transactionData, handleDeleteTransaction]);
 
   // Initialize form with transaction data if in edit mode
   useEffect(() => {
@@ -84,14 +122,25 @@ const AddTransactionScreen: React.FC = () => {
       },
       headerRight: () => (
         <TouchableOpacity
-          onPress={handleDelete}
+          onPress={showDeleteConfirmation} // ✅ Gunakan fungsi yang aman
           style={tw`mr-4 ${isEditMode ? "opacity-100" : "opacity-0"}`}
+          disabled={!isEditMode || loading}
         >
-          <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+          <Ionicons
+            name="trash-outline"
+            size={22}
+            color={isEditMode && !loading ? "#FFFFFF" : "transparent"}
+          />
         </TouchableOpacity>
       ),
     });
-  }, [isEditMode, transactionData, navigation]);
+  }, [
+    isEditMode,
+    transactionData,
+    navigation,
+    loading,
+    showDeleteConfirmation,
+  ]);
 
   // Validate amount input
   const validateAmount = (value: string): boolean => {
@@ -175,33 +224,6 @@ const AddTransactionScreen: React.FC = () => {
     }
   };
 
-  // Handle delete transaction
-  const handleDelete = () => {
-    if (!isEditMode || !transactionData) return;
-
-    Alert.alert(
-      "Hapus Transaksi",
-      "Apakah Anda yakin ingin menghapus transaksi ini?",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const { deleteTransaction } = useAppContext();
-              await deleteTransaction(transactionData.id);
-              navigation.goBack();
-            } catch (error) {
-              console.error("Delete error:", error);
-              Alert.alert("Error", "Gagal menghapus transaksi");
-            }
-          },
-        },
-      ]
-    );
-  };
-
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateAmount(amount)) {
@@ -279,6 +301,25 @@ const AddTransactionScreen: React.FC = () => {
     }
   };
 
+  // Render category icons
+  const renderCategoryIcon = (iconName: string) => {
+    // Map icon names to valid Ionicons
+    const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+      "restaurant-outline": "restaurant-outline",
+      "car-outline": "car-outline",
+      "cart-outline": "cart-outline",
+      "film-outline": "film-outline",
+      "medical-outline": "medical-outline",
+      "school-outline": "school-outline",
+      "document-text-outline": "document-text-outline",
+      "cash-outline": "cash-outline",
+      "trending-up-outline": "trending-up-outline",
+      "ellipsis-horizontal-outline": "ellipsis-horizontal-outline",
+    };
+
+    return iconMap[iconName] || "receipt-outline";
+  };
+
   return (
     <View style={tw`flex-1 bg-gray-50`}>
       <ScrollView
@@ -297,6 +338,7 @@ const AddTransactionScreen: React.FC = () => {
                 type === "expense" ? "bg-white shadow-sm" : ""
               }`}
               onPress={() => setType("expense")}
+              disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
                 <View
@@ -319,6 +361,7 @@ const AddTransactionScreen: React.FC = () => {
                 type === "income" ? "bg-white shadow-sm" : ""
               }`}
               onPress={() => setType("income")}
+              disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
                 <View
@@ -359,6 +402,7 @@ const AddTransactionScreen: React.FC = () => {
                 keyboardType="decimal-pad"
                 returnKeyType="done"
                 maxLength={15}
+                editable={!loading}
               />
             </View>
             {amount ? (
@@ -389,6 +433,7 @@ const AddTransactionScreen: React.FC = () => {
                   key={cat.id}
                   style={tw`items-center mr-3 mb-3`}
                   onPress={() => setCategory(cat.name)}
+                  disabled={loading}
                 >
                   <View
                     style={tw`w-16 h-16 rounded-xl justify-center items-center ${
@@ -400,7 +445,7 @@ const AddTransactionScreen: React.FC = () => {
                     }`}
                   >
                     <Ionicons
-                      name={cat.icon}
+                      name={renderCategoryIcon(cat.icon)}
                       size={24}
                       color={
                         category === cat.name
@@ -442,6 +487,7 @@ const AddTransactionScreen: React.FC = () => {
               multiline
               textAlignVertical="top"
               maxLength={200}
+              editable={!loading}
             />
             <Text style={tw`text-gray-400 text-xs text-right mt-1`}>
               {description.length}/200
@@ -457,6 +503,7 @@ const AddTransactionScreen: React.FC = () => {
           <TouchableOpacity
             style={tw`bg-white rounded-xl border border-gray-300 p-4 flex-row justify-between items-center`}
             onPress={() => setShowCalendar(true)}
+            disabled={loading}
           >
             <View>
               <Text style={tw`text-gray-800 text-sm font-medium mb-1`}>
@@ -492,6 +539,7 @@ const AddTransactionScreen: React.FC = () => {
                 )}
               </Text>
             </View>
+            {/* HAPUS userId display karena sudah tidak ada field userId */}
           </View>
         )}
 

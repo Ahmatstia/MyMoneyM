@@ -1,5 +1,5 @@
-// File: src/navigation/AppNavigator.tsx - VERSI DIPERBAIKI
-import React, { useState, useEffect } from "react";
+// File: src/navigation/AppNavigator.tsx - VERSI SINGLE USER
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -14,15 +14,11 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-  ActivityIndicator,
   Alert,
 } from "react-native";
-import { Avatar } from "react-native-paper";
 import tw from "twrnc";
 
 // Screens
-import UserSelectScreen from "../screens/Onboarding/UserSelectScreen";
-import WelcomeScreen from "../screens/Onboarding/WelcomeScreen";
 import HomeScreen from "../screens/Home/HomeScreen";
 import TransactionsScreen from "../screens/Transactions/TransactionsScreen";
 import BudgetScreen from "../screens/Budget/BudgetScreen";
@@ -37,18 +33,20 @@ import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactio
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 
-// Import user manager
-import {
-  hasUsers,
-  getCurrentUser,
-  clearCurrentUser,
-} from "../utils/userManager";
-import { User } from "../types";
+// Warna tema dari logo
+const PRIMARY_COLOR = "#0B4FB3"; // Deep Blue / Royal Blue
+const ACCENT_COLOR = "#2EE6C8"; // Teal / Mint Green
+const BACKGROUND_COLOR = "#F8FAFC"; // Very light blue-gray
+const SURFACE_COLOR = "#FFFFFF"; // White
+const TEXT_PRIMARY = "#1E293B"; // Dark blue-gray
+const TEXT_SECONDARY = "#64748B"; // Medium gray
+const SUCCESS_COLOR = "#10B981"; // Green
+const WARNING_COLOR = "#F59E0B"; // Amber
+const ERROR_COLOR = "#EF4444"; // Red
+const INFO_COLOR = "#3B82F6"; // Blue
 
-// Types - ✅ TAMBAH 'Profile' ke StackParamList
+// Types
 type StackParamList = {
-  Welcome: undefined;
-  UserSelect: undefined;
   MainDrawer: undefined;
   MainStack: undefined;
   Home: undefined;
@@ -57,7 +55,7 @@ type StackParamList = {
   Savings: undefined;
   Analytics: undefined;
   Calendar: undefined;
-  Profile: undefined; // ✅ TAMBAH INI
+  Profile: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -70,72 +68,22 @@ const Stack = createStackNavigator<StackParamList>();
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
 
-// Custom Drawer Content
+// Custom Drawer Content - SINGLE USER VERSION
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
-  const [activeRoute, setActiveRoute] = useState<string>("Home");
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    loadCurrentUser();
-  }, []);
-
-  const loadCurrentUser = async () => {
-    const user = await getCurrentUser();
-    setCurrentUser(user);
-  };
-
-  // FUNGSI LOGOUT
-  const handleLogout = async () => {
-    Alert.alert(
-      "Keluar",
-      "Apakah Anda yakin ingin keluar dari akun saat ini?",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Keluar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Hapus current user dari storage
-              await clearCurrentUser();
-
-              // Navigasi ke UserSelectScreen
-              props.navigation.reset({
-                index: 0,
-                routes: [{ name: "UserSelect" }],
-              });
-
-              console.log("✅ Logout berhasil");
-            } catch (error) {
-              console.error("❌ Error logout:", error);
-              Alert.alert("Error", "Gagal keluar dari akun");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // ✅ SATU-SATUNYA FUNGSI handleOpenProfile
-  const handleOpenProfile = () => {
-    props.navigation.navigate("Profile");
-    props.navigation.closeDrawer();
-  };
-
   const menuItems = [
     {
       name: "Home",
       label: "Beranda",
       icon: "home-outline" as const,
       activeIcon: "home" as const,
-      color: "#4F46E5",
+      color: PRIMARY_COLOR,
     },
     {
       name: "Transactions",
       label: "Transaksi",
       icon: "swap-horizontal-outline" as const,
       activeIcon: "swap-horizontal" as const,
-      color: "#10B981",
+      color: ACCENT_COLOR,
     },
     {
       name: "Calendar",
@@ -149,7 +97,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       label: "Analitik",
       icon: "stats-chart-outline" as const,
       activeIcon: "stats-chart" as const,
-      color: "#F59E0B",
+      color: WARNING_COLOR,
     },
     {
       name: "Budget",
@@ -163,33 +111,35 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       label: "Tabungan",
       icon: "wallet-outline" as const,
       activeIcon: "wallet" as const,
-      color: "#EC4899",
+      color: SUCCESS_COLOR,
     },
   ];
 
   const navigateToScreen = (screenName: keyof StackParamList) => {
-    setActiveRoute(screenName);
     props.navigation.navigate(screenName);
+    props.navigation.closeDrawer();
+  };
+
+  const handleOpenProfile = () => {
+    props.navigation.navigate("Profile");
     props.navigation.closeDrawer();
   };
 
   return (
     <View style={tw`flex-1 bg-white`}>
       {/* Header */}
-      <View style={tw`pt-10 pb-6 px-6 bg-indigo-600`}>
+      <View style={tw`pt-10 pb-6 px-6 bg-[${PRIMARY_COLOR}]`}>
         <TouchableOpacity onPress={handleOpenProfile}>
           <View style={tw`flex-row items-center`}>
             <View
               style={tw`w-14 h-14 bg-white rounded-full items-center justify-center`}
             >
-              <Text style={tw`text-2xl`}>{currentUser?.avatar || "👤"}</Text>
+              <Text style={tw`text-2xl`}>👤</Text>
             </View>
             <View style={tw`ml-4 flex-1`}>
               <Text style={tw`text-white text-lg font-bold`}>MyMoney</Text>
-              <Text style={tw`text-indigo-100 text-xs mt-0.5`}>
-                {currentUser
-                  ? `Halo, ${currentUser.name}!`
-                  : "Keuangan Pribadi"}
+              <Text style={tw`text-[${PRIMARY_COLOR}90] text-xs mt-0.5`}>
+                Keuangan Pribadi
               </Text>
             </View>
           </View>
@@ -203,106 +153,67 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         showsVerticalScrollIndicator={false}
       >
         <Text
-          style={tw`text-gray-500 text-xs font-medium px-6 mb-2 uppercase tracking-wider`}
+          style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium px-6 mb-2 uppercase tracking-wider`}
         >
           Menu
         </Text>
 
-        {menuItems.map((item) => {
-          const isActive = activeRoute === item.name;
-          return (
-            <TouchableOpacity
-              key={item.name}
-              style={[
-                tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`,
-                isActive ? tw`bg-indigo-50` : tw``,
-              ]}
-              onPress={() =>
-                navigateToScreen(item.name as keyof StackParamList)
-              }
-              activeOpacity={0.7}
+        {menuItems.map((item) => (
+          <TouchableOpacity
+            key={item.name}
+            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1 active:bg-[${PRIMARY_COLOR}10]`}
+            onPress={() => navigateToScreen(item.name as keyof StackParamList)}
+            activeOpacity={0.7}
+          >
+            <View
+              style={tw`w-8 h-8 rounded-lg bg-gray-50 items-center justify-center mr-3`}
             >
-              <View
-                style={[
-                  tw`w-8 h-8 rounded-lg items-center justify-center mr-3`,
-                  isActive ? tw`bg-indigo-100` : tw`bg-gray-50`,
-                ]}
-              >
-                <Ionicons
-                  name={isActive ? item.activeIcon : item.icon}
-                  size={18}
-                  color={isActive ? item.color : "#6B7280"}
-                />
-              </View>
+              <Ionicons name={item.icon} size={18} color={TEXT_SECONDARY} />
+            </View>
 
-              <Text
-                style={[
-                  tw`text-sm flex-1`,
-                  isActive
-                    ? tw`text-indigo-600 font-semibold`
-                    : tw`text-gray-700`,
-                ]}
-              >
-                {item.label}
-              </Text>
-
-              {isActive && (
-                <View style={tw`w-1.5 h-1.5 rounded-full bg-indigo-500`} />
-              )}
-            </TouchableOpacity>
-          );
-        })}
+            <Text style={tw`text-[${TEXT_PRIMARY}] text-sm flex-1`}>
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
 
         {/* Divider */}
         <View style={tw`h-px bg-gray-100 my-4 mx-6`} />
 
         {/* Menu Profil */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1 active:bg-[${INFO_COLOR}10]`}
           onPress={handleOpenProfile}
         >
           <View
-            style={tw`w-8 h-8 rounded-lg bg-blue-50 items-center justify-center mr-3`}
+            style={tw`w-8 h-8 rounded-lg bg-[${INFO_COLOR}10] items-center justify-center mr-3`}
           >
-            <Ionicons name="person-outline" size={18} color="#3B82F6" />
+            <Ionicons name="person-outline" size={18} color={INFO_COLOR} />
           </View>
-          <Text style={tw`text-gray-700 text-sm flex-1`}>Profil Saya</Text>
+          <Text style={tw`text-[${TEXT_PRIMARY}] text-sm flex-1`}>
+            Profil Saya
+          </Text>
         </TouchableOpacity>
 
         {/* Bantuan */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-lg mb-1 active:bg-[${WARNING_COLOR}10]`}
           onPress={() => Alert.alert("Bantuan", "Hubungi: support@mymoney.app")}
         >
           <View
-            style={tw`w-8 h-8 rounded-lg bg-amber-50 items-center justify-center mr-3`}
+            style={tw`w-8 h-8 rounded-lg bg-[${WARNING_COLOR}10] items-center justify-center mr-3`}
           >
-            <Ionicons name="help-circle-outline" size={18} color="#F59E0B" />
+            <Ionicons
+              name="help-circle-outline"
+              size={18}
+              color={WARNING_COLOR}
+            />
           </View>
-          <Text style={tw`text-gray-700 text-sm flex-1`}>Bantuan & FAQ</Text>
+          <Text style={tw`text-[${TEXT_PRIMARY}] text-sm flex-1`}>
+            Bantuan & FAQ
+          </Text>
         </TouchableOpacity>
       </DrawerContentScrollView>
-
-      {/* Footer - LOGOUT */}
-      <View style={tw`border-t border-gray-100 p-4`}>
-        <TouchableOpacity
-          style={tw`flex-row items-center`}
-          activeOpacity={0.7}
-          onPress={handleLogout}
-        >
-          <View
-            style={tw`w-8 h-8 rounded-lg bg-red-50 items-center justify-center mr-3`}
-          >
-            <Ionicons name="log-out-outline" size={18} color="#EF4444" />
-          </View>
-          <View style={tw`flex-1`}>
-            <Text style={tw`text-gray-800 text-sm font-medium`}>
-              Keluar dari {currentUser?.name || "Akun"}
-            </Text>
-            <Text style={tw`text-gray-500 text-xs`}>Pilih pengguna lain</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -313,7 +224,7 @@ const MainStackNavigator = () => {
     <Stack.Navigator
       screenOptions={({ navigation, route }) => ({
         headerStyle: {
-          backgroundColor: "#4F46E5",
+          backgroundColor: PRIMARY_COLOR,
           elevation: 0,
           shadowOpacity: 0,
           height: Platform.OS === "ios" ? 100 : 70,
@@ -396,7 +307,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      {/* ✅ PROFILE SCREEN */}
+      {/* PROFILE SCREEN */}
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
@@ -480,64 +391,21 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// 🔴 PERBAIKAN: HANYA SATU RootNavigator, tidak ada duplikasi
-const RootNavigator: React.FC = () => {
-  const [hasExistingUsers, setHasExistingUsers] = useState<boolean | null>(
-    null
-  );
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    checkUsers();
-  }, []);
-
-  const checkUsers = async () => {
-    try {
-      const usersExist = await hasUsers();
-      setHasExistingUsers(usersExist);
-    } catch (error) {
-      console.error("Error checking users:", error);
-      setHasExistingUsers(false);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  if (isChecking) {
-    return (
-      <View style={tw`flex-1 bg-gray-50 items-center justify-center`}>
-        <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={tw`mt-4 text-gray-600`}>Memeriksa data...</Text>
-      </View>
-    );
-  }
-
+// Main App Navigator - langsung ke MainDrawer (single user)
+const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!hasExistingUsers ? (
-          // First time: Welcome → MainDrawer
-          <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-          </>
-        ) : (
-          // Already have users: UserSelect → MainDrawer
-          <>
-            <Stack.Screen name="UserSelect" component={UserSelectScreen} />
-            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-            {/* 🔴 TAMBAHKAN: Backup jika semua user dihapus */}
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          </>
-        )}
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      >
+        {/* Langsung ke MainDrawer tanpa Welcome/UserSelect */}
+        <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
-
-// 🔴 PERBAIKAN: Export RootNavigator sebagai AppNavigator
-const AppNavigator: React.FC = () => {
-  return <RootNavigator />;
 };
 
 export default AppNavigator;

@@ -19,9 +19,21 @@ import { calculateTransactionAnalytics } from "../../utils/analytics";
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
+// Warna tema dari logo
+const PRIMARY_COLOR = "#0B4FB3"; // Deep Blue / Royal Blue
+const ACCENT_COLOR = "#2EE6C8"; // Teal / Mint Green
+const BACKGROUND_COLOR = "#F8FAFC"; // Very light blue-gray
+const SURFACE_COLOR = "#FFFFFF"; // White
+const TEXT_PRIMARY = "#1E293B"; // Dark blue-gray
+const TEXT_SECONDARY = "#64748B"; // Medium gray
+const BORDER_COLOR = "#E2E8F0"; // Light border
+const SUCCESS_COLOR = "#10B981"; // Green
+const WARNING_COLOR = "#F59E0B"; // Amber
+const ERROR_COLOR = "#EF4444"; // Red
+
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { state, isLoading, currentUser } = useAppContext();
+  const { state, isLoading } = useAppContext();
 
   // Helper untuk mendapatkan icon yang aman
   const getSafeIcon = (iconName: string): SafeIconName => {
@@ -74,10 +86,10 @@ const HomeScreen: React.FC = () => {
   // PERBAIKAN: Conditional return HARUS DI BAWAH semua hooks
   if (isLoading) {
     return (
-      <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+      <SafeAreaView style={tw`flex-1 bg-[${BACKGROUND_COLOR}]`}>
         <View style={tw`flex-1 items-center justify-center`}>
-          <ActivityIndicator size="large" color="#4F46E5" />
-          <Text style={tw`mt-4 text-gray-600 text-center px-8`}>
+          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+          <Text style={tw`mt-4 text-[${TEXT_SECONDARY}] text-center px-8`}>
             Memuat data keuangan Anda...
           </Text>
         </View>
@@ -166,7 +178,7 @@ const HomeScreen: React.FC = () => {
     if (score === null) {
       return {
         label: "Belum Ada Data",
-        color: "#6B7280",
+        color: TEXT_SECONDARY,
         icon: "help-circle-outline" as SafeIconName,
       };
     }
@@ -175,24 +187,24 @@ const HomeScreen: React.FC = () => {
     if (safeScore >= 80)
       return {
         label: "Sangat Sehat",
-        color: "#10B981",
+        color: SUCCESS_COLOR,
         icon: "heart-outline" as SafeIconName,
       };
     if (safeScore >= 60)
       return {
         label: "Sehat",
-        color: "#F59E0B",
+        color: WARNING_COLOR,
         icon: "checkmark-circle-outline" as SafeIconName,
       };
     if (safeScore >= 40)
       return {
         label: "Perhatian",
-        color: "#F59E0B",
+        color: WARNING_COLOR,
         icon: "alert-circle-outline" as SafeIconName,
       };
     return {
       label: "Kritis",
-      color: "#EF4444",
+      color: ERROR_COLOR,
       icon: "warning-outline" as SafeIconName,
     };
   };
@@ -211,7 +223,7 @@ const HomeScreen: React.FC = () => {
         message:
           "Tambahkan transaksi pertama Anda untuk melihat analisis keuangan",
         icon: "add-circle-outline" as SafeIconName,
-        color: "#4F46E5",
+        color: PRIMARY_COLOR,
         action: "Tambah Transaksi",
         onPress: () => navigation.navigate("AddTransaction"),
       });
@@ -229,7 +241,7 @@ const HomeScreen: React.FC = () => {
           1
         )}% dari pemasukan disimpan`,
         icon: "trending-down-outline" as SafeIconName,
-        color: "#EF4444",
+        color: ERROR_COLOR,
         action: "Tingkatkan ke 20%",
         onPress: () => navigation.navigate("Analytics"),
       });
@@ -241,7 +253,7 @@ const HomeScreen: React.FC = () => {
           1
         )}% pemasukan berhasil disimpan`,
         icon: "trending-up-outline" as SafeIconName,
-        color: "#10B981",
+        color: SUCCESS_COLOR,
         action: "Pertahankan!",
         onPress: () => navigation.navigate("Analytics"),
       });
@@ -263,7 +275,7 @@ const HomeScreen: React.FC = () => {
             percentage
           ).toFixed(0)}% dari total pengeluaran`,
           icon: "pie-chart-outline" as SafeIconName,
-          color: "#F59E0B",
+          color: WARNING_COLOR,
           action: "Diversifikasi",
           onPress: () =>
             navigation.navigate("Analytics", { tab: "categories" }),
@@ -282,7 +294,7 @@ const HomeScreen: React.FC = () => {
           title: `${overBudgetCount} Anggaran Melebihi Limit`,
           message: "Beberapa kategori pengeluaran melebihi batas",
           icon: "alert-circle-outline" as SafeIconName,
-          color: "#EF4444",
+          color: ERROR_COLOR,
           action: "Review Anggaran",
           onPress: () => navigation.navigate("Budget"),
         });
@@ -306,7 +318,7 @@ const HomeScreen: React.FC = () => {
           title: `${nearingCompletion.length} Target Hampir Tercapai!`,
           message: "Tabungan Anda hampir mencapai target",
           icon: "trophy-outline" as SafeIconName,
-          color: "#8B5CF6",
+          color: PRIMARY_COLOR,
           action: "Lihat Progress",
           onPress: () => navigation.navigate("Savings"),
         });
@@ -320,7 +332,7 @@ const HomeScreen: React.FC = () => {
         title: "Keuangan Stabil",
         message: "Semua indikator dalam kondisi baik",
         icon: "checkmark-circle-outline" as SafeIconName,
-        color: "#4F46E5",
+        color: PRIMARY_COLOR,
         action: "Pantau Terus",
         onPress: () => navigation.navigate("Analytics"),
       });
@@ -342,7 +354,7 @@ const HomeScreen: React.FC = () => {
       id: 1,
       title: "Transaksi",
       icon: "swap-horizontal-outline" as SafeIconName,
-      color: "#4F46E5",
+      color: PRIMARY_COLOR,
       onPress: () => navigation.navigate("Transactions"),
     });
 
@@ -350,7 +362,7 @@ const HomeScreen: React.FC = () => {
       id: 2,
       title: "Analitik",
       icon: "stats-chart-outline" as SafeIconName,
-      color: "#10B981",
+      color: ACCENT_COLOR,
       onPress: () => navigation.navigate("Analytics"),
     });
 
@@ -361,7 +373,7 @@ const HomeScreen: React.FC = () => {
         id: 3,
         title: "Review Hari",
         icon: "calendar-outline" as SafeIconName,
-        color: "#F59E0B",
+        color: WARNING_COLOR,
         onPress: () => navigation.navigate("Budget"),
       });
     } else if (hour > 18) {
@@ -379,7 +391,7 @@ const HomeScreen: React.FC = () => {
         id: 3,
         title: "Anggaran",
         icon: "pie-chart-outline" as SafeIconName,
-        color: "#F59E0B",
+        color: WARNING_COLOR,
         onPress: () => navigation.navigate("Budget"),
       });
     }
@@ -399,7 +411,7 @@ const HomeScreen: React.FC = () => {
         id: 4,
         title: "Tabungan",
         icon: "wallet-outline" as SafeIconName,
-        color: "#8B5CF6",
+        color: PRIMARY_COLOR,
         onPress: () => navigation.navigate("Savings"),
       });
     }
@@ -411,28 +423,28 @@ const HomeScreen: React.FC = () => {
           id: 0,
           title: "Mulai Catat",
           icon: "add-circle-outline" as SafeIconName,
-          color: "#4F46E5",
+          color: PRIMARY_COLOR,
           onPress: () => navigation.navigate("AddTransaction"),
         },
         {
           id: 1,
           title: "Tutorial",
           icon: "help-circle-outline" as SafeIconName,
-          color: "#10B981",
+          color: ACCENT_COLOR,
           onPress: () => navigation.navigate("Analytics"),
         },
         {
           id: 2,
           title: "Anggaran",
           icon: "pie-chart-outline" as SafeIconName,
-          color: "#F59E0B",
+          color: WARNING_COLOR,
           onPress: () => navigation.navigate("Budget"),
         },
         {
           id: 3,
           title: "Tabungan",
           icon: "wallet-outline" as SafeIconName,
-          color: "#8B5CF6",
+          color: PRIMARY_COLOR,
           onPress: () => navigation.navigate("Savings"),
         },
       ];
@@ -520,14 +532,14 @@ const HomeScreen: React.FC = () => {
           value: "Transaksi",
           unit: "Pertama",
           trend: "✨",
-          color: "#4F46E5",
+          color: PRIMARY_COLOR,
         },
         {
           id: 2,
           label: "Pantau",
           value: "Pengeluaran",
           trend: "📊",
-          color: "#10B981",
+          color: ACCENT_COLOR,
         },
         {
           id: 3,
@@ -535,7 +547,7 @@ const HomeScreen: React.FC = () => {
           value: "Target",
           unit: "Tabungan",
           trend: "🎯",
-          color: "#F59E0B",
+          color: WARNING_COLOR,
         },
       ];
     }
@@ -592,14 +604,14 @@ const HomeScreen: React.FC = () => {
         value: daysWithoutShopping.toString(),
         unit: "hari",
         trend: daysWithoutShopping >= 4 ? "+" : "-",
-        color: "#10B981",
+        color: SUCCESS_COLOR,
       },
       {
         id: 2,
         label: "Rata-rata/Hari",
         value: formatCurrency(avgDailyExpense),
         trend: avgDailyExpense > 100000 ? "↑" : "↓",
-        color: "#F59E0B",
+        color: WARNING_COLOR,
       },
       {
         id: 3,
@@ -607,7 +619,7 @@ const HomeScreen: React.FC = () => {
         value: thisMonthTransactions.toString(),
         unit: "bulan ini",
         trend: transactionGrowth >= 0 ? "+" : "-",
-        color: "#4F46E5",
+        color: PRIMARY_COLOR,
       },
     ];
   };
@@ -644,43 +656,25 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+    <SafeAreaView style={tw`flex-1 bg-[${BACKGROUND_COLOR}]`}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tw`px-5 pb-24`}
       >
+        {/* HEADER SECTION - PERBAIKAN: Hapus referensi currentUser */}
         <View style={tw`flex-row justify-between items-center pt-3 pb-3`}>
           <View style={tw`flex-1`}>
             <View style={tw`flex-row items-center mb-0.5`}>
-              <Text style={tw`text-gray-800 text-xl font-bold mr-2`}>
+              <Text style={tw`text-[${TEXT_PRIMARY}] text-xl font-bold`}>
                 {getPersonalizedGreeting()}
               </Text>
-              {/* Tampilkan avatar user kecil */}
-              {currentUser && (
-                <View
-                  style={[
-                    tw`w-6 h-6 rounded-full items-center justify-center`,
-                    { backgroundColor: `${currentUser.color || "#4F46E5"}20` },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      tw`text-xs`,
-                      { color: currentUser.color || "#4F46E5" },
-                    ]}
-                  >
-                    {currentUser.avatar || "👤"}
-                  </Text>
-                </View>
-              )}
             </View>
-            <Text style={tw`text-gray-500 text-sm`}>
+            <Text style={tw`text-[${TEXT_SECONDARY}] text-sm`}>
               {getCurrentDate()}
-              {currentUser && ` • ${currentUser.name}`}
             </Text>
           </View>
 
-          {/* Health Score Badge - IMPROVED */}
+          {/* Health Score Badge */}
           {healthScore !== null ? (
             <TouchableOpacity
               style={[
@@ -711,7 +705,11 @@ const HomeScreen: React.FC = () => {
               onPress={() => navigation.navigate("AddTransaction")}
             >
               <View style={tw`flex-row items-center`}>
-                <Ionicons name="add-circle-outline" size={16} color="#4F46E5" />
+                <Ionicons
+                  name="add-circle-outline"
+                  size={16}
+                  color={PRIMARY_COLOR}
+                />
                 <Text style={tw`ml-1 text-xs font-medium text-gray-700`}>
                   Mulai
                 </Text>
@@ -720,6 +718,7 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           )}
         </View>
+
         {/* SMART INSIGHTS CARDS */}
         {smartInsights.length > 0 && (
           <ScrollView
@@ -760,7 +759,7 @@ const HomeScreen: React.FC = () => {
                     >
                       {insight.title}
                     </Text>
-                    <Text style={tw`text-xs text-gray-700 mb-2`}>
+                    <Text style={tw`text-xs text-[${TEXT_SECONDARY}] mb-2`}>
                       {insight.message}
                     </Text>
                     <Text
@@ -777,18 +776,19 @@ const HomeScreen: React.FC = () => {
             ))}
           </ScrollView>
         )}
+
         {/* BALANCE CARD WITH MONTHLY PROGRESS */}
         <View
-          style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}
+          style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-[${BORDER_COLOR}]`}
         >
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <Text
-              style={tw`text-gray-500 text-xs font-medium uppercase tracking-wider`}
+              style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium uppercase tracking-wider`}
             >
               {hasFinancialData ? "SALDO ANDA" : "SELAMAT DATANG"}
             </Text>
             <View style={tw`px-2 py-1 bg-gray-100 rounded-full`}>
-              <Text style={tw`text-gray-600 text-xs font-medium`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium`}>
                 {hasFinancialData
                   ? `Hari ke-${monthlyProgress.currentDay} dari ${monthlyProgress.daysInMonth}`
                   : "Hari Pertama"}
@@ -796,7 +796,7 @@ const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <Text style={tw`text-gray-800 text-2xl font-bold mb-5`}>
+          <Text style={tw`text-[${TEXT_PRIMARY}] text-2xl font-bold mb-5`}>
             {hasFinancialData
               ? formatCurrency(safeNumber(state.balance))
               : "Rp 0"}
@@ -805,10 +805,10 @@ const HomeScreen: React.FC = () => {
           {/* Monthly Progress Bar */}
           <View style={tw`mb-4`}>
             <View style={tw`flex-row justify-between items-center mb-1`}>
-              <Text style={tw`text-gray-600 text-xs`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs`}>
                 {hasFinancialData ? "Progress Bulan Ini" : "Siap Memulai?"}
               </Text>
-              <Text style={tw`text-gray-600 text-xs font-medium`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium`}>
                 {hasFinancialData
                   ? `${safeNumber(monthlyProgress.progress).toFixed(0)}%`
                   : "0%"}
@@ -826,9 +826,11 @@ const HomeScreen: React.FC = () => {
                   },
                   hasFinancialData
                     ? (monthlyProgress.status === "surplus" &&
-                        tw`bg-emerald-500`,
-                      monthlyProgress.status === "warning" && tw`bg-yellow-500`,
-                      monthlyProgress.status === "deficit" && tw`bg-red-500`)
+                        tw`bg-[${SUCCESS_COLOR}]`,
+                      monthlyProgress.status === "warning" &&
+                        tw`bg-[${WARNING_COLOR}]`,
+                      monthlyProgress.status === "deficit" &&
+                        tw`bg-[${ERROR_COLOR}]`)
                     : tw`bg-gray-300`,
                 ]}
               />
@@ -837,8 +839,10 @@ const HomeScreen: React.FC = () => {
 
           <View style={tw`flex-row items-center`}>
             <View style={tw`flex-1`}>
-              <Text style={tw`text-gray-500 text-xs mb-1`}>Pemasukan</Text>
-              <Text style={tw`text-emerald-600 text-base font-semibold`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+                Pemasukan
+              </Text>
+              <Text style={tw`text-[${SUCCESS_COLOR}] text-base font-semibold`}>
                 {formatCurrency(safeNumber(state.totalIncome))}
               </Text>
             </View>
@@ -846,8 +850,10 @@ const HomeScreen: React.FC = () => {
             <View style={tw`w-px h-10 bg-gray-200 mx-4`} />
 
             <View style={tw`flex-1`}>
-              <Text style={tw`text-gray-500 text-xs mb-1`}>Pengeluaran</Text>
-              <Text style={tw`text-red-500 text-base font-semibold`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+                Pengeluaran
+              </Text>
+              <Text style={tw`text-[${ERROR_COLOR}] text-base font-semibold`}>
                 {formatCurrency(safeNumber(state.totalExpense))}
               </Text>
               <Text style={tw`text-gray-400 text-xs`}>
@@ -863,7 +869,7 @@ const HomeScreen: React.FC = () => {
           {/* Projected Balance */}
           {hasFinancialData && monthlyProgress.daysRemaining > 0 && (
             <View style={tw`mt-3 pt-3 border-t border-gray-100`}>
-              <Text style={tw`text-gray-500 text-xs mb-1`}>
+              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
                 Proyeksi akhir bulan ({monthlyProgress.daysRemaining} hari
                 lagi):
               </Text>
@@ -871,8 +877,8 @@ const HomeScreen: React.FC = () => {
                 style={[
                   tw`text-base font-semibold`,
                   monthlyProgress.projectedBalance >= 0
-                    ? tw`text-emerald-600`
-                    : tw`text-red-600`,
+                    ? tw`text-[${SUCCESS_COLOR}]`
+                    : tw`text-[${ERROR_COLOR}]`,
                 ]}
               >
                 {formatCurrency(safeNumber(monthlyProgress.projectedBalance))}
@@ -880,6 +886,7 @@ const HomeScreen: React.FC = () => {
             </View>
           )}
         </View>
+
         {/* DYNAMIC QUICK ACTIONS */}
         <View style={tw`flex-row justify-between mb-8`}>
           {dynamicQuickActions.map((action) => (
@@ -897,14 +904,19 @@ const HomeScreen: React.FC = () => {
               >
                 <Ionicons name={action.icon} size={20} color={action.color} />
               </View>
-              <Text style={tw`text-gray-700 text-xs font-medium text-center`}>
+              <Text
+                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium text-center`}
+              >
                 {action.title}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+
         {/* QUICK STATS - HORIZONTAL COMPACT */}
-        <View style={tw`bg-white rounded-xl p-3 mb-6 border border-gray-100`}>
+        <View
+          style={tw`bg-white rounded-xl p-3 mb-6 border border-[${BORDER_COLOR}]`}
+        >
           <View style={tw`flex-row justify-between`}>
             {quickStats.map((stat, index) => (
               <React.Fragment key={stat.id}>
@@ -917,7 +929,9 @@ const HomeScreen: React.FC = () => {
                   >
                     {stat.value}
                   </Text>
-                  <Text style={tw`text-gray-500 text-xs text-center`}>
+                  <Text
+                    style={tw`text-[${TEXT_SECONDARY}] text-xs text-center`}
+                  >
                     {stat.label}
                   </Text>
                 </View>
@@ -928,16 +942,17 @@ const HomeScreen: React.FC = () => {
             ))}
           </View>
         </View>
+
         {/* RECENT TRANSACTIONS HEADER */}
         <View style={tw`flex-row justify-between items-center mb-4`}>
-          <Text style={tw`text-gray-800 text-lg font-semibold`}>
+          <Text style={tw`text-[${TEXT_PRIMARY}] text-lg font-semibold`}>
             {hasFinancialData ? "Transaksi Terbaru" : "Mulai Catat Keuangan"}
           </Text>
           {state.transactions.length > 0 ? (
             <TouchableOpacity
               onPress={() => navigation.navigate("Transactions")}
             >
-              <Text style={tw`text-indigo-600 text-sm font-medium`}>
+              <Text style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}>
                 Lihat Semua
               </Text>
             </TouchableOpacity>
@@ -945,16 +960,17 @@ const HomeScreen: React.FC = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate("AddTransaction")}
             >
-              <Text style={tw`text-indigo-600 text-sm font-medium`}>
+              <Text style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}>
                 Mulai Sekarang
               </Text>
             </TouchableOpacity>
           )}
         </View>
+
         {/* TRANSACTIONS LIST */}
         {state.transactions.length > 0 ? (
           <View
-            style={tw`bg-white rounded-2xl mb-6 overflow-hidden border border-gray-100`}
+            style={tw`bg-white rounded-2xl mb-6 overflow-hidden border border-[${BORDER_COLOR}]`}
           >
             {state.transactions
               .slice()
@@ -991,17 +1007,19 @@ const HomeScreen: React.FC = () => {
                         name={getTransactionIcon(transaction.category)}
                         size={18}
                         color={
-                          transaction.type === "income" ? "#10B981" : "#EF4444"
+                          transaction.type === "income"
+                            ? SUCCESS_COLOR
+                            : ERROR_COLOR
                         }
                       />
                     </View>
                     <View style={tw`flex-1`}>
                       <Text
-                        style={tw`text-gray-800 text-sm font-medium mb-0.5`}
+                        style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium mb-0.5`}
                       >
                         {transaction.category}
                       </Text>
-                      <Text style={tw`text-gray-500 text-xs mb-1`}>
+                      <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
                         {transaction.description || "Tidak ada deskripsi"}
                       </Text>
                       <Text style={tw`text-gray-400 text-xs`}>
@@ -1021,8 +1039,8 @@ const HomeScreen: React.FC = () => {
                     style={[
                       tw`text-sm font-semibold`,
                       transaction.type === "income"
-                        ? tw`text-emerald-600`
-                        : tw`text-red-500`,
+                        ? tw`text-[${SUCCESS_COLOR}]`
+                        : tw`text-[${ERROR_COLOR}]`,
                     ]}
                   >
                     {transaction.type === "income" ? "+" : "-"}
@@ -1033,21 +1051,25 @@ const HomeScreen: React.FC = () => {
           </View>
         ) : (
           <View
-            style={tw`bg-white rounded-2xl p-8 items-center mb-6 border border-gray-100`}
+            style={tw`bg-white rounded-2xl p-8 items-center mb-6 border border-[${BORDER_COLOR}]`}
           >
             <View
-              style={tw`w-16 h-16 rounded-xl bg-indigo-50 items-center justify-center mb-4`}
+              style={tw`w-16 h-16 rounded-xl bg-[${PRIMARY_COLOR}10] items-center justify-center mb-4`}
             >
-              <Ionicons name="wallet-outline" size={28} color="#4F46E5" />
+              <Ionicons name="wallet-outline" size={28} color={PRIMARY_COLOR} />
             </View>
-            <Text style={tw`text-gray-800 text-base font-semibold mb-1`}>
+            <Text
+              style={tw`text-[${TEXT_PRIMARY}] text-base font-semibold mb-1`}
+            >
               Selamat Datang di MyMoney!
             </Text>
-            <Text style={tw`text-gray-500 text-sm text-center mb-5 leading-5`}>
+            <Text
+              style={tw`text-[${TEXT_SECONDARY}] text-sm text-center mb-5 leading-5`}
+            >
               Mulai kelola keuangan Anda dengan mencatat transaksi pertama
             </Text>
             <TouchableOpacity
-              style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg flex-row items-center`}
+              style={tw`bg-[${PRIMARY_COLOR}] px-5 py-2.5 rounded-lg flex-row items-center`}
               onPress={() => navigation.navigate("AddTransaction")}
             >
               <Ionicons
@@ -1062,12 +1084,13 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         )}
+
         {/* COMBINED: BUDGET + GOALS IN ONE CARD */}
         {hasFinancialData &&
           (state.budgets.length > 0 || goalsPreview.length > 0) && (
             <>
               <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-gray-800 text-lg font-semibold`}>
+                <Text style={tw`text-[${TEXT_PRIMARY}] text-lg font-semibold`}>
                   Progress & Target
                 </Text>
                 <View style={tw`flex-row gap-3`}>
@@ -1075,7 +1098,9 @@ const HomeScreen: React.FC = () => {
                     <TouchableOpacity
                       onPress={() => navigation.navigate("Budget")}
                     >
-                      <Text style={tw`text-indigo-600 text-sm font-medium`}>
+                      <Text
+                        style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}
+                      >
                         Anggaran
                       </Text>
                     </TouchableOpacity>
@@ -1084,7 +1109,9 @@ const HomeScreen: React.FC = () => {
                     <TouchableOpacity
                       onPress={() => navigation.navigate("Savings")}
                     >
-                      <Text style={tw`text-emerald-600 text-sm font-medium`}>
+                      <Text
+                        style={tw`text-[${SUCCESS_COLOR}] text-sm font-medium`}
+                      >
                         Tabungan
                       </Text>
                     </TouchableOpacity>
@@ -1093,13 +1120,15 @@ const HomeScreen: React.FC = () => {
               </View>
 
               <View
-                style={tw`bg-white rounded-2xl p-4 mb-6 border border-gray-100`}
+                style={tw`bg-white rounded-2xl p-4 mb-6 border border-[${BORDER_COLOR}]`}
               >
                 <View style={tw`flex-row`}>
-                  {/* LEFT COLUMN: BUDGET SUMMARY - FIXED division by zero */}
+                  {/* LEFT COLUMN: BUDGET SUMMARY */}
                   {state.budgets.length > 0 && (
                     <View style={tw`flex-1 pr-3 border-r border-gray-200`}>
-                      <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
+                      <Text
+                        style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium mb-3`}
+                      >
                         Anggaran ({state.budgets.slice(0, 3).length})
                       </Text>
                       {state.budgets.slice(0, 3).map((budget) => {
@@ -1109,10 +1138,10 @@ const HomeScreen: React.FC = () => {
                           safeLimit > 0 ? (safeSpent / safeLimit) * 100 : 0;
                         const progressColor =
                           progress > 90
-                            ? "#EF4444"
+                            ? ERROR_COLOR
                             : progress > 70
-                            ? "#F59E0B"
-                            : "#10B981";
+                            ? WARNING_COLOR
+                            : SUCCESS_COLOR;
 
                         return (
                           <View key={budget.id} style={tw`mb-3 last:mb-0`}>
@@ -1120,11 +1149,13 @@ const HomeScreen: React.FC = () => {
                               style={tw`flex-row justify-between items-center mb-1`}
                             >
                               <Text
-                                style={tw`text-gray-700 text-xs font-medium`}
+                                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium`}
                               >
                                 {budget.category}
                               </Text>
-                              <Text style={tw`text-gray-400 text-xs`}>
+                              <Text
+                                style={tw`text-[${TEXT_SECONDARY}] text-xs`}
+                              >
                                 {Math.round(safeNumber(progress))}%
                               </Text>
                             </View>
@@ -1144,7 +1175,9 @@ const HomeScreen: React.FC = () => {
                                 ]}
                               />
                             </View>
-                            <Text style={tw`text-gray-400 text-xs mt-1`}>
+                            <Text
+                              style={tw`text-[${TEXT_SECONDARY}] text-xs mt-1`}
+                            >
                               {formatCurrency(safeSpent)} /{" "}
                               {formatCurrency(safeLimit)}
                             </Text>
@@ -1154,10 +1187,12 @@ const HomeScreen: React.FC = () => {
                     </View>
                   )}
 
-                  {/* RIGHT COLUMN: GOALS PREVIEW - FIXED division by zero */}
+                  {/* RIGHT COLUMN: GOALS PREVIEW */}
                   {goalsPreview.length > 0 && (
                     <View style={tw`flex-1 pl-3`}>
-                      <Text style={tw`text-gray-600 text-xs font-medium mb-3`}>
+                      <Text
+                        style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium mb-3`}
+                      >
                         Tabungan ({goalsPreview.length})
                       </Text>
                       {goalsPreview.slice(0, 3).map((goal) => {
@@ -1176,11 +1211,13 @@ const HomeScreen: React.FC = () => {
                               style={tw`flex-row justify-between items-center mb-1`}
                             >
                               <Text
-                                style={tw`text-gray-700 text-xs font-medium`}
+                                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium`}
                               >
                                 {goal.name}
                               </Text>
-                              <Text style={tw`text-gray-400 text-xs`}>
+                              <Text
+                                style={tw`text-[${TEXT_SECONDARY}] text-xs`}
+                              >
                                 {Math.round(safeNumber(progress))}%
                               </Text>
                             </View>
@@ -1197,15 +1234,17 @@ const HomeScreen: React.FC = () => {
                                     )}%`,
                                     backgroundColor:
                                       progress >= 80
-                                        ? "#10B981"
+                                        ? SUCCESS_COLOR
                                         : progress >= 50
-                                        ? "#F59E0B"
-                                        : "#4F46E5",
+                                        ? WARNING_COLOR
+                                        : PRIMARY_COLOR,
                                   },
                                 ]}
                               />
                             </View>
-                            <Text style={tw`text-gray-400 text-xs mt-1`}>
+                            <Text
+                              style={tw`text-[${TEXT_SECONDARY}] text-xs mt-1`}
+                            >
                               {formatCurrency(safeCurrent)} /{" "}
                               {formatCurrency(safeTarget)}
                             </Text>
@@ -1218,24 +1257,26 @@ const HomeScreen: React.FC = () => {
               </View>
             </>
           )}
-        {/* MOTIVATIONAL QUOTE (Bonus) */}
+
+        {/* MOTIVATIONAL QUOTE */}
         <View
-          style={tw`bg-indigo-50 rounded-2xl p-4 mb-6 border border-indigo-100`}
+          style={tw`bg-[${PRIMARY_COLOR}10] rounded-2xl p-4 mb-6 border border-[${PRIMARY_COLOR}20]`}
         >
-          <Text style={tw`text-indigo-800 text-sm italic mb-1`}>
+          <Text style={tw`text-[${PRIMARY_COLOR}] text-sm italic mb-1`}>
             {hasFinancialData
               ? "Keuangan yang sehat dimulai dari kebiasaan kecil yang konsisten."
               : "Langkah pertama menuju kebebasan finansial dimulai dari pencatatan yang baik."}
           </Text>
-          <Text style={tw`text-indigo-600 text-xs`}>#MyMoneyTips</Text>
+          <Text style={tw`text-[${PRIMARY_COLOR}] text-xs`}>#MyMoneyTips</Text>
         </View>
+
         {/* Spacer untuk floating button */}
         <View style={tw`h-16`} />
       </ScrollView>
 
       {/* FLOATING ADD BUTTON */}
       <TouchableOpacity
-        style={tw`absolute bottom-6 right-5 w-14 h-14 bg-indigo-600 rounded-2xl items-center justify-center shadow-lg`}
+        style={tw`absolute bottom-6 right-5 w-14 h-14 bg-[${PRIMARY_COLOR}] rounded-2xl items-center justify-center shadow-lg`}
         onPress={() => navigation.navigate("AddTransaction")}
         activeOpacity={0.8}
       >

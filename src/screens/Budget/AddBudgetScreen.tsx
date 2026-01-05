@@ -1,4 +1,3 @@
-// File: src/screens/AddBudgetScreen.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -16,7 +15,6 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
-import { Budget } from "../../types";
 
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
@@ -85,10 +83,6 @@ const AddBudgetScreen: React.FC = () => {
     monthly: number;
   } | null>(null);
 
-  // 🟢 PERBAIKAN: Cek apakah kategori sudah digunakan (hanya untuk mode tambah)
-  const isCategoryUsed =
-    !isEditMode && state.budgets.some((b) => b.category === category);
-
   // Update title based on mode
   useEffect(() => {
     navigation.setOptions({
@@ -103,7 +97,7 @@ const AddBudgetScreen: React.FC = () => {
     });
   }, [isEditMode, navigation]);
 
-  // 🟢 PERBAIKAN CRITICAL: Update end date ketika period berubah (hanya untuk mode TAMBAH BARU)
+  // Update end date ketika period berubah (hanya untuk mode TAMBAH BARU)
   useEffect(() => {
     // Hanya update otomatis jika TIDAK dalam edit mode dan period BUKAN custom
     if (period !== "custom" && !isEditMode) {
@@ -125,7 +119,7 @@ const AddBudgetScreen: React.FC = () => {
 
       setEndDate(formatDate(newEndDate));
     }
-  }, [period, startDate, isEditMode]); // 🟢 Tambah dependency isEditMode
+  }, [period, startDate, isEditMode]);
 
   // Hitung total hari
   const calculateTotalDays = (): number => {
@@ -265,6 +259,43 @@ const AddBudgetScreen: React.FC = () => {
     return safeNumber(limitNum / totalDays);
   };
 
+  // Handle delete budget
+  const handleDeleteBudget = async () => {
+    if (!budgetData?.id) {
+      Alert.alert("Error", "Data anggaran tidak valid");
+      return;
+    }
+
+    try {
+      await deleteBudget(budgetData.id);
+      navigation.goBack();
+    } catch (error: any) {
+      console.error("Delete budget error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Gagal menghapus anggaran. Silakan coba lagi."
+      );
+    }
+  };
+
+  // Show delete confirmation
+  const showDeleteConfirmation = () => {
+    if (!isEditMode || !budgetData) return;
+
+    Alert.alert(
+      "Hapus Anggaran",
+      `Apakah Anda yakin ingin menghapus anggaran "${budgetData.category}"?`,
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Hapus",
+          style: "destructive",
+          onPress: handleDeleteBudget,
+        },
+      ]
+    );
+  };
+
   // Handle submit
   const handleSubmit = async () => {
     if (!category || !limit) {
@@ -314,7 +345,7 @@ const AddBudgetScreen: React.FC = () => {
       return;
     }
 
-    // 🟢 PERBAIKAN: Validasi tanggal tidak boleh di masa lalu untuk start date
+    // Validasi tanggal tidak boleh di masa lalu untuk start date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -361,13 +392,13 @@ const AddBudgetScreen: React.FC = () => {
     setLoading(true);
     try {
       if (isEditMode && budgetData) {
-        // Edit mode - 🟢 PERTAHANKAN tanggal yang sudah diubah user
+        // Edit mode - pertahankan tanggal yang sudah diubah user
         await editBudget(budgetData.id, {
           category,
           limit: limitNum,
           period,
-          startDate, // 🟢 Gunakan tanggal dari state
-          endDate, // 🟢 Gunakan tanggal dari state
+          startDate, // Gunakan tanggal dari state
+          endDate, // Gunakan tanggal dari state
           lastResetDate: budgetData.lastResetDate || budgetData.createdAt,
         });
         Alert.alert("Sukses", "Anggaran berhasil diperbarui", [
@@ -379,8 +410,8 @@ const AddBudgetScreen: React.FC = () => {
           category,
           limit: limitNum,
           period,
-          startDate, // 🟢 Gunakan tanggal dari state
-          endDate, // 🟢 Gunakan tanggal dari state
+          startDate, // Gunakan tanggal dari state
+          endDate, // Gunakan tanggal dari state
         });
         Alert.alert("Sukses", "Anggaran berhasil ditambahkan", [
           { text: "OK", onPress: () => navigation.goBack() },
@@ -396,31 +427,6 @@ const AddBudgetScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDelete = () => {
-    if (!isEditMode || !budgetData) return;
-
-    Alert.alert(
-      "Hapus Anggaran",
-      `Apakah Anda yakin ingin menghapus anggaran "${budgetData.category}"?`,
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteBudget(budgetData.id);
-              navigation.goBack();
-            } catch (error: any) {
-              console.error("Error deleting budget:", error);
-              Alert.alert("Error", error.message || "Gagal menghapus anggaran");
-            }
-          },
-        },
-      ]
-    );
   };
 
   // Calendar Component Modal
@@ -569,11 +575,12 @@ const AddBudgetScreen: React.FC = () => {
         <View style={tw`mb-6`}>
           <View style={tw`flex-row justify-between items-center mb-3`}>
             <Text style={tw`text-sm font-medium text-gray-700`}>Kategori</Text>
-            {isCategoryUsed && (
-              <Text style={tw`text-xs text-red-600`}>
-                Kategori sudah digunakan
-              </Text>
-            )}
+            {!isEditMode &&
+              state.budgets.some((b) => b.category === category) && (
+                <Text style={tw`text-xs text-red-600`}>
+                  Kategori sudah digunakan
+                </Text>
+              )}
           </View>
           <View style={tw`flex-row flex-wrap gap-2`}>
             {AVAILABLE_CATEGORIES.map((cat) => {
@@ -792,6 +799,7 @@ const AddBudgetScreen: React.FC = () => {
               keyboardType="decimal-pad"
               returnKeyType="done"
               maxLength={15}
+              editable={!loading}
             />
           </View>
 
@@ -804,6 +812,7 @@ const AddBudgetScreen: React.FC = () => {
                   key={preset.label}
                   style={tw`px-3 py-1.5 bg-gray-100 rounded-lg active:bg-gray-200`}
                   onPress={() => setLimit(preset.value)}
+                  disabled={loading}
                 >
                   <Text style={tw`text-xs text-gray-700`}>{preset.label}</Text>
                 </TouchableOpacity>
@@ -820,7 +829,10 @@ const AddBudgetScreen: React.FC = () => {
                 <Text style={tw`text-sm font-medium text-gray-800`}>
                   🧮 Kalkulator Anggaran
                 </Text>
-                <TouchableOpacity onPress={() => setShowCalculator(false)}>
+                <TouchableOpacity
+                  onPress={() => setShowCalculator(false)}
+                  disabled={loading}
+                >
                   <Ionicons name="close-outline" size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
@@ -841,6 +853,7 @@ const AddBudgetScreen: React.FC = () => {
                   onChangeText={handleCalculatorInputChange}
                   keyboardType="decimal-pad"
                   maxLength={15}
+                  editable={!loading}
                 />
               </View>
 
@@ -856,6 +869,7 @@ const AddBudgetScreen: React.FC = () => {
                     <TouchableOpacity
                       style={tw`flex-row justify-between items-center p-3 mb-2 bg-white rounded-lg border border-gray-200 active:bg-gray-50`}
                       onPress={() => applyCalculatorResult("daily")}
+                      disabled={loading}
                     >
                       <View>
                         <Text style={tw`text-sm font-medium text-gray-900`}>
@@ -882,6 +896,7 @@ const AddBudgetScreen: React.FC = () => {
                     <TouchableOpacity
                       style={tw`flex-row justify-between items-center p-3 mb-2 bg-white rounded-lg border border-gray-200 active:bg-gray-50`}
                       onPress={() => applyCalculatorResult("weekly")}
+                      disabled={loading}
                     >
                       <View>
                         <Text style={tw`text-sm font-medium text-gray-900`}>
@@ -908,6 +923,7 @@ const AddBudgetScreen: React.FC = () => {
                     <TouchableOpacity
                       style={tw`flex-row justify-between items-center p-3 bg-white rounded-lg border border-gray-200 active:bg-gray-50`}
                       onPress={() => applyCalculatorResult("monthly")}
+                      disabled={loading}
                     >
                       <View>
                         <Text style={tw`text-sm font-medium text-gray-900`}>
@@ -1023,7 +1039,7 @@ const AddBudgetScreen: React.FC = () => {
           {isEditMode && (
             <TouchableOpacity
               style={tw`flex-1 py-3 bg-red-600 rounded-lg items-center active:bg-red-700`}
-              onPress={handleDelete}
+              onPress={showDeleteConfirmation}
               disabled={loading}
             >
               <Text style={tw`text-white font-medium`}>Hapus</Text>

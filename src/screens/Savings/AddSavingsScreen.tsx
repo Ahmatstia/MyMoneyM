@@ -1,4 +1,3 @@
-// File: src/screens/AddSavingsScreen.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -16,7 +15,6 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
-import { Savings } from "../../types";
 
 const CATEGORIES = [
   { id: "emergency", name: "Dana Darurat", icon: "shield", color: "#EF4444" },
@@ -183,7 +181,6 @@ const AddSavingsScreen: React.FC = () => {
   const saveSavings = async (targetNum: number, currentNum: number) => {
     setLoading(true);
     try {
-      // 🟢 PERBAIKAN: Pastikan semua properti Savings ada
       const selectedCategory = CATEGORIES.find((c) => c.id === category);
       const savingsDataToSave = {
         name: name.trim(),
@@ -199,12 +196,18 @@ const AddSavingsScreen: React.FC = () => {
       if (isEditMode && savingsData) {
         await editSavings(savingsData.id, savingsDataToSave);
         Alert.alert("Sukses", "Tabungan berhasil diperbarui", [
-          { text: "OK", onPress: () => navigation.goBack() },
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
         ]);
       } else {
         await addSavings(savingsDataToSave);
         Alert.alert("Sukses", "Tabungan berhasil ditambahkan", [
-          { text: "OK", onPress: () => navigation.goBack() },
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
         ]);
       }
     } catch (error: any) {
@@ -305,11 +308,6 @@ const AddSavingsScreen: React.FC = () => {
         contentContainerStyle={tw`p-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
-        <Text style={tw`text-xl font-semibold text-gray-900 mb-6 text-center`}>
-          {isEditMode ? "Edit Tabungan" : "Target Tabungan Baru"}
-        </Text>
-
         {/* Name Input */}
         <View style={tw`mb-6`}>
           <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
@@ -322,6 +320,7 @@ const AddSavingsScreen: React.FC = () => {
             value={name}
             onChangeText={setName}
             maxLength={50}
+            editable={!loading}
           />
           <Text style={tw`text-xs text-gray-500 mt-1 text-right`}>
             {name.length}/50 karakter
@@ -345,6 +344,7 @@ const AddSavingsScreen: React.FC = () => {
               onChangeText={(text) => handleAmountChange(text, setTarget)}
               keyboardType="numeric"
               maxLength={15}
+              editable={!loading}
             />
           </View>
 
@@ -363,6 +363,7 @@ const AddSavingsScreen: React.FC = () => {
               onChangeText={(text) => handleAmountChange(text, setCurrent)}
               keyboardType="numeric"
               maxLength={15}
+              editable={!loading}
             />
           </View>
 
@@ -423,6 +424,7 @@ const AddSavingsScreen: React.FC = () => {
                     : tw`border-gray-200 bg-white`,
                 ]}
                 onPress={() => setCategory(cat.id)}
+                disabled={loading}
               >
                 <Ionicons
                   name={cat.icon as any}
@@ -461,6 +463,7 @@ const AddSavingsScreen: React.FC = () => {
                     : tw`border-gray-200 bg-white`,
                 ]}
                 onPress={() => setPriority(p.id as any)}
+                disabled={loading}
               >
                 <Ionicons
                   name={p.icon as any}
@@ -491,6 +494,7 @@ const AddSavingsScreen: React.FC = () => {
           <TouchableOpacity
             style={tw`flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3`}
             onPress={openCalendar}
+            disabled={loading}
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
@@ -524,6 +528,7 @@ const AddSavingsScreen: React.FC = () => {
             multiline
             textAlignVertical="top"
             maxLength={200}
+            editable={!loading}
           />
           <Text style={tw`text-xs text-gray-500 mt-1 text-right`}>
             {description.length}/200 karakter
