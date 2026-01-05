@@ -1,5 +1,4 @@
-// File: src/navigation/AppNavigator.tsx - VERSI SINGLE USER
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -15,8 +14,10 @@ import {
   Dimensions,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import tw from "twrnc";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Screens
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -32,21 +33,23 @@ import CalendarScreen from "../screens/Calendar/CalendarScreen";
 import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
+import OnboardingScreen from "../screens/Onboarding/OnboardingScreen"; // Tambahkan ini
 
 // Warna tema dari logo
-const PRIMARY_COLOR = "#0B4FB3"; // Deep Blue / Royal Blue
-const ACCENT_COLOR = "#2EE6C8"; // Teal / Mint Green
-const BACKGROUND_COLOR = "#F8FAFC"; // Very light blue-gray
-const SURFACE_COLOR = "#FFFFFF"; // White
-const TEXT_PRIMARY = "#1E293B"; // Dark blue-gray
-const TEXT_SECONDARY = "#64748B"; // Medium gray
-const SUCCESS_COLOR = "#10B981"; // Green
-const WARNING_COLOR = "#F59E0B"; // Amber
-const ERROR_COLOR = "#EF4444"; // Red
-const INFO_COLOR = "#3B82F6"; // Blue
+const PRIMARY_COLOR = "#0B4FB3";
+const ACCENT_COLOR = "#2EE6C8";
+const BACKGROUND_COLOR = "#F8FAFC";
+const SURFACE_COLOR = "#FFFFFF";
+const TEXT_PRIMARY = "#1E293B";
+const TEXT_SECONDARY = "#64748B";
+const SUCCESS_COLOR = "#10B981";
+const WARNING_COLOR = "#F59E0B";
+const ERROR_COLOR = "#EF4444";
+const INFO_COLOR = "#3B82F6";
 
-// Types
+// Types - Update
 type StackParamList = {
+  Onboarding: undefined; // Tambahkan
   MainDrawer: undefined;
   MainStack: undefined;
   Home: undefined;
@@ -235,7 +238,6 @@ const MainStackNavigator = () => {
           fontSize: 18,
         },
         headerTitleAlign: "center" as const,
-        // HAMBURGER MENU hanya untuk Home screen
         headerLeft: () => {
           if (route.name === "Home") {
             return (
@@ -393,6 +395,41 @@ const DrawerNavigator = () => (
 
 // Main App Navigator - langsung ke MainDrawer (single user)
 const AppNavigator: React.FC = () => {
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkFirstLaunch();
+  }, []);
+
+  const checkFirstLaunch = async () => {
+    try {
+      const value = await AsyncStorage.getItem("@onboarding_completed");
+      setIsFirstLaunch(value === null);
+    } catch (error) {
+      console.error("Error checking first launch:", error);
+      setIsFirstLaunch(true); // Default ke onboarding jika error
+    }
+  };
+
+  if (isFirstLaunch === null) {
+    // Tampilkan loading screen
+    return (
+      <View style={tw`flex-1 bg-white items-center justify-center`}>
+        <View style={tw`items-center`}>
+          <View
+            style={tw`w-20 h-20 rounded-full bg-[${PRIMARY_COLOR}] items-center justify-center mb-6`}
+          >
+            <Text style={tw`text-white text-2xl font-bold`}>M</Text>
+          </View>
+          <Text style={tw`text-xl font-bold text-[${PRIMARY_COLOR}] mb-2`}>
+            MyMoney
+          </Text>
+          <Text style={tw`text-gray-500`}>Menyiapkan aplikasi...</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -401,7 +438,11 @@ const AppNavigator: React.FC = () => {
           gestureEnabled: false,
         }}
       >
-        {/* Langsung ke MainDrawer tanpa Welcome/UserSelect */}
+        {isFirstLaunch ? (
+          // Tampilkan onboarding jika pertama kali
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        ) : null}
+        {/* Main app */}
         <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
