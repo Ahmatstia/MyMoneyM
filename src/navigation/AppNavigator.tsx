@@ -1,3 +1,5 @@
+// [file name]: src/navigation/AppNavigator.tsx
+// [file content begin]
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -14,7 +16,6 @@ import {
   Dimensions,
   Platform,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -33,7 +34,7 @@ import CalendarScreen from "../screens/Calendar/CalendarScreen";
 import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactionScreen";
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
-import OnboardingScreen from "../screens/Onboarding/OnboardingScreen"; // Tambahkan ini
+import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
 
 // Warna tema dari logo
 const PRIMARY_COLOR = "#0B4FB3";
@@ -47,9 +48,9 @@ const WARNING_COLOR = "#F59E0B";
 const ERROR_COLOR = "#EF4444";
 const INFO_COLOR = "#3B82F6";
 
-// Types - Update
+// Types
 type StackParamList = {
-  Onboarding: undefined; // Tambahkan
+  Onboarding: undefined;
   MainDrawer: undefined;
   MainStack: undefined;
   Home: undefined;
@@ -71,7 +72,7 @@ const Stack = createStackNavigator<StackParamList>();
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
 
-// Custom Drawer Content - SINGLE USER VERSION
+// Custom Drawer Content
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = [
     {
@@ -393,60 +394,38 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// Main App Navigator - langsung ke MainDrawer (single user)
+// Main App Navigator
 const AppNavigator: React.FC = () => {
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean>(true);
 
   useEffect(() => {
-    checkFirstLaunch();
+    const checkOnboarding = async () => {
+      try {
+        const value = await AsyncStorage.getItem("@onboarding_completed");
+        console.log("DEBUG: Onboarding status =", value);
+        if (value !== null) {
+          setIsFirstLaunch(false); // Sudah pernah onboard
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    checkOnboarding();
   }, []);
-
-  const checkFirstLaunch = async () => {
-    try {
-      const value = await AsyncStorage.getItem("@onboarding_completed");
-      setIsFirstLaunch(value === null);
-    } catch (error) {
-      console.error("Error checking first launch:", error);
-      setIsFirstLaunch(true); // Default ke onboarding jika error
-    }
-  };
-
-  if (isFirstLaunch === null) {
-    // Tampilkan loading screen
-    return (
-      <View style={tw`flex-1 bg-white items-center justify-center`}>
-        <View style={tw`items-center`}>
-          <View
-            style={tw`w-20 h-20 rounded-full bg-[${PRIMARY_COLOR}] items-center justify-center mb-6`}
-          >
-            <Text style={tw`text-white text-2xl font-bold`}>M</Text>
-          </View>
-          <Text style={tw`text-xl font-bold text-[${PRIMARY_COLOR}] mb-2`}>
-            MyMoney
-          </Text>
-          <Text style={tw`text-gray-500`}>Menyiapkan aplikasi...</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          gestureEnabled: false,
-        }}
-      >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isFirstLaunch ? (
-          // Tampilkan onboarding jika pertama kali
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        ) : null}
-        {/* Main app */}
-        <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+        ) : (
+          <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
 
 export default AppNavigator;
+// [file content end]

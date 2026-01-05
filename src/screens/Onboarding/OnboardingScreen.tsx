@@ -1,218 +1,188 @@
-// File: src/screens/Onboarding/OnboardingScreen.tsx
-import React, { useRef, useState } from "react";
+// [file name]: src/screens/Onboarding/OnboardingScreen.tsx
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Dimensions,
-  StyleSheet,
-  Animated,
-  FlatList,
   Image,
+  StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 
-const PRIMARY_COLOR = "#0B4FB3";
-const ACCENT_COLOR = "#2EE6C8";
-const BACKGROUND_COLOR = "#F8FAFC";
+const OnboardingScreen = ({ navigation }: any) => {
+  const [currentPage, setCurrentPage] = useState(0);
 
-const onboardingData = [
-  {
-    id: "1",
-    title: "Kelola Keuangan dengan Mudah",
-    description:
-      "Pantau semua transaksi, anggaran, dan tabungan dalam satu aplikasi yang sederhana",
-    icon: "💰",
-    backgroundColor: "#F0F9FF",
-  },
-  {
-    id: "2",
-    title: "Analisis Cerdas",
-    description:
-      "Dapatkan insight dari data keuangan Anda untuk pengambilan keputusan yang lebih baik",
-    icon: "📊",
-    backgroundColor: "#F0FDF4",
-  },
-  {
-    id: "3",
-    title: "Raih Target Keuangan",
-    description:
-      "Tetapkan target tabungan dan anggaran, lalu lacak progres Anda secara real-time",
-    icon: "🎯",
-    backgroundColor: "#FFFBEB",
-  },
-  {
-    id: "4",
-    title: "Siap Memulai?",
-    description: "Bergabunglah dengan komunitas yang telah mempercayai MyMoney",
-    icon: "🚀",
-    backgroundColor: "#FEF2F2",
-  },
-];
+  const onboardingData = [
+    {
+      id: "1",
+      title: "Kelola Keuangan\nDengan Mudah",
+      description:
+        "Pantau semua pemasukan dan pengeluaran Anda di satu tempat dengan interface yang intuitif dan ramah pengguna.",
+      image: require("../../../assets/onboarding1.png"),
+    },
+    {
+      id: "2",
+      title: "Analisis Keuangan\nSecara Real-time",
+      description:
+        "Dapatkan insight mendalam tentang kebiasaan keuangan Anda dengan grafik dan laporan yang mudah dipahami.",
+      image: require("../../../assets/onboarding2.png"),
+    },
+    {
+      id: "3",
+      title: "Raih Target\nKeuangan Anda",
+      description:
+        "Tetapkan target tabungan dan anggaran, lalu lacak progresnya secara berkala untuk mencapai tujuan finansial.",
+      image: require("../../../assets/onboarding3.png"),
+    },
+  ];
 
-export default function OnboardingScreen({ navigation }: any) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const slidesRef = useRef<FlatList>(null);
-
-  const viewableItemsChanged = useRef(({ viewableItems }: any) => {
-    setCurrentIndex(viewableItems[0]?.index || 0);
-  }).current;
-
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
-  const scrollTo = () => {
-    if (currentIndex < onboardingData.length - 1) {
-      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
+  const handleNext = () => {
+    if (currentPage < onboardingData.length - 1) {
+      setCurrentPage(currentPage + 1);
     } else {
-      handleGetStarted();
+      handleFinish();
     }
   };
 
-  const handleGetStarted = async () => {
+  const handlePrevious = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleSkip = () => {
+    handleFinish();
+  };
+
+  const handleFinish = async () => {
     try {
       await AsyncStorage.setItem("@onboarding_completed", "true");
       navigation.replace("MainDrawer");
     } catch (error) {
-      console.error(error);
+      console.error("Error saving onboarding status:", error);
+      navigation.replace("MainDrawer");
     }
   };
 
-  const renderItem = ({ item }: any) => {
-    return (
-      <View style={[tw`flex-1 items-center justify-center px-8`, { width }]}>
-        <View
-          style={[
-            tw`w-64 h-64 rounded-full items-center justify-center mb-12`,
-            { backgroundColor: item.backgroundColor },
-          ]}
-        >
-          <Text style={tw`text-7xl`}>{item.icon}</Text>
-        </View>
-
-        <View style={tw`items-center`}>
-          <Text
-            style={tw`text-3xl font-bold text-center mb-6 text-[${PRIMARY_COLOR}]`}
-          >
-            {item.title}
-          </Text>
-          <Text
-            style={tw`text-lg text-center text-gray-600 leading-relaxed px-4`}
-          >
-            {item.description}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  const Paginator = () => {
-    return (
-      <View style={tw`flex-row h-12 items-center justify-center`}>
-        {onboardingData.map((_, i) => {
-          const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-
-          const dotWidth = scrollX.interpolate({
-            inputRange,
-            outputRange: [10, 30, 10],
-            extrapolate: "clamp",
-          });
-
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.3, 1, 0.3],
-            extrapolate: "clamp",
-          });
-
-          return (
-            <Animated.View
-              style={[
-                tw`h-3 mx-1 rounded-full bg-[${PRIMARY_COLOR}]`,
-                {
-                  width: dotWidth,
-                  opacity,
-                },
-              ]}
-              key={i.toString()}
-            />
-          );
-        })}
-      </View>
-    );
-  };
+  const currentSlide = onboardingData[currentPage];
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-white`}>
-      {/* Skip Button */}
-      {currentIndex < onboardingData.length - 1 && (
+    <View style={tw`flex-1 bg-white`}>
+      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+
+      {/* Skip Button - Minimalist */}
+      {currentPage < 2 && (
         <TouchableOpacity
-          style={tw`absolute top-12 right-6 z-10`}
-          onPress={handleGetStarted}
+          style={tw`absolute top-12 right-6 z-10 px-4 py-2`}
+          onPress={handleSkip}
+          activeOpacity={0.6}
         >
-          <Text style={tw`text-[${PRIMARY_COLOR}] font-medium`}>Lewati</Text>
+          <Text style={tw`text-gray-500 text-sm font-medium`}>Lewati</Text>
         </TouchableOpacity>
       )}
 
-      {/* Logo */}
-      <View style={tw`absolute top-12 left-6 z-10`}>
-        <View style={tw`flex-row items-center`}>
-          <View
-            style={tw`w-10 h-10 rounded-full bg-[${PRIMARY_COLOR}] items-center justify-center mr-2`}
-          >
-            <Text style={tw`text-white text-lg font-bold`}>M</Text>
+      {/* Main Content */}
+      <View style={tw`flex-1 justify-between px-6`}>
+        {/* Top Section - Image & Indicator */}
+        <View style={tw`flex-1 justify-center items-center pt-20 pb-8`}>
+          {/* Image Container */}
+          <View style={tw`items-center justify-center mb-8`}>
+            <Image
+              source={currentSlide.image}
+              style={{
+                width: width * 0.65,
+                height: width * 0.65,
+                resizeMode: "contain",
+              }}
+            />
           </View>
-          <Text style={tw`text-xl font-bold text-[${PRIMARY_COLOR}]`}>
-            MyMoney
+
+          {/* Page Indicator - Minimalist Dots */}
+          <View style={tw`flex-row justify-center mt-4`}>
+            {onboardingData.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  tw`h-1.5 rounded-full mx-1`,
+                  {
+                    width: index === currentPage ? 24 : 6,
+                    backgroundColor:
+                      index === currentPage ? "#4F46E5" : "#E0E7FF",
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Middle Section - Text Content */}
+        <View style={tw`pb-8`}>
+          <Text
+            style={tw`text-gray-900 text-3xl font-bold text-center mb-4 leading-10`}
+          >
+            {currentSlide.title}
+          </Text>
+          <Text style={tw`text-gray-500 text-base text-center leading-6 px-4`}>
+            {currentSlide.description}
           </Text>
         </View>
-      </View>
 
-      {/* Slides */}
-      <FlatList
-        data={onboardingData}
-        renderItem={renderItem}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        bounces={false}
-        keyExtractor={(item) => item.id}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={32}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        ref={slidesRef}
-      />
+        {/* Bottom Section - Navigation */}
+        <View style={tw`pb-10`}>
+          {/* Navigation Buttons */}
+          <View style={tw`flex-row items-center gap-3 mb-6`}>
+            {/* Back Button - Only show if not first page */}
+            {currentPage > 0 && (
+              <TouchableOpacity
+                onPress={handlePrevious}
+                style={tw`flex-1 py-4 rounded-2xl border border-gray-200 bg-white`}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={tw`text-gray-700 font-semibold text-center text-base`}
+                >
+                  Kembali
+                </Text>
+              </TouchableOpacity>
+            )}
 
-      {/* Paginator */}
-      <View style={tw`absolute bottom-36 w-full`}>
-        <Paginator />
-      </View>
+            {/* Next/Start Button */}
+            <TouchableOpacity
+              onPress={handleNext}
+              activeOpacity={0.8}
+              style={tw`${
+                currentPage > 0 ? "flex-1" : "flex-1"
+              } py-4 rounded-2xl bg-[#4F46E5] shadow-sm`}
+            >
+              <Text style={tw`text-white font-semibold text-center text-base`}>
+                {currentPage === onboardingData.length - 1
+                  ? "Mulai Sekarang"
+                  : "Lanjut"}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-      {/* Next/Get Started Button */}
-      <View style={tw`absolute bottom-10 w-full px-8`}>
-        <TouchableOpacity
-          style={tw`py-4 rounded-full items-center justify-center ${
-            currentIndex === onboardingData.length - 1
-              ? `bg-[${ACCENT_COLOR}]`
-              : `bg-[${PRIMARY_COLOR}]`
-          }`}
-          onPress={scrollTo}
-          activeOpacity={0.8}
-        >
-          <Text style={tw`text-white text-lg font-semibold`}>
-            {currentIndex === onboardingData.length - 1
-              ? "Mulai Sekarang"
-              : "Lanjut"}
-          </Text>
-        </TouchableOpacity>
+          {/* Minimal Progress Bar */}
+          <View style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}>
+            <View
+              style={[
+                tw`h-full bg-[#4F46E5] rounded-full`,
+                {
+                  width: `${
+                    ((currentPage + 1) / onboardingData.length) * 100
+                  }%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
-}
+};
+
+export default OnboardingScreen;
