@@ -128,20 +128,28 @@ const OnboardingScreen = ({ navigation }: any) => {
     });
   };
 
-  const handleSkip = () => {
-    handleFinish();
-  };
-
+  // Di dalam handleFinish dan handleSkip:
   const handleFinish = async () => {
     try {
       await AsyncStorage.setItem("@onboarding_completed", "true");
-      navigation.replace("MainDrawer");
     } catch (error) {
       console.error("Error saving onboarding status:", error);
-      navigation.replace("MainDrawer");
     }
+
+    // NAVIGASI YANG PASTI BEKERJA
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MainDrawer" }],
+    });
   };
 
+  const handleSkip = () => {
+    // Skip juga reset ke MainDrawer
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MainDrawer" }],
+    });
+  };
   const currentSlide = onboardingData[currentPage];
 
   const floatInterpolate = floatAnim.interpolate({

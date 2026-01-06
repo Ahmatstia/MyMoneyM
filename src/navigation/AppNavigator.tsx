@@ -16,6 +16,7 @@ import {
   Dimensions,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -495,23 +496,32 @@ const DrawerNavigator = () => (
 
 // Main App Navigator
 const AppNavigator: React.FC = () => {
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean>(true);
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
         const value = await AsyncStorage.getItem("@onboarding_completed");
         console.log("DEBUG: Onboarding status =", value);
-        if (value !== null) {
-          setIsFirstLaunch(false); // Sudah pernah onboard
-        }
+        setIsFirstLaunch(value === null); // null = true, "true" = false
       } catch (error) {
         console.error(error);
+        setIsFirstLaunch(true);
       }
     };
 
     checkOnboarding();
   }, []);
+
+  // Loading screen
+  if (isFirstLaunch === null) {
+    return (
+      <View style={tw`flex-1 bg-[#0F172A] justify-center items-center`}>
+        <ActivityIndicator size="large" color="#22D3EE" />
+        <Text style={tw`text-[#CBD5E1] mt-4`}>Memuat...</Text>
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -527,4 +537,3 @@ const AppNavigator: React.FC = () => {
 };
 
 export default AppNavigator;
-// [file content end]

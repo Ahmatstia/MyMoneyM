@@ -16,6 +16,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.princcesrachel.mymoney",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/lg.png",
         "backgroundColor": "#0F172A"
@@ -26,6 +28,12 @@
     "web": {
       "favicon": "./assets/lg.png"
     },
-    "plugins": ["expo-font"]
+    "plugins": ["expo-font"],
+    "extra": {
+      "eas": {
+        "projectId": "73455952-1350-4200-9817-3cbff3fc4ca9"
+      }
+    },
+    "owner": "princcesrachel"
   }
 }
