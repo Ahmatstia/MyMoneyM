@@ -16,20 +16,23 @@ import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 
+// Import tema navy blue dari file theme
+import { Colors } from "../../theme/theme";
+
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// Warna tema dari logo
-const PRIMARY_COLOR = "#0B4FB3"; // Deep Blue / Royal Blue
-const ACCENT_COLOR = "#2EE6C8"; // Teal / Mint Green
-const BACKGROUND_COLOR = "#F8FAFC"; // Very light blue-gray
-const SURFACE_COLOR = "#FFFFFF"; // White
-const TEXT_PRIMARY = "#1E293B"; // Dark blue-gray
-const TEXT_SECONDARY = "#64748B"; // Medium gray
-const BORDER_COLOR = "#E2E8F0"; // Light border
-const SUCCESS_COLOR = "#10B981"; // Green
-const WARNING_COLOR = "#F59E0B"; // Amber
-const ERROR_COLOR = "#EF4444"; // Red
+// GUNAKAN WARNA DARI TEMA NAVY BLUE
+const PRIMARY_COLOR = Colors.primary; // "#0F172A" - Navy blue gelap
+const ACCENT_COLOR = Colors.accent; // "#22D3EE" - Cyan terang
+const BACKGROUND_COLOR = Colors.background; // "#0F172A" - Background navy blue gelap
+const SURFACE_COLOR = Colors.surface; // "#1E293B" - Permukaan navy blue medium
+const TEXT_PRIMARY = Colors.textPrimary; // "#F8FAFC" - Teks utama putih
+const TEXT_SECONDARY = Colors.textSecondary; // "#CBD5E1" - Teks sekunder abu-abu muda
+const BORDER_COLOR = Colors.border; // "#334155" - Border navy blue lebih terang
+const SUCCESS_COLOR = Colors.success; // "#10B981" - Hijau
+const WARNING_COLOR = Colors.warning; // "#F59E0B" - Kuning
+const ERROR_COLOR = Colors.error; // "#EF4444" - Merah
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -86,10 +89,10 @@ const HomeScreen: React.FC = () => {
   // PERBAIKAN: Conditional return HARUS DI BAWAH semua hooks
   if (isLoading) {
     return (
-      <SafeAreaView style={tw`flex-1 bg-[${BACKGROUND_COLOR}]`}>
+      <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
         <View style={tw`flex-1 items-center justify-center`}>
-          <ActivityIndicator size="large" color={PRIMARY_COLOR} />
-          <Text style={tw`mt-4 text-[${TEXT_SECONDARY}] text-center px-8`}>
+          <ActivityIndicator size="large" color={ACCENT_COLOR} />
+          <Text style={[tw`mt-4 px-8`, { color: TEXT_SECONDARY }]}>
             Memuat data keuangan Anda...
           </Text>
         </View>
@@ -223,7 +226,7 @@ const HomeScreen: React.FC = () => {
         message:
           "Tambahkan transaksi pertama Anda untuk melihat analisis keuangan",
         icon: "add-circle-outline" as SafeIconName,
-        color: PRIMARY_COLOR,
+        color: ACCENT_COLOR,
         action: "Tambah Transaksi",
         onPress: () => navigation.navigate("AddTransaction"),
       });
@@ -318,7 +321,7 @@ const HomeScreen: React.FC = () => {
           title: `${nearingCompletion.length} Target Hampir Tercapai!`,
           message: "Tabungan Anda hampir mencapai target",
           icon: "trophy-outline" as SafeIconName,
-          color: PRIMARY_COLOR,
+          color: ACCENT_COLOR,
           action: "Lihat Progress",
           onPress: () => navigation.navigate("Savings"),
         });
@@ -332,7 +335,7 @@ const HomeScreen: React.FC = () => {
         title: "Keuangan Stabil",
         message: "Semua indikator dalam kondisi baik",
         icon: "checkmark-circle-outline" as SafeIconName,
-        color: PRIMARY_COLOR,
+        color: ACCENT_COLOR,
         action: "Pantau Terus",
         onPress: () => navigation.navigate("Analytics"),
       });
@@ -354,7 +357,7 @@ const HomeScreen: React.FC = () => {
       id: 1,
       title: "Transaksi",
       icon: "swap-horizontal-outline" as SafeIconName,
-      color: PRIMARY_COLOR,
+      color: ACCENT_COLOR,
       onPress: () => navigation.navigate("Transactions"),
     });
 
@@ -362,7 +365,7 @@ const HomeScreen: React.FC = () => {
       id: 2,
       title: "Analitik",
       icon: "stats-chart-outline" as SafeIconName,
-      color: ACCENT_COLOR,
+      color: SUCCESS_COLOR,
       onPress: () => navigation.navigate("Analytics"),
     });
 
@@ -382,7 +385,7 @@ const HomeScreen: React.FC = () => {
         id: 3,
         title: "Catat Hari",
         icon: "checkmark-circle-outline" as SafeIconName,
-        color: "#EC4899",
+        color: Colors.info,
         onPress: () => navigation.navigate("AddTransaction"),
       });
     } else {
@@ -402,7 +405,7 @@ const HomeScreen: React.FC = () => {
         id: 4,
         title: "Review Minggu",
         icon: "document-text-outline" as SafeIconName,
-        color: "#8B5CF6",
+        color: Colors.purple,
         onPress: () => navigation.navigate("Analytics"),
       });
     } else {
@@ -411,7 +414,7 @@ const HomeScreen: React.FC = () => {
         id: 4,
         title: "Tabungan",
         icon: "wallet-outline" as SafeIconName,
-        color: PRIMARY_COLOR,
+        color: ACCENT_COLOR,
         onPress: () => navigation.navigate("Savings"),
       });
     }
@@ -423,14 +426,14 @@ const HomeScreen: React.FC = () => {
           id: 0,
           title: "Mulai Catat",
           icon: "add-circle-outline" as SafeIconName,
-          color: PRIMARY_COLOR,
+          color: ACCENT_COLOR,
           onPress: () => navigation.navigate("AddTransaction"),
         },
         {
           id: 1,
           title: "Tutorial",
           icon: "help-circle-outline" as SafeIconName,
-          color: ACCENT_COLOR,
+          color: SUCCESS_COLOR,
           onPress: () => navigation.navigate("Analytics"),
         },
         {
@@ -444,7 +447,7 @@ const HomeScreen: React.FC = () => {
           id: 3,
           title: "Tabungan",
           icon: "wallet-outline" as SafeIconName,
-          color: PRIMARY_COLOR,
+          color: ACCENT_COLOR,
           onPress: () => navigation.navigate("Savings"),
         },
       ];
@@ -532,14 +535,14 @@ const HomeScreen: React.FC = () => {
           value: "Transaksi",
           unit: "Pertama",
           trend: "✨",
-          color: PRIMARY_COLOR,
+          color: ACCENT_COLOR,
         },
         {
           id: 2,
           label: "Pantau",
           value: "Pengeluaran",
           trend: "📊",
-          color: ACCENT_COLOR,
+          color: SUCCESS_COLOR,
         },
         {
           id: 3,
@@ -619,7 +622,7 @@ const HomeScreen: React.FC = () => {
         value: thisMonthTransactions.toString(),
         unit: "bulan ini",
         trend: transactionGrowth >= 0 ? "+" : "-",
-        color: PRIMARY_COLOR,
+        color: ACCENT_COLOR,
       },
     ];
   };
@@ -656,20 +659,20 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-[${BACKGROUND_COLOR}]`}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tw`px-5 pb-24`}
       >
-        {/* HEADER SECTION - PERBAIKAN: Hapus referensi currentUser */}
+        {/* HEADER SECTION */}
         <View style={tw`flex-row justify-between items-center pt-3 pb-3`}>
           <View style={tw`flex-1`}>
             <View style={tw`flex-row items-center mb-0.5`}>
-              <Text style={tw`text-[${TEXT_PRIMARY}] text-xl font-bold`}>
+              <Text style={[tw`text-xl font-bold`, { color: TEXT_PRIMARY }]}>
                 {getPersonalizedGreeting()}
               </Text>
             </View>
-            <Text style={tw`text-[${TEXT_SECONDARY}] text-sm`}>
+            <Text style={[tw`text-sm`, { color: TEXT_SECONDARY }]}>
               {getCurrentDate()}
             </Text>
           </View>
@@ -679,7 +682,11 @@ const HomeScreen: React.FC = () => {
             <TouchableOpacity
               style={[
                 tw`px-3 py-2 rounded-xl items-center justify-center`,
-                { backgroundColor: `${healthStatus.color}15` },
+                {
+                  backgroundColor: SURFACE_COLOR,
+                  borderWidth: 1,
+                  borderColor: BORDER_COLOR,
+                },
               ]}
               onPress={() => navigation.navigate("Analytics")}
             >
@@ -695,26 +702,40 @@ const HomeScreen: React.FC = () => {
                   {healthScore}
                 </Text>
               </View>
-              <Text style={[tw`text-xs mt-0.5`, { color: healthStatus.color }]}>
+              <Text style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}>
                 {healthStatus.label}
               </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={tw`px-3 py-2 rounded-xl items-center justify-center bg-gray-100`}
+              style={[
+                tw`px-3 py-2 rounded-xl items-center justify-center`,
+                {
+                  backgroundColor: SURFACE_COLOR,
+                  borderWidth: 1,
+                  borderColor: BORDER_COLOR,
+                },
+              ]}
               onPress={() => navigation.navigate("AddTransaction")}
             >
               <View style={tw`flex-row items-center`}>
                 <Ionicons
                   name="add-circle-outline"
                   size={16}
-                  color={PRIMARY_COLOR}
+                  color={ACCENT_COLOR}
                 />
-                <Text style={tw`ml-1 text-xs font-medium text-gray-700`}>
+                <Text
+                  style={[
+                    tw`ml-1 text-xs font-medium`,
+                    { color: ACCENT_COLOR },
+                  ]}
+                >
                   Mulai
                 </Text>
               </View>
-              <Text style={tw`text-xs mt-0.5 text-gray-500`}>Tambah Data</Text>
+              <Text style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}>
+                Tambah Data
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -732,7 +753,11 @@ const HomeScreen: React.FC = () => {
                 key={index}
                 style={[
                   tw`w-64 rounded-xl p-3 mr-3`,
-                  { backgroundColor: `${insight.color}15` },
+                  {
+                    backgroundColor: SURFACE_COLOR,
+                    borderWidth: 1,
+                    borderColor: BORDER_COLOR,
+                  },
                 ]}
                 onPress={insight.onPress}
                 activeOpacity={0.7}
@@ -741,7 +766,7 @@ const HomeScreen: React.FC = () => {
                   <View
                     style={[
                       tw`w-8 h-8 rounded-lg items-center justify-center mr-2`,
-                      { backgroundColor: `${insight.color}25` },
+                      { backgroundColor: `${insight.color}20` },
                     ]}
                   >
                     <Ionicons
@@ -759,7 +784,7 @@ const HomeScreen: React.FC = () => {
                     >
                       {insight.title}
                     </Text>
-                    <Text style={tw`text-xs text-[${TEXT_SECONDARY}] mb-2`}>
+                    <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
                       {insight.message}
                     </Text>
                     <Text
@@ -779,16 +804,33 @@ const HomeScreen: React.FC = () => {
 
         {/* BALANCE CARD WITH MONTHLY PROGRESS */}
         <View
-          style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-[${BORDER_COLOR}]`}
+          style={[
+            tw`rounded-2xl p-5 mb-6`,
+            {
+              backgroundColor: SURFACE_COLOR,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            },
+          ]}
         >
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <Text
-              style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium uppercase tracking-wider`}
+              style={[
+                tw`text-xs font-medium uppercase tracking-wider`,
+                { color: TEXT_SECONDARY },
+              ]}
             >
               {hasFinancialData ? "SALDO ANDA" : "SELAMAT DATANG"}
             </Text>
-            <View style={tw`px-2 py-1 bg-gray-100 rounded-full`}>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium`}>
+            <View
+              style={[
+                tw`px-2 py-1 rounded-full`,
+                { backgroundColor: Colors.surfaceLight },
+              ]}
+            >
+              <Text
+                style={[tw`text-xs font-medium`, { color: TEXT_SECONDARY }]}
+              >
                 {hasFinancialData
                   ? `Hari ke-${monthlyProgress.currentDay} dari ${monthlyProgress.daysInMonth}`
                   : "Hari Pertama"}
@@ -796,7 +838,7 @@ const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <Text style={tw`text-[${TEXT_PRIMARY}] text-2xl font-bold mb-5`}>
+          <Text style={[tw`text-2xl font-bold mb-5`, { color: TEXT_PRIMARY }]}>
             {hasFinancialData
               ? formatCurrency(safeNumber(state.balance))
               : "Rp 0"}
@@ -805,16 +847,23 @@ const HomeScreen: React.FC = () => {
           {/* Monthly Progress Bar */}
           <View style={tw`mb-4`}>
             <View style={tw`flex-row justify-between items-center mb-1`}>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs`}>
+              <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
                 {hasFinancialData ? "Progress Bulan Ini" : "Siap Memulai?"}
               </Text>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium`}>
+              <Text
+                style={[tw`text-xs font-medium`, { color: TEXT_SECONDARY }]}
+              >
                 {hasFinancialData
                   ? `${safeNumber(monthlyProgress.progress).toFixed(0)}%`
                   : "0%"}
               </Text>
             </View>
-            <View style={tw`h-1.5 bg-gray-100 rounded-full overflow-hidden`}>
+            <View
+              style={[
+                tw`h-1.5 rounded-full overflow-hidden`,
+                { backgroundColor: Colors.surfaceLight },
+              ]}
+            >
               <View
                 style={[
                   tw`h-full rounded-full`,
@@ -823,15 +872,14 @@ const HomeScreen: React.FC = () => {
                       0,
                       Math.min(safeNumber(monthlyProgress.progress), 100)
                     )}%`,
+                    backgroundColor: hasFinancialData
+                      ? monthlyProgress.status === "surplus"
+                        ? SUCCESS_COLOR
+                        : monthlyProgress.status === "warning"
+                        ? WARNING_COLOR
+                        : ERROR_COLOR
+                      : Colors.textTertiary,
                   },
-                  hasFinancialData
-                    ? (monthlyProgress.status === "surplus" &&
-                        tw`bg-[${SUCCESS_COLOR}]`,
-                      monthlyProgress.status === "warning" &&
-                        tw`bg-[${WARNING_COLOR}]`,
-                      monthlyProgress.status === "deficit" &&
-                        tw`bg-[${ERROR_COLOR}]`)
-                    : tw`bg-gray-300`,
                 ]}
               />
             </View>
@@ -839,24 +887,30 @@ const HomeScreen: React.FC = () => {
 
           <View style={tw`flex-row items-center`}>
             <View style={tw`flex-1`}>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+              <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
                 Pemasukan
               </Text>
-              <Text style={tw`text-[${SUCCESS_COLOR}] text-base font-semibold`}>
+              <Text
+                style={[tw`text-base font-semibold`, { color: SUCCESS_COLOR }]}
+              >
                 {formatCurrency(safeNumber(state.totalIncome))}
               </Text>
             </View>
 
-            <View style={tw`w-px h-10 bg-gray-200 mx-4`} />
+            <View
+              style={[tw`w-px h-10 mx-4`, { backgroundColor: BORDER_COLOR }]}
+            />
 
             <View style={tw`flex-1`}>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+              <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
                 Pengeluaran
               </Text>
-              <Text style={tw`text-[${ERROR_COLOR}] text-base font-semibold`}>
+              <Text
+                style={[tw`text-base font-semibold`, { color: ERROR_COLOR }]}
+              >
                 {formatCurrency(safeNumber(state.totalExpense))}
               </Text>
-              <Text style={tw`text-gray-400 text-xs`}>
+              <Text style={[tw`text-xs`, { color: Colors.textTertiary }]}>
                 {hasFinancialData
                   ? `${formatCurrency(
                       safeNumber(monthlyProgress.dailyAvgExpense)
@@ -868,8 +922,13 @@ const HomeScreen: React.FC = () => {
 
           {/* Projected Balance */}
           {hasFinancialData && monthlyProgress.daysRemaining > 0 && (
-            <View style={tw`mt-3 pt-3 border-t border-gray-100`}>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+            <View
+              style={[
+                tw`mt-3 pt-3`,
+                { borderTopWidth: 1, borderTopColor: BORDER_COLOR },
+              ]}
+            >
+              <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
                 Proyeksi akhir bulan ({monthlyProgress.daysRemaining} hari
                 lagi):
               </Text>
@@ -877,8 +936,8 @@ const HomeScreen: React.FC = () => {
                 style={[
                   tw`text-base font-semibold`,
                   monthlyProgress.projectedBalance >= 0
-                    ? tw`text-[${SUCCESS_COLOR}]`
-                    : tw`text-[${ERROR_COLOR}]`,
+                    ? { color: SUCCESS_COLOR }
+                    : { color: ERROR_COLOR },
                 ]}
               >
                 {formatCurrency(safeNumber(monthlyProgress.projectedBalance))}
@@ -899,13 +958,20 @@ const HomeScreen: React.FC = () => {
               <View
                 style={[
                   tw`w-12 h-12 rounded-xl items-center justify-center mb-2`,
-                  { backgroundColor: `${action.color}15` },
+                  {
+                    backgroundColor: SURFACE_COLOR,
+                    borderWidth: 1,
+                    borderColor: BORDER_COLOR,
+                  },
                 ]}
               >
                 <Ionicons name={action.icon} size={20} color={action.color} />
               </View>
               <Text
-                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium text-center`}
+                style={[
+                  tw`text-xs font-medium text-center`,
+                  { color: TEXT_PRIMARY },
+                ]}
               >
                 {action.title}
               </Text>
@@ -915,7 +981,14 @@ const HomeScreen: React.FC = () => {
 
         {/* QUICK STATS - HORIZONTAL COMPACT */}
         <View
-          style={tw`bg-white rounded-xl p-3 mb-6 border border-[${BORDER_COLOR}]`}
+          style={[
+            tw`rounded-xl p-3 mb-6`,
+            {
+              backgroundColor: SURFACE_COLOR,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            },
+          ]}
         >
           <View style={tw`flex-row justify-between`}>
             {quickStats.map((stat, index) => (
@@ -930,13 +1003,15 @@ const HomeScreen: React.FC = () => {
                     {stat.value}
                   </Text>
                   <Text
-                    style={tw`text-[${TEXT_SECONDARY}] text-xs text-center`}
+                    style={[tw`text-xs text-center`, { color: TEXT_SECONDARY }]}
                   >
                     {stat.label}
                   </Text>
                 </View>
                 {index < quickStats.length - 1 && (
-                  <View style={tw`w-px h-8 bg-gray-200`} />
+                  <View
+                    style={[tw`w-px h-8`, { backgroundColor: BORDER_COLOR }]}
+                  />
                 )}
               </React.Fragment>
             ))}
@@ -945,14 +1020,14 @@ const HomeScreen: React.FC = () => {
 
         {/* RECENT TRANSACTIONS HEADER */}
         <View style={tw`flex-row justify-between items-center mb-4`}>
-          <Text style={tw`text-[${TEXT_PRIMARY}] text-lg font-semibold`}>
+          <Text style={[tw`text-lg font-semibold`, { color: TEXT_PRIMARY }]}>
             {hasFinancialData ? "Transaksi Terbaru" : "Mulai Catat Keuangan"}
           </Text>
           {state.transactions.length > 0 ? (
             <TouchableOpacity
               onPress={() => navigation.navigate("Transactions")}
             >
-              <Text style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}>
+              <Text style={[tw`text-sm font-medium`, { color: ACCENT_COLOR }]}>
                 Lihat Semua
               </Text>
             </TouchableOpacity>
@@ -960,7 +1035,7 @@ const HomeScreen: React.FC = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate("AddTransaction")}
             >
-              <Text style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}>
+              <Text style={[tw`text-sm font-medium`, { color: ACCENT_COLOR }]}>
                 Mulai Sekarang
               </Text>
             </TouchableOpacity>
@@ -970,7 +1045,14 @@ const HomeScreen: React.FC = () => {
         {/* TRANSACTIONS LIST */}
         {state.transactions.length > 0 ? (
           <View
-            style={tw`bg-white rounded-2xl mb-6 overflow-hidden border border-[${BORDER_COLOR}]`}
+            style={[
+              tw`rounded-2xl mb-6 overflow-hidden`,
+              {
+                backgroundColor: SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: BORDER_COLOR,
+              },
+            ]}
           >
             {state.transactions
               .slice()
@@ -984,7 +1066,10 @@ const HomeScreen: React.FC = () => {
                   key={transaction.id}
                   style={[
                     tw`flex-row justify-between items-center p-4`,
-                    index < 2 && tw`border-b border-gray-100`,
+                    index < 2 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: BORDER_COLOR,
+                    },
                   ]}
                   onPress={() =>
                     navigation.navigate("AddTransaction", {
@@ -999,8 +1084,8 @@ const HomeScreen: React.FC = () => {
                       style={[
                         tw`w-10 h-10 rounded-lg items-center justify-center mr-3`,
                         transaction.type === "income"
-                          ? tw`bg-emerald-50`
-                          : tw`bg-red-50`,
+                          ? { backgroundColor: Colors.success + "20" }
+                          : { backgroundColor: Colors.error + "20" },
                       ]}
                     >
                       <Ionicons
@@ -1015,14 +1100,21 @@ const HomeScreen: React.FC = () => {
                     </View>
                     <View style={tw`flex-1`}>
                       <Text
-                        style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium mb-0.5`}
+                        style={[
+                          tw`text-sm font-medium mb-0.5`,
+                          { color: TEXT_PRIMARY },
+                        ]}
                       >
                         {transaction.category}
                       </Text>
-                      <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mb-1`}>
+                      <Text
+                        style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}
+                      >
                         {transaction.description || "Tidak ada deskripsi"}
                       </Text>
-                      <Text style={tw`text-gray-400 text-xs`}>
+                      <Text
+                        style={[tw`text-xs`, { color: Colors.textTertiary }]}
+                      >
                         {new Date(transaction.date).toLocaleDateString(
                           "id-ID",
                           {
@@ -1039,8 +1131,8 @@ const HomeScreen: React.FC = () => {
                     style={[
                       tw`text-sm font-semibold`,
                       transaction.type === "income"
-                        ? tw`text-[${SUCCESS_COLOR}]`
-                        : tw`text-[${ERROR_COLOR}]`,
+                        ? { color: SUCCESS_COLOR }
+                        : { color: ERROR_COLOR },
                     ]}
                   >
                     {transaction.type === "income" ? "+" : "-"}
@@ -1051,25 +1143,44 @@ const HomeScreen: React.FC = () => {
           </View>
         ) : (
           <View
-            style={tw`bg-white rounded-2xl p-8 items-center mb-6 border border-[${BORDER_COLOR}]`}
+            style={[
+              tw`rounded-2xl p-8 items-center mb-6`,
+              {
+                backgroundColor: SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: BORDER_COLOR,
+              },
+            ]}
           >
             <View
-              style={tw`w-16 h-16 rounded-xl bg-[${PRIMARY_COLOR}10] items-center justify-center mb-4`}
+              style={[
+                tw`w-16 h-16 rounded-xl items-center justify-center mb-4`,
+                { backgroundColor: Colors.accent + "20" },
+              ]}
             >
-              <Ionicons name="wallet-outline" size={28} color={PRIMARY_COLOR} />
+              <Ionicons name="wallet-outline" size={28} color={ACCENT_COLOR} />
             </View>
             <Text
-              style={tw`text-[${TEXT_PRIMARY}] text-base font-semibold mb-1`}
+              style={[
+                tw`text-base font-semibold mb-1`,
+                { color: TEXT_PRIMARY },
+              ]}
             >
               Selamat Datang di MyMoney!
             </Text>
             <Text
-              style={tw`text-[${TEXT_SECONDARY}] text-sm text-center mb-5 leading-5`}
+              style={[
+                tw`text-sm text-center mb-5 leading-5`,
+                { color: TEXT_SECONDARY },
+              ]}
             >
               Mulai kelola keuangan Anda dengan mencatat transaksi pertama
             </Text>
             <TouchableOpacity
-              style={tw`bg-[${PRIMARY_COLOR}] px-5 py-2.5 rounded-lg flex-row items-center`}
+              style={[
+                tw`px-5 py-2.5 rounded-lg flex-row items-center`,
+                { backgroundColor: ACCENT_COLOR },
+              ]}
               onPress={() => navigation.navigate("AddTransaction")}
             >
               <Ionicons
@@ -1090,7 +1201,9 @@ const HomeScreen: React.FC = () => {
           (state.budgets.length > 0 || goalsPreview.length > 0) && (
             <>
               <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-[${TEXT_PRIMARY}] text-lg font-semibold`}>
+                <Text
+                  style={[tw`text-lg font-semibold`, { color: TEXT_PRIMARY }]}
+                >
                   Progress & Target
                 </Text>
                 <View style={tw`flex-row gap-3`}>
@@ -1099,7 +1212,10 @@ const HomeScreen: React.FC = () => {
                       onPress={() => navigation.navigate("Budget")}
                     >
                       <Text
-                        style={tw`text-[${PRIMARY_COLOR}] text-sm font-medium`}
+                        style={[
+                          tw`text-sm font-medium`,
+                          { color: ACCENT_COLOR },
+                        ]}
                       >
                         Anggaran
                       </Text>
@@ -1110,7 +1226,10 @@ const HomeScreen: React.FC = () => {
                       onPress={() => navigation.navigate("Savings")}
                     >
                       <Text
-                        style={tw`text-[${SUCCESS_COLOR}] text-sm font-medium`}
+                        style={[
+                          tw`text-sm font-medium`,
+                          { color: SUCCESS_COLOR },
+                        ]}
                       >
                         Tabungan
                       </Text>
@@ -1120,14 +1239,29 @@ const HomeScreen: React.FC = () => {
               </View>
 
               <View
-                style={tw`bg-white rounded-2xl p-4 mb-6 border border-[${BORDER_COLOR}]`}
+                style={[
+                  tw`rounded-2xl p-4 mb-6`,
+                  {
+                    backgroundColor: SURFACE_COLOR,
+                    borderWidth: 1,
+                    borderColor: BORDER_COLOR,
+                  },
+                ]}
               >
                 <View style={tw`flex-row`}>
                   {/* LEFT COLUMN: BUDGET SUMMARY */}
                   {state.budgets.length > 0 && (
-                    <View style={tw`flex-1 pr-3 border-r border-gray-200`}>
+                    <View
+                      style={[
+                        tw`flex-1 pr-3`,
+                        { borderRightWidth: 1, borderRightColor: BORDER_COLOR },
+                      ]}
+                    >
                       <Text
-                        style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium mb-3`}
+                        style={[
+                          tw`text-xs font-medium mb-3`,
+                          { color: TEXT_SECONDARY },
+                        ]}
                       >
                         Anggaran ({state.budgets.slice(0, 3).length})
                       </Text>
@@ -1149,18 +1283,24 @@ const HomeScreen: React.FC = () => {
                               style={tw`flex-row justify-between items-center mb-1`}
                             >
                               <Text
-                                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium`}
+                                style={[
+                                  tw`text-xs font-medium`,
+                                  { color: TEXT_PRIMARY },
+                                ]}
                               >
                                 {budget.category}
                               </Text>
                               <Text
-                                style={tw`text-[${TEXT_SECONDARY}] text-xs`}
+                                style={[tw`text-xs`, { color: TEXT_SECONDARY }]}
                               >
                                 {Math.round(safeNumber(progress))}%
                               </Text>
                             </View>
                             <View
-                              style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
+                              style={[
+                                tw`h-1 rounded-full overflow-hidden`,
+                                { backgroundColor: Colors.surfaceLight },
+                              ]}
                             >
                               <View
                                 style={[
@@ -1176,7 +1316,10 @@ const HomeScreen: React.FC = () => {
                               />
                             </View>
                             <Text
-                              style={tw`text-[${TEXT_SECONDARY}] text-xs mt-1`}
+                              style={[
+                                tw`text-xs mt-1`,
+                                { color: TEXT_SECONDARY },
+                              ]}
                             >
                               {formatCurrency(safeSpent)} /{" "}
                               {formatCurrency(safeLimit)}
@@ -1191,7 +1334,10 @@ const HomeScreen: React.FC = () => {
                   {goalsPreview.length > 0 && (
                     <View style={tw`flex-1 pl-3`}>
                       <Text
-                        style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium mb-3`}
+                        style={[
+                          tw`text-xs font-medium mb-3`,
+                          { color: TEXT_SECONDARY },
+                        ]}
                       >
                         Tabungan ({goalsPreview.length})
                       </Text>
@@ -1211,18 +1357,24 @@ const HomeScreen: React.FC = () => {
                               style={tw`flex-row justify-between items-center mb-1`}
                             >
                               <Text
-                                style={tw`text-[${TEXT_PRIMARY}] text-xs font-medium`}
+                                style={[
+                                  tw`text-xs font-medium`,
+                                  { color: TEXT_PRIMARY },
+                                ]}
                               >
                                 {goal.name}
                               </Text>
                               <Text
-                                style={tw`text-[${TEXT_SECONDARY}] text-xs`}
+                                style={[tw`text-xs`, { color: TEXT_SECONDARY }]}
                               >
                                 {Math.round(safeNumber(progress))}%
                               </Text>
                             </View>
                             <View
-                              style={tw`h-1 bg-gray-100 rounded-full overflow-hidden`}
+                              style={[
+                                tw`h-1 rounded-full overflow-hidden`,
+                                { backgroundColor: Colors.surfaceLight },
+                              ]}
                             >
                               <View
                                 style={[
@@ -1237,13 +1389,16 @@ const HomeScreen: React.FC = () => {
                                         ? SUCCESS_COLOR
                                         : progress >= 50
                                         ? WARNING_COLOR
-                                        : PRIMARY_COLOR,
+                                        : ACCENT_COLOR,
                                   },
                                 ]}
                               />
                             </View>
                             <Text
-                              style={tw`text-[${TEXT_SECONDARY}] text-xs mt-1`}
+                              style={[
+                                tw`text-xs mt-1`,
+                                { color: TEXT_SECONDARY },
+                              ]}
                             >
                               {formatCurrency(safeCurrent)} /{" "}
                               {formatCurrency(safeTarget)}
@@ -1260,14 +1415,23 @@ const HomeScreen: React.FC = () => {
 
         {/* MOTIVATIONAL QUOTE */}
         <View
-          style={tw`bg-[${PRIMARY_COLOR}10] rounded-2xl p-4 mb-6 border border-[${PRIMARY_COLOR}20]`}
+          style={[
+            tw`rounded-2xl p-4 mb-6`,
+            {
+              backgroundColor: Colors.surfaceLight,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            },
+          ]}
         >
-          <Text style={tw`text-[${PRIMARY_COLOR}] text-sm italic mb-1`}>
+          <Text style={[tw`text-sm italic mb-1`, { color: ACCENT_COLOR }]}>
             {hasFinancialData
               ? "Keuangan yang sehat dimulai dari kebiasaan kecil yang konsisten."
               : "Langkah pertama menuju kebebasan finansial dimulai dari pencatatan yang baik."}
           </Text>
-          <Text style={tw`text-[${PRIMARY_COLOR}] text-xs`}>#MyMoneyTips</Text>
+          <Text style={[tw`text-xs`, { color: ACCENT_COLOR }]}>
+            #MyMoneyTips
+          </Text>
         </View>
 
         {/* Spacer untuk floating button */}
@@ -1276,7 +1440,10 @@ const HomeScreen: React.FC = () => {
 
       {/* FLOATING ADD BUTTON */}
       <TouchableOpacity
-        style={tw`absolute bottom-6 right-5 w-14 h-14 bg-[${PRIMARY_COLOR}] rounded-2xl items-center justify-center shadow-lg`}
+        style={[
+          tw`absolute bottom-6 right-5 w-14 h-14 rounded-2xl items-center justify-center shadow-lg`,
+          { backgroundColor: ACCENT_COLOR },
+        ]}
         onPress={() => navigation.navigate("AddTransaction")}
         activeOpacity={0.8}
       >
