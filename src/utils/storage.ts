@@ -6,6 +6,7 @@ import {
   Budget,
   Savings,
   SavingsTransaction,
+  Note, // TAMBAHKAN
 } from "../types";
 import { calculateTotals } from "./calculations";
 
@@ -13,8 +14,8 @@ import { calculateTotals } from "./calculations";
 // SIMPLE STORAGE KEYS - SINGLE USER
 // ======================================================
 const STORAGE_KEYS = {
-  APP_DATA: "@mymoney_app_data_v4", // Version 4: simple single user
-  MIGRATION_FLAG: "@mymoney_migrated_v4",
+  APP_DATA: "@mymoney_app_data_v5", // Version 5: tambah notes
+  MIGRATION_FLAG: "@mymoney_migrated_v5",
 };
 
 // ======================================================
@@ -41,7 +42,6 @@ const validateTransaction = (obj: any): Transaction | null => {
       description: obj.description || "",
       date: obj.date || new Date().toISOString().split("T")[0],
       createdAt: obj.createdAt || new Date().toISOString(),
-      // NO userId field
     };
   } catch (error) {
     console.warn("Transaction validation error:", error);
@@ -102,7 +102,6 @@ const validateBudget = (obj: any): Budget | null => {
       endDate,
       lastResetDate: obj.lastResetDate,
       createdAt: obj.createdAt || new Date().toISOString(),
-      // NO userId field
     };
   } catch (error) {
     console.warn("Budget validation error:", error);
@@ -131,7 +130,6 @@ const validateSavings = (obj: any): Savings | null => {
       priority: obj.priority || "medium",
       icon: obj.icon || "wallet",
       createdAt: obj.createdAt || new Date().toISOString(),
-      // NO userId field
     };
   } catch (error) {
     console.warn("Savings validation error:", error);
@@ -162,10 +160,67 @@ const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
       previousBalance: Math.max(0, obj.previousBalance || 0),
       newBalance: Math.max(0, obj.newBalance || 0),
       createdAt: obj.createdAt || new Date().toISOString(),
-      // NO userId field
     };
   } catch (error) {
     console.warn("Savings transaction validation error:", error);
+    return null;
+  }
+};
+
+// TAMBAHKAN: Validasi Note
+const validateNote = (obj: any): Note | null => {
+  if (!obj || typeof obj !== "object") return null;
+
+  try {
+    const validTypes = [
+      "financial_decision",
+      "expense_reflection",
+      "goal_progress",
+      "investment_idea",
+      "budget_analysis",
+      "general",
+    ];
+
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.title !== "string" ||
+      !validTypes.includes(obj.type || "general")
+    ) {
+      return null;
+    }
+
+    return {
+      id: obj.id,
+      title: obj.title || "",
+      content: obj.content || "",
+      type: obj.type || "general",
+      mood: ["positive", "neutral", "negative", "reflective"].includes(obj.mood)
+        ? obj.mood
+        : undefined,
+      financialImpact: ["positive", "neutral", "negative"].includes(
+        obj.financialImpact
+      )
+        ? obj.financialImpact
+        : undefined,
+      amount:
+        typeof obj.amount === "number" ? Math.max(0, obj.amount) : undefined,
+      category: obj.category || undefined,
+      tags: Array.isArray(obj.tags) ? obj.tags : [],
+      relatedTransactionIds: Array.isArray(obj.relatedTransactionIds)
+        ? obj.relatedTransactionIds
+        : [],
+      relatedSavingsIds: Array.isArray(obj.relatedSavingsIds)
+        ? obj.relatedSavingsIds
+        : [],
+      relatedBudgetIds: Array.isArray(obj.relatedBudgetIds)
+        ? obj.relatedBudgetIds
+        : [],
+      date: obj.date || new Date().toISOString().split("T")[0],
+      createdAt: obj.createdAt || new Date().toISOString(),
+      updatedAt: obj.updatedAt || new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn("Note validation error:", error);
     return null;
   }
 };
@@ -192,6 +247,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
 
     // Cek semua versi key lama
     const OLD_KEYS = [
+      "@mymoney_app_data_v4",
       "@mymoney_app_data_v3",
       "@mymoney_app_data_v2",
       "@mymoney_app_data",
@@ -244,6 +300,13 @@ const migrateOldData = async (): Promise<AppState | null> => {
                 )
             : [];
 
+          // Untuk data lama yang belum punya notes, default ke array kosong
+          const notes: Note[] = Array.isArray(oldData.notes)
+            ? oldData.notes
+                .map((n: any) => validateNote(n))
+                .filter((n: Note | null): n is Note => n !== null)
+            : [];
+
           const totals = calculateTotals(transactions);
 
           migratedData = {
@@ -251,6 +314,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
             budgets,
             savings,
             savingsTransactions,
+            notes, // TAMBAHKAN
             ...totals,
           };
 
@@ -319,6 +383,13 @@ export const storageService = {
               )
           : [];
 
+      // TAMBAHKAN: Validasi notes
+      const validatedNotes: Note[] = data.notes
+        ? data.notes
+            .map((n) => validateNote(n))
+            .filter((n: Note | null): n is Note => n !== null)
+        : [];
+
       const totals = calculateTotals(validatedTransactions);
 
       const appData: AppState = {
@@ -326,6 +397,7 @@ export const storageService = {
         budgets: validatedBudgets,
         savings: validatedSavings,
         savingsTransactions: validatedSavingsTransactions,
+        notes: validatedNotes, // TAMBAHKAN
         ...totals,
       };
 
@@ -334,7 +406,7 @@ export const storageService = {
         JSON.stringify(appData)
       );
       console.log(
-        `✅ Data tersimpan: ${validatedTransactions.length} transaksi`
+        `✅ Data tersimpan: ${validatedTransactions.length} transaksi, ${validatedNotes.length} catatan`
       );
     } catch (error) {
       console.error("❌ Error menyimpan data:", error);
@@ -357,7 +429,7 @@ export const storageService = {
         if (migratedData) {
           await AsyncStorage.setItem(STORAGE_KEYS.MIGRATION_FLAG, "true");
           console.log(
-            `✅ Data dimigrasi: ${migratedData.transactions.length} transaksi`
+            `✅ Data dimigrasi: ${migratedData.transactions.length} transaksi, ${migratedData.notes.length} catatan`
           );
           return migratedData;
         }
@@ -375,6 +447,7 @@ export const storageService = {
           budgets: [],
           savings: [],
           savingsTransactions: [],
+          notes: [], // TAMBAHKAN
           totalIncome: 0,
           totalExpense: 0,
           balance: 0,
@@ -413,6 +486,13 @@ export const storageService = {
             )
         : [];
 
+      // TAMBAHKAN: Load notes
+      const notes: Note[] = Array.isArray(parsedData.notes)
+        ? parsedData.notes
+            .map((n: any) => validateNote(n))
+            .filter((n: Note | null): n is Note => n !== null)
+        : [];
+
       const totals = calculateTotals(transactions);
 
       const appData: AppState = {
@@ -420,10 +500,13 @@ export const storageService = {
         budgets,
         savings,
         savingsTransactions,
+        notes, // TAMBAHKAN
         ...totals,
       };
 
-      console.log(`✅ Data dimuat: ${transactions.length} transaksi`);
+      console.log(
+        `✅ Data dimuat: ${transactions.length} transaksi, ${notes.length} catatan`
+      );
       return appData;
     } catch (error) {
       console.error("❌ Error memuat data:", error);
@@ -432,6 +515,7 @@ export const storageService = {
         budgets: [],
         savings: [],
         savingsTransactions: [],
+        notes: [], // TAMBAHKAN
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
@@ -477,6 +561,7 @@ export const storageService = {
         console.log("Transactions:", appData.transactions?.length || 0);
         console.log("Budgets:", appData.budgets?.length || 0);
         console.log("Savings:", appData.savings?.length || 0);
+        console.log("Notes:", appData.notes?.length || 0); // TAMBAHKAN
 
         if (appData.transactions?.length > 0) {
           console.log("Sample transaction:", {
@@ -484,6 +569,15 @@ export const storageService = {
             type: appData.transactions[0].type,
             amount: appData.transactions[0].amount,
             category: appData.transactions[0].category,
+          });
+        }
+
+        if (appData.notes?.length > 0) {
+          console.log("Sample note:", {
+            id: appData.notes[0].id,
+            title: appData.notes[0].title,
+            type: appData.notes[0].type,
+            tags: appData.notes[0].tags,
           });
         }
       }

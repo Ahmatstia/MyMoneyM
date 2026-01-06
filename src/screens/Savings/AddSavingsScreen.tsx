@@ -15,23 +15,44 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { Colors } from "../../theme/theme";
 
 const CATEGORIES = [
-  { id: "emergency", name: "Dana Darurat", icon: "shield", color: "#EF4444" },
-  { id: "vacation", name: "Liburan", icon: "airplane", color: "#3B82F6" },
-  { id: "gadget", name: "Gadget", icon: "phone-portrait", color: "#8B5CF6" },
-  { id: "education", name: "Pendidikan", icon: "school", color: "#10B981" },
-  { id: "house", name: "Rumah", icon: "home", color: "#F59E0B" },
-  { id: "car", name: "Mobil", icon: "car", color: "#6366F1" },
-  { id: "health", name: "Kesehatan", icon: "medical", color: "#EC4899" },
-  { id: "wedding", name: "Pernikahan", icon: "heart", color: "#F43F5E" },
-  { id: "other", name: "Lainnya", icon: "wallet", color: "#6B7280" },
+  {
+    id: "emergency",
+    name: "Dana Darurat",
+    icon: "shield",
+    color: Colors.error,
+  },
+  { id: "vacation", name: "Liburan", icon: "airplane", color: Colors.info },
+  {
+    id: "gadget",
+    name: "Gadget",
+    icon: "phone-portrait",
+    color: Colors.purple,
+  },
+  {
+    id: "education",
+    name: "Pendidikan",
+    icon: "school",
+    color: Colors.success,
+  },
+  { id: "house", name: "Rumah", icon: "home", color: Colors.warning },
+  { id: "car", name: "Mobil", icon: "car", color: Colors.accent },
+  { id: "health", name: "Kesehatan", icon: "medical", color: Colors.pink },
+  {
+    id: "wedding",
+    name: "Pernikahan",
+    icon: "heart",
+    color: Colors.errorLight,
+  },
+  { id: "other", name: "Lainnya", icon: "wallet", color: Colors.textTertiary },
 ];
 
 const PRIORITIES = [
-  { id: "low", name: "Rendah", color: "#10B981", icon: "flag" },
-  { id: "medium", name: "Sedang", color: "#F59E0B", icon: "flag" },
-  { id: "high", name: "Tinggi", color: "#EF4444", icon: "flag" },
+  { id: "low", name: "Rendah", color: Colors.success, icon: "flag" },
+  { id: "medium", name: "Sedang", color: Colors.warning, icon: "flag" },
+  { id: "high", name: "Tinggi", color: Colors.error, icon: "flag" },
 ];
 
 // Helper untuk format tanggal
@@ -86,9 +107,9 @@ const AddSavingsScreen: React.FC = () => {
     navigation.setOptions({
       title: isEditMode ? "Edit Tabungan" : "Tambah Tabungan",
       headerStyle: {
-        backgroundColor: "#4F46E5",
+        backgroundColor: Colors.surface,
       },
-      headerTintColor: "#FFFFFF",
+      headerTintColor: Colors.textPrimary,
       headerTitleStyle: {
         fontWeight: "600",
       },
@@ -230,14 +251,26 @@ const AddSavingsScreen: React.FC = () => {
       animationType="slide"
       onRequestClose={() => setShowCalendar(false)}
     >
-      <View style={tw`flex-1 justify-center items-center bg-black/50`}>
-        <View style={tw`bg-white rounded-xl p-4 w-11/12`}>
+      <View
+        style={tw.style(`flex-1 justify-center items-center`, {
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+        })}
+      >
+        <View
+          style={tw.style(`rounded-xl p-4 w-11/12`, {
+            backgroundColor: Colors.surface,
+          })}
+        >
           <View style={tw`flex-row justify-between items-center mb-4`}>
-            <Text style={tw`text-lg font-semibold text-gray-900`}>
+            <Text
+              style={tw.style(`text-lg font-semibold`, {
+                color: Colors.textPrimary,
+              })}
+            >
               Pilih Deadline
             </Text>
             <TouchableOpacity onPress={() => setShowCalendar(false)}>
-              <Ionicons name="close" size={24} color="#6B7280" />
+              <Ionicons name="close" size={24} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -247,23 +280,23 @@ const AddSavingsScreen: React.FC = () => {
             markedDates={{
               [tempDate]: {
                 selected: true,
-                selectedColor: "#4F46E5",
+                selectedColor: Colors.accent,
               },
             }}
             minDate={formatDate(new Date())}
             theme={{
-              backgroundColor: "#ffffff",
-              calendarBackground: "#ffffff",
-              textSectionTitleColor: "#6B7280",
-              selectedDayBackgroundColor: "#4F46E5",
-              selectedDayTextColor: "#ffffff",
-              todayTextColor: "#4F46E5",
-              dayTextColor: "#111827",
-              textDisabledColor: "#D1D5DB",
-              dotColor: "#4F46E5",
-              selectedDotColor: "#ffffff",
-              arrowColor: "#4F46E5",
-              monthTextColor: "#111827",
+              backgroundColor: Colors.surface,
+              calendarBackground: Colors.surface,
+              textSectionTitleColor: Colors.textSecondary,
+              selectedDayBackgroundColor: Colors.accent,
+              selectedDayTextColor: Colors.textPrimary,
+              todayTextColor: Colors.accent,
+              dayTextColor: Colors.textPrimary,
+              textDisabledColor: Colors.textTertiary,
+              dotColor: Colors.accent,
+              selectedDotColor: Colors.textPrimary,
+              arrowColor: Colors.accent,
+              monthTextColor: Colors.textPrimary,
               textDayFontFamily: "System",
               textMonthFontFamily: "System",
               textDayHeaderFontFamily: "System",
@@ -271,25 +304,37 @@ const AddSavingsScreen: React.FC = () => {
               textMonthFontSize: 16,
               textDayHeaderFontSize: 12,
             }}
-            style={tw`rounded-lg`}
+            style={tw.style(`rounded-lg`, { backgroundColor: Colors.surface })}
           />
 
           <View style={tw`mt-4 flex-row justify-between`}>
             <TouchableOpacity
-              style={tw`px-4 py-2 bg-gray-200 rounded-lg`}
+              style={tw.style(`px-4 py-2 rounded-lg`, {
+                backgroundColor: Colors.surfaceLight,
+              })}
               onPress={() => {
                 setDeadline(undefined);
                 setShowCalendar(false);
               }}
             >
-              <Text style={tw`text-gray-700 font-medium`}>Tanpa Deadline</Text>
+              <Text
+                style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+              >
+                Tanpa Deadline
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`px-4 py-2 bg-indigo-600 rounded-lg`}
+              style={tw.style(`px-4 py-2 rounded-lg`, {
+                backgroundColor: Colors.accent,
+              })}
               onPress={() => setShowCalendar(false)}
             >
-              <Text style={tw`text-white font-medium`}>Selesai</Text>
+              <Text
+                style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+              >
+                Selesai
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -302,7 +347,7 @@ const AddSavingsScreen: React.FC = () => {
   const selectedPriority = PRIORITIES.find((p) => p.id === priority);
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`p-4 pb-8`}
@@ -310,36 +355,62 @@ const AddSavingsScreen: React.FC = () => {
       >
         {/* Name Input */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Nama Tabungan *
           </Text>
           <TextInput
-            style={tw`bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-800`}
+            style={tw.style(`border rounded-lg px-3 py-3`, {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+              color: Colors.textPrimary,
+            })}
             placeholder="Contoh: Dana Liburan ke Bali"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.textTertiary}
             value={name}
             onChangeText={setName}
             maxLength={50}
             editable={!loading}
           />
-          <Text style={tw`text-xs text-gray-500 mt-1 text-right`}>
+          <Text
+            style={tw.style(`text-xs mt-1 text-right`, {
+              color: Colors.textSecondary,
+            })}
+          >
             {name.length}/50 karakter
           </Text>
         </View>
 
         {/* Amount Inputs */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Target Tabungan *
           </Text>
           <View
-            style={tw`flex-row items-center bg-white border border-gray-300 rounded-lg px-3 mb-3`}
+            style={tw.style(
+              `flex-row items-center border rounded-lg px-3 mb-3`,
+              {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              }
+            )}
           >
-            <Text style={tw`text-gray-600 mr-2`}>Rp</Text>
+            <Text style={tw.style(`mr-2`, { color: Colors.textSecondary })}>
+              Rp
+            </Text>
             <TextInput
-              style={tw`flex-1 py-3 text-gray-800 text-lg`}
+              style={tw.style(`flex-1 py-3 text-lg`, {
+                color: Colors.textPrimary,
+              })}
               placeholder="1000000"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.textTertiary}
               value={target}
               onChangeText={(text) => handleAmountChange(text, setTarget)}
               keyboardType="numeric"
@@ -348,17 +419,26 @@ const AddSavingsScreen: React.FC = () => {
             />
           </View>
 
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Jumlah Saat Ini
           </Text>
           <View
-            style={tw`flex-row items-center bg-white border border-gray-300 rounded-lg px-3`}
+            style={tw.style(`flex-row items-center border rounded-lg px-3`, {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+            })}
           >
-            <Text style={tw`text-gray-600 mr-2`}>Rp</Text>
+            <Text style={tw.style(`mr-2`, { color: Colors.textSecondary })}>
+              Rp
+            </Text>
             <TextInput
-              style={tw`flex-1 py-3 text-gray-800`}
+              style={tw.style(`flex-1 py-3`, { color: Colors.textPrimary })}
               placeholder="0"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.textTertiary}
               value={current}
               onChangeText={(text) => handleAmountChange(text, setCurrent)}
               keyboardType="numeric"
@@ -369,28 +449,49 @@ const AddSavingsScreen: React.FC = () => {
 
           {/* Progress Preview */}
           {target && safeNumber(parseFloat(target)) > 0 && (
-            <View style={tw`mt-4 bg-blue-50 p-3 rounded-lg`}>
+            <View
+              style={tw.style(`mt-4 p-3 rounded-lg`, {
+                backgroundColor: `${Colors.info}20`,
+              })}
+            >
               <View style={tw`flex-row justify-between items-center mb-2`}>
-                <Text style={tw`text-sm font-medium text-gray-700`}>
+                <Text
+                  style={tw.style(`text-sm font-medium`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Progress: {progress.toFixed(1)}%
                 </Text>
-                <Text style={tw`text-sm font-medium text-gray-700`}>
+                <Text
+                  style={tw.style(`text-sm font-medium`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {formatCurrency(safeNumber(parseFloat(current)))} /{" "}
                   {formatCurrency(safeNumber(parseFloat(target)))}
                 </Text>
               </View>
-              <View style={tw`h-2 bg-gray-200 rounded-full overflow-hidden`}>
+              <View
+                style={tw.style(`h-2 rounded-full overflow-hidden`, {
+                  backgroundColor: Colors.surfaceLight,
+                })}
+              >
                 <View
                   style={[
                     tw`h-full rounded-full`,
                     {
-                      backgroundColor: progress >= 100 ? "#10B981" : "#4F46E5",
+                      backgroundColor:
+                        progress >= 100 ? Colors.success : Colors.accent,
                       width: `${Math.min(progress, 100)}%`,
                     },
                   ]}
                 />
               </View>
-              <Text style={tw`text-xs text-gray-600 mt-2`}>
+              <Text
+                style={tw.style(`text-xs mt-2`, {
+                  color: Colors.textSecondary,
+                })}
+              >
                 Sisa:{" "}
                 {formatCurrency(
                   safeNumber(parseFloat(target)) -
@@ -403,7 +504,11 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Category Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Kategori
           </Text>
           <ScrollView
@@ -419,9 +524,12 @@ const AddSavingsScreen: React.FC = () => {
                   category === cat.id
                     ? {
                         borderColor: cat.color,
-                        backgroundColor: `${cat.color}10`,
+                        backgroundColor: `${cat.color}20`,
                       }
-                    : tw`border-gray-200 bg-white`,
+                    : {
+                        borderColor: Colors.border,
+                        backgroundColor: Colors.surface,
+                      },
                 ]}
                 onPress={() => setCategory(cat.id)}
                 disabled={loading}
@@ -429,7 +537,7 @@ const AddSavingsScreen: React.FC = () => {
                 <Ionicons
                   name={cat.icon as any}
                   size={20}
-                  color={category === cat.id ? cat.color : "#6B7280"}
+                  color={category === cat.id ? cat.color : Colors.textSecondary}
                   style={tw`mb-1`}
                 />
                 <Text
@@ -437,7 +545,7 @@ const AddSavingsScreen: React.FC = () => {
                     tw`text-xs text-center`,
                     category === cat.id
                       ? { color: cat.color, fontWeight: "600" }
-                      : tw`text-gray-700`,
+                      : { color: Colors.textPrimary },
                   ]}
                 >
                   {cat.name}
@@ -449,7 +557,11 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Priority Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Prioritas
           </Text>
           <View style={tw`flex-row gap-3`}>
@@ -459,8 +571,11 @@ const AddSavingsScreen: React.FC = () => {
                 style={[
                   tw`flex-1 px-4 py-3 rounded-lg border items-center`,
                   priority === p.id
-                    ? { borderColor: p.color, backgroundColor: `${p.color}10` }
-                    : tw`border-gray-200 bg-white`,
+                    ? { borderColor: p.color, backgroundColor: `${p.color}20` }
+                    : {
+                        borderColor: Colors.border,
+                        backgroundColor: Colors.surface,
+                      },
                 ]}
                 onPress={() => setPriority(p.id as any)}
                 disabled={loading}
@@ -468,7 +583,7 @@ const AddSavingsScreen: React.FC = () => {
                 <Ionicons
                   name={p.icon as any}
                   size={16}
-                  color={priority === p.id ? p.color : "#6B7280"}
+                  color={priority === p.id ? p.color : Colors.textSecondary}
                   style={tw`mb-1`}
                 />
                 <Text
@@ -476,7 +591,7 @@ const AddSavingsScreen: React.FC = () => {
                     tw`text-sm text-center`,
                     priority === p.id
                       ? { color: p.color, fontWeight: "600" }
-                      : tw`text-gray-700`,
+                      : { color: Colors.textPrimary },
                   ]}
                 >
                   {p.name}
@@ -488,11 +603,21 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Deadline Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Deadline (Opsional)
           </Text>
           <TouchableOpacity
-            style={tw`flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3`}
+            style={tw.style(
+              `flex-row items-center justify-between border rounded-lg px-3 py-3`,
+              {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              }
+            )}
             onPress={openCalendar}
             disabled={loading}
           >
@@ -500,29 +625,43 @@ const AddSavingsScreen: React.FC = () => {
               <Ionicons
                 name="calendar-outline"
                 size={18}
-                color="#4F46E5"
+                color={Colors.accent}
                 style={tw`mr-2`}
               />
-              <Text style={tw`text-gray-800`}>
+              <Text style={tw.style({ color: Colors.textPrimary })}>
                 {formatDisplayDate(deadline)}
               </Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#6B7280" />
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={Colors.textSecondary}
+            />
           </TouchableOpacity>
-          <Text style={tw`text-xs text-gray-500 mt-1`}>
+          <Text
+            style={tw.style(`text-xs mt-1`, { color: Colors.textSecondary })}
+          >
             Tetapkan deadline untuk membantu mencapai target tepat waktu
           </Text>
         </View>
 
         {/* Description */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Deskripsi (Opsional)
           </Text>
           <TextInput
-            style={tw`bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-800 min-h-[100px]`}
+            style={tw.style(`border rounded-lg px-3 py-3 min-h-[100px]`, {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+              color: Colors.textPrimary,
+            })}
             placeholder="Tambahkan catatan atau motivasi..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.textTertiary}
             value={description}
             onChangeText={setDescription}
             multiline
@@ -530,31 +669,44 @@ const AddSavingsScreen: React.FC = () => {
             maxLength={200}
             editable={!loading}
           />
-          <Text style={tw`text-xs text-gray-500 mt-1 text-right`}>
+          <Text
+            style={tw.style(`text-xs mt-1 text-right`, {
+              color: Colors.textSecondary,
+            })}
+          >
             {description.length}/200 karakter
           </Text>
         </View>
 
         {/* Tips */}
-        <View style={tw`bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6`}>
-          <Text style={tw`text-sm font-semibold text-blue-800 mb-2`}>
+        <View
+          style={tw.style(`border rounded-xl p-4 mb-6`, {
+            backgroundColor: `${Colors.info}10`,
+            borderColor: Colors.info,
+          })}
+        >
+          <Text
+            style={tw.style(`text-sm font-semibold mb-2`, {
+              color: Colors.info,
+            })}
+          >
             💡 Tips Menabung
           </Text>
-          <Text style={tw`text-xs text-blue-700 mb-1`}>
-            • <Text style={tw`font-medium`}>Dana Darurat</Text>: 3-6 bulan
-            pengeluaran
+          <Text style={tw.style(`text-xs mb-1`, { color: Colors.info })}>
+            • <Text style={tw.style(`font-medium`)}>Dana Darurat</Text>: 3-6
+            bulan pengeluaran
           </Text>
-          <Text style={tw`text-xs text-blue-700 mb-1`}>
-            • <Text style={tw`font-medium`}>50/30/20 Rule</Text>: 50% kebutuhan,
-            30% keinginan, 20% tabungan
+          <Text style={tw.style(`text-xs mb-1`, { color: Colors.info })}>
+            • <Text style={tw.style(`font-medium`)}>50/30/20 Rule</Text>: 50%
+            kebutuhan, 30% keinginan, 20% tabungan
           </Text>
-          <Text style={tw`text-xs text-blue-700 mb-1`}>
-            • <Text style={tw`font-medium`}>Pay Yourself First</Text>: Sisihkan
-            tabungan diawal bulan
+          <Text style={tw.style(`text-xs mb-1`, { color: Colors.info })}>
+            • <Text style={tw.style(`font-medium`)}>Pay Yourself First</Text>:
+            Sisihkan tabungan diawal bulan
           </Text>
-          <Text style={tw`text-xs text-blue-700`}>
-            • <Text style={tw`font-medium`}>Automate</Text>: Set autodebit untuk
-            tabungan rutin
+          <Text style={tw.style(`text-xs`, { color: Colors.info })}>
+            • <Text style={tw.style(`font-medium`)}>Automate</Text>: Set
+            autodebit untuk tabungan rutin
           </Text>
         </View>
 
@@ -564,16 +716,22 @@ const AddSavingsScreen: React.FC = () => {
             style={[
               tw`flex-1 py-3 rounded-lg items-center`,
               !name || !target || loading
-                ? tw`bg-gray-400`
-                : tw`bg-indigo-600 active:bg-indigo-700`,
+                ? { backgroundColor: Colors.textTertiary }
+                : { backgroundColor: Colors.accent },
             ]}
             onPress={handleSubmit}
             disabled={!name || !target || loading}
           >
             {loading ? (
-              <Text style={tw`text-white font-medium`}>Menyimpan...</Text>
+              <Text
+                style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+              >
+                Menyimpan...
+              </Text>
             ) : (
-              <Text style={tw`text-white font-medium`}>
+              <Text
+                style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+              >
                 {isEditMode ? "Simpan Perubahan" : "Simpan Tabungan"}
               </Text>
             )}
@@ -582,11 +740,17 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Cancel Button */}
         <TouchableOpacity
-          style={tw`py-3 border border-gray-300 rounded-lg items-center mt-3 active:bg-gray-50`}
+          style={tw.style(
+            `py-3 border rounded-lg items-center mt-3 active:opacity-80`,
+            {
+              borderColor: Colors.border,
+              backgroundColor: Colors.surface,
+            }
+          )}
           onPress={() => navigation.goBack()}
           disabled={loading}
         >
-          <Text style={tw`text-gray-700`}>Batal</Text>
+          <Text style={tw.style({ color: Colors.textPrimary })}>Batal</Text>
         </TouchableOpacity>
       </ScrollView>
 

@@ -19,6 +19,7 @@ import {
   getSafePercentage,
 } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
+import { Colors } from "../../theme/theme";
 
 const SavingsDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -41,16 +42,28 @@ const SavingsDetailScreen: React.FC = () => {
 
   if (!saving) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-gray-50 p-4`}>
-        <Ionicons name="warning-outline" size={48} color="#EF4444" />
-        <Text style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2`}>
+      <View
+        style={tw.style(`flex-1 justify-center items-center p-4`, {
+          backgroundColor: Colors.background,
+        })}
+      >
+        <Ionicons name="warning-outline" size={48} color={Colors.error} />
+        <Text
+          style={tw.style(`text-lg font-semibold mt-4 mb-2`, {
+            color: Colors.textPrimary,
+          })}
+        >
           Tabungan tidak ditemukan
         </Text>
         <TouchableOpacity
-          style={tw`mt-4 px-4 py-2 bg-indigo-600 rounded-lg`}
+          style={tw.style(`mt-4 px-4 py-2 rounded-lg`, {
+            backgroundColor: Colors.accent,
+          })}
           onPress={() => navigation.goBack()}
         >
-          <Text style={tw`text-white font-medium`}>Kembali</Text>
+          <Text style={tw.style(`font-medium`, { color: Colors.textPrimary })}>
+            Kembali
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -87,7 +100,8 @@ const SavingsDetailScreen: React.FC = () => {
 
   // Format deadline
   const formatDeadlineInfo = () => {
-    if (!saving.deadline) return { text: "Tanpa deadline", color: "#6B7280" };
+    if (!saving.deadline)
+      return { text: "Tanpa deadline", color: Colors.textTertiary };
 
     try {
       const deadlineDate = new Date(saving.deadline);
@@ -95,21 +109,21 @@ const SavingsDetailScreen: React.FC = () => {
       const diffTime = deadlineDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays < 0) return { text: "Terlambat", color: "#DC2626" };
-      if (diffDays === 0) return { text: "Hari ini", color: "#EF4444" };
+      if (diffDays < 0) return { text: "Terlambat", color: Colors.error };
+      if (diffDays === 0) return { text: "Hari ini", color: Colors.error };
       if (diffDays <= 7)
-        return { text: `${diffDays} hari lagi`, color: "#F59E0B" };
+        return { text: `${diffDays} hari lagi`, color: Colors.warning };
       if (diffDays <= 30)
         return {
           text: `${Math.floor(diffDays / 7)} minggu lagi`,
-          color: "#3B82F6",
+          color: Colors.info,
         };
       return {
         text: `${Math.floor(diffDays / 30)} bulan lagi`,
-        color: "#10B981",
+        color: Colors.success,
       };
     } catch {
-      return { text: saving.deadline, color: "#6B7280" };
+      return { text: saving.deadline, color: Colors.textTertiary };
     }
   };
 
@@ -147,8 +161,10 @@ const SavingsDetailScreen: React.FC = () => {
         key={transaction.id}
         style={[
           tw`py-3 px-4`,
-          index < savingsTransactions.length - 1 &&
-            tw`border-b border-gray-100`,
+          index < savingsTransactions.length - 1 && {
+            borderBottomWidth: 1,
+            borderBottomColor: Colors.border,
+          },
         ]}
       >
         <View style={tw`flex-row justify-between items-center`}>
@@ -156,20 +172,30 @@ const SavingsDetailScreen: React.FC = () => {
             <View
               style={[
                 tw`w-10 h-10 rounded-full items-center justify-center`,
-                isDeposit ? tw`bg-emerald-50` : tw`bg-red-50`,
+                isDeposit
+                  ? { backgroundColor: `${Colors.success}20` }
+                  : { backgroundColor: `${Colors.error}20` },
               ]}
             >
               <Ionicons
                 name={isDeposit ? "arrow-down" : "arrow-up"}
                 size={18}
-                color={isDeposit ? "#10B981" : "#DC2626"}
+                color={isDeposit ? Colors.success : Colors.error}
               />
             </View>
             <View>
-              <Text style={tw`text-sm font-medium text-gray-900`}>
+              <Text
+                style={tw.style(`text-sm font-medium`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 {isDeposit ? "Setoran" : "Penarikan"}
               </Text>
-              <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+              <Text
+                style={tw.style(`text-xs mt-0.5`, {
+                  color: Colors.textTertiary,
+                })}
+              >
                 {formatDate(transaction.date)}
               </Text>
             </View>
@@ -179,18 +205,24 @@ const SavingsDetailScreen: React.FC = () => {
             <Text
               style={[
                 tw`text-base font-semibold`,
-                isDeposit ? tw`text-emerald-600` : tw`text-red-600`,
+                isDeposit ? { color: Colors.success } : { color: Colors.error },
               ]}
             >
               {isDeposit ? "+" : "-"} {formatCurrency(transaction.amount)}
             </Text>
-            <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+            <Text
+              style={tw.style(`text-xs mt-0.5`, { color: Colors.textTertiary })}
+            >
               Saldo: {formatCurrency(transaction.newBalance)}
             </Text>
           </View>
         </View>
         {transaction.note && (
-          <Text style={tw`text-xs text-gray-400 mt-2 ml-13`}>
+          <Text
+            style={tw.style(`text-xs mt-2 ml-13`, {
+              color: Colors.textTertiary,
+            })}
+          >
             {transaction.note}
           </Text>
         )}
@@ -199,13 +231,15 @@ const SavingsDetailScreen: React.FC = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
       {/* Header - Super Minimalis */}
-      <View style={tw`px-4 pt-2 pb-3 bg-white`}>
+      <View
+        style={tw.style(`px-4 pt-2 pb-3`, { backgroundColor: Colors.surface })}
+      >
         {/* Navigation Bar */}
         <View style={tw`flex-row justify-between items-center mb-2`}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
-            <Ionicons name="chevron-back" size={22} color="#4F46E5" />
+            <Ionicons name="chevron-back" size={22} color={Colors.accent} />
           </TouchableOpacity>
 
           <View style={tw`flex-row gap-1`}>
@@ -218,11 +252,11 @@ const SavingsDetailScreen: React.FC = () => {
               }}
               style={tw`p-2`}
             >
-              <Ionicons name="create-outline" size={20} color="#4F46E5" />
+              <Ionicons name="create-outline" size={20} color={Colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleDelete} style={tw`p-2`}>
-              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              <Ionicons name="trash-outline" size={20} color={Colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -232,23 +266,33 @@ const SavingsDetailScreen: React.FC = () => {
           <View
             style={[
               tw`w-14 h-14 rounded-full items-center justify-center mb-2`,
-              { backgroundColor: `${isCompleted ? "#10B981" : "#4F46E5"}10` },
+              {
+                backgroundColor: `${
+                  isCompleted ? Colors.success : Colors.accent
+                }20`,
+              },
             ]}
           >
             <Ionicons
               name={(saving.icon as any) || "wallet-outline"}
               size={24}
-              color={isCompleted ? "#10B981" : "#4F46E5"}
+              color={isCompleted ? Colors.success : Colors.accent}
             />
           </View>
 
-          <Text style={tw`text-lg font-semibold text-gray-900 text-center`}>
+          <Text
+            style={tw.style(`text-lg font-semibold text-center`, {
+              color: Colors.textPrimary,
+            })}
+          >
             {saving.name}
           </Text>
 
           {saving.description && (
             <Text
-              style={tw`text-xs text-gray-500 text-center mt-0.5 leading-4`}
+              style={tw.style(`text-xs text-center mt-0.5 leading-4`, {
+                color: Colors.textSecondary,
+              })}
             >
               {saving.description}
             </Text>
@@ -269,19 +313,26 @@ const SavingsDetailScreen: React.FC = () => {
         <View style={tw`mx-4 mt-4`}>
           {/* Header Progress */}
           <View style={tw`flex-row justify-between items-center mb-3`}>
-            <Text style={tw`text-sm font-medium text-gray-700`}>
+            <Text
+              style={tw.style(`text-sm font-medium`, {
+                color: Colors.textPrimary,
+              })}
+            >
               Progress Tabungan
             </Text>
             <View style={tw`flex-row items-center gap-1`}>
               <Ionicons
                 name={isCompleted ? "checkmark-circle" : "time-outline"}
                 size={14}
-                color={isCompleted ? "#10B981" : "#4F46E5"}
+                color={isCompleted ? Colors.success : Colors.accent}
               />
               <Text
-                style={tw`text-xs font-medium ${
-                  isCompleted ? "text-emerald-600" : "text-indigo-600"
-                }`}
+                style={tw.style(
+                  `text-xs font-medium`,
+                  isCompleted
+                    ? { color: Colors.success }
+                    : { color: Colors.accent }
+                )}
               >
                 {progress.toFixed(1)}%
               </Text>
@@ -292,12 +343,16 @@ const SavingsDetailScreen: React.FC = () => {
           <View style={tw`mb-4`}>
             <ProgressBar
               progress={Math.min(progress / 100, 1)}
-              color={isCompleted ? "#10B981" : "#4F46E5"}
-              style={tw`h-1.5 rounded-full`}
+              color={isCompleted ? Colors.success : Colors.accent}
+              style={tw.style(`h-1.5 rounded-full`, {
+                backgroundColor: Colors.surfaceLight,
+              })}
             />
             <View style={tw`flex-row justify-between mt-1`}>
-              <Text style={tw`text-xs text-gray-500`}>Rp0</Text>
-              <Text style={tw`text-xs text-gray-500`}>
+              <Text style={tw.style(`text-xs`, { color: Colors.textTertiary })}>
+                Rp0
+              </Text>
+              <Text style={tw.style(`text-xs`, { color: Colors.textTertiary })}>
                 {formatCurrency(target)}
               </Text>
             </View>
@@ -306,29 +361,66 @@ const SavingsDetailScreen: React.FC = () => {
           {/* Angka-angka Penting - Compact Layout */}
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-500 mb-0.5`}>Terkumpul</Text>
-              <Text style={tw`text-base font-bold text-emerald-600`}>
+              <Text
+                style={tw.style(`text-xs mb-0.5`, {
+                  color: Colors.textSecondary,
+                })}
+              >
+                Terkumpul
+              </Text>
+              <Text
+                style={tw.style(`text-base font-bold`, {
+                  color: Colors.success,
+                })}
+              >
                 {formatCurrency(current)}
               </Text>
             </View>
 
-            <Ionicons name="arrow-forward" size={16} color="#9CA3AF" />
+            <Ionicons
+              name="arrow-forward"
+              size={16}
+              color={Colors.textTertiary}
+            />
 
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-500 mb-0.5`}>Target</Text>
-              <Text style={tw`text-base font-bold text-gray-900`}>
+              <Text
+                style={tw.style(`text-xs mb-0.5`, {
+                  color: Colors.textSecondary,
+                })}
+              >
+                Target
+              </Text>
+              <Text
+                style={tw.style(`text-base font-bold`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 {formatCurrency(target)}
               </Text>
             </View>
 
-            <Ionicons name="arrow-forward" size={16} color="#9CA3AF" />
+            <Ionicons
+              name="arrow-forward"
+              size={16}
+              color={Colors.textTertiary}
+            />
 
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-500 mb-0.5`}>Sisa</Text>
               <Text
-                style={tw`text-base font-bold ${
-                  remaining >= 0 ? "text-indigo-600" : "text-red-600"
-                }`}
+                style={tw.style(`text-xs mb-0.5`, {
+                  color: Colors.textSecondary,
+                })}
+              >
+                Sisa
+              </Text>
+              <Text
+                style={tw.style(
+                  `text-base font-bold`,
+                  remaining >= 0
+                    ? { color: Colors.accent }
+                    : { color: Colors.error }
+                )}
               >
                 {formatCurrency(remaining)}
               </Text>
@@ -337,7 +429,10 @@ const SavingsDetailScreen: React.FC = () => {
 
           {/* Info Status & Deadline - Single Line */}
           <View
-            style={tw`flex-row justify-between items-center py-2 border-t border-gray-100`}
+            style={tw.style(
+              `flex-row justify-between items-center py-2 border-t`,
+              { borderColor: Colors.border }
+            )}
           >
             <View style={tw`flex-row items-center gap-2`}>
               <View
@@ -346,17 +441,27 @@ const SavingsDetailScreen: React.FC = () => {
                   { backgroundColor: deadlineInfo.color },
                 ]}
               />
-              <Text style={tw`text-xs text-gray-600`}>{deadlineInfo.text}</Text>
+              <Text
+                style={tw.style(`text-xs`, { color: Colors.textSecondary })}
+              >
+                {deadlineInfo.text}
+              </Text>
             </View>
 
             <View style={tw`flex-row items-center gap-1`}>
               <View
                 style={[
                   tw`w-2 h-2 rounded-full`,
-                  { backgroundColor: isCompleted ? "#10B981" : "#4F46E5" },
+                  {
+                    backgroundColor: isCompleted
+                      ? Colors.success
+                      : Colors.accent,
+                  },
                 ]}
               />
-              <Text style={tw`text-xs text-gray-600`}>
+              <Text
+                style={tw.style(`text-xs`, { color: Colors.textSecondary })}
+              >
                 {isCompleted ? "Selesai" : "Berlangsung"}
               </Text>
             </View>
@@ -366,42 +471,78 @@ const SavingsDetailScreen: React.FC = () => {
         {/* Stats Cards - Super Minimalis */}
         <View style={tw`flex-row mx-4 mt-3 gap-2`}>
           <View style={tw`flex-1`}>
-            <View style={tw`bg-emerald-50 rounded-lg p-3`}>
+            <View
+              style={tw.style(`rounded-lg p-3`, {
+                backgroundColor: `${Colors.success}20`,
+              })}
+            >
               <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text style={tw`text-xs font-medium text-emerald-700`}>
+                <Text
+                  style={tw.style(`text-xs font-medium`, {
+                    color: Colors.success,
+                  })}
+                >
                   Setoran
                 </Text>
-                <Ionicons name="arrow-down" size={12} color="#10B981" />
+                <Ionicons name="arrow-down" size={12} color={Colors.success} />
               </View>
-              <Text style={tw`text-sm font-bold text-emerald-600`}>
+              <Text
+                style={tw.style(`text-sm font-bold`, { color: Colors.success })}
+              >
                 {formatCurrency(stats.deposits)}
               </Text>
             </View>
           </View>
 
           <View style={tw`flex-1`}>
-            <View style={tw`bg-red-50 rounded-lg p-3`}>
+            <View
+              style={tw.style(`rounded-lg p-3`, {
+                backgroundColor: `${Colors.error}20`,
+              })}
+            >
               <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text style={tw`text-xs font-medium text-red-700`}>
+                <Text
+                  style={tw.style(`text-xs font-medium`, {
+                    color: Colors.error,
+                  })}
+                >
                   Penarikan
                 </Text>
-                <Ionicons name="arrow-up" size={12} color="#DC2626" />
+                <Ionicons name="arrow-up" size={12} color={Colors.error} />
               </View>
-              <Text style={tw`text-sm font-bold text-red-600`}>
+              <Text
+                style={tw.style(`text-sm font-bold`, { color: Colors.error })}
+              >
                 {formatCurrency(stats.withdrawals)}
               </Text>
             </View>
           </View>
 
           <View style={tw`flex-1`}>
-            <View style={tw`bg-gray-50 rounded-lg p-3`}>
+            <View
+              style={tw.style(`rounded-lg p-3`, {
+                backgroundColor: Colors.surfaceLight,
+              })}
+            >
               <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text style={tw`text-xs font-medium text-gray-700`}>
+                <Text
+                  style={tw.style(`text-xs font-medium`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Transaksi
                 </Text>
-                <Ionicons name="receipt-outline" size={12} color="#6B7280" />
+                <Ionicons
+                  name="receipt-outline"
+                  size={12}
+                  color={Colors.textTertiary}
+                />
               </View>
-              <Text style={tw`text-sm font-bold text-gray-900`}>
+              <Text
+                style={tw.style(`text-sm font-bold`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 {stats.transactionCount}
               </Text>
             </View>
@@ -409,10 +550,23 @@ const SavingsDetailScreen: React.FC = () => {
         </View>
 
         {/* Transactions Section */}
-        <View style={tw`bg-white mx-4 mt-4 rounded-xl border border-gray-100`}>
-          <View style={tw`px-4 py-3 border-b border-gray-100`}>
+        <View
+          style={tw.style(`mx-4 mt-4 rounded-xl border`, {
+            backgroundColor: Colors.surface,
+            borderColor: Colors.border,
+          })}
+        >
+          <View
+            style={tw.style(`px-4 py-3 border-b`, {
+              borderColor: Colors.border,
+            })}
+          >
             <View style={tw`flex-row justify-between items-center`}>
-              <Text style={tw`text-base font-semibold text-gray-900`}>
+              <Text
+                style={tw.style(`text-base font-semibold`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Riwayat Transaksi
               </Text>
               {savingsTransactions.length > 0 && (
@@ -421,7 +575,11 @@ const SavingsDetailScreen: React.FC = () => {
                     navigation.navigate("SavingsHistory", { savingsId })
                   }
                 >
-                  <Text style={tw`text-sm text-indigo-600 font-medium`}>
+                  <Text
+                    style={tw.style(`text-sm font-medium`, {
+                      color: Colors.accent,
+                    })}
+                  >
                     Lihat Semua
                   </Text>
                 </TouchableOpacity>
@@ -432,18 +590,35 @@ const SavingsDetailScreen: React.FC = () => {
           {savingsTransactions.length === 0 ? (
             <View style={tw`py-8 px-4 items-center`}>
               <View
-                style={tw`w-16 h-16 rounded-full bg-gray-50 items-center justify-center mb-3`}
+                style={tw.style(
+                  `w-16 h-16 rounded-full items-center justify-center mb-3`,
+                  { backgroundColor: Colors.surfaceLight }
+                )}
               >
-                <Ionicons name="receipt-outline" size={24} color="#9CA3AF" />
+                <Ionicons
+                  name="receipt-outline"
+                  size={24}
+                  color={Colors.textTertiary}
+                />
               </View>
-              <Text style={tw`text-base font-semibold text-gray-900 mb-2`}>
+              <Text
+                style={tw.style(`text-base font-semibold mb-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Belum ada transaksi
               </Text>
-              <Text style={tw`text-sm text-gray-500 text-center mb-4`}>
+              <Text
+                style={tw.style(`text-sm text-center mb-4`, {
+                  color: Colors.textSecondary,
+                })}
+              >
                 Mulai dengan menambahkan setoran pertama
               </Text>
               <TouchableOpacity
-                style={tw`px-4 py-2 bg-indigo-600 rounded-lg`}
+                style={tw.style(`px-4 py-2 rounded-lg`, {
+                  backgroundColor: Colors.accent,
+                })}
                 onPress={() => {
                   navigation.navigate("AddSavingsTransaction", {
                     savingsId: saving.id,
@@ -451,7 +626,11 @@ const SavingsDetailScreen: React.FC = () => {
                   });
                 }}
               >
-                <Text style={tw`text-white font-medium`}>Tambah Setoran</Text>
+                <Text
+                  style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+                >
+                  Tambah Setoran
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -467,7 +646,9 @@ const SavingsDetailScreen: React.FC = () => {
         <View style={tw`mx-4 mt-4 mb-8`}>
           {!isCompleted && (
             <TouchableOpacity
-              style={tw`bg-indigo-600 rounded-xl py-3 items-center shadow-sm`}
+              style={tw.style(`rounded-xl py-3 items-center shadow-sm`, {
+                backgroundColor: Colors.accent,
+              })}
               onPress={() => {
                 navigation.navigate("AddSavingsTransaction", {
                   savingsId: saving.id,
@@ -475,13 +656,19 @@ const SavingsDetailScreen: React.FC = () => {
                 });
               }}
             >
-              <Text style={tw`text-white font-semibold`}>+ Tambah Setoran</Text>
+              <Text
+                style={tw.style(`font-semibold`, { color: Colors.textPrimary })}
+              >
+                + Tambah Setoran
+              </Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity
             style={[
-              tw`mt-2 border border-gray-300 rounded-xl py-3 items-center`,
+              tw.style(`border rounded-xl py-3 items-center`, {
+                borderColor: Colors.border,
+              }),
               !isCompleted && tw`mt-3`,
             ]}
             onPress={() => {
@@ -491,7 +678,11 @@ const SavingsDetailScreen: React.FC = () => {
               });
             }}
           >
-            <Text style={tw`text-gray-700 font-medium`}>Penarikan Dana</Text>
+            <Text
+              style={tw.style(`font-medium`, { color: Colors.textPrimary })}
+            >
+              Penarikan Dana
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

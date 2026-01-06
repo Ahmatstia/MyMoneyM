@@ -1,4 +1,4 @@
-// File: src/screens/BudgetScreen.tsx
+// File: src/screens/BudgetScreen.tsx - WITH NAVY BLUE THEME
 import React, { useState, useMemo } from "react";
 import { View, ScrollView, Alert, TouchableOpacity } from "react-native";
 import { Text, ProgressBar } from "react-native-paper";
@@ -9,9 +9,23 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Budget } from "../../types";
+import { Colors } from "../../theme/theme";
 
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
+
+// GUNAKAN WARNA DARI TEMA NAVY BLUE
+const PRIMARY_COLOR = Colors.primary; // "#0F172A" - Navy blue gelap
+const ACCENT_COLOR = Colors.accent; // "#22D3EE" - Cyan terang
+const BACKGROUND_COLOR = Colors.background; // "#0F172A" - Background navy blue gelap
+const SURFACE_COLOR = Colors.surface; // "#1E293B" - Permukaan navy blue medium
+const TEXT_PRIMARY = Colors.textPrimary; // "#F8FAFC" - Teks utama putih
+const TEXT_SECONDARY = Colors.textSecondary; // "#CBD5E1" - Teks sekunder abu-abu muda
+const BORDER_COLOR = Colors.border; // "#334155" - Border navy blue lebih terang
+const SUCCESS_COLOR = Colors.success; // "#10B981" - Hijau
+const WARNING_COLOR = Colors.warning; // "#F59E0B" - Kuning
+const ERROR_COLOR = Colors.error; // "#EF4444" - Merah
+const INFO_COLOR = Colors.info; // "#3B82F6" - Biru terang
 
 const BudgetScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -222,9 +236,9 @@ const BudgetScreen: React.FC = () => {
   // Get status color
   const getStatusColor = (budget: Budget) => {
     const progress = getProgressPercentage(budget);
-    if (progress > 100) return "#DC2626";
-    if (progress >= 80) return "#F59E0B";
-    return "#10B981";
+    if (progress > 100) return ERROR_COLOR;
+    if (progress >= 80) return WARNING_COLOR;
+    return SUCCESS_COLOR;
   };
 
   // Handle delete budget
@@ -264,17 +278,18 @@ const BudgetScreen: React.FC = () => {
       <View
         style={[
           tw`px-2 py-1 rounded-lg`,
-          progress > 100 && tw`bg-red-100`,
-          progress >= 80 && progress <= 100 && tw`bg-yellow-100`,
-          progress < 80 && tw`bg-emerald-100`,
+          progress > 100 && { backgroundColor: Colors.error + "20" },
+          progress >= 80 &&
+            progress <= 100 && { backgroundColor: Colors.warning + "20" },
+          progress < 80 && { backgroundColor: Colors.success + "20" },
         ]}
       >
         <Text
           style={[
             tw`text-xs font-medium`,
-            progress > 100 && tw`text-red-600`,
-            progress >= 80 && progress <= 100 && tw`text-yellow-600`,
-            progress < 80 && tw`text-emerald-600`,
+            progress > 100 && { color: ERROR_COLOR },
+            progress >= 80 && progress <= 100 && { color: WARNING_COLOR },
+            progress < 80 && { color: SUCCESS_COLOR },
           ]}
         >
           {text}
@@ -286,20 +301,35 @@ const BudgetScreen: React.FC = () => {
   // Render empty state
   const renderEmptyState = () => (
     <View style={tw`items-center py-12`}>
-      <Ionicons name="pie-chart-outline" size={48} color="#9CA3AF" />
+      <Ionicons
+        name="pie-chart-outline"
+        size={48}
+        color={Colors.textTertiary}
+      />
       <Text
-        style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2 text-center`}
+        style={[
+          tw`text-lg font-semibold mt-4 mb-2 text-center`,
+          { color: TEXT_PRIMARY },
+        ]}
       >
         {filter === "all" ? "Belum ada anggaran" : "Tidak ada anggaran"}
       </Text>
-      <Text style={tw`text-sm text-gray-600 text-center mb-6 leading-5`}>
+      <Text
+        style={[
+          tw`text-sm text-center mb-6 leading-5`,
+          { color: TEXT_SECONDARY },
+        ]}
+      >
         {filter === "all"
           ? "Mulai dengan membuat anggaran pertama Anda"
           : `Tidak ada anggaran dengan status "${filter}"`}
       </Text>
       {filter === "all" && (
         <TouchableOpacity
-          style={tw`flex-row items-center bg-indigo-600 px-5 py-3 rounded-lg gap-2`}
+          style={[
+            tw`flex-row items-center px-5 py-3 rounded-lg gap-2`,
+            { backgroundColor: ACCENT_COLOR },
+          ]}
           onPress={() => navigation.navigate("AddBudget")}
         >
           <Ionicons name="add-circle" size={20} color="#FFFFFF" />
@@ -312,19 +342,31 @@ const BudgetScreen: React.FC = () => {
   );
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       {/* Header */}
       <View
-        style={tw`px-4 pt-3 pb-4 bg-white border-b border-gray-200 flex-row justify-between items-center`}
+        style={[
+          tw`px-4 pt-3 pb-4 flex-row justify-between items-center`,
+          {
+            backgroundColor: SURFACE_COLOR,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER_COLOR,
+          },
+        ]}
       >
         <View>
-          <Text style={tw`text-2xl font-bold text-gray-900`}>Anggaran</Text>
-          <Text style={tw`text-sm text-gray-600 mt-0.5`}>
+          <Text style={[tw`text-2xl font-bold`, { color: TEXT_PRIMARY }]}>
+            Anggaran
+          </Text>
+          <Text style={[tw`text-sm mt-0.5`, { color: TEXT_SECONDARY }]}>
             {state.budgets.length} anggaran aktif
           </Text>
         </View>
         <TouchableOpacity
-          style={tw`w-10 h-10 rounded-full bg-indigo-600 justify-center items-center`}
+          style={[
+            tw`w-10 h-10 rounded-full justify-center items-center`,
+            { backgroundColor: ACCENT_COLOR },
+          ]}
           onPress={() => navigation.navigate("AddBudget")}
         >
           <Ionicons name="add" size={24} color="#FFFFFF" />
@@ -332,30 +374,45 @@ const BudgetScreen: React.FC = () => {
       </View>
 
       {/* Summary Stats */}
-      <View style={tw`bg-white py-4 px-4 border-b border-gray-200`}>
+      <View
+        style={[
+          tw`py-4 px-4`,
+          {
+            backgroundColor: SURFACE_COLOR,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER_COLOR,
+          },
+        ]}
+      >
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Limit</Text>
-            <Text style={tw`text-base font-bold text-gray-900`}>
+            <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
+              Total Limit
+            </Text>
+            <Text style={[tw`text-base font-bold`, { color: TEXT_PRIMARY }]}>
               {formatCurrency(summary.totalLimit)}
             </Text>
           </View>
-          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Terpakai</Text>
-            <Text style={tw`text-base font-bold text-gray-900`}>
+            <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
+              Total Terpakai
+            </Text>
+            <Text style={[tw`text-base font-bold`, { color: TEXT_PRIMARY }]}>
               {formatCurrency(summary.totalSpent)}
             </Text>
           </View>
-          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Total Sisa</Text>
+            <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
+              Total Sisa
+            </Text>
             <Text
               style={[
                 tw`text-base font-bold`,
                 summary.totalRemaining >= 0
-                  ? tw`text-emerald-600`
-                  : tw`text-red-600`,
+                  ? { color: SUCCESS_COLOR }
+                  : { color: ERROR_COLOR },
               ]}
             >
               {formatCurrency(summary.totalRemaining)}
@@ -365,7 +422,16 @@ const BudgetScreen: React.FC = () => {
       </View>
 
       {/* Filter Tabs */}
-      <View style={tw`bg-white border-b border-gray-200 py-2 px-4`}>
+      <View
+        style={[
+          tw`py-2 px-4`,
+          {
+            backgroundColor: SURFACE_COLOR,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER_COLOR,
+          },
+        ]}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -385,14 +451,18 @@ const BudgetScreen: React.FC = () => {
               key={tab.key}
               style={[
                 tw`px-3 py-1.5 rounded-full`,
-                filter === tab.key ? tw`bg-indigo-100` : tw`bg-gray-100`,
+                filter === tab.key
+                  ? { backgroundColor: ACCENT_COLOR + "20" }
+                  : { backgroundColor: Colors.surfaceLight },
               ]}
               onPress={() => setFilter(tab.key as any)}
             >
               <Text
                 style={[
                   tw`text-xs font-medium`,
-                  filter === tab.key ? tw`text-indigo-700` : tw`text-gray-700`,
+                  filter === tab.key
+                    ? { color: ACCENT_COLOR }
+                    : { color: TEXT_SECONDARY },
                 ]}
               >
                 {tab.label} ({tab.count})
@@ -431,19 +501,34 @@ const BudgetScreen: React.FC = () => {
               return (
                 <View
                   key={budget.id}
-                  style={tw`bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100`}
+                  style={[
+                    tw`rounded-xl p-4 mb-3`,
+                    {
+                      backgroundColor: SURFACE_COLOR,
+                      borderWidth: 1,
+                      borderColor: BORDER_COLOR,
+                    },
+                  ]}
                 >
                   {/* Card Header */}
                   <View style={tw`flex-row justify-between items-start mb-3`}>
                     <View style={tw`flex-row items-center gap-2`}>
-                      <Text style={tw`text-base font-semibold text-gray-900`}>
+                      <Text
+                        style={[
+                          tw`text-base font-semibold`,
+                          { color: TEXT_PRIMARY },
+                        ]}
+                      >
                         {budget.category}
                       </Text>
                       <StatusBadge budget={budget} />
                     </View>
                     <View style={tw`flex-row gap-2`}>
                       <TouchableOpacity
-                        style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
+                        style={[
+                          tw`w-8 h-8 rounded-lg justify-center items-center`,
+                          { backgroundColor: Colors.surfaceLight },
+                        ]}
                         onPress={() => {
                           navigation.navigate("AddBudget", {
                             editMode: true,
@@ -454,18 +539,21 @@ const BudgetScreen: React.FC = () => {
                         <Ionicons
                           name="pencil-outline"
                           size={18}
-                          color="#4F46E5"
+                          color={ACCENT_COLOR}
                         />
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
+                        style={[
+                          tw`w-8 h-8 rounded-lg justify-center items-center`,
+                          { backgroundColor: Colors.surfaceLight },
+                        ]}
                         onPress={() => handleDelete(budget)}
                       >
                         <Ionicons
                           name="trash-outline"
                           size={18}
-                          color="#DC2626"
+                          color={ERROR_COLOR}
                         />
                       </TouchableOpacity>
                     </View>
@@ -473,31 +561,62 @@ const BudgetScreen: React.FC = () => {
 
                   {/* Period Info */}
                   <View style={tw`mb-3`}>
-                    <Text style={tw`text-xs text-gray-600 mb-1`}>
+                    <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
                       {dateInfo}
                     </Text>
                     <View style={tw`flex-row justify-between items-center`}>
                       <View style={tw`flex-row items-center gap-2`}>
                         <Text
-                          style={tw`text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-lg`}
+                          style={[
+                            tw`text-sm font-medium px-2 py-1 rounded-lg`,
+                            {
+                              backgroundColor: Colors.surfaceLight,
+                              color: TEXT_PRIMARY,
+                            },
+                          ]}
                         >
                           {periodInfo}
                         </Text>
                         {daysRemaining > 0 ? (
-                          <View style={tw`px-2 py-1 bg-blue-100 rounded-lg`}>
-                            <Text style={tw`text-xs font-medium text-blue-700`}>
+                          <View
+                            style={[
+                              tw`px-2 py-1 rounded-lg`,
+                              { backgroundColor: Colors.info + "20" },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                tw`text-xs font-medium`,
+                                { color: INFO_COLOR },
+                              ]}
+                            >
                               {daysRemainingText}
                             </Text>
                           </View>
                         ) : (
-                          <View style={tw`px-2 py-1 bg-gray-100 rounded-lg`}>
-                            <Text style={tw`text-xs font-medium text-gray-700`}>
+                          <View
+                            style={[
+                              tw`px-2 py-1 rounded-lg`,
+                              { backgroundColor: Colors.surfaceLight },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                tw`text-xs font-medium`,
+                                { color: TEXT_SECONDARY },
+                              ]}
+                            >
                               Selesai
                             </Text>
                           </View>
                         )}
                       </View>
-                      <Text style={tw`text-sm font-semibold text-indigo-600`}>
+                      <Text
+                        style={[
+                          tw`text-sm font-semibold`,
+                          { color: ACCENT_COLOR },
+                        ]}
+                      >
                         {progress.toFixed(0)}%
                       </Text>
                     </View>
@@ -505,7 +624,13 @@ const BudgetScreen: React.FC = () => {
 
                   {/* Daily Stats Card */}
                   <View
-                    style={tw`mb-3 bg-gray-50 p-3 rounded-lg border border-gray-200`}
+                    style={[
+                      tw`mb-3 p-3 rounded-lg border`,
+                      {
+                        backgroundColor: Colors.surfaceLight,
+                        borderColor: BORDER_COLOR,
+                      },
+                    ]}
                   >
                     <View
                       style={tw`flex-row justify-between items-center mb-2`}
@@ -514,47 +639,79 @@ const BudgetScreen: React.FC = () => {
                         <Ionicons
                           name="calendar-outline"
                           size={12}
-                          color="#6B7280"
+                          color={TEXT_SECONDARY}
                         />
-                        <Text style={tw`text-xs font-medium text-gray-700`}>
+                        <Text
+                          style={[
+                            tw`text-xs font-medium`,
+                            { color: TEXT_PRIMARY },
+                          ]}
+                        >
                           Progress Harian
                         </Text>
                       </View>
-                      <Text style={tw`text-xs text-gray-500`}>
+                      <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
                         Hari ke-{daysPassed} dari {totalDays} hari
                       </Text>
                     </View>
 
                     <View style={tw`flex-row justify-between`}>
                       <View style={tw`flex-1 pr-2`}>
-                        <Text style={tw`text-xs text-gray-600 mb-0.5`}>
+                        <Text
+                          style={[
+                            tw`text-xs mb-0.5`,
+                            { color: TEXT_SECONDARY },
+                          ]}
+                        >
                           Rata-rata/Hari
                         </Text>
-                        <Text style={tw`text-sm font-semibold text-gray-900`}>
+                        <Text
+                          style={[
+                            tw`text-sm font-semibold`,
+                            { color: TEXT_PRIMARY },
+                          ]}
+                        >
                           {formatCurrency(dailyAverage)}
                         </Text>
-                        <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                        <Text
+                          style={[
+                            tw`text-xs mt-0.5`,
+                            { color: Colors.textTertiary },
+                          ]}
+                        >
                           dari {daysPassed} hari
                         </Text>
                       </View>
 
-                      <View style={tw`w-px bg-gray-300`} />
+                      <View
+                        style={[tw`w-px`, { backgroundColor: BORDER_COLOR }]}
+                      />
 
                       <View style={tw`flex-1 pl-2`}>
-                        <Text style={tw`text-xs text-gray-600 mb-0.5`}>
+                        <Text
+                          style={[
+                            tw`text-xs mb-0.5`,
+                            { color: TEXT_SECONDARY },
+                          ]}
+                        >
                           {daysRemaining > 0 ? "Sisa/Hari" : "Kelebihan/Hari"}
                         </Text>
                         <Text
                           style={[
                             tw`text-sm font-semibold`,
                             dailyRemaining >= 0
-                              ? tw`text-emerald-600`
-                              : tw`text-red-600`,
+                              ? { color: SUCCESS_COLOR }
+                              : { color: ERROR_COLOR },
                           ]}
                         >
                           {formatCurrency(dailyRemaining)}
                         </Text>
-                        <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+                        <Text
+                          style={[
+                            tw`text-xs mt-0.5`,
+                            { color: Colors.textTertiary },
+                          ]}
+                        >
                           {daysRemaining > 0
                             ? `untuk ${daysRemaining} hari`
                             : "melebihi batas"}
@@ -568,53 +725,90 @@ const BudgetScreen: React.FC = () => {
                     <View
                       style={tw`flex-row justify-between items-center mb-1`}
                     >
-                      <Text style={tw`text-xs text-gray-600`}>
+                      <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
                         {formatCurrency(safeNumber(budget.spent))} /{" "}
                         {formatCurrency(safeNumber(budget.limit))}
                       </Text>
-                      <Text style={tw`text-sm font-semibold text-indigo-600`}>
+                      <Text
+                        style={[
+                          tw`text-sm font-semibold`,
+                          { color: ACCENT_COLOR },
+                        ]}
+                      >
                         {progress.toFixed(0)}%
                       </Text>
                     </View>
                     <ProgressBar
                       progress={normalizedProgress}
                       color={statusColor}
-                      style={tw`h-2 rounded-full`}
+                      style={[
+                        tw`h-2 rounded-full`,
+                        { backgroundColor: Colors.surfaceLight },
+                      ]}
                     />
                     <View style={tw`flex-row justify-between mt-1`}>
-                      <Text style={tw`text-xs text-gray-400`}>Rp0</Text>
-                      <Text style={tw`text-xs text-gray-400`}>
+                      <Text
+                        style={[tw`text-xs`, { color: Colors.textTertiary }]}
+                      >
+                        Rp0
+                      </Text>
+                      <Text
+                        style={[tw`text-xs`, { color: Colors.textTertiary }]}
+                      >
                         {formatCurrency(safeNumber(budget.limit))}
                       </Text>
                     </View>
                   </View>
 
                   {/* Details Row */}
-                  <View style={tw`flex-row mb-2 pt-3 border-t border-gray-200`}>
+                  <View
+                    style={[
+                      tw`flex-row mb-2 pt-3`,
+                      { borderTopWidth: 1, borderTopColor: BORDER_COLOR },
+                    ]}
+                  >
                     <View style={tw`flex-1 items-center`}>
-                      <Text style={tw`text-xs text-gray-600 mb-1`}>
+                      <Text
+                        style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}
+                      >
                         Terpakai
                       </Text>
-                      <Text style={tw`text-sm font-semibold text-gray-900`}>
+                      <Text
+                        style={[
+                          tw`text-sm font-semibold`,
+                          { color: TEXT_PRIMARY },
+                        ]}
+                      >
                         {formatCurrency(safeNumber(budget.spent))}
                       </Text>
                     </View>
                     <View style={tw`flex-1 items-center`}>
-                      <Text style={tw`text-xs text-gray-600 mb-1`}>Limit</Text>
-                      <Text style={tw`text-sm font-semibold text-gray-900`}>
+                      <Text
+                        style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}
+                      >
+                        Limit
+                      </Text>
+                      <Text
+                        style={[
+                          tw`text-sm font-semibold`,
+                          { color: TEXT_PRIMARY },
+                        ]}
+                      >
                         {formatCurrency(safeNumber(budget.limit))}
                       </Text>
                     </View>
                     <View style={tw`flex-1 items-center`}>
-                      <Text style={tw`text-xs text-gray-600 mb-1`}>
+                      <Text
+                        style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}
+                      >
                         Sisa Total
                       </Text>
                       <Text
                         style={[
                           tw`text-sm font-semibold`,
                           remaining >= 0
-                            ? tw`text-emerald-600`
-                            : tw`text-red-600`,
+                            ? { color: SUCCESS_COLOR }
+                            : { color: ERROR_COLOR },
                         ]}
                       >
                         {formatCurrency(remaining)}
@@ -625,9 +819,20 @@ const BudgetScreen: React.FC = () => {
                   {/* Info Message */}
                   {dailyRemaining > 0 ? (
                     <View
-                      style={tw`mt-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100`}
+                      style={[
+                        tw`mt-2 p-2 rounded-lg border`,
+                        {
+                          backgroundColor: Colors.success + "10",
+                          borderColor: Colors.success + "30",
+                        },
+                      ]}
                     >
-                      <Text style={tw`text-xs text-emerald-800 text-center`}>
+                      <Text
+                        style={[
+                          tw`text-xs text-center`,
+                          { color: SUCCESS_COLOR },
+                        ]}
+                      >
                         🟢 Target harian:{" "}
                         <Text style={tw`font-bold`}>
                           {formatCurrency(dailyRemaining)}
@@ -639,9 +844,20 @@ const BudgetScreen: React.FC = () => {
                     </View>
                   ) : dailyRemaining < 0 ? (
                     <View
-                      style={tw`mt-2 p-2 bg-red-50 rounded-lg border border-red-100`}
+                      style={[
+                        tw`mt-2 p-2 rounded-lg border`,
+                        {
+                          backgroundColor: Colors.error + "10",
+                          borderColor: Colors.error + "30",
+                        },
+                      ]}
                     >
-                      <Text style={tw`text-xs text-red-800 text-center`}>
+                      <Text
+                        style={[
+                          tw`text-xs text-center`,
+                          { color: ERROR_COLOR },
+                        ]}
+                      >
                         🔴 Kelebihan:{" "}
                         <Text style={tw`font-bold`}>
                           {formatCurrency(Math.abs(dailyRemaining))}
@@ -651,17 +867,36 @@ const BudgetScreen: React.FC = () => {
                     </View>
                   ) : daysRemaining === 0 ? (
                     <View
-                      style={tw`mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-100`}
+                      style={[
+                        tw`mt-2 p-2 rounded-lg border`,
+                        {
+                          backgroundColor: Colors.warning + "10",
+                          borderColor: Colors.warning + "30",
+                        },
+                      ]}
                     >
-                      <Text style={tw`text-xs text-yellow-800 text-center`}>
+                      <Text
+                        style={[
+                          tw`text-xs text-center`,
+                          { color: WARNING_COLOR },
+                        ]}
+                      >
                         ⚠️ Budget sudah berakhir!
                       </Text>
                     </View>
                   ) : (
                     <View
-                      style={tw`mt-2 p-2 bg-blue-50 rounded-lg border border-blue-100`}
+                      style={[
+                        tw`mt-2 p-2 rounded-lg border`,
+                        {
+                          backgroundColor: Colors.info + "10",
+                          borderColor: Colors.info + "30",
+                        },
+                      ]}
                     >
-                      <Text style={tw`text-xs text-blue-800 text-center`}>
+                      <Text
+                        style={[tw`text-xs text-center`, { color: INFO_COLOR }]}
+                      >
                         🔵 Budget berjalan normal.
                       </Text>
                     </View>

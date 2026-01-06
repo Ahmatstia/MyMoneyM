@@ -17,6 +17,7 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber } from "../../utils/calculations";
 import { RootStackParamList, TransactionType } from "../../types";
+import { Colors } from "../../theme/theme";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -27,6 +28,18 @@ type AddTransactionScreenRouteProp = RouteProp<
   RootStackParamList,
   "AddTransaction"
 >;
+
+// GUNAKAN WARNA DARI TEMA NAVY BLUE
+const PRIMARY_COLOR = Colors.primary; // "#0F172A" - Navy blue gelap
+const ACCENT_COLOR = Colors.accent; // "#22D3EE" - Cyan terang
+const BACKGROUND_COLOR = Colors.background; // "#0F172A" - Background navy blue gelap
+const SURFACE_COLOR = Colors.surface; // "#1E293B" - Permukaan navy blue medium
+const TEXT_PRIMARY = Colors.textPrimary; // "#F8FAFC" - Teks utama putih
+const TEXT_SECONDARY = Colors.textSecondary; // "#CBD5E1" - Teks sekunder abu-abu muda
+const BORDER_COLOR = Colors.border; // "#334155" - Border navy blue lebih terang
+const SUCCESS_COLOR = Colors.success; // "#10B981" - Hijau
+const WARNING_COLOR = Colors.warning; // "#F59E0B" - Kuning
+const ERROR_COLOR = Colors.error; // "#EF4444" - Merah
 
 // Categories with icons
 const CATEGORIES = [
@@ -114,9 +127,9 @@ const AddTransactionScreen: React.FC = () => {
     navigation.setOptions({
       title: isEditMode ? "Edit Transaksi" : "Tambah Transaksi",
       headerStyle: {
-        backgroundColor: "#4F46E5",
+        backgroundColor: PRIMARY_COLOR,
       },
-      headerTintColor: "#FFFFFF",
+      headerTintColor: TEXT_PRIMARY,
       headerTitleStyle: {
         fontWeight: "600",
       },
@@ -129,7 +142,7 @@ const AddTransactionScreen: React.FC = () => {
           <Ionicons
             name="trash-outline"
             size={22}
-            color={isEditMode && !loading ? "#FFFFFF" : "transparent"}
+            color={isEditMode && !loading ? TEXT_PRIMARY : "transparent"}
           />
         </TouchableOpacity>
       ),
@@ -321,7 +334,7 @@ const AddTransactionScreen: React.FC = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`p-4 pb-8`}
@@ -329,27 +342,41 @@ const AddTransactionScreen: React.FC = () => {
       >
         {/* Transaction Type Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-gray-800 text-base font-medium mb-3`}>
+          <Text
+            style={[tw`text-base font-medium mb-3`, { color: TEXT_PRIMARY }]}
+          >
             Tipe Transaksi
           </Text>
-          <View style={tw`flex-row bg-gray-100 rounded-xl p-1`}>
+          <View
+            style={[
+              tw`rounded-xl p-1`,
+              { backgroundColor: Colors.surfaceLight },
+            ]}
+          >
             <TouchableOpacity
-              style={tw`flex-1 py-3 rounded-lg ${
-                type === "expense" ? "bg-white shadow-sm" : ""
-              }`}
+              style={[
+                tw`flex-1 py-3 rounded-lg`,
+                type === "expense" ? { backgroundColor: SURFACE_COLOR } : {},
+              ]}
               onPress={() => setType("expense")}
               disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
                 <View
-                  style={tw`w-8 h-8 rounded-full bg-red-100 justify-center items-center mr-2`}
+                  style={[
+                    tw`w-8 h-8 rounded-full justify-center items-center mr-2`,
+                    { backgroundColor: Colors.error + "20" },
+                  ]}
                 >
-                  <Ionicons name="arrow-up" size={16} color="#EF4444" />
+                  <Ionicons name="arrow-up" size={16} color={ERROR_COLOR} />
                 </View>
                 <Text
-                  style={tw`text-sm font-medium ${
-                    type === "expense" ? "text-red-600" : "text-gray-600"
-                  }`}
+                  style={[
+                    tw`text-sm font-medium`,
+                    type === "expense"
+                      ? { color: ERROR_COLOR }
+                      : { color: TEXT_SECONDARY },
+                  ]}
                 >
                   Pengeluaran
                 </Text>
@@ -357,22 +384,29 @@ const AddTransactionScreen: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`flex-1 py-3 rounded-lg ${
-                type === "income" ? "bg-white shadow-sm" : ""
-              }`}
+              style={[
+                tw`flex-1 py-3 rounded-lg`,
+                type === "income" ? { backgroundColor: SURFACE_COLOR } : {},
+              ]}
               onPress={() => setType("income")}
               disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
                 <View
-                  style={tw`w-8 h-8 rounded-full bg-emerald-100 justify-center items-center mr-2`}
+                  style={[
+                    tw`w-8 h-8 rounded-full justify-center items-center mr-2`,
+                    { backgroundColor: Colors.success + "20" },
+                  ]}
                 >
-                  <Ionicons name="arrow-down" size={16} color="#10B981" />
+                  <Ionicons name="arrow-down" size={16} color={SUCCESS_COLOR} />
                 </View>
                 <Text
-                  style={tw`text-sm font-medium ${
-                    type === "income" ? "text-emerald-600" : "text-gray-600"
-                  }`}
+                  style={[
+                    tw`text-sm font-medium`,
+                    type === "income"
+                      ? { color: SUCCESS_COLOR }
+                      : { color: TEXT_SECONDARY },
+                  ]}
                 >
                   Pemasukan
                 </Text>
@@ -383,20 +417,32 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Amount Input */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-gray-800 text-base font-medium mb-3`}>
+          <Text
+            style={[tw`text-base font-medium mb-3`, { color: TEXT_PRIMARY }]}
+          >
             Jumlah
           </Text>
           <View
-            style={tw`bg-white rounded-xl border ${
-              amountError ? "border-red-300" : "border-gray-300"
-            } p-4`}
+            style={[
+              tw`rounded-xl p-4`,
+              {
+                backgroundColor: SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: amountError ? Colors.error + "40" : BORDER_COLOR,
+              },
+            ]}
           >
             <View style={tw`flex-row items-center`}>
-              <Text style={tw`text-gray-700 text-lg mr-2`}>Rp</Text>
+              <Text style={[tw`text-lg mr-2`, { color: TEXT_PRIMARY }]}>
+                Rp
+              </Text>
               <TextInput
-                style={tw`flex-1 text-gray-800 text-xl font-medium`}
+                style={[
+                  tw`flex-1 text-xl font-medium`,
+                  { color: TEXT_PRIMARY },
+                ]}
                 placeholder="0"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={Colors.textTertiary}
                 value={amount}
                 onChangeText={handleAmountChange}
                 keyboardType="decimal-pad"
@@ -406,19 +452,23 @@ const AddTransactionScreen: React.FC = () => {
               />
             </View>
             {amount ? (
-              <Text style={tw`text-gray-500 text-sm mt-1`}>
+              <Text style={[tw`text-sm mt-1`, { color: TEXT_SECONDARY }]}>
                 {formatAmountDisplay()}
               </Text>
             ) : null}
             {amountError ? (
-              <Text style={tw`text-red-500 text-xs mt-2`}>{amountError}</Text>
+              <Text style={[tw`text-xs mt-2`, { color: ERROR_COLOR }]}>
+                {amountError}
+              </Text>
             ) : null}
           </View>
         </View>
 
         {/* Category Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-gray-800 text-base font-medium mb-3`}>
+          <Text
+            style={[tw`text-base font-medium mb-3`, { color: TEXT_PRIMARY }]}
+          >
             Kategori
           </Text>
           <ScrollView
@@ -436,13 +486,22 @@ const AddTransactionScreen: React.FC = () => {
                   disabled={loading}
                 >
                   <View
-                    style={tw`w-16 h-16 rounded-xl justify-center items-center ${
+                    style={[
+                      tw`w-16 h-16 rounded-xl justify-center items-center`,
                       category === cat.name
                         ? type === "income"
-                          ? "bg-emerald-100 border-2 border-emerald-500"
-                          : "bg-red-100 border-2 border-red-500"
-                        : "bg-gray-100"
-                    }`}
+                          ? {
+                              backgroundColor: Colors.success + "20",
+                              borderWidth: 2,
+                              borderColor: SUCCESS_COLOR,
+                            }
+                          : {
+                              backgroundColor: Colors.error + "20",
+                              borderWidth: 2,
+                              borderColor: ERROR_COLOR,
+                            }
+                        : { backgroundColor: Colors.surfaceLight },
+                    ]}
                   >
                     <Ionicons
                       name={renderCategoryIcon(cat.icon)}
@@ -450,18 +509,19 @@ const AddTransactionScreen: React.FC = () => {
                       color={
                         category === cat.name
                           ? type === "income"
-                            ? "#10B981"
-                            : "#EF4444"
-                          : "#6B7280"
+                            ? SUCCESS_COLOR
+                            : ERROR_COLOR
+                          : TEXT_SECONDARY
                       }
                     />
                   </View>
                   <Text
-                    style={tw`text-xs mt-2 text-center ${
+                    style={[
+                      tw`text-xs mt-2 text-center`,
                       category === cat.name
-                        ? "font-medium text-gray-800"
-                        : "text-gray-600"
-                    }`}
+                        ? { fontWeight: "500", color: TEXT_PRIMARY }
+                        : { color: TEXT_SECONDARY },
+                    ]}
                     numberOfLines={2}
                   >
                     {cat.name}
@@ -474,14 +534,25 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Description Input */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-gray-800 text-base font-medium mb-3`}>
+          <Text
+            style={[tw`text-base font-medium mb-3`, { color: TEXT_PRIMARY }]}
+          >
             Deskripsi (opsional)
           </Text>
-          <View style={tw`bg-white rounded-xl border border-gray-300 p-3`}>
+          <View
+            style={[
+              tw`rounded-xl p-3`,
+              {
+                backgroundColor: SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: BORDER_COLOR,
+              },
+            ]}
+          >
             <TextInput
-              style={tw`text-gray-800 text-sm min-h-20`}
+              style={[tw`text-sm min-h-20`, { color: TEXT_PRIMARY }]}
               placeholder="Contoh: Makan siang di kantin, beli buku, dll."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -489,7 +560,12 @@ const AddTransactionScreen: React.FC = () => {
               maxLength={200}
               editable={!loading}
             />
-            <Text style={tw`text-gray-400 text-xs text-right mt-1`}>
+            <Text
+              style={[
+                tw`text-xs text-right mt-1`,
+                { color: Colors.textTertiary },
+              ]}
+            >
               {description.length}/200
             </Text>
           </View>
@@ -497,57 +573,88 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Date Selection */}
         <View style={tw`mb-8`}>
-          <Text style={tw`text-gray-800 text-base font-medium mb-3`}>
+          <Text
+            style={[tw`text-base font-medium mb-3`, { color: TEXT_PRIMARY }]}
+          >
             Tanggal
           </Text>
           <TouchableOpacity
-            style={tw`bg-white rounded-xl border border-gray-300 p-4 flex-row justify-between items-center`}
+            style={[
+              tw`rounded-xl p-4 flex-row justify-between items-center`,
+              {
+                backgroundColor: SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: BORDER_COLOR,
+              },
+            ]}
             onPress={() => setShowCalendar(true)}
             disabled={loading}
           >
             <View>
-              <Text style={tw`text-gray-800 text-sm font-medium mb-1`}>
+              <Text
+                style={[tw`text-sm font-medium mb-1`, { color: TEXT_PRIMARY }]}
+              >
                 {getFormattedDate()}
               </Text>
-              <Text style={tw`text-gray-400 text-xs`}>
+              <Text style={[tw`text-xs`, { color: Colors.textTertiary }]}>
                 Ketuk untuk mengubah tanggal
               </Text>
             </View>
-            <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color={TEXT_SECONDARY}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Edit Mode Info */}
         {isEditMode && transactionData && (
           <View
-            style={tw`bg-gray-50 rounded-xl p-4 mb-6 border border-gray-200`}
+            style={[
+              tw`rounded-xl p-4 mb-6`,
+              {
+                backgroundColor: Colors.surfaceLight,
+                borderWidth: 1,
+                borderColor: BORDER_COLOR,
+              },
+            ]}
           >
-            <Text style={tw`text-gray-700 text-sm font-medium mb-2`}>
+            <Text
+              style={[tw`text-sm font-medium mb-2`, { color: TEXT_PRIMARY }]}
+            >
               Informasi Transaksi
             </Text>
             <View style={tw`flex-row justify-between mb-2`}>
-              <Text style={tw`text-gray-500 text-xs`}>ID Transaksi:</Text>
-              <Text style={tw`text-gray-800 text-xs font-medium`}>
+              <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
+                ID Transaksi:
+              </Text>
+              <Text style={[tw`text-xs font-medium`, { color: TEXT_PRIMARY }]}>
                 {transactionData.id.substring(0, 8)}...
               </Text>
             </View>
             <View style={tw`flex-row justify-between`}>
-              <Text style={tw`text-gray-500 text-xs`}>Dibuat pada:</Text>
-              <Text style={tw`text-gray-800 text-xs`}>
+              <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
+                Dibuat pada:
+              </Text>
+              <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
                 {new Date(transactionData.createdAt).toLocaleDateString(
                   "id-ID"
                 )}
               </Text>
             </View>
-            {/* HAPUS userId display karena sudah tidak ada field userId */}
           </View>
         )}
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={tw`bg-indigo-600 rounded-xl py-4 items-center justify-center ${
-            loading ? "opacity-70" : ""
-          }`}
+          style={[
+            tw`rounded-xl py-4 items-center justify-center`,
+            {
+              backgroundColor: ACCENT_COLOR,
+              opacity: loading ? 0.7 : 1,
+            },
+          ]}
           onPress={handleSubmit}
           disabled={loading}
         >
@@ -566,11 +673,19 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Cancel Button */}
         <TouchableOpacity
-          style={tw`border border-gray-300 rounded-xl py-3 items-center justify-center mt-3`}
+          style={[
+            tw`rounded-xl py-3 items-center justify-center mt-3`,
+            {
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            },
+          ]}
           onPress={() => navigation.goBack()}
           disabled={loading}
         >
-          <Text style={tw`text-gray-700 text-sm font-medium`}>Batal</Text>
+          <Text style={[tw`text-sm font-medium`, { color: TEXT_PRIMARY }]}>
+            Batal
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -582,13 +697,19 @@ const AddTransactionScreen: React.FC = () => {
         onRequestClose={() => setShowCalendar(false)}
       >
         <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View style={tw`bg-white rounded-t-3xl p-4`}>
+          <View
+            style={[tw`rounded-t-3xl p-4`, { backgroundColor: SURFACE_COLOR }]}
+          >
             <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={tw`text-gray-800 text-lg font-bold`}>
+              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
                 Pilih Tanggal
               </Text>
               <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons name="close-outline" size={24} color="#6B7280" />
+                <Ionicons
+                  name="close-outline"
+                  size={24}
+                  color={TEXT_SECONDARY}
+                />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -596,23 +717,23 @@ const AddTransactionScreen: React.FC = () => {
               markedDates={{
                 [date]: {
                   selected: true,
-                  selectedColor: "#4F46E5",
+                  selectedColor: ACCENT_COLOR,
                   selectedTextColor: "#FFFFFF",
                 },
               }}
               theme={{
-                backgroundColor: "#ffffff",
-                calendarBackground: "#ffffff",
-                textSectionTitleColor: "#6B7280",
-                selectedDayBackgroundColor: "#4F46E5",
-                selectedDayTextColor: "#ffffff",
-                todayTextColor: "#4F46E5",
-                dayTextColor: "#374151",
-                textDisabledColor: "#D1D5DB",
-                dotColor: "#4F46E5",
-                selectedDotColor: "#ffffff",
-                arrowColor: "#4F46E5",
-                monthTextColor: "#4F46E5",
+                backgroundColor: SURFACE_COLOR,
+                calendarBackground: SURFACE_COLOR,
+                textSectionTitleColor: TEXT_SECONDARY,
+                selectedDayBackgroundColor: ACCENT_COLOR,
+                selectedDayTextColor: "#FFFFFF",
+                todayTextColor: ACCENT_COLOR,
+                dayTextColor: TEXT_PRIMARY,
+                textDisabledColor: Colors.textTertiary,
+                dotColor: ACCENT_COLOR,
+                selectedDotColor: "#FFFFFF",
+                arrowColor: ACCENT_COLOR,
+                monthTextColor: ACCENT_COLOR,
                 textMonthFontWeight: "bold",
                 textDayFontSize: 16,
                 textMonthFontSize: 18,

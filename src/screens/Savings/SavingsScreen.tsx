@@ -20,6 +20,7 @@ import {
 } from "../../utils/calculations";
 import { formatDateShort } from "../../utils/formatters";
 import { Savings } from "../../types";
+import { Colors } from "../../theme/theme";
 
 const SavingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -109,11 +110,11 @@ const SavingsScreen: React.FC = () => {
 
   // Dapatkan warna berdasarkan progress
   const getProgressColor = (progress: number) => {
-    if (progress >= 100) return "#10B981"; // hijau
-    if (progress >= 75) return "#3B82F6"; // biru
-    if (progress >= 50) return "#F59E0B"; // kuning
-    if (progress >= 25) return "#EF4444"; // merah muda
-    return "#6B7280"; // abu-abu
+    if (progress >= 100) return Colors.success; // hijau
+    if (progress >= 75) return Colors.info; // biru
+    if (progress >= 50) return Colors.warning; // kuning
+    if (progress >= 25) return Colors.error; // merah
+    return Colors.textTertiary; // abu-abu
   };
 
   // Format deadline
@@ -164,24 +165,26 @@ const SavingsScreen: React.FC = () => {
   // Empty state component
   const renderEmptyState = () => (
     <View style={tw`items-center py-12`}>
-      <Ionicons name="wallet-outline" size={48} color="#9CA3AF" />
+      <Ionicons name="wallet-outline" size={48} color={Colors.textTertiary} />
       <Text
-        style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2 text-center`}
+        style={tw`text-lg font-semibold text-[${Colors.textPrimary}] mt-4 mb-2 text-center`}
       >
         {filter === "all" ? "Belum ada tabungan" : "Tidak ada tabungan"}
       </Text>
-      <Text style={tw`text-sm text-gray-600 text-center mb-6 leading-5`}>
+      <Text
+        style={tw`text-sm text-[${Colors.textSecondary}] text-center mb-6 leading-5`}
+      >
         {filter === "all"
           ? "Mulai dengan membuat target tabungan pertama Anda"
           : `Tidak ada tabungan dengan status "${filter}"`}
       </Text>
       {filter === "all" && (
         <TouchableOpacity
-          style={tw`flex-row items-center bg-indigo-600 px-5 py-3 rounded-lg gap-2`}
+          style={tw`flex-row items-center bg-[${Colors.accent}] px-5 py-3 rounded-lg gap-2`}
           onPress={() => navigation.navigate("AddSavings")}
         >
-          <Ionicons name="add-circle" size={20} color="#FFFFFF" />
-          <Text style={tw`text-sm font-semibold text-white`}>
+          <Ionicons name="add-circle" size={20} color={Colors.textPrimary} />
+          <Text style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}>
             Buat Target Tabungan
           </Text>
         </TouchableOpacity>
@@ -203,7 +206,7 @@ const SavingsScreen: React.FC = () => {
     return (
       <View
         key={saving.id}
-        style={tw`bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100`}
+        style={tw`bg-[${Colors.surface}] rounded-xl p-4 mb-3 border border-[${Colors.border}]`}
       >
         {/* Card Header */}
         <View style={tw`flex-row justify-between items-start mb-3`}>
@@ -217,11 +220,13 @@ const SavingsScreen: React.FC = () => {
               <Ionicons name={iconName} size={20} color={progressColor} />
             </View>
             <View>
-              <Text style={tw`text-base font-semibold text-gray-900`}>
+              <Text
+                style={tw`text-base font-semibold text-[${Colors.textPrimary}]`}
+              >
                 {saving.name}
               </Text>
               {saving.category && (
-                <Text style={tw`text-xs text-gray-500`}>
+                <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
                   {saving.category.charAt(0).toUpperCase() +
                     saving.category.slice(1)}
                 </Text>
@@ -231,7 +236,7 @@ const SavingsScreen: React.FC = () => {
 
           <View style={tw`flex-row gap-2`}>
             <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
+              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
               onPress={() => {
                 navigation.navigate("AddSavingsTransaction", {
                   savingsId: saving.id,
@@ -239,11 +244,11 @@ const SavingsScreen: React.FC = () => {
                 });
               }}
             >
-              <Ionicons name="add" size={18} color="#4F46E5" />
+              <Ionicons name="add" size={18} color={Colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
+              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
               onPress={() => {
                 navigation.navigate("AddSavings", {
                   editMode: true,
@@ -251,14 +256,14 @@ const SavingsScreen: React.FC = () => {
                 });
               }}
             >
-              <Ionicons name="pencil-outline" size={18} color="#4F46E5" />
+              <Ionicons name="pencil-outline" size={18} color={Colors.accent} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-gray-100 justify-center items-center`}
+              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
               onPress={() => handleDelete(saving)}
             >
-              <Ionicons name="trash-outline" size={18} color="#DC2626" />
+              <Ionicons name="trash-outline" size={18} color={Colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -266,12 +271,16 @@ const SavingsScreen: React.FC = () => {
         {/* Progress Bar */}
         <View style={tw`mb-4`}>
           <View style={tw`flex-row justify-between items-center mb-1`}>
-            <Text style={tw`text-sm font-semibold text-gray-900`}>
+            <Text
+              style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}
+            >
               {formatCurrency(current)} / {formatCurrency(target)}
             </Text>
             <Text
               style={tw`text-sm font-semibold ${
-                isCompleted ? "text-emerald-600" : "text-indigo-600"
+                isCompleted
+                  ? "text-[${Colors.success}]"
+                  : "text-[${Colors.accent}]"
               }`}
             >
               {progress.toFixed(1)}%
@@ -280,11 +289,11 @@ const SavingsScreen: React.FC = () => {
           <ProgressBar
             progress={progressNormalized}
             color={progressColor}
-            style={tw`h-2 rounded-full`}
+            style={tw`h-2 rounded-full bg-[${Colors.surfaceLight}]`}
           />
           <View style={tw`flex-row justify-between mt-1`}>
-            <Text style={tw`text-xs text-gray-400`}>Rp0</Text>
-            <Text style={tw`text-xs text-gray-400`}>
+            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>Rp0</Text>
+            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
               {formatCurrency(target)}
             </Text>
           </View>
@@ -293,10 +302,14 @@ const SavingsScreen: React.FC = () => {
         {/* Details */}
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <View>
-            <Text style={tw`text-xs text-gray-600 mb-1`}>Sisa</Text>
+            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+              Sisa
+            </Text>
             <Text
               style={tw`text-sm font-semibold ${
-                remaining >= 0 ? "text-emerald-600" : "text-red-600"
+                remaining >= 0
+                  ? "text-[${Colors.success}]"
+                  : "text-[${Colors.error}]"
               }`}
             >
               {formatCurrency(remaining)}
@@ -304,10 +317,14 @@ const SavingsScreen: React.FC = () => {
           </View>
 
           <View>
-            <Text style={tw`text-xs text-gray-600 mb-1`}>Deadline</Text>
+            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+              Deadline
+            </Text>
             <Text
               style={tw`text-sm font-semibold ${
-                saving.deadline ? "text-gray-900" : "text-gray-500"
+                saving.deadline
+                  ? "text-[${Colors.textPrimary}]"
+                  : "text-[${Colors.textTertiary}]"
               }`}
             >
               {formatDeadline(saving.deadline)}
@@ -315,23 +332,31 @@ const SavingsScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity
-            style={tw`px-3 py-1.5 rounded-lg bg-indigo-50`}
+            style={tw`px-3 py-1.5 rounded-lg bg-[${Colors.accent}]/20`}
             onPress={() =>
               navigation.navigate("SavingsDetail", { savingsId: saving.id })
             }
           >
-            <Text style={tw`text-xs font-medium text-indigo-700`}>Detail</Text>
+            <Text style={tw`text-xs font-medium text-[${Colors.accent}]`}>
+              Detail
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Status Badge */}
-        <View style={tw`mt-2 pt-3 border-t border-gray-200`}>
+        <View style={tw`mt-2 pt-3 border-t border-[${Colors.border}]`}>
           <View style={tw`flex-row justify-between items-center`}>
             <View style={tw`flex-row items-center gap-2`}>
               {isCompleted ? (
                 <View style={tw`flex-row items-center gap-1`}>
-                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                  <Text style={tw`text-xs font-medium text-emerald-700`}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={Colors.success}
+                  />
+                  <Text
+                    style={tw`text-xs font-medium text-[${Colors.success}]`}
+                  >
                     Tercapai
                   </Text>
                 </View>
@@ -347,7 +372,7 @@ const SavingsScreen: React.FC = () => {
               )}
             </View>
 
-            <Text style={tw`text-xs text-gray-500`}>
+            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
               Dibuat: {formatDateShort(saving.createdAt)}
             </Text>
           </View>
@@ -357,69 +382,85 @@ const SavingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw`flex-1 bg-[${Colors.background}]`}>
       {/* Header */}
-      <View style={tw`px-4 pt-3 pb-4 bg-white border-b border-gray-200`}>
+      <View
+        style={tw`px-4 pt-3 pb-4 bg-[${Colors.surface}] border-b border-[${Colors.border}]`}
+      >
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <View>
-            <Text style={tw`text-2xl font-bold text-gray-900`}>Tabungan</Text>
-            <Text style={tw`text-sm text-gray-600 mt-0.5`}>
+            <Text style={tw`text-2xl font-bold text-[${Colors.textPrimary}]`}>
+              Tabungan
+            </Text>
+            <Text style={tw`text-sm text-[${Colors.textSecondary}] mt-0.5`}>
               {savings.length} target tabungan
             </Text>
           </View>
           <TouchableOpacity
-            style={tw`w-10 h-10 rounded-full bg-indigo-600 justify-center items-center`}
+            style={tw`w-10 h-10 rounded-full bg-[${Colors.accent}] justify-center items-center`}
             onPress={() => navigation.navigate("AddSavings")}
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Ionicons name="add" size={24} color={Colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
         {/* Overall Stats - FIXED: Tanpa gradient */}
-        <View style={tw`bg-indigo-50 rounded-xl p-4 border border-indigo-100`}>
-          <Text style={tw`text-sm font-semibold text-gray-900 mb-3`}>
+        <View
+          style={tw`bg-[${Colors.surfaceLight}] rounded-xl p-4 border border-[${Colors.border}]`}
+        >
+          <Text
+            style={tw`text-sm font-semibold text-[${Colors.textPrimary}] mb-3`}
+          >
             Progress Tabungan Total
           </Text>
 
           <View style={tw`mb-3`}>
             <View style={tw`flex-row justify-between items-center mb-1`}>
-              <Text style={tw`text-sm font-medium text-gray-700`}>
+              <Text
+                style={tw`text-sm font-medium text-[${Colors.textPrimary}]`}
+              >
                 {formatCurrency(totalStats.totalCurrent)} /{" "}
                 {formatCurrency(totalStats.totalTarget)}
               </Text>
-              <Text style={tw`text-sm font-bold text-indigo-600`}>
+              <Text style={tw`text-sm font-bold text-[${Colors.accent}]`}>
                 {totalStats.overallProgress.toFixed(1)}%
               </Text>
             </View>
             <ProgressBar
               progress={Math.min(totalStats.overallProgress / 100, 1)}
-              color="#4F46E5"
-              style={tw`h-2 rounded-full`}
+              color={Colors.accent}
+              style={tw`h-2 rounded-full bg-[${Colors.surfaceLight}]`}
             />
           </View>
 
           <View style={tw`flex-row justify-between`}>
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-600 mb-1`}>Aktif</Text>
-              <Text style={tw`text-lg font-bold text-indigo-600`}>
+              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+                Aktif
+              </Text>
+              <Text style={tw`text-lg font-bold text-[${Colors.accent}]`}>
                 {totalStats.activeCount}
               </Text>
             </View>
 
-            <View style={tw`w-px h-8 bg-gray-300`} />
+            <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
 
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-600 mb-1`}>Tercapai</Text>
-              <Text style={tw`text-lg font-bold text-emerald-600`}>
+              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+                Tercapai
+              </Text>
+              <Text style={tw`text-lg font-bold text-[${Colors.success}]`}>
                 {totalStats.completedCount}
               </Text>
             </View>
 
-            <View style={tw`w-px h-8 bg-gray-300`} />
+            <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
 
             <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-gray-600 mb-1`}>Total</Text>
-              <Text style={tw`text-lg font-bold text-gray-900`}>
+              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+                Total
+              </Text>
+              <Text style={tw`text-lg font-bold text-[${Colors.textPrimary}]`}>
                 {savings.length}
               </Text>
             </View>
@@ -428,7 +469,9 @@ const SavingsScreen: React.FC = () => {
       </View>
 
       {/* Filter Tabs */}
-      <View style={tw`bg-white border-b border-gray-200 py-2 px-4`}>
+      <View
+        style={tw`bg-[${Colors.surface}] border-b border-[${Colors.border}] py-2 px-4`}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -447,14 +490,18 @@ const SavingsScreen: React.FC = () => {
               key={tab.key}
               style={[
                 tw`px-3 py-1.5 rounded-full`,
-                filter === tab.key ? tw`bg-indigo-100` : tw`bg-gray-100`,
+                filter === tab.key
+                  ? tw`bg-[${Colors.accent}]/20`
+                  : tw`bg-[${Colors.surfaceLight}]`,
               ]}
               onPress={() => setFilter(tab.key as any)}
             >
               <Text
                 style={[
                   tw`text-xs font-medium`,
-                  filter === tab.key ? tw`text-indigo-700` : tw`text-gray-700`,
+                  filter === tab.key
+                    ? tw`text-[${Colors.accent}]`
+                    : tw`text-[${Colors.textSecondary}]`,
                 ]}
               >
                 {tab.label} ({tab.count})

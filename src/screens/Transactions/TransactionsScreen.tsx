@@ -19,11 +19,26 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Transaction } from "../../types";
+import { Colors } from "../../theme/theme";
 
 const { width } = Dimensions.get("window");
 
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
+
+// GUNAKAN WARNA DARI TEMA NAVY BLUE
+const PRIMARY_COLOR = Colors.primary; // "#0F172A" - Navy blue gelap
+const ACCENT_COLOR = Colors.accent; // "#22D3EE" - Cyan terang
+const BACKGROUND_COLOR = Colors.background; // "#0F172A" - Background navy blue gelap
+const SURFACE_COLOR = Colors.surface; // "#1E293B" - Permukaan navy blue medium
+const TEXT_PRIMARY = Colors.textPrimary; // "#F8FAFC" - Teks utama putih
+const TEXT_SECONDARY = Colors.textSecondary; // "#CBD5E1" - Teks sekunder abu-abu muda
+const BORDER_COLOR = Colors.border; // "#334155" - Border navy blue lebih terang
+const SUCCESS_COLOR = Colors.success; // "#10B981" - Hijau
+const WARNING_COLOR = Colors.warning; // "#F59E0B" - Kuning
+const ERROR_COLOR = Colors.error; // "#EF4444" - Merah
+const INFO_COLOR = Colors.info; // "#3B82F6" - Biru terang
+const PURPLE_COLOR = Colors.purple || "#8B5CF6"; // Ungu
 
 const TransactionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -289,17 +304,24 @@ const TransactionsScreen: React.FC = () => {
     });
   };
 
-  // Render swipe actions - FIXED styling
+  // Render swipe actions - FIXED styling dengan tema navy blue
+  // Render swipe actions - FIXED styling dengan tema navy blue
   const renderRightActions = (transaction: Transaction) => (
     <View style={tw`flex-row w-24 h-11/12 my-2 rounded-xl overflow-hidden`}>
       <TouchableOpacity
-        style={tw`flex-1 bg-blue-500 justify-center items-center`}
+        style={[
+          tw`flex-1 justify-center items-center`,
+          { backgroundColor: ACCENT_COLOR },
+        ]}
         onPress={() => handleEdit(transaction)}
       >
         <Ionicons name="pencil-outline" size={18} color="#FFFFFF" />
       </TouchableOpacity>
       <TouchableOpacity
-        style={tw`flex-1 bg-red-500 justify-center items-center`}
+        style={[
+          tw`flex-1 justify-center items-center`,
+          { backgroundColor: ERROR_COLOR },
+        ]}
         onPress={() => handleDelete(transaction.id)}
       >
         <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
@@ -433,34 +455,59 @@ const TransactionsScreen: React.FC = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       {/* Minimal Header */}
-      <View style={tw`bg-white px-4 pt-3 pb-3 border-b border-gray-100`}>
+      <View
+        style={[
+          tw`px-4 pt-3 pb-3`,
+          {
+            backgroundColor: SURFACE_COLOR,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER_COLOR,
+          },
+        ]}
+      >
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <View>
-            <Text style={tw`text-gray-900 text-lg font-bold`}>Transaksi</Text>
-            <Text style={tw`text-gray-500 text-xs mt-0.5`}>
+            <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
+              Transaksi
+            </Text>
+            <Text style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}>
               {filteredTransactions.length} transaksi
             </Text>
           </View>
           <TouchableOpacity
-            style={tw`w-9 h-9 bg-indigo-100 rounded-lg justify-center items-center`}
+            style={[
+              tw`w-9 h-9 rounded-lg justify-center items-center`,
+              {
+                backgroundColor: Colors.surfaceLight,
+              },
+            ]}
             onPress={() => navigation.navigate("AddTransaction")}
           >
-            <Ionicons name="add" size={18} color="#4F46E5" />
+            <Ionicons name="add" size={18} color={ACCENT_COLOR} />
           </TouchableOpacity>
         </View>
 
         {/* Search Bar - Compact */}
         <View style={tw`flex-row items-center mb-2`}>
           <View
-            style={tw`flex-1 flex-row items-center bg-gray-100 rounded-lg px-3 py-2`}
+            style={[
+              tw`flex-1 flex-row items-center rounded-lg px-3 py-2`,
+              {
+                backgroundColor: Colors.surfaceLight,
+              },
+            ]}
           >
-            <Ionicons name="search-outline" size={16} color="#9CA3AF" />
+            <Ionicons
+              name="search-outline"
+              size={16}
+              color={Colors.textTertiary}
+            />
             <TextInput
-              style={tw`flex-1 text-gray-800 text-sm ml-2`}
+              style={[tw`flex-1 text-sm ml-2`, { color: TEXT_PRIMARY }]}
               placeholder="Cari transaksi..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.textTertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onFocus={() => setSearchFocused(true)}
@@ -470,15 +517,24 @@ const TransactionsScreen: React.FC = () => {
             />
             {searchQuery ? (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                <Ionicons
+                  name="close-circle"
+                  size={16}
+                  color={Colors.textTertiary}
+                />
               </TouchableOpacity>
             ) : null}
           </View>
           <TouchableOpacity
-            style={tw`ml-2 w-9 h-9 bg-gray-100 rounded-lg justify-center items-center`}
+            style={[
+              tw`ml-2 w-9 h-9 rounded-lg justify-center items-center`,
+              {
+                backgroundColor: Colors.surfaceLight,
+              },
+            ]}
             onPress={() => setShowFilterModal(true)}
           >
-            <Ionicons name="filter-outline" size={16} color="#6B7280" />
+            <Ionicons name="filter-outline" size={16} color={TEXT_SECONDARY} />
           </TouchableOpacity>
         </View>
 
@@ -490,63 +546,79 @@ const TransactionsScreen: React.FC = () => {
         >
           <View style={tw`flex-row px-1`}>
             <TouchableOpacity
-              style={tw`mr-2 px-3 py-1.5 rounded-full ${
-                filterType === "all" ? "bg-indigo-600" : "bg-gray-200"
-              }`}
+              style={[
+                tw`mr-2 px-3 py-1.5 rounded-full`,
+                filterType === "all"
+                  ? { backgroundColor: ACCENT_COLOR }
+                  : { backgroundColor: Colors.surfaceLight },
+              ]}
               onPress={() => setFilterType("all")}
             >
               <Text
-                style={tw`text-xs ${
+                style={[
+                  tw`text-xs`,
                   filterType === "all"
-                    ? "text-white font-medium"
-                    : "text-gray-700"
-                }`}
+                    ? { color: "#FFFFFF", fontWeight: "500" }
+                    : { color: TEXT_SECONDARY },
+                ]}
               >
                 Semua
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center ${
+              style={[
+                tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center`,
                 filterType === "income"
-                  ? "bg-emerald-100 border border-emerald-200"
-                  : "bg-gray-200"
-              }`}
+                  ? {
+                      backgroundColor: Colors.success + "20",
+                      borderWidth: 1,
+                      borderColor: Colors.success + "40",
+                    }
+                  : { backgroundColor: Colors.surfaceLight },
+              ]}
               onPress={() => setFilterType("income")}
             >
               <Ionicons
                 name="arrow-down-outline"
                 size={12}
-                color={filterType === "income" ? "#10B981" : "#6B7280"}
+                color={filterType === "income" ? SUCCESS_COLOR : TEXT_SECONDARY}
               />
               <Text
-                style={tw`text-xs ml-1 ${
+                style={[
+                  tw`text-xs ml-1`,
                   filterType === "income"
-                    ? "text-emerald-700 font-medium"
-                    : "text-gray-700"
-                }`}
+                    ? { color: SUCCESS_COLOR, fontWeight: "500" }
+                    : { color: TEXT_SECONDARY },
+                ]}
               >
                 Pemasukan
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center ${
+              style={[
+                tw`mr-2 px-3 py-1.5 rounded-full flex-row items-center`,
                 filterType === "expense"
-                  ? "bg-red-100 border border-red-200"
-                  : "bg-gray-200"
-              }`}
+                  ? {
+                      backgroundColor: Colors.error + "20",
+                      borderWidth: 1,
+                      borderColor: Colors.error + "40",
+                    }
+                  : { backgroundColor: Colors.surfaceLight },
+              ]}
               onPress={() => setFilterType("expense")}
             >
               <Ionicons
                 name="arrow-up-outline"
                 size={12}
-                color={filterType === "expense" ? "#EF4444" : "#6B7280"}
+                color={filterType === "expense" ? ERROR_COLOR : TEXT_SECONDARY}
               />
               <Text
-                style={tw`text-xs ml-1 ${
+                style={[
+                  tw`text-xs ml-1`,
                   filterType === "expense"
-                    ? "text-red-700 font-medium"
-                    : "text-gray-700"
-                }`}
+                    ? { color: ERROR_COLOR, fontWeight: "500" }
+                    : { color: TEXT_SECONDARY },
+                ]}
               >
                 Pengeluaran
               </Text>
@@ -556,25 +628,40 @@ const TransactionsScreen: React.FC = () => {
       </View>
 
       {/* Compact Summary Cards */}
-      <View style={tw`px-4 py-2 bg-white border-b border-gray-100`}>
+      <View
+        style={[
+          tw`px-4 py-2`,
+          {
+            backgroundColor: SURFACE_COLOR,
+            borderBottomWidth: 1,
+            borderBottomColor: BORDER_COLOR,
+          },
+        ]}
+      >
         <View style={tw`flex-row justify-between items-center`}>
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-gray-600 text-xs mb-0.5`}>Saldo</Text>
-            <Text style={tw`text-gray-900 text-sm font-bold`}>
+            <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
+              Saldo
+            </Text>
+            <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>
               {formatCurrency(totals.balance)}
             </Text>
           </View>
-          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-emerald-600 text-xs mb-0.5`}>Pemasukan</Text>
-            <Text style={tw`text-emerald-600 text-sm font-bold`}>
+            <Text style={[tw`text-xs mb-0.5`, { color: SUCCESS_COLOR }]}>
+              Pemasukan
+            </Text>
+            <Text style={[tw`text-sm font-bold`, { color: SUCCESS_COLOR }]}>
               {formatCurrency(totals.totalIncome)}
             </Text>
           </View>
-          <View style={tw`w-px h-6 bg-gray-200`} />
+          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-red-600 text-xs mb-0.5`}>Pengeluaran</Text>
-            <Text style={tw`text-red-600 text-sm font-bold`}>
+            <Text style={[tw`text-xs mb-0.5`, { color: ERROR_COLOR }]}>
+              Pengeluaran
+            </Text>
+            <Text style={[tw`text-sm font-bold`, { color: ERROR_COLOR }]}>
               {formatCurrency(totals.totalExpense)}
             </Text>
           </View>
@@ -590,8 +677,8 @@ const TransactionsScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={["#4F46E5"]}
-            tintColor="#4F46E5"
+            colors={[ACCENT_COLOR]}
+            tintColor={ACCENT_COLOR}
           />
         }
       >
@@ -601,7 +688,9 @@ const TransactionsScreen: React.FC = () => {
               {/* Day Header */}
               <View style={tw`px-4 mb-2 mt-3`}>
                 <View style={tw`flex-row justify-between items-center`}>
-                  <Text style={tw`text-gray-700 text-sm font-medium`}>
+                  <Text
+                    style={[tw`text-sm font-medium`, { color: TEXT_PRIMARY }]}
+                  >
                     {day}
                   </Text>
                 </View>
@@ -640,7 +729,14 @@ const TransactionsScreen: React.FC = () => {
                     }}
                   >
                     <TouchableOpacity
-                      style={tw`bg-white p-3 rounded-xl border border-gray-100`}
+                      style={[
+                        tw`p-3 rounded-xl`,
+                        {
+                          backgroundColor: SURFACE_COLOR,
+                          borderWidth: 1,
+                          borderColor: BORDER_COLOR,
+                        },
+                      ]}
                       activeOpacity={0.7}
                       onPress={() => handleEdit(transaction)}
                       onLongPress={() => handleDelete(transaction.id)}
@@ -649,19 +745,20 @@ const TransactionsScreen: React.FC = () => {
                       <View style={tw`flex-row items-center justify-between`}>
                         <View style={tw`flex-row items-center flex-1`}>
                           <View
-                            style={tw`w-10 h-10 rounded-lg justify-center items-center mr-3 ${
+                            style={[
+                              tw`w-10 h-10 rounded-lg justify-center items-center mr-3`,
                               transaction.type === "income"
-                                ? "bg-emerald-50"
-                                : "bg-red-50"
-                            }`}
+                                ? { backgroundColor: Colors.success + "20" }
+                                : { backgroundColor: Colors.error + "20" },
+                            ]}
                           >
                             <Ionicons
                               name={getCategoryIcon(transaction.category)}
                               size={18}
                               color={
                                 transaction.type === "income"
-                                  ? "#10B981"
-                                  : "#EF4444"
+                                  ? SUCCESS_COLOR
+                                  : ERROR_COLOR
                               }
                             />
                           </View>
@@ -671,47 +768,64 @@ const TransactionsScreen: React.FC = () => {
                               style={tw`flex-row items-center justify-between mb-0.5`}
                             >
                               <Text
-                                style={tw`text-gray-800 text-sm font-medium`}
+                                style={[
+                                  tw`text-sm font-medium`,
+                                  { color: TEXT_PRIMARY },
+                                ]}
                               >
                                 {transaction.category}
                               </Text>
                               <Text
-                                style={tw`text-sm font-medium ${
+                                style={[
+                                  tw`text-sm font-medium`,
                                   transaction.type === "income"
-                                    ? "text-emerald-600"
-                                    : "text-red-500"
-                                }`}
+                                    ? { color: SUCCESS_COLOR }
+                                    : { color: ERROR_COLOR },
+                                ]}
                               >
                                 {transaction.type === "income" ? "+" : "-"}
                                 {formatCurrency(safeNumber(transaction.amount))}
                               </Text>
                             </View>
                             <Text
-                              style={tw`text-gray-500 text-xs mb-0.5`}
+                              style={[
+                                tw`text-xs mb-0.5`,
+                                { color: TEXT_SECONDARY },
+                              ]}
                               numberOfLines={1}
                             >
                               {transaction.description || "Tidak ada deskripsi"}
                             </Text>
                             <View style={tw`flex-row items-center`}>
-                              <Text style={tw`text-gray-400 text-xs`}>
+                              <Text
+                                style={[
+                                  tw`text-xs`,
+                                  { color: Colors.textTertiary },
+                                ]}
+                              >
                                 {formatDisplayDate(transaction.date)}
                               </Text>
                               <View
-                                style={tw`w-1 h-1 bg-gray-300 rounded-full mx-2`}
+                                style={[
+                                  tw`w-1 h-1 rounded-full mx-2`,
+                                  { backgroundColor: BORDER_COLOR },
+                                ]}
                               />
                               <View
-                                style={tw`px-1.5 py-0.5 rounded-full ${
+                                style={[
+                                  tw`px-1.5 py-0.5 rounded-full`,
                                   transaction.type === "income"
-                                    ? "bg-emerald-100"
-                                    : "bg-red-100"
-                                }`}
+                                    ? { backgroundColor: Colors.success + "20" }
+                                    : { backgroundColor: Colors.error + "20" },
+                                ]}
                               >
                                 <Text
-                                  style={tw`text-xs ${
+                                  style={[
+                                    tw`text-xs`,
                                     transaction.type === "income"
-                                      ? "text-emerald-700"
-                                      : "text-red-700"
-                                  }`}
+                                      ? { color: SUCCESS_COLOR }
+                                      : { color: ERROR_COLOR },
+                                  ]}
                                 >
                                   {transaction.type === "income"
                                     ? "Masuk"
@@ -731,7 +845,10 @@ const TransactionsScreen: React.FC = () => {
         ) : (
           <View style={tw`items-center justify-center py-16 px-10`}>
             <View
-              style={tw`w-20 h-20 rounded-full bg-gray-100 justify-center items-center mb-4`}
+              style={[
+                tw`w-20 h-20 rounded-full justify-center items-center mb-4`,
+                { backgroundColor: Colors.surfaceLight },
+              ]}
             >
               <Ionicons
                 name={
@@ -740,24 +857,32 @@ const TransactionsScreen: React.FC = () => {
                     : "receipt-outline"
                 }
                 size={32}
-                color="#9CA3AF"
+                color={Colors.textTertiary}
               />
             </View>
             <Text
-              style={tw`text-gray-800 text-base font-medium text-center mb-1.5`}
+              style={[
+                tw`text-base font-medium text-center mb-1.5`,
+                { color: TEXT_PRIMARY },
+              ]}
             >
               {searchQuery || filterType !== "all" || dateFilter !== "all"
                 ? "Transaksi tidak ditemukan"
                 : "Belum ada transaksi"}
             </Text>
-            <Text style={tw`text-gray-500 text-sm text-center mb-5`}>
+            <Text
+              style={[tw`text-sm text-center mb-5`, { color: TEXT_SECONDARY }]}
+            >
               {searchQuery || filterType !== "all" || dateFilter !== "all"
                 ? "Coba kata kunci lain atau hapus filter"
                 : "Mulai catat transaksi pertama Anda"}
             </Text>
             {!searchQuery && filterType === "all" && dateFilter === "all" && (
               <TouchableOpacity
-                style={tw`bg-indigo-600 px-5 py-2.5 rounded-lg flex-row items-center`}
+                style={[
+                  tw`px-5 py-2.5 rounded-lg flex-row items-center`,
+                  { backgroundColor: ACCENT_COLOR },
+                ]}
                 onPress={() => navigation.navigate("AddTransaction")}
               >
                 <Ionicons name="add" size={16} color="#FFFFFF" />
@@ -768,15 +893,30 @@ const TransactionsScreen: React.FC = () => {
             )}
             {(searchQuery || filterType !== "all" || dateFilter !== "all") && (
               <TouchableOpacity
-                style={tw`mt-3 border border-gray-300 px-4 py-2 rounded-lg flex-row items-center`}
+                style={[
+                  tw`mt-3 px-4 py-2 rounded-lg flex-row items-center`,
+                  {
+                    borderWidth: 1,
+                    borderColor: BORDER_COLOR,
+                  },
+                ]}
                 onPress={() => {
                   setSearchQuery("");
                   setFilterType("all");
                   resetDateFilter();
                 }}
               >
-                <Ionicons name="close-outline" size={16} color="#6B7280" />
-                <Text style={tw`text-gray-700 text-sm font-medium ml-1.5`}>
+                <Ionicons
+                  name="close-outline"
+                  size={16}
+                  color={TEXT_SECONDARY}
+                />
+                <Text
+                  style={[
+                    tw`text-sm font-medium ml-1.5`,
+                    { color: TEXT_PRIMARY },
+                  ]}
+                >
                   Hapus Filter
                 </Text>
               </TouchableOpacity>
@@ -787,7 +927,10 @@ const TransactionsScreen: React.FC = () => {
 
       {/* Add FAB - Smaller */}
       <TouchableOpacity
-        style={tw`absolute bottom-5 right-4 w-14 h-14 bg-indigo-600 rounded-xl justify-center items-center shadow-lg`}
+        style={[
+          tw`absolute bottom-5 right-4 w-14 h-14 rounded-xl justify-center items-center shadow-lg`,
+          { backgroundColor: ACCENT_COLOR },
+        ]}
         onPress={() => navigation.navigate("AddTransaction")}
         activeOpacity={0.9}
       >
@@ -802,13 +945,22 @@ const TransactionsScreen: React.FC = () => {
         onRequestClose={() => setShowFilterModal(false)}
       >
         <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View style={tw`bg-white rounded-t-3xl p-5 max-h-3/4`}>
+          <View
+            style={[
+              tw`rounded-t-3xl p-5 max-h-3/4`,
+              { backgroundColor: SURFACE_COLOR },
+            ]}
+          >
             <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={tw`text-gray-800 text-lg font-bold`}>
+              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
                 Filter Tanggal
               </Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close-outline" size={22} color="#6B7280" />
+                <Ionicons
+                  name="close-outline"
+                  size={22}
+                  color={TEXT_SECONDARY}
+                />
               </TouchableOpacity>
             </View>
 
@@ -817,7 +969,7 @@ const TransactionsScreen: React.FC = () => {
               style={tw`max-h-64`}
             >
               <View style={tw`mb-4`}>
-                <Text style={tw`text-gray-600 text-sm mb-2`}>
+                <Text style={[tw`text-sm mb-2`, { color: TEXT_SECONDARY }]}>
                   Rentang Waktu
                 </Text>
                 <View style={tw`flex-row flex-wrap gap-2`}>
@@ -829,19 +981,21 @@ const TransactionsScreen: React.FC = () => {
                   ].map((option) => (
                     <TouchableOpacity
                       key={option.key}
-                      style={tw`px-3 py-2 rounded-full ${
+                      style={[
+                        tw`px-3 py-2 rounded-full`,
                         dateFilter === option.key
-                          ? "bg-indigo-600"
-                          : "bg-gray-200"
-                      }`}
+                          ? { backgroundColor: ACCENT_COLOR }
+                          : { backgroundColor: Colors.surfaceLight },
+                      ]}
                       onPress={() => setDateFilter(option.key as any)}
                     >
                       <Text
-                        style={tw`text-sm ${
+                        style={[
+                          tw`text-sm`,
                           dateFilter === option.key
-                            ? "text-white font-medium"
-                            : "text-gray-700"
-                        }`}
+                            ? { color: "#FFFFFF", fontWeight: "500" }
+                            : { color: TEXT_PRIMARY },
+                        ]}
                       >
                         {option.label}
                       </Text>
@@ -852,32 +1006,48 @@ const TransactionsScreen: React.FC = () => {
 
               {dateFilter === "custom" && (
                 <View style={tw`mb-4`}>
-                  <Text style={tw`text-gray-600 text-sm mb-2`}>
+                  <Text style={[tw`text-sm mb-2`, { color: TEXT_SECONDARY }]}>
                     Tanggal Kustom
                   </Text>
                   <View style={tw`flex-row gap-3`}>
                     <View style={tw`flex-1`}>
-                      <Text style={tw`text-gray-400 text-xs mb-1`}>
+                      <Text
+                        style={[
+                          tw`text-xs mb-1`,
+                          { color: Colors.textTertiary },
+                        ]}
+                      >
                         Dari Tanggal
                       </Text>
                       <TouchableOpacity
-                        style={tw`border border-gray-300 rounded-lg p-3`}
+                        style={[
+                          tw`border rounded-lg p-3`,
+                          { borderColor: BORDER_COLOR },
+                        ]}
                         onPress={() => setShowCalendar("start")}
                       >
-                        <Text style={tw`text-gray-800`}>
+                        <Text style={{ color: TEXT_PRIMARY }}>
                           {customStartDate.toLocaleDateString("id-ID")}
                         </Text>
                       </TouchableOpacity>
                     </View>
                     <View style={tw`flex-1`}>
-                      <Text style={tw`text-gray-400 text-xs mb-1`}>
+                      <Text
+                        style={[
+                          tw`text-xs mb-1`,
+                          { color: Colors.textTertiary },
+                        ]}
+                      >
                         Sampai Tanggal
                       </Text>
                       <TouchableOpacity
-                        style={tw`border border-gray-300 rounded-lg p-3`}
+                        style={[
+                          tw`border rounded-lg p-3`,
+                          { borderColor: BORDER_COLOR },
+                        ]}
                         onPress={() => setShowCalendar("end")}
                       >
-                        <Text style={tw`text-gray-800`}>
+                        <Text style={{ color: TEXT_PRIMARY }}>
                           {customEndDate.toLocaleDateString("id-ID")}
                         </Text>
                       </TouchableOpacity>
@@ -888,18 +1058,27 @@ const TransactionsScreen: React.FC = () => {
 
               <View style={tw`flex-row gap-3 mt-4 mb-2`}>
                 <TouchableOpacity
-                  style={tw`flex-1 border border-gray-300 rounded-xl py-3 items-center`}
+                  style={[
+                    tw`flex-1 rounded-xl py-3 items-center`,
+                    {
+                      borderWidth: 1,
+                      borderColor: BORDER_COLOR,
+                    },
+                  ]}
                   onPress={() => {
                     resetDateFilter();
                     setShowFilterModal(false);
                   }}
                 >
-                  <Text style={tw`text-gray-700 font-medium`}>
+                  <Text style={[tw`font-medium`, { color: TEXT_PRIMARY }]}>
                     Reset & Tutup
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={tw`flex-1 bg-indigo-600 rounded-xl py-3 items-center`}
+                  style={[
+                    tw`flex-1 rounded-xl py-3 items-center`,
+                    { backgroundColor: ACCENT_COLOR },
+                  ]}
                   onPress={applyFilter}
                 >
                   <Text style={tw`text-white font-medium`}>Terapkan</Text>
@@ -918,15 +1097,21 @@ const TransactionsScreen: React.FC = () => {
         onRequestClose={() => setShowCalendar(null)}
       >
         <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View style={tw`bg-white rounded-t-3xl p-4`}>
+          <View
+            style={[tw`rounded-t-3xl p-4`, { backgroundColor: SURFACE_COLOR }]}
+          >
             <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={tw`text-gray-800 text-lg font-bold`}>
+              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
                 {showCalendar === "start"
                   ? "Pilih Tanggal Mulai"
                   : "Pilih Tanggal Akhir"}
               </Text>
               <TouchableOpacity onPress={() => setShowCalendar(null)}>
-                <Ionicons name="close-outline" size={24} color="#6B7280" />
+                <Ionicons
+                  name="close-outline"
+                  size={24}
+                  color={TEXT_SECONDARY}
+                />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -936,7 +1121,7 @@ const TransactionsScreen: React.FC = () => {
                   showCalendar === "start" ? customStartDate : customEndDate
                 )]: {
                   selected: true,
-                  selectedColor: "#4F46E5",
+                  selectedColor: ACCENT_COLOR,
                   selectedTextColor: "#FFFFFF",
                 },
               }}
@@ -951,18 +1136,18 @@ const TransactionsScreen: React.FC = () => {
                   : undefined
               }
               theme={{
-                backgroundColor: "#ffffff",
-                calendarBackground: "#ffffff",
-                textSectionTitleColor: "#6B7280",
-                selectedDayBackgroundColor: "#4F46E5",
-                selectedDayTextColor: "#ffffff",
-                todayTextColor: "#4F46E5",
-                dayTextColor: "#374151",
-                textDisabledColor: "#D1D5DB",
-                dotColor: "#4F46E5",
-                selectedDotColor: "#ffffff",
-                arrowColor: "#4F46E5",
-                monthTextColor: "#4F46E5",
+                backgroundColor: SURFACE_COLOR,
+                calendarBackground: SURFACE_COLOR,
+                textSectionTitleColor: TEXT_SECONDARY,
+                selectedDayBackgroundColor: ACCENT_COLOR,
+                selectedDayTextColor: "#FFFFFF",
+                todayTextColor: ACCENT_COLOR,
+                dayTextColor: TEXT_PRIMARY,
+                textDisabledColor: Colors.textTertiary,
+                dotColor: ACCENT_COLOR,
+                selectedDotColor: "#FFFFFF",
+                arrowColor: ACCENT_COLOR,
+                monthTextColor: ACCENT_COLOR,
                 textMonthFontWeight: "bold",
                 textDayFontSize: 16,
                 textMonthFontSize: 18,

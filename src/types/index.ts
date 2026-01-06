@@ -8,7 +8,6 @@ export interface Transaction {
   description: string;
   date: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
-  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface Budget {
@@ -17,11 +16,10 @@ export interface Budget {
   limit: number;
   spent: number;
   period: "custom" | "weekly" | "monthly" | "yearly";
-  startDate: string; // ✨ TAMBAH: tanggal mulai periode
-  endDate: string; // ✨ TAMBAH: tanggal akhir periode
+  startDate: string;
+  endDate: string;
   lastResetDate?: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
-  // HAPUS: userId? - tidak perlu multi user
 }
 
 export interface Savings {
@@ -30,12 +28,11 @@ export interface Savings {
   target: number;
   current: number;
   deadline?: string;
-  category: string; // Tambahkan
-  priority: "low" | "medium" | "high"; // Tambahkan
-  description: string; // Tambahkan
-  icon: string; // Tambahkan
-  createdAt: string; // Tambahkan
-  // HAPUS: userId? - tidak perlu multi user
+  category: string;
+  priority: "low" | "medium" | "high";
+  description: string;
+  icon: string;
+  createdAt: string;
 }
 
 export interface SavingsTransaction {
@@ -47,20 +44,41 @@ export interface SavingsTransaction {
   note?: string;
   previousBalance: number;
   newBalance: number;
-  createdAt: string; // Tambahkan
-  // HAPUS: userId? - tidak perlu multi user
+  createdAt: string;
+}
+
+// TAMBAHKAN INTERFACE NOTE
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  type:
+    | "financial_decision"
+    | "expense_reflection"
+    | "goal_progress"
+    | "investment_idea"
+    | "budget_analysis"
+    | "general";
+  mood?: "positive" | "neutral" | "negative" | "reflective";
+  financialImpact?: "positive" | "neutral" | "negative";
+  amount?: number;
+  category?: string;
+  tags: string[];
+  relatedTransactionIds?: string[];
+  relatedSavingsIds?: string[];
+  relatedBudgetIds?: string[];
+  date: string; // YYYY-MM-DD
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AppState {
-  // HAPUS user management
-  // currentUser: User | null;
-  // users: User[];
-
   // Financial data
   transactions: Transaction[];
   budgets: Budget[];
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];
+  notes: Note[]; // TAMBAHKAN
 
   // Calculated totals
   totalIncome: number;
@@ -68,7 +86,6 @@ export interface AppState {
   balance: number;
 }
 
-// Navigation types
 export type RootStackParamList = {
   Home: undefined;
   MainTabs: undefined;
@@ -78,17 +95,17 @@ export type RootStackParamList = {
   Analytics: undefined;
   Calendar: undefined;
   SavingsDetail: { savingsId: string };
-
+  Notes: undefined; // TAMBAHKAN
+  NoteForm: { noteId?: string }; // TAMBAHKAN
+  NoteDetail: { noteId: string }; // TAMBAHKAN
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;
   };
-
   AddBudget: {
     editMode?: boolean;
     budgetData?: Budget;
   };
-
   AddSavings: {
     editMode?: boolean;
     savingsData?: Savings;

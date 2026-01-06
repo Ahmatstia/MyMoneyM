@@ -21,6 +21,7 @@ import {
   getSafePercentage,
   safeNumber,
 } from "../../utils/calculations";
+import { Colors } from "../../theme/theme";
 
 // Type untuk icon yang aman
 type SafeIconName = keyof typeof Ionicons.glyphMap;
@@ -351,27 +352,35 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
   const renderBenchmarkItem = (item: BenchmarkItem) => (
     <View key={item.category} style={tw`mb-3`}>
       <View style={tw`flex-row justify-between items-center mb-1`}>
-        <Text style={tw`text-sm font-medium text-gray-900`}>
+        <Text
+          style={tw.style(`text-sm font-medium`, { color: Colors.textPrimary })}
+        >
           {item.category}
         </Text>
         <View style={tw`flex-row items-center`}>
-          <Text style={tw`text-sm text-gray-900 mr-2`}>
+          <Text style={tw.style(`text-sm mr-2`, { color: Colors.textPrimary })}>
             {item.yourPercentage.toFixed(0)}%
           </Text>
           <View
             style={[
               tw`px-2 py-1 rounded-full`,
-              item.status === "above" && tw`bg-red-100`,
-              item.status === "below" && tw`bg-emerald-100`,
-              item.status === "normal" && tw`bg-gray-100`,
+              item.status === "above" && {
+                backgroundColor: `${Colors.error}20`,
+              },
+              item.status === "below" && {
+                backgroundColor: `${Colors.success}20`,
+              },
+              item.status === "normal" && {
+                backgroundColor: Colors.surfaceLight,
+              },
             ]}
           >
             <Text
               style={[
                 tw`text-xs font-medium`,
-                item.status === "above" && tw`text-red-600`,
-                item.status === "below" && tw`text-emerald-600`,
-                item.status === "normal" && tw`text-gray-600`,
+                item.status === "above" && { color: Colors.error },
+                item.status === "below" && { color: Colors.success },
+                item.status === "normal" && { color: Colors.textSecondary },
               ]}
             >
               {item.status === "above"
@@ -384,18 +393,25 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
         </View>
       </View>
       <View style={tw`flex-row items-center`}>
-        <View style={tw`flex-1 h-2 bg-gray-200 rounded-full overflow-hidden`}>
+        <View
+          style={tw.style(`flex-1 h-2 rounded-full overflow-hidden`, {
+            backgroundColor: Colors.surfaceLight,
+          })}
+        >
           <View
             style={[
-              tw`h-full rounded-full`,
-              { width: `${Math.min(item.yourPercentage, 100)}%` },
-              item.status === "above" && tw`bg-red-500`,
-              item.status === "below" && tw`bg-emerald-500`,
-              item.status === "normal" && tw`bg-gray-400`,
+              {
+                width: `${Math.min(item.yourPercentage, 100)}%`,
+                height: "100%",
+                borderRadius: 9999,
+              },
+              item.status === "above" && { backgroundColor: Colors.error },
+              item.status === "below" && { backgroundColor: Colors.success },
+              item.status === "normal" && { backgroundColor: Colors.info },
             ]}
           />
         </View>
-        <Text style={tw`text-xs text-gray-400 ml-2`}>
+        <Text style={tw.style(`text-xs ml-2`, { color: Colors.textTertiary })}>
           Rata-rata: {item.avgPercentage}%
         </Text>
       </View>
@@ -403,21 +419,41 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
   );
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
       {/* Header Minimalis */}
-      <View style={tw`px-4 pt-3 pb-4 bg-white border-b border-gray-200`}>
+      <View
+        style={tw.style(`px-4 pt-3 pb-4 border-b`, {
+          backgroundColor: Colors.surface,
+          borderColor: Colors.border,
+        })}
+      >
         <View style={tw`flex-row justify-between items-center mb-3`}>
           <View>
-            <Text style={tw`text-2xl font-bold text-gray-900`}>Analitik</Text>
-            <Text style={tw`text-sm text-gray-600 mt-0.5`}>
+            <Text
+              style={tw.style(`text-2xl font-bold`, {
+                color: Colors.textPrimary,
+              })}
+            >
+              Analitik
+            </Text>
+            <Text
+              style={tw.style(`text-sm mt-0.5`, {
+                color: Colors.textSecondary,
+              })}
+            >
               {getCurrentMonth()}
             </Text>
           </View>
           <TouchableOpacity
-            style={tw`w-10 h-10 rounded-full bg-indigo-100 justify-center items-center`}
+            style={tw.style(
+              `w-10 h-10 rounded-full justify-center items-center`,
+              {
+                backgroundColor: `${Colors.accent}20`,
+              }
+            )}
             onPress={handleExport}
           >
-            <Ionicons name="share-outline" size={20} color="#4F46E5" />
+            <Ionicons name="share-outline" size={20} color={Colors.accent} />
           </TouchableOpacity>
         </View>
 
@@ -432,14 +468,18 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               key={tab.key}
               style={[
                 tw`px-4 py-2 rounded-full`,
-                timeRange === tab.key ? tw`bg-indigo-600` : tw`bg-gray-100`,
+                timeRange === tab.key
+                  ? { backgroundColor: Colors.accent }
+                  : { backgroundColor: Colors.surfaceLight },
               ]}
               onPress={() => setTimeRange(tab.key as any)}
             >
               <Text
                 style={[
                   tw`text-sm font-medium`,
-                  timeRange === tab.key ? tw`text-white` : tw`text-gray-700`,
+                  timeRange === tab.key
+                    ? { color: Colors.textPrimary }
+                    : { color: Colors.textSecondary },
                 ]}
               >
                 {tab.label}
@@ -450,7 +490,12 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
       </View>
 
       {/* Main Tabs */}
-      <View style={tw`bg-white border-b border-gray-200`}>
+      <View
+        style={tw.style(`border-b`, {
+          backgroundColor: Colors.surface,
+          borderColor: Colors.border,
+        })}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -482,21 +527,25 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               key={tab.key}
               style={[
                 tw`px-4 py-2 rounded-full flex-row items-center`,
-                activeTab === tab.key ? tw`bg-indigo-100` : tw`bg-gray-100`,
+                activeTab === tab.key
+                  ? { backgroundColor: `${Colors.accent}20` }
+                  : { backgroundColor: Colors.surfaceLight },
               ]}
               onPress={() => setActiveTab(tab.key as any)}
             >
               <Ionicons
                 name={tab.icon}
                 size={16}
-                color={activeTab === tab.key ? "#4F46E5" : "#6B7280"}
+                color={
+                  activeTab === tab.key ? Colors.accent : Colors.textSecondary
+                }
               />
               <Text
                 style={[
                   tw`ml-2 text-sm font-medium`,
                   activeTab === tab.key
-                    ? tw`text-indigo-600`
-                    : tw`text-gray-700`,
+                    ? { color: Colors.accent }
+                    : { color: Colors.textSecondary },
                 ]}
               >
                 {tab.label}
@@ -513,14 +562,29 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
           <>
             {/* Main Stats Card */}
             <View
-              style={tw`bg-white rounded-xl p-4 mb-4 border border-gray-200`}
+              style={tw.style(`rounded-xl p-4 mb-4 border`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
             >
               <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={tw`text-lg font-semibold text-gray-900`}>
+                <Text
+                  style={tw.style(`text-lg font-semibold`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Ringkasan {timeRange}
                 </Text>
-                <View style={tw`px-3 py-1 bg-indigo-50 rounded-full`}>
-                  <Text style={tw`text-xs font-medium text-indigo-600`}>
+                <View
+                  style={tw.style(`px-3 py-1 rounded-full`, {
+                    backgroundColor: `${Colors.accent}20`,
+                  })}
+                >
+                  <Text
+                    style={tw.style(`text-xs font-medium`, {
+                      color: Colors.accent,
+                    })}
+                  >
                     vs bulan lalu:{" "}
                     {formatChange(comparativeData.savingsRateChange, true)}
                   </Text>
@@ -529,36 +593,60 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
               <View style={tw`flex-row justify-between mb-6`}>
                 <View style={tw`items-center flex-1`}>
-                  <Text style={tw`text-gray-600 text-xs mb-1`}>Pemasukan</Text>
-                  <Text style={tw`text-lg font-bold text-emerald-600`}>
+                  <Text
+                    style={tw.style(`text-xs mb-1`, {
+                      color: Colors.textSecondary,
+                    })}
+                  >
+                    Pemasukan
+                  </Text>
+                  <Text
+                    style={tw.style(`text-lg font-bold`, {
+                      color: Colors.success,
+                    })}
+                  >
                     {formatCurrency(transactionAnalytics.totalIncome)}
                   </Text>
                   <Text
-                    style={tw`text-xs ${
+                    style={tw.style(
+                      `text-xs`,
                       comparativeData.incomeChange >= 0
-                        ? "text-emerald-500"
-                        : "text-red-500"
-                    }`}
+                        ? { color: Colors.success }
+                        : { color: Colors.error }
+                    )}
                   >
                     {formatChange(comparativeData.incomeChange)}
                   </Text>
                 </View>
 
-                <View style={tw`w-px h-12 bg-gray-200`} />
+                <View
+                  style={tw.style(`w-px h-12`, {
+                    backgroundColor: Colors.border,
+                  })}
+                />
 
                 <View style={tw`items-center flex-1`}>
-                  <Text style={tw`text-gray-600 text-xs mb-1`}>
+                  <Text
+                    style={tw.style(`text-xs mb-1`, {
+                      color: Colors.textSecondary,
+                    })}
+                  >
                     Pengeluaran
                   </Text>
-                  <Text style={tw`text-lg font-bold text-red-600`}>
+                  <Text
+                    style={tw.style(`text-lg font-bold`, {
+                      color: Colors.error,
+                    })}
+                  >
                     {formatCurrency(transactionAnalytics.totalExpense)}
                   </Text>
                   <Text
-                    style={tw`text-xs ${
+                    style={tw.style(
+                      `text-xs`,
                       comparativeData.expenseChange >= 0
-                        ? "text-red-500"
-                        : "text-emerald-500"
-                    }`}
+                        ? { color: Colors.error }
+                        : { color: Colors.success }
+                    )}
                   >
                     {formatChange(comparativeData.expenseChange)}
                   </Text>
@@ -568,10 +656,18 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               {/* Savings Rate Progress */}
               <View style={tw`mb-4`}>
                 <View style={tw`flex-row justify-between items-center mb-2`}>
-                  <Text style={tw`text-gray-700 text-sm font-medium`}>
+                  <Text
+                    style={tw.style(`text-sm font-medium`, {
+                      color: Colors.textPrimary,
+                    })}
+                  >
                     Rasio Tabungan
                   </Text>
-                  <Text style={tw`text-lg font-bold text-indigo-600`}>
+                  <Text
+                    style={tw.style(`text-lg font-bold`, {
+                      color: Colors.accent,
+                    })}
+                  >
                     {transactionAnalytics.savingsRate.toFixed(1)}%
                   </Text>
                 </View>
@@ -585,47 +681,73 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   )}
                   color={
                     transactionAnalytics.savingsRate >= 20
-                      ? "#10B981"
+                      ? Colors.success
                       : transactionAnalytics.savingsRate >= 10
-                      ? "#F59E0B"
-                      : "#EF4444"
+                      ? Colors.warning
+                      : Colors.error
                   }
-                  style={tw`h-2 rounded-full`}
+                  style={tw.style(`h-2 rounded-full`, {
+                    backgroundColor: Colors.surfaceLight,
+                  })}
                 />
                 <View style={tw`flex-row justify-between mt-1`}>
-                  <Text style={tw`text-xs text-gray-400`}>0% (Defisit)</Text>
-                  <Text style={tw`text-xs text-gray-400`}>20% (Sehat)</Text>
-                  <Text style={tw`text-xs text-gray-400`}>100%</Text>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
+                    0% (Defisit)
+                  </Text>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
+                    20% (Sehat)
+                  </Text>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
+                    100%
+                  </Text>
                 </View>
               </View>
 
               {/* Cash Flow Forecast */}
               {cashFlowForecast.daysRemaining > 0 && (
                 <View
-                  style={tw`mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200`}
+                  style={tw.style(`mt-4 p-3 rounded-lg border`, {
+                    backgroundColor: Colors.surfaceLight,
+                    borderColor: Colors.border,
+                  })}
                 >
                   <View style={tw`flex-row items-center mb-2`}>
                     <Ionicons
                       name="calendar-outline"
                       size={16}
-                      color="#6B7280"
+                      color={Colors.textSecondary}
                     />
-                    <Text style={tw`text-sm font-medium text-gray-700 ml-2`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium ml-2`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
                       Proyeksi Akhir Bulan
                     </Text>
                   </View>
                   <Text
-                    style={tw`text-lg font-bold ${
+                    style={tw.style(
+                      `text-lg font-bold`,
                       cashFlowForecast.status === "safe"
-                        ? "text-emerald-600"
+                        ? { color: Colors.success }
                         : cashFlowForecast.status === "warning"
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                    }`}
+                        ? { color: Colors.warning }
+                        : { color: Colors.error }
+                    )}
                   >
                     {formatCurrency(cashFlowForecast.forecast)}
                   </Text>
-                  <Text style={tw`text-xs text-gray-600 mt-1`}>
+                  <Text
+                    style={tw.style(`text-xs mt-1`, {
+                      color: Colors.textSecondary,
+                    })}
+                  >
                     {cashFlowForecast.daysRemaining} hari lagi, rata-rata{" "}
                     {formatCurrency(cashFlowForecast.dailyAvg)}/hari
                   </Text>
@@ -636,26 +758,56 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
             {/* Quick Stats */}
             <View style={tw`flex-row gap-3 mb-4`}>
               <View
-                style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200`}
+                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
               >
-                <Text style={tw`text-gray-600 text-xs mb-1`}>Transaksi</Text>
-                <Text style={tw`text-lg font-bold text-gray-900`}>
+                <Text
+                  style={tw.style(`text-xs mb-1`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
+                  Transaksi
+                </Text>
+                <Text
+                  style={tw.style(`text-lg font-bold`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {transactionAnalytics.transactionCount}
                 </Text>
-                <Text style={tw`text-xs text-gray-500`}>
+                <Text
+                  style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                >
                   {transactionAnalytics.incomeTransactionCount} masuk,{" "}
                   {transactionAnalytics.expenseTransactionCount} keluar
                 </Text>
               </View>
 
               <View
-                style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200`}
+                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
               >
-                <Text style={tw`text-gray-600 text-xs mb-1`}>Anggaran</Text>
-                <Text style={tw`text-lg font-bold text-gray-900`}>
+                <Text
+                  style={tw.style(`text-xs mb-1`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
+                  Anggaran
+                </Text>
+                <Text
+                  style={tw.style(`text-lg font-bold`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {budgetAnalytics.overBudgetCount}
                 </Text>
-                <Text style={tw`text-xs text-gray-500`}>
+                <Text
+                  style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                >
                   {budgetAnalytics.overBudgetCount > 0
                     ? "Melebihi limit"
                     : "Semua aman"}
@@ -663,15 +815,30 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               </View>
 
               <View
-                style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200`}
+                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
               >
-                <Text style={tw`text-gray-600 text-xs mb-1`}>Tabungan</Text>
-                <Text style={tw`text-lg font-bold text-gray-900`}>
+                <Text
+                  style={tw.style(`text-xs mb-1`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
+                  Tabungan
+                </Text>
+                <Text
+                  style={tw.style(`text-lg font-bold`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {savingsAnalytics.completedSavings}/
                   {savingsAnalytics.activeSavings +
                     savingsAnalytics.completedSavings}
                 </Text>
-                <Text style={tw`text-xs text-gray-500`}>
+                <Text
+                  style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                >
                   {savingsAnalytics.overallProgress.toFixed(0)}% tercapai
                 </Text>
               </View>
@@ -681,8 +848,17 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
         {/* Trends Tab */}
         {activeTab === "trends" && (
-          <View style={tw`bg-white rounded-xl p-4 border border-gray-200`}>
-            <Text style={tw`text-lg font-semibold text-gray-900 mb-4`}>
+          <View
+            style={tw.style(`rounded-xl p-4 border`, {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+            })}
+          >
+            <Text
+              style={tw.style(`text-lg font-semibold mb-4`, {
+                color: Colors.textPrimary,
+              })}
+            >
               Tren {timeRange}
             </Text>
 
@@ -690,15 +866,20 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               {/* Spending Trend */}
               <View style={tw`mb-4`}>
                 <View style={tw`flex-row justify-between items-center mb-2`}>
-                  <Text style={tw`text-sm font-medium text-gray-900`}>
+                  <Text
+                    style={tw.style(`text-sm font-medium`, {
+                      color: Colors.textPrimary,
+                    })}
+                  >
                     Pengeluaran
                   </Text>
                   <Text
-                    style={tw`text-sm ${
+                    style={tw.style(
+                      `text-sm`,
                       comparativeData.expenseChange >= 0
-                        ? "text-red-600"
-                        : "text-emerald-600"
-                    }`}
+                        ? { color: Colors.error }
+                        : { color: Colors.success }
+                    )}
                   >
                     {comparativeData.expenseChange >= 0 ? "Naik" : "Turun"}{" "}
                     {formatChange(Math.abs(comparativeData.expenseChange))}
@@ -714,23 +895,30 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                       1
                     )
                   )}
-                  color="#EF4444"
-                  style={tw`h-2 rounded-full`}
+                  color={Colors.error}
+                  style={tw.style(`h-2 rounded-full`, {
+                    backgroundColor: Colors.surfaceLight,
+                  })}
                 />
               </View>
 
               {/* Income Trend */}
               <View style={tw`mb-4`}>
                 <View style={tw`flex-row justify-between items-center mb-2`}>
-                  <Text style={tw`text-sm font-medium text-gray-900`}>
+                  <Text
+                    style={tw.style(`text-sm font-medium`, {
+                      color: Colors.textPrimary,
+                    })}
+                  >
                     Pemasukan
                   </Text>
                   <Text
-                    style={tw`text-sm ${
+                    style={tw.style(
+                      `text-sm`,
                       comparativeData.incomeChange >= 0
-                        ? "text-emerald-600"
-                        : "text-red-600"
-                    }`}
+                        ? { color: Colors.success }
+                        : { color: Colors.error }
+                    )}
                   >
                     {comparativeData.incomeChange >= 0 ? "Naik" : "Turun"}{" "}
                     {formatChange(Math.abs(comparativeData.incomeChange))}
@@ -746,23 +934,30 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                       1
                     )
                   )}
-                  color="#10B981"
-                  style={tw`h-2 rounded-full`}
+                  color={Colors.success}
+                  style={tw.style(`h-2 rounded-full`, {
+                    backgroundColor: Colors.surfaceLight,
+                  })}
                 />
               </View>
 
               {/* Savings Rate Trend */}
               <View>
                 <View style={tw`flex-row justify-between items-center mb-2`}>
-                  <Text style={tw`text-sm font-medium text-gray-900`}>
+                  <Text
+                    style={tw.style(`text-sm font-medium`, {
+                      color: Colors.textPrimary,
+                    })}
+                  >
                     Rasio Tabungan
                   </Text>
                   <Text
-                    style={tw`text-sm ${
+                    style={tw.style(
+                      `text-sm`,
                       comparativeData.savingsRateChange >= 0
-                        ? "text-emerald-600"
-                        : "text-red-600"
-                    }`}
+                        ? { color: Colors.success }
+                        : { color: Colors.error }
+                    )}
                   >
                     {comparativeData.savingsRateChange >= 0
                       ? "Membaik"
@@ -781,18 +976,24 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                       1
                     )
                   )}
-                  color="#4F46E5"
-                  style={tw`h-2 rounded-full`}
+                  color={Colors.accent}
+                  style={tw.style(`h-2 rounded-full`, {
+                    backgroundColor: Colors.surfaceLight,
+                  })}
                 />
                 <View style={tw`flex-row justify-between mt-1`}>
-                  <Text style={tw`text-xs text-gray-400`}>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
                     Bulan lalu:{" "}
                     {safeNumber(comparativeData.previous.savingsRate).toFixed(
                       1
                     )}
                     %
                   </Text>
-                  <Text style={tw`text-xs text-gray-400`}>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
                     Sekarang:{" "}
                     {safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
                   </Text>
@@ -801,26 +1002,51 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
             </View>
 
             {/* Daily Average */}
-            <View style={tw`mt-6 p-3 bg-gray-50 rounded-lg`}>
-              <Text style={tw`text-sm font-medium text-gray-900 mb-2`}>
+            <View
+              style={tw.style(`mt-6 p-3 rounded-lg`, {
+                backgroundColor: Colors.surfaceLight,
+              })}
+            >
+              <Text
+                style={tw.style(`text-sm font-medium mb-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Rata-rata Harian
               </Text>
               <View style={tw`flex-row justify-between`}>
                 <View style={tw`items-center flex-1`}>
-                  <Text style={tw`text-xs text-gray-600`}>Pengeluaran</Text>
-                  <Text style={tw`text-sm font-semibold text-red-600`}>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textSecondary })}
+                  >
+                    Pengeluaran
+                  </Text>
+                  <Text
+                    style={tw.style(`text-sm font-semibold`, {
+                      color: Colors.error,
+                    })}
+                  >
                     {formatCurrency(transactionAnalytics.avgDailyExpense)}
                   </Text>
                 </View>
-                <View style={tw`w-px h-8 bg-gray-300`} />
+                <View
+                  style={tw.style(`w-px h-8`, {
+                    backgroundColor: Colors.border,
+                  })}
+                />
                 <View style={tw`items-center flex-1`}>
-                  <Text style={tw`text-xs text-gray-600`}>vs Rata-rata*</Text>
                   <Text
-                    style={tw`text-sm font-semibold ${
+                    style={tw.style(`text-xs`, { color: Colors.textSecondary })}
+                  >
+                    vs Rata-rata*
+                  </Text>
+                  <Text
+                    style={tw.style(
+                      `text-sm font-semibold`,
                       transactionAnalytics.avgDailyExpense > 100000
-                        ? "text-red-600"
-                        : "text-emerald-600"
-                    }`}
+                        ? { color: Colors.error }
+                        : { color: Colors.success }
+                    )}
                   >
                     {transactionAnalytics.avgDailyExpense > 100000
                       ? "↑ Tinggi"
@@ -828,7 +1054,9 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   </Text>
                 </View>
               </View>
-              <Text style={tw`text-xs text-gray-400 mt-2`}>
+              <Text
+                style={tw.style(`text-xs mt-2`, { color: Colors.textTertiary })}
+              >
                 *Berdasarkan data pengguna di kota besar
               </Text>
             </View>
@@ -837,8 +1065,17 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
         {/* Categories Tab */}
         {activeTab === "categories" && (
-          <View style={tw`bg-white rounded-xl p-4 border border-gray-200`}>
-            <Text style={tw`text-lg font-semibold text-gray-900 mb-4`}>
+          <View
+            style={tw.style(`rounded-xl p-4 border`, {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+            })}
+          >
+            <Text
+              style={tw.style(`text-lg font-semibold mb-4`, {
+                color: Colors.textPrimary,
+              })}
+            >
               Analisis Kategori
             </Text>
 
@@ -846,30 +1083,43 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               <>
                 {categoryBenchmarks.slice(0, 5).map(renderBenchmarkItem)}
 
-                <Divider style={tw`my-4`} />
+                <Divider
+                  style={tw.style(`my-4`, { backgroundColor: Colors.border })}
+                />
 
                 {/* Budget Optimization */}
                 {budgetSuggestion && (
                   <View
-                    style={tw`p-3 bg-amber-50 rounded-lg border border-amber-200`}
+                    style={tw.style(`p-3 rounded-lg border`, {
+                      backgroundColor: `${Colors.warning}10`,
+                      borderColor: `${Colors.warning}30`,
+                    })}
                   >
                     <View style={tw`flex-row items-start mb-2`}>
                       <Ionicons
                         name="alert-circle-outline"
                         size={20}
-                        color="#F59E0B"
+                        color={Colors.warning}
                       />
                       <Text
-                        style={tw`text-sm font-medium text-amber-900 ml-2 flex-1`}
+                        style={tw.style(`text-sm font-medium ml-2 flex-1`, {
+                          color: Colors.warning,
+                        })}
                       >
                         {budgetSuggestion.message}
                       </Text>
                     </View>
-                    <Text style={tw`text-amber-800 text-sm`}>
+                    <Text
+                      style={tw.style(`text-sm`, { color: Colors.warning })}
+                    >
                       Total kelebihan:{" "}
                       {formatCurrency(budgetSuggestion.totalOver)}
                     </Text>
-                    <Text style={tw`text-amber-700 text-xs mt-1`}>
+                    <Text
+                      style={tw.style(`text-xs mt-1`, {
+                        color: Colors.warningLight,
+                      })}
+                    >
                       💡 {budgetSuggestion.suggestion}
                     </Text>
                   </View>
@@ -880,19 +1130,28 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   safeNumber(transactionAnalytics.topCategories[0][1]) >
                     safeNumber(transactionAnalytics.totalExpense) * 0.4 && (
                     <View
-                      style={tw`mt-3 p-3 bg-red-50 rounded-lg border border-red-200`}
+                      style={tw.style(`mt-3 p-3 rounded-lg border`, {
+                        backgroundColor: `${Colors.error}10`,
+                        borderColor: `${Colors.error}30`,
+                      })}
                     >
                       <View style={tw`flex-row items-center mb-1`}>
                         <Ionicons
                           name="warning-outline"
                           size={16}
-                          color="#DC2626"
+                          color={Colors.error}
                         />
-                        <Text style={tw`text-sm font-medium text-red-900 ml-2`}>
+                        <Text
+                          style={tw.style(`text-sm font-medium ml-2`, {
+                            color: Colors.error,
+                          })}
+                        >
                           Konsentrasi Pengeluaran Tinggi
                         </Text>
                       </View>
-                      <Text style={tw`text-red-800 text-sm`}>
+                      <Text
+                        style={tw.style(`text-sm`, { color: Colors.error })}
+                      >
                         {transactionAnalytics.topCategories[0][0]} menghabiskan{" "}
                         {getSafePercentage(
                           transactionAnalytics.topCategories[0][1],
@@ -905,11 +1164,23 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
               </>
             ) : (
               <View style={tw`items-center py-8`}>
-                <Ionicons name="pricetags-outline" size={48} color="#9CA3AF" />
-                <Text style={tw`text-gray-900 text-base font-medium mt-4 mb-2`}>
+                <Ionicons
+                  name="pricetags-outline"
+                  size={48}
+                  color={Colors.textTertiary}
+                />
+                <Text
+                  style={tw.style(`text-base font-medium mt-4 mb-2`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Belum ada data kategori
                 </Text>
-                <Text style={tw`text-gray-600 text-sm text-center`}>
+                <Text
+                  style={tw.style(`text-sm text-center`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
                   Mulai catat transaksi untuk melihat analisis kategori
                 </Text>
               </View>
@@ -922,8 +1193,17 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
           <View style={tw`mb-4`}>
             {/* Financial Insights */}
             {insights.length > 0 && (
-              <View style={tw`bg-white rounded-xl p-4 border border-gray-200`}>
-                <Text style={tw`text-lg font-semibold text-gray-900 mb-4`}>
+              <View
+                style={tw.style(`rounded-xl p-4 border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
+              >
+                <Text
+                  style={tw.style(`text-lg font-semibold mb-4`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Insights Keuangan
                 </Text>
                 {insights.map((insight, index) => (
@@ -931,12 +1211,21 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                     key={index}
                     style={[
                       tw`p-3 rounded-lg mb-3`,
-                      insight.type === "success" &&
-                        tw`bg-emerald-50 border border-emerald-200`,
-                      insight.type === "warning" &&
-                        tw`bg-red-50 border border-red-200`,
-                      insight.type === "info" &&
-                        tw`bg-blue-50 border border-blue-200`,
+                      insight.type === "success" && {
+                        backgroundColor: `${Colors.success}10`,
+                        borderColor: `${Colors.success}30`,
+                        borderWidth: 1,
+                      },
+                      insight.type === "warning" && {
+                        backgroundColor: `${Colors.error}10`,
+                        borderColor: `${Colors.error}30`,
+                        borderWidth: 1,
+                      },
+                      insight.type === "info" && {
+                        backgroundColor: `${Colors.info}10`,
+                        borderColor: `${Colors.info}30`,
+                        borderWidth: 1,
+                      },
                     ]}
                   >
                     <View style={tw`flex-row items-start`}>
@@ -945,19 +1234,23 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                         size={20}
                         color={
                           insight.type === "success"
-                            ? "#10B981"
+                            ? Colors.success
                             : insight.type === "warning"
-                            ? "#DC2626"
-                            : "#3B82F6"
+                            ? Colors.error
+                            : Colors.info
                         }
                       />
                       <View style={tw`ml-3 flex-1`}>
                         <Text
                           style={[
                             tw`text-sm font-semibold mb-1`,
-                            insight.type === "success" && tw`text-emerald-900`,
-                            insight.type === "warning" && tw`text-red-900`,
-                            insight.type === "info" && tw`text-blue-900`,
+                            insight.type === "success" && {
+                              color: Colors.success,
+                            },
+                            insight.type === "warning" && {
+                              color: Colors.error,
+                            },
+                            insight.type === "info" && { color: Colors.info },
                           ]}
                         >
                           {insight.title}
@@ -965,9 +1258,15 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                         <Text
                           style={[
                             tw`text-sm`,
-                            insight.type === "success" && tw`text-emerald-800`,
-                            insight.type === "warning" && tw`text-red-800`,
-                            insight.type === "info" && tw`text-blue-800`,
+                            insight.type === "success" && {
+                              color: Colors.successLight,
+                            },
+                            insight.type === "warning" && {
+                              color: Colors.errorLight,
+                            },
+                            insight.type === "info" && {
+                              color: Colors.infoLight,
+                            },
                           ]}
                         >
                           {insight.message}
@@ -981,39 +1280,70 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
             {/* Quick Wins */}
             {quickWins.length > 0 && (
-              <View style={tw`bg-white rounded-xl p-4 border border-gray-200`}>
-                <Text style={tw`text-lg font-semibold text-gray-900 mb-4`}>
+              <View
+                style={tw.style(`rounded-xl p-4 border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
+              >
+                <Text
+                  style={tw.style(`text-lg font-semibold mb-4`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Quick Wins
                 </Text>
                 {quickWins.map((win, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={tw`p-3 bg-gray-50 rounded-lg mb-3 border border-gray-200`}
+                    style={tw.style(`p-3 rounded-lg mb-3 border`, {
+                      backgroundColor: Colors.surfaceLight,
+                      borderColor: Colors.border,
+                    })}
                     activeOpacity={0.7}
                   >
                     <View style={tw`flex-row items-start`}>
                       <View
-                        style={tw`w-10 h-10 rounded-lg bg-indigo-100 justify-center items-center mr-3`}
+                        style={tw.style(
+                          `w-10 h-10 rounded-lg justify-center items-center mr-3`,
+                          {
+                            backgroundColor: `${Colors.accent}20`,
+                          }
+                        )}
                       >
-                        <Ionicons name={win.icon} size={20} color="#4F46E5" />
+                        <Ionicons
+                          name={win.icon}
+                          size={20}
+                          color={Colors.accent}
+                        />
                       </View>
                       <View style={tw`flex-1`}>
                         <Text
-                          style={tw`text-sm font-semibold text-gray-900 mb-1`}
+                          style={tw.style(`text-sm font-semibold mb-1`, {
+                            color: Colors.textPrimary,
+                          })}
                         >
                           {win.title}
                         </Text>
-                        <Text style={tw`text-sm text-gray-600 mb-2`}>
+                        <Text
+                          style={tw.style(`text-sm mb-2`, {
+                            color: Colors.textSecondary,
+                          })}
+                        >
                           {win.description}
                         </Text>
                         <View style={tw`flex-row items-center justify-between`}>
                           <Text
-                            style={tw`text-xs text-emerald-700 font-medium`}
+                            style={tw.style(`text-xs font-medium`, {
+                              color: Colors.success,
+                            })}
                           >
                             💡 {win.tip}
                           </Text>
                           <Text
-                            style={tw`text-xs font-semibold text-emerald-600`}
+                            style={tw.style(`text-xs font-semibold`, {
+                              color: Colors.success,
+                            })}
                           >
                             Potensi +{formatCurrency(win.potential)}
                           </Text>
@@ -1026,23 +1356,51 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
             )}
 
             {/* Tips Card */}
-            <View style={tw`bg-white rounded-xl p-4 border border-gray-200`}>
-              <Text style={tw`text-lg font-semibold text-gray-900 mb-4`}>
+            <View
+              style={tw.style(`rounded-xl p-4 border`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
+            >
+              <Text
+                style={tw.style(`text-lg font-semibold mb-4`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Tips Harian
               </Text>
 
               <View>
                 <View style={tw`flex-row items-start`}>
                   <View
-                    style={tw`w-6 h-6 rounded-full bg-indigo-100 justify-center items-center mr-3 mt-0.5`}
+                    style={tw.style(
+                      `w-6 h-6 rounded-full justify-center items-center mr-3 mt-0.5`,
+                      {
+                        backgroundColor: `${Colors.accent}20`,
+                      }
+                    )}
                   >
-                    <Text style={tw`text-xs font-bold text-indigo-600`}>1</Text>
+                    <Text
+                      style={tw.style(`text-xs font-bold`, {
+                        color: Colors.accent,
+                      })}
+                    >
+                      1
+                    </Text>
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-sm font-medium text-gray-900`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
                       Review Mingguan
                     </Text>
-                    <Text style={tw`text-sm text-gray-600`}>
+                    <Text
+                      style={tw.style(`text-sm`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
                       Luangkan 10 menit setiap Minggu malam untuk review
                       pengeluaran minggu ini
                     </Text>
@@ -1051,17 +1409,34 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
                 <View style={tw`flex-row items-start`}>
                   <View
-                    style={tw`w-6 h-6 rounded-full bg-emerald-100 justify-center items-center mr-3 mt-0.5`}
+                    style={tw.style(
+                      `w-6 h-6 rounded-full justify-center items-center mr-3 mt-0.5`,
+                      {
+                        backgroundColor: `${Colors.success}20`,
+                      }
+                    )}
                   >
-                    <Text style={tw`text-xs font-bold text-emerald-600`}>
+                    <Text
+                      style={tw.style(`text-xs font-bold`, {
+                        color: Colors.success,
+                      })}
+                    >
                       2
                     </Text>
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-sm font-medium text-gray-900`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
                       Auto-Saving
                     </Text>
-                    <Text style={tw`text-sm text-gray-600`}>
+                    <Text
+                      style={tw.style(`text-sm`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
                       Set up auto-transfer 10% gaji ke rekening tabungan setiap
                       tanggal gajian
                     </Text>
@@ -1070,15 +1445,34 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
                 <View style={tw`flex-row items-start`}>
                   <View
-                    style={tw`w-6 h-6 rounded-full bg-amber-100 justify-center items-center mr-3 mt-0.5`}
+                    style={tw.style(
+                      `w-6 h-6 rounded-full justify-center items-center mr-3 mt-0.5`,
+                      {
+                        backgroundColor: `${Colors.warning}20`,
+                      }
+                    )}
                   >
-                    <Text style={tw`text-xs font-bold text-amber-600`}>3</Text>
+                    <Text
+                      style={tw.style(`text-xs font-bold`, {
+                        color: Colors.warning,
+                      })}
+                    >
+                      3
+                    </Text>
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-sm font-medium text-gray-900`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
                       Cash-Only Weekend
                     </Text>
-                    <Text style={tw`text-sm text-gray-600`}>
+                    <Text
+                      style={tw.style(`text-sm`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
                       Coba metode cash-only untuk pengeluaran weekend, terbukti
                       kurangi impulse buying 30%
                     </Text>
@@ -1091,36 +1485,69 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
         {/* Quick Actions */}
         <View style={tw`mt-4`}>
-          <Text style={tw`text-sm font-medium text-gray-900 mb-3`}>
+          <Text
+            style={tw.style(`text-sm font-medium mb-3`, {
+              color: Colors.textPrimary,
+            })}
+          >
             Aksi Cepat
           </Text>
           <View style={tw`flex-row gap-3`}>
             <TouchableOpacity
-              style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
+              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
               onPress={() => navigation.navigate("AddTransaction")}
             >
-              <Ionicons name="add-circle-outline" size={24} color="#4F46E5" />
-              <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
+              <Ionicons
+                name="add-circle-outline"
+                size={24}
+                color={Colors.accent}
+              />
+              <Text
+                style={tw.style(`text-xs font-medium mt-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Transaksi Baru
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
+              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
               onPress={() => navigation.navigate("Budget")}
             >
-              <Ionicons name="pie-chart-outline" size={24} color="#8B5CF6" />
-              <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
+              <Ionicons
+                name="pie-chart-outline"
+                size={24}
+                color={Colors.purple}
+              />
+              <Text
+                style={tw.style(`text-xs font-medium mt-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Cek Anggaran
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw`flex-1 bg-white p-3 rounded-xl border border-gray-200 items-center`}
+              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
               onPress={() => navigation.navigate("Savings")}
             >
-              <Ionicons name="wallet-outline" size={24} color="#EC4899" />
-              <Text style={tw`text-xs font-medium text-gray-900 mt-2`}>
+              <Ionicons name="wallet-outline" size={24} color={Colors.pink} />
+              <Text
+                style={tw.style(`text-xs font-medium mt-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
                 Progress Tabungan
               </Text>
             </TouchableOpacity>

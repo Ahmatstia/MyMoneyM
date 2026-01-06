@@ -1,4 +1,4 @@
-// File: src/screens/AddSavingsTransactionScreen.tsx
+// File: src/screens/AddSavingsTransactionScreen.tsx - FIXED VERSION
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -16,6 +16,7 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { Colors } from "../../theme/theme";
 
 // Helper untuk format tanggal
 const formatDate = (date: Date): string => {
@@ -43,16 +44,28 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
   if (!saving) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-gray-50 p-4`}>
-        <Ionicons name="warning-outline" size={48} color="#EF4444" />
-        <Text style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2`}>
+      <View
+        style={tw.style("flex-1 justify-center items-center p-4", {
+          backgroundColor: Colors.background,
+        })}
+      >
+        <Ionicons name="warning-outline" size={48} color={Colors.error} />
+        <Text
+          style={tw.style("text-lg font-semibold mt-4 mb-2", {
+            color: Colors.textPrimary,
+          })}
+        >
           Tabungan tidak ditemukan
         </Text>
         <TouchableOpacity
-          style={tw`mt-4 px-4 py-2 bg-indigo-600 rounded-lg`}
+          style={tw.style("mt-4 px-4 py-2 rounded-lg", {
+            backgroundColor: Colors.accent,
+          })}
           onPress={() => navigation.goBack()}
         >
-          <Text style={tw`text-white font-medium`}>Kembali</Text>
+          <Text style={tw.style("font-medium", { color: Colors.textPrimary })}>
+            Kembali
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -73,9 +86,9 @@ const AddSavingsTransactionScreen: React.FC = () => {
       title:
         transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana",
       headerStyle: {
-        backgroundColor: "#4F46E5",
+        backgroundColor: Colors.surface,
       },
-      headerTintColor: "#FFFFFF",
+      headerTintColor: Colors.textPrimary,
       headerTitleStyle: {
         fontWeight: "600",
       },
@@ -170,14 +183,26 @@ const AddSavingsTransactionScreen: React.FC = () => {
       animationType="slide"
       onRequestClose={() => setShowCalendar(false)}
     >
-      <View style={tw`flex-1 justify-center items-center bg-black/50`}>
-        <View style={tw`bg-white rounded-xl p-4 w-11/12`}>
+      <View
+        style={tw.style("flex-1 justify-center items-center", {
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+        })}
+      >
+        <View
+          style={tw.style("rounded-xl p-4 w-11/12", {
+            backgroundColor: Colors.surface,
+          })}
+        >
           <View style={tw`flex-row justify-between items-center mb-4`}>
-            <Text style={tw`text-lg font-semibold text-gray-900`}>
+            <Text
+              style={tw.style("text-lg font-semibold", {
+                color: Colors.textPrimary,
+              })}
+            >
               Pilih Tanggal
             </Text>
             <TouchableOpacity onPress={() => setShowCalendar(false)}>
-              <Ionicons name="close" size={24} color="#6B7280" />
+              <Ionicons name="close" size={24} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -187,23 +212,23 @@ const AddSavingsTransactionScreen: React.FC = () => {
             markedDates={{
               [date]: {
                 selected: true,
-                selectedColor: "#4F46E5",
+                selectedColor: Colors.accent,
               },
             }}
             maxDate={formatDate(new Date())}
             theme={{
-              backgroundColor: "#ffffff",
-              calendarBackground: "#ffffff",
-              textSectionTitleColor: "#6B7280",
-              selectedDayBackgroundColor: "#4F46E5",
-              selectedDayTextColor: "#ffffff",
-              todayTextColor: "#4F46E5",
-              dayTextColor: "#111827",
-              textDisabledColor: "#D1D5DB",
-              dotColor: "#4F46E5",
-              selectedDotColor: "#ffffff",
-              arrowColor: "#4F46E5",
-              monthTextColor: "#111827",
+              backgroundColor: Colors.surface,
+              calendarBackground: Colors.surface,
+              textSectionTitleColor: Colors.textSecondary,
+              selectedDayBackgroundColor: Colors.accent,
+              selectedDayTextColor: Colors.textPrimary,
+              todayTextColor: Colors.accent,
+              dayTextColor: Colors.textPrimary,
+              textDisabledColor: Colors.textTertiary,
+              dotColor: Colors.accent,
+              selectedDotColor: Colors.textPrimary,
+              arrowColor: Colors.accent,
+              monthTextColor: Colors.textPrimary,
               textDayFontFamily: "System",
               textMonthFontFamily: "System",
               textDayHeaderFontFamily: "System",
@@ -211,15 +236,21 @@ const AddSavingsTransactionScreen: React.FC = () => {
               textMonthFontSize: 16,
               textDayHeaderFontSize: 12,
             }}
-            style={tw`rounded-lg`}
+            style={tw.style("rounded-lg", { backgroundColor: Colors.surface })}
           />
 
           <View style={tw`mt-4 flex-row justify-end`}>
             <TouchableOpacity
-              style={tw`px-4 py-2 bg-indigo-600 rounded-lg`}
+              style={tw.style("px-4 py-2 rounded-lg", {
+                backgroundColor: Colors.accent,
+              })}
               onPress={() => setShowCalendar(false)}
             >
-              <Text style={tw`text-white font-medium`}>Selesai</Text>
+              <Text
+                style={tw.style("font-medium", { color: Colors.textPrimary })}
+              >
+                Selesai
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -231,29 +262,45 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const maxWithdrawal = currentBalance;
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw.style("flex-1", { backgroundColor: Colors.background })}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`p-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
         {/* Savings Info */}
-        <View style={tw`bg-white rounded-xl p-4 mb-6 border border-gray-200`}>
+        <View
+          style={tw.style("rounded-xl p-4 mb-6 border", {
+            backgroundColor: Colors.surface,
+            borderColor: Colors.border,
+          })}
+        >
           <View style={tw`flex-row items-center gap-3 mb-3`}>
             <View
-              style={tw`w-12 h-12 rounded-full bg-indigo-100 items-center justify-center`}
+              style={tw.style(
+                "w-12 h-12 rounded-full items-center justify-center",
+                {
+                  backgroundColor: Colors.accent + "20",
+                }
+              )}
             >
               <Ionicons
                 name={(saving.icon as any) || "wallet"}
                 size={24}
-                color="#4F46E5"
+                color={Colors.accent}
               />
             </View>
             <View style={tw`flex-1`}>
-              <Text style={tw`text-base font-semibold text-gray-900`}>
+              <Text
+                style={tw.style("text-base font-semibold", {
+                  color: Colors.textPrimary,
+                })}
+              >
                 {saving.name}
               </Text>
-              <Text style={tw`text-sm text-gray-600`}>
+              <Text
+                style={tw.style("text-sm", { color: Colors.textSecondary })}
+              >
                 Saldo saat ini: {formatCurrency(currentBalance)}
               </Text>
             </View>
@@ -262,19 +309,19 @@ const AddSavingsTransactionScreen: React.FC = () => {
           <View style={tw`flex-row gap-2`}>
             <TouchableOpacity
               style={[
-                tw`flex-1 py-2 rounded-lg items-center`,
+                tw.style("flex-1 py-2 rounded-lg items-center"),
                 transactionType === "deposit"
-                  ? tw`bg-emerald-600`
-                  : tw`bg-gray-100`,
+                  ? { backgroundColor: Colors.success }
+                  : { backgroundColor: Colors.surfaceLight },
               ]}
               onPress={() => setTransactionType("deposit")}
             >
               <Text
                 style={[
-                  tw`text-sm font-medium`,
+                  tw.style("text-sm font-medium"),
                   transactionType === "deposit"
-                    ? tw`text-white`
-                    : tw`text-gray-700`,
+                    ? { color: Colors.textPrimary }
+                    : { color: Colors.textSecondary },
                 ]}
               >
                 Setoran
@@ -283,22 +330,22 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
             <TouchableOpacity
               style={[
-                tw`flex-1 py-2 rounded-lg items-center`,
+                tw.style("flex-1 py-2 rounded-lg items-center"),
                 transactionType === "withdrawal"
-                  ? tw`bg-red-600`
-                  : tw`bg-gray-100`,
+                  ? { backgroundColor: Colors.error }
+                  : { backgroundColor: Colors.surfaceLight },
               ]}
               onPress={() => setTransactionType("withdrawal")}
               disabled={currentBalance <= 0}
             >
               <Text
                 style={[
-                  tw`text-sm font-medium`,
+                  tw.style("text-sm font-medium"),
                   transactionType === "withdrawal"
-                    ? tw`text-white`
+                    ? { color: Colors.textPrimary }
                     : currentBalance <= 0
-                    ? tw`text-gray-400`
-                    : tw`text-gray-700`,
+                    ? { color: Colors.textTertiary }
+                    : { color: Colors.textSecondary },
                 ]}
               >
                 Penarikan
@@ -309,17 +356,28 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
         {/* Amount Input */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style("text-sm font-medium mb-2", {
+              color: Colors.textPrimary,
+            })}
+          >
             Jumlah *
           </Text>
           <View
-            style={tw`flex-row items-center bg-white border border-gray-300 rounded-lg px-3`}
+            style={tw.style("flex-row items-center border rounded-lg px-3", {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+            })}
           >
-            <Text style={tw`text-gray-600 mr-2`}>Rp</Text>
+            <Text style={tw.style("mr-2", { color: Colors.textSecondary })}>
+              Rp
+            </Text>
             <TextInput
-              style={tw`flex-1 py-3 text-gray-800 text-lg`}
+              style={tw.style("flex-1 py-3 text-lg", {
+                color: Colors.textPrimary,
+              })}
               placeholder="0"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Colors.textTertiary}
               value={amount}
               onChangeText={handleAmountChange}
               keyboardType="numeric"
@@ -329,7 +387,11 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
           {/* Quick Amount Presets */}
           <View style={tw`mt-3`}>
-            <Text style={tw`text-xs text-gray-600 mb-2`}>Pilih cepat:</Text>
+            <Text
+              style={tw.style("text-xs mb-2", { color: Colors.textSecondary })}
+            >
+              Pilih cepat:
+            </Text>
             <View style={tw`flex-row flex-wrap gap-2`}>
               {transactionType === "deposit"
                 ? [
@@ -340,10 +402,19 @@ const AddSavingsTransactionScreen: React.FC = () => {
                   ].map((preset) => (
                     <TouchableOpacity
                       key={preset.label}
-                      style={tw`px-3 py-1.5 bg-gray-100 rounded-lg active:bg-gray-200`}
+                      style={tw.style(
+                        "px-3 py-1.5 rounded-lg active:opacity-80",
+                        {
+                          backgroundColor: Colors.surfaceLight,
+                        }
+                      )}
                       onPress={() => setAmount(preset.value)}
                     >
-                      <Text style={tw`text-xs text-gray-700`}>
+                      <Text
+                        style={tw.style("text-xs", {
+                          color: Colors.textSecondary,
+                        })}
+                      >
                         {preset.label}
                       </Text>
                     </TouchableOpacity>
@@ -360,9 +431,12 @@ const AddSavingsTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       key={preset.label}
                       style={[
-                        tw`px-3 py-1.5 bg-gray-100 rounded-lg active:bg-gray-200`,
-                        parseFloat(preset.value) > maxWithdrawal &&
-                          tw`opacity-50`,
+                        tw.style("px-3 py-1.5 rounded-lg active:opacity-80", {
+                          backgroundColor: Colors.surfaceLight,
+                        }),
+                        parseFloat(preset.value) > maxWithdrawal && {
+                          opacity: 0.5,
+                        },
                       ]}
                       onPress={() => {
                         if (parseFloat(preset.value) <= maxWithdrawal) {
@@ -371,7 +445,11 @@ const AddSavingsTransactionScreen: React.FC = () => {
                       }}
                       disabled={parseFloat(preset.value) > maxWithdrawal}
                     >
-                      <Text style={tw`text-xs text-gray-700`}>
+                      <Text
+                        style={tw.style("text-xs", {
+                          color: Colors.textSecondary,
+                        })}
+                      >
                         {preset.label}
                       </Text>
                     </TouchableOpacity>
@@ -381,39 +459,67 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
           {/* Balance Preview */}
           {amount && safeNumber(parseFloat(amount)) > 0 && (
-            <View style={tw`mt-4 bg-blue-50 p-3 rounded-lg`}>
+            <View
+              style={tw.style("mt-4 p-3 rounded-lg", {
+                backgroundColor: Colors.info + "20",
+              })}
+            >
               <View style={tw`flex-row justify-between items-center`}>
-                <Text style={tw`text-sm font-medium text-gray-700`}>
+                <Text
+                  style={tw.style("text-sm font-medium", {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Saldo saat ini:
                 </Text>
-                <Text style={tw`text-sm font-medium text-gray-900`}>
+                <Text
+                  style={tw.style("text-sm font-medium", {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {formatCurrency(currentBalance)}
                 </Text>
               </View>
 
               <View style={tw`flex-row justify-between items-center mt-1`}>
-                <Text style={tw`text-sm font-medium text-gray-700`}>
+                <Text
+                  style={tw.style("text-sm font-medium", {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {transactionType === "deposit" ? "+" : "-"}:
                 </Text>
                 <Text
-                  style={[
-                    tw`text-sm font-medium`,
+                  style={tw.style(
+                    "text-sm font-medium",
                     transactionType === "deposit"
-                      ? tw`text-emerald-600`
-                      : tw`text-red-600`,
-                  ]}
+                      ? { color: Colors.success }
+                      : { color: Colors.error }
+                  )}
                 >
                   {formatCurrency(safeNumber(parseFloat(amount)))}
                 </Text>
               </View>
 
-              <View style={tw`h-px bg-gray-300 my-2`} />
+              <View
+                style={tw.style("h-px my-2", {
+                  backgroundColor: Colors.border,
+                })}
+              />
 
               <View style={tw`flex-row justify-between items-center`}>
-                <Text style={tw`text-sm font-semibold text-gray-900`}>
+                <Text
+                  style={tw.style("text-sm font-semibold", {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   Saldo baru:
                 </Text>
-                <Text style={tw`text-sm font-semibold text-gray-900`}>
+                <Text
+                  style={tw.style("text-sm font-semibold", {
+                    color: Colors.textPrimary,
+                  })}
+                >
                   {formatCurrency(
                     transactionType === "deposit"
                       ? currentBalance + safeNumber(parseFloat(amount))
@@ -427,42 +533,70 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
         {/* Date Selection */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style("text-sm font-medium mb-2", {
+              color: Colors.textPrimary,
+            })}
+          >
             Tanggal Transaksi
           </Text>
           <TouchableOpacity
-            style={tw`flex-row items-center justify-between bg-white border border-gray-300 rounded-lg px-3 py-3`}
+            style={tw.style(
+              "flex-row items-center justify-between border rounded-lg px-3 py-3",
+              {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              }
+            )}
             onPress={openCalendar}
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
                 name="calendar-outline"
                 size={18}
-                color="#4F46E5"
+                color={Colors.accent}
                 style={tw`mr-2`}
               />
-              <Text style={tw`text-gray-800`}>{formatDisplayDate(date)}</Text>
+              <Text style={tw.style({ color: Colors.textPrimary })}>
+                {formatDisplayDate(date)}
+              </Text>
             </View>
-            <Ionicons name="chevron-down" size={18} color="#6B7280" />
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={Colors.textSecondary}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Note Input */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
+          <Text
+            style={tw.style("text-sm font-medium mb-2", {
+              color: Colors.textPrimary,
+            })}
+          >
             Catatan (Opsional)
           </Text>
           <TextInput
-            style={tw`bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-800 min-h-[80px]`}
+            style={tw.style("border rounded-lg px-3 py-3 min-h-[80px]", {
+              backgroundColor: Colors.surface,
+              borderColor: Colors.border,
+              color: Colors.textPrimary,
+            })}
             placeholder="Tambahkan catatan..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.textTertiary}
             value={note}
             onChangeText={setNote}
             multiline
             textAlignVertical="top"
             maxLength={100}
           />
-          <Text style={tw`text-xs text-gray-500 mt-1 text-right`}>
+          <Text
+            style={tw.style("text-xs mt-1 text-right", {
+              color: Colors.textSecondary,
+            })}
+          >
             {note.length}/100 karakter
           </Text>
         </View>
@@ -471,20 +605,26 @@ const AddSavingsTransactionScreen: React.FC = () => {
         <View style={tw`flex-row gap-3`}>
           <TouchableOpacity
             style={[
-              tw`flex-1 py-3 rounded-lg items-center`,
+              tw.style("flex-1 py-3 rounded-lg items-center"),
               !amount || loading
-                ? tw`bg-gray-400`
+                ? { backgroundColor: Colors.textTertiary }
                 : transactionType === "deposit"
-                ? tw`bg-emerald-600 active:bg-emerald-700`
-                : tw`bg-red-600 active:bg-red-700`,
+                ? { backgroundColor: Colors.success }
+                : { backgroundColor: Colors.error },
             ]}
             onPress={handleSubmit}
             disabled={!amount || loading}
           >
             {loading ? (
-              <Text style={tw`text-white font-medium`}>Menyimpan...</Text>
+              <Text
+                style={tw.style("font-medium", { color: Colors.textPrimary })}
+              >
+                Menyimpan...
+              </Text>
             ) : (
-              <Text style={tw`text-white font-medium`}>
+              <Text
+                style={tw.style("font-medium", { color: Colors.textPrimary })}
+              >
                 {transactionType === "deposit"
                   ? "Tambah Setoran"
                   : "Lakukan Penarikan"}
@@ -495,11 +635,17 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
         {/* Cancel Button */}
         <TouchableOpacity
-          style={tw`py-3 border border-gray-300 rounded-lg items-center mt-3 active:bg-gray-50`}
+          style={tw.style(
+            "py-3 border rounded-lg items-center mt-3 active:opacity-80",
+            {
+              borderColor: Colors.border,
+              backgroundColor: Colors.surface,
+            }
+          )}
           onPress={() => navigation.goBack()}
           disabled={loading}
         >
-          <Text style={tw`text-gray-700`}>Batal</Text>
+          <Text style={tw.style({ color: Colors.textPrimary })}>Batal</Text>
         </TouchableOpacity>
       </ScrollView>
 

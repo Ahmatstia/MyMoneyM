@@ -36,6 +36,10 @@ import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
 
+import NotesScreen from "../screens/Notes/NotesScreen";
+import NoteFormScreen from "../screens/Notes/NoteFormScreen";
+import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
+
 // TEMA NAVY BLUE YANG DISEMPURNAKAN
 const PRIMARY_COLOR = "#0F172A"; // Navy blue gelap (utama)
 const ACCENT_COLOR = "#22D3EE"; // Cyan terang (aksen)
@@ -61,12 +65,15 @@ type StackParamList = {
   Analytics: undefined;
   Calendar: undefined;
   Profile: undefined;
+  Notes: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
   AddBudget: { editMode?: boolean; budgetData?: any };
   AddSavings: { editMode?: boolean; savingsData?: any };
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
+  NoteForm: { noteId?: string };
+  NoteDetail: { noteId: string };
 };
 
 const Stack = createStackNavigator<StackParamList>();
@@ -117,6 +124,13 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       icon: "wallet-outline" as const,
       activeIcon: "wallet" as const,
       color: ACCENT_COLOR, // Cyan untuk tabungan
+    },
+    {
+      name: "Notes", // TAMBAHKAN INI
+      label: "Catatan",
+      icon: "document-text-outline" as const,
+      activeIcon: "document-text" as const,
+      color: "#EC4899", // Pink untuk catatan
     },
   ];
 
@@ -431,6 +445,30 @@ const MainStackNavigator = () => {
               ? "Tambah Setoran"
               : "Penarikan Dana",
         })}
+      />
+
+      <Stack.Screen
+        name="Notes"
+        component={NotesScreen}
+        options={{
+          title: "Catatan Finansial",
+        }}
+      />
+
+      <Stack.Screen
+        name="NoteForm"
+        component={NoteFormScreen}
+        options={({ route }: any) => ({
+          title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru",
+        })}
+      />
+
+      <Stack.Screen
+        name="NoteDetail"
+        component={NoteDetailScreen}
+        options={{
+          title: "Detail Catatan",
+        }}
       />
     </Stack.Navigator>
   );

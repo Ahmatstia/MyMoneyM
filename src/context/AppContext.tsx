@@ -11,6 +11,7 @@ import {
   Budget,
   Savings,
   SavingsTransaction,
+  Note,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -21,9 +22,6 @@ import {
   generateId,
 } from "../utils/idGenerator";
 
-/* ======================================================
-   CONTEXT TYPE - SIMPLE VERSION
-====================================================== */
 interface AppContextType {
   state: AppState;
   isLoading: boolean;
@@ -57,6 +55,14 @@ interface AppContextType {
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
+  // 🔹 NOTES (BARU)
+  addNote: (
+    note: Omit<Note, "id" | "createdAt" | "updatedAt">
+  ) => Promise<void>;
+  editNote: (id: string, updates: Partial<Note>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
+  getNote: (id: string) => Note | undefined;
+
   // 🔹 SYSTEM
   refreshData: () => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -65,22 +71,17 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-/* ======================================================
-   DEFAULT STATE
-====================================================== */
 const defaultAppState: AppState = {
   transactions: [],
   budgets: [],
   savings: [],
   savingsTransactions: [],
+  notes: [],
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
 };
 
-/* ======================================================
-   PROVIDER
-====================================================== */
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -88,10 +89,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const isMounted = useRef(true);
 
-  /* ======================================================
-     HELPER FUNCTIONS
-  ====================================================== */
-
+  // ========== HELPER FUNCTIONS ==========
   const isValidDateString = (dateStr: string): boolean => {
     try {
       if (!dateStr || typeof dateStr !== "string") return false;
@@ -99,6 +97,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       return !isNaN(date.getTime()) && dateStr.length === 10;
     } catch {
       return false;
+    }
+  };
+
+  const validateNote = (note: any): Note => {
+    try {
+      const validTypes = [
+        "financial_decision",
+        "expense_reflection",
+        "goal_progress",
+        "investment_idea",
+        "budget_analysis",
+        "general",
+      ];
+      const validMoods = ["positive", "neutral", "negative", "reflective"];
+      const validImpacts = ["positive", "neutral", "negative"];
+
+      return {
+        id: note.id || generateId(),
+        title: note.title?.trim() || "Catatan tanpa judul",
+        content: note.content?.trim() || "", // Boleh kosong
+        type: validTypes.includes(note.type) ? note.type : "general",
+        mood: validMoods.includes(note.mood) ? note.mood : undefined,
+        financialImpact: validImpacts.includes(note.financialImpact)
+          ? note.financialImpact
+          : undefined,
+        amount:
+          typeof note.amount === "number"
+            ? Math.max(0, note.amount)
+            : undefined,
+        category: note.category?.trim() || undefined,
+        tags: Array.isArray(note.tags)
+          ? note.tags
+              .filter((tag: any) => typeof tag === "string")
+              .map((tag: string) => tag.trim())
+          : [],
+        relatedTransactionIds: Array.isArray(note.relatedTransactionIds)
+          ? note.relatedTransactionIds
+          : [],
+        relatedSavingsIds: Array.isArray(note.relatedSavingsIds)
+          ? note.relatedSavingsIds
+          : [],
+        relatedBudgetIds: Array.isArray(note.relatedBudgetIds)
+          ? note.relatedBudgetIds
+          : [],
+        date: isValidDateString(note.date)
+          ? note.date
+          : new Date().toISOString().split("T")[0],
+        createdAt: note.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error validating note:", error);
+      const now = new Date().toISOString();
+      return {
+        id: generateId(),
+        title: "Catatan tanpa judul",
+        content: "",
+        type: "general",
+        tags: [],
+        date: now.split("T")[0],
+        createdAt: now,
+        updatedAt: now,
+      };
     }
   };
 
@@ -230,9 +291,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  /* ======================================================
-     LOAD INITIAL DATA
-  ====================================================== */
+  // ========== LOAD INITIAL DATA ==========
   useEffect(() => {
     console.log("🔄 AppProvider: Initial load started");
     loadInitialData();
@@ -250,8 +309,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("📥 Loading initial data...");
       const appData = await storageService.loadData();
 
+      // Pastikan semua properti ada termasuk notes
+      const completeAppData: AppState = {
+        ...defaultAppState,
+        ...appData,
+        notes: appData.notes || [],
+      };
+
       if (isMounted.current) {
-        setState(appData);
+        setState(completeAppData);
       }
     } catch (error) {
       console.error("❌ Error loading initial data:", error);
@@ -266,14 +332,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  /* ======================================================
-     SYSTEM FUNCTIONS
-  ====================================================== */
+  // ========== SYSTEM FUNCTIONS ==========
   const refreshData = async () => {
     try {
       const appData = await storageService.loadData();
+      const completeAppData: AppState = {
+        ...defaultAppState,
+        ...appData,
+        notes: appData.notes || [],
+      };
       if (isMounted.current) {
-        setState(appData);
+        setState(completeAppData);
       }
     } catch (error) {
       console.error("❌ Error refreshing data:", error);
@@ -295,9 +364,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.debugStorage();
   };
 
-  /* ======================================================
-     TRANSACTIONS
-  ====================================================== */
+  // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt">
   ) => {
@@ -308,9 +375,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     console.log(`➕ Adding transaction`);
-    console.log(
-      `   Amount: ${newTransaction.amount}, Type: ${newTransaction.type}`
-    );
 
     const updatedTransactions = [newTransaction, ...state.transactions];
     const totals = calculateTotals(updatedTransactions);
@@ -355,7 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteTransaction = async (id: string) => {
-    console.log(`🗑️  Deleting transaction: ${id}`);
+    console.log(`🗑️ Deleting transaction: ${id}`);
 
     const transactionToDelete = state.transactions.find((t) => t.id === id);
     if (!transactionToDelete) {
@@ -385,9 +449,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  /* ======================================================
-     BUDGETS
-  ====================================================== */
+  // ========== BUDGETS FUNCTIONS ==========
   const addBudget = async (
     budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
   ) => {
@@ -442,9 +504,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
   };
 
-  /* ======================================================
-     SAVINGS
-  ====================================================== */
+  // ========== SAVINGS FUNCTIONS ==========
   const addSavings = async (savings: Omit<Savings, "id" | "createdAt">) => {
     const newSavings: Savings = {
       ...savings,
@@ -562,42 +622,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  /* ======================================================
-     PROVIDER VALUE
-  ====================================================== */
+  // ========== NOTES FUNCTIONS (BARU) ==========
+  const addNote = async (
+    note: Omit<Note, "id" | "createdAt" | "updatedAt">
+  ) => {
+    console.log(`📝 Adding note: ${note.title}`);
+
+    const newNote: Note = validateNote({
+      ...note,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+    });
+
+    const updatedNotes = [newNote, ...state.notes];
+    const newState: AppState = {
+      ...state,
+      notes: updatedNotes,
+    };
+
+    setState(newState);
+    await storageService.saveData(newState);
+
+    console.log(`✅ Note added. Total: ${updatedNotes.length}`);
+  };
+
+  const editNote = async (id: string, updates: Partial<Note>) => {
+    console.log(`✏️ Editing note: ${id}`);
+
+    const noteToUpdate = state.notes.find((n) => n.id === id);
+    if (!noteToUpdate) {
+      console.warn("⚠️ Catatan tidak ditemukan untuk diedit");
+      return;
+    }
+
+    const updatedNote: Note = validateNote({
+      ...noteToUpdate,
+      ...updates,
+      id,
+    });
+
+    const updatedNotes = state.notes.map((n) =>
+      n.id === id ? updatedNote : n
+    );
+
+    const newState: AppState = {
+      ...state,
+      notes: updatedNotes,
+    };
+
+    setState(newState);
+    await storageService.saveData(newState);
+
+    console.log(`✅ Note updated: ${updatedNote.title}`);
+  };
+
+  const deleteNote = async (id: string) => {
+    console.log(`🗑️ Deleting note: ${id}`);
+
+    const updatedNotes = state.notes.filter((n) => n.id !== id);
+    const newState: AppState = {
+      ...state,
+      notes: updatedNotes,
+    };
+
+    setState(newState);
+    await storageService.saveData(newState);
+
+    console.log(`✅ Note deleted. Remaining: ${updatedNotes.length}`);
+  };
+
+  const getNote = (id: string): Note | undefined => {
+    return state.notes.find((note) => note.id === id);
+  };
+
+  // ========== PROVIDER VALUE ==========
+  const contextValue: AppContextType = {
+    state,
+    isLoading,
+
+    // Data Operations
+    addTransaction,
+    editTransaction,
+    deleteTransaction,
+    addBudget,
+    editBudget,
+    deleteBudget,
+    addSavings,
+    editSavings,
+    deleteSavings,
+    addSavingsTransaction,
+    getSavingsTransactions,
+
+    // Notes Operations
+    addNote,
+    editNote,
+    deleteNote,
+    getNote,
+
+    // System
+    refreshData,
+    clearAllData,
+    debugStorage,
+  };
+
   return (
-    <AppContext.Provider
-      value={{
-        state,
-        isLoading,
-
-        // Data Operations
-        addTransaction,
-        editTransaction,
-        deleteTransaction,
-        addBudget,
-        editBudget,
-        deleteBudget,
-        addSavings,
-        editSavings,
-        deleteSavings,
-        addSavingsTransaction,
-        getSavingsTransactions,
-
-        // System
-        refreshData,
-        clearAllData,
-        debugStorage,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 
-/* ======================================================
-   HOOK
-====================================================== */
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {

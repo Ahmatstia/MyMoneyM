@@ -13,6 +13,7 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
+import { Colors } from "../../theme/theme";
 
 const SavingsHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -35,16 +36,22 @@ const SavingsHistoryScreen: React.FC = () => {
 
   if (!saving) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-gray-50 p-4`}>
-        <Ionicons name="warning-outline" size={48} color="#EF4444" />
-        <Text style={tw`text-lg font-semibold text-gray-900 mt-4 mb-2`}>
+      <View
+        style={tw`flex-1 justify-center items-center bg-[${Colors.background}] p-4`}
+      >
+        <Ionicons name="warning-outline" size={48} color={Colors.error} />
+        <Text
+          style={tw`text-lg font-semibold text-[${Colors.textPrimary}] mt-4 mb-2`}
+        >
           Tabungan tidak ditemukan
         </Text>
         <TouchableOpacity
-          style={tw`mt-4 px-4 py-2 bg-indigo-600 rounded-lg`}
+          style={tw`mt-4 px-4 py-2 bg-[${Colors.accent}] rounded-lg`}
           onPress={() => navigation.goBack()}
         >
-          <Text style={tw`text-white font-medium`}>Kembali</Text>
+          <Text style={tw`text-[${Colors.textPrimary}] font-medium`}>
+            Kembali
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -99,31 +106,35 @@ const SavingsHistoryScreen: React.FC = () => {
         style={[
           tw`flex-row justify-between items-center py-4 px-4`,
           index !== filteredTransactions.length - 1 &&
-            tw`border-b border-gray-100`,
+            tw`border-b border-[${Colors.border}]`,
         ]}
       >
         <View style={tw`flex-row items-center gap-3`}>
           <View
             style={[
               tw`w-10 h-10 rounded-full items-center justify-center`,
-              isDeposit ? tw`bg-emerald-100` : tw`bg-red-100`,
+              isDeposit
+                ? tw`bg-[${Colors.success}]/20`
+                : tw`bg-[${Colors.error}]/20`,
             ]}
           >
             <Ionicons
               name={isDeposit ? "arrow-down" : "arrow-up"}
               size={18}
-              color={isDeposit ? "#10B981" : "#DC2626"}
+              color={isDeposit ? Colors.success : Colors.error}
             />
           </View>
           <View>
-            <Text style={tw`text-sm font-semibold text-gray-900`}>
+            <Text
+              style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}
+            >
               {isDeposit ? "Setoran" : "Penarikan"}
             </Text>
-            <Text style={tw`text-xs text-gray-500 mt-0.5`}>
+            <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-0.5`}>
               {formatDate(transaction.date)}
             </Text>
             {transaction.note && (
-              <Text style={tw`text-xs text-gray-400 mt-1`}>
+              <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-1`}>
                 {transaction.note}
               </Text>
             )}
@@ -134,12 +145,14 @@ const SavingsHistoryScreen: React.FC = () => {
           <Text
             style={[
               tw`text-base font-bold`,
-              isDeposit ? tw`text-emerald-600` : tw`text-red-600`,
+              isDeposit
+                ? tw`text-[${Colors.success}]`
+                : tw`text-[${Colors.error}]`,
             ]}
           >
             {isDeposit ? "+" : "-"} {formatCurrency(transaction.amount)}
           </Text>
-          <Text style={tw`text-xs text-gray-500 mt-1`}>
+          <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-1`}>
             Saldo: {formatCurrency(transaction.newBalance)}
           </Text>
         </View>
@@ -174,47 +187,57 @@ const SavingsHistoryScreen: React.FC = () => {
   }, [filteredTransactions]);
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={tw`flex-1 bg-[${Colors.background}]`}>
       {/* Header */}
-      <View style={tw`px-4 pt-3 pb-4 bg-white border-b border-gray-200`}>
+      <View
+        style={tw`px-4 pt-3 pb-4 bg-[${Colors.surface}] border-b border-[${Colors.border}]`}
+      >
         <View style={tw`flex-row items-center mb-4`}>
           <TouchableOpacity
-            style={tw`w-10 h-10 rounded-full bg-gray-100 justify-center items-center`}
+            style={tw`w-10 h-10 rounded-full bg-[${Colors.surfaceLight}] justify-center items-center`}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="chevron-back" size={24} color="#4F46E5" />
+            <Ionicons name="chevron-back" size={24} color={Colors.accent} />
           </TouchableOpacity>
           <View style={tw`ml-3 flex-1`}>
-            <Text style={tw`text-lg font-bold text-gray-900`}>
+            <Text style={tw`text-lg font-bold text-[${Colors.textPrimary}]`}>
               Riwayat Transaksi
             </Text>
-            <Text style={tw`text-sm text-gray-600`}>{saving.name}</Text>
+            <Text style={tw`text-sm text-[${Colors.textSecondary}]`}>
+              {saving.name}
+            </Text>
           </View>
         </View>
 
         {/* Stats */}
         <View style={tw`flex-row justify-between mb-3`}>
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-gray-600 mb-1`}>Total Setoran</Text>
-            <Text style={tw`text-base font-bold text-emerald-600`}>
+            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+              Total Setoran
+            </Text>
+            <Text style={tw`text-base font-bold text-[${Colors.success}]`}>
               {formatCurrency(stats.totalDeposits)}
             </Text>
           </View>
 
-          <View style={tw`w-px h-8 bg-gray-300`} />
+          <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
 
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-gray-600 mb-1`}>Total Penarikan</Text>
-            <Text style={tw`text-base font-bold text-red-600`}>
+            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+              Total Penarikan
+            </Text>
+            <Text style={tw`text-base font-bold text-[${Colors.error}]`}>
               {formatCurrency(stats.totalWithdrawals)}
             </Text>
           </View>
 
-          <View style={tw`w-px h-8 bg-gray-300`} />
+          <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
 
           <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-gray-600 mb-1`}>Transaksi</Text>
-            <Text style={tw`text-base font-bold text-gray-900`}>
+            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
+              Transaksi
+            </Text>
+            <Text style={tw`text-base font-bold text-[${Colors.textPrimary}]`}>
               {stats.totalTransactions}
             </Text>
           </View>
@@ -235,14 +258,18 @@ const SavingsHistoryScreen: React.FC = () => {
               key={tab.key}
               style={[
                 tw`px-3 py-1.5 rounded-full`,
-                filter === tab.key ? tw`bg-indigo-100` : tw`bg-gray-100`,
+                filter === tab.key
+                  ? tw`bg-[${Colors.accent}]/20`
+                  : tw`bg-[${Colors.surfaceLight}]`,
               ]}
               onPress={() => setFilter(tab.key as any)}
             >
               <Text
                 style={[
                   tw`text-xs font-medium`,
-                  filter === tab.key ? tw`text-indigo-700` : tw`text-gray-700`,
+                  filter === tab.key
+                    ? tw`text-[${Colors.accent}]`
+                    : tw`text-[${Colors.textSecondary}]`,
                 ]}
               >
                 {tab.label} ({tab.count})
@@ -262,11 +289,19 @@ const SavingsHistoryScreen: React.FC = () => {
       >
         {groupedTransactions.length === 0 ? (
           <View style={tw`items-center py-12`}>
-            <Ionicons name="receipt-outline" size={48} color="#9CA3AF" />
-            <Text style={tw`text-base font-semibold text-gray-900 mt-4 mb-2`}>
+            <Ionicons
+              name="receipt-outline"
+              size={48}
+              color={Colors.textTertiary}
+            />
+            <Text
+              style={tw`text-base font-semibold text-[${Colors.textPrimary}] mt-4 mb-2`}
+            >
               {filter === "all" ? "Belum ada transaksi" : "Tidak ada transaksi"}
             </Text>
-            <Text style={tw`text-sm text-gray-600 text-center px-8`}>
+            <Text
+              style={tw`text-sm text-[${Colors.textSecondary}] text-center px-8`}
+            >
               {filter === "all"
                 ? "Mulai dengan menambahkan setoran pertama"
                 : `Tidak ada transaksi dengan tipe "${filter}"`}
@@ -276,14 +311,16 @@ const SavingsHistoryScreen: React.FC = () => {
           groupedTransactions.map((group) => (
             <View key={group.date} style={tw`mb-4`}>
               {/* Date Header */}
-              <View style={tw`px-4 py-2 bg-gray-50`}>
-                <Text style={tw`text-sm font-medium text-gray-700`}>
+              <View style={tw`px-4 py-2 bg-[${Colors.surfaceLight}]`}>
+                <Text
+                  style={tw`text-sm font-medium text-[${Colors.textSecondary}]`}
+                >
                   {group.formattedDate}
                 </Text>
               </View>
 
               {/* Transactions for this date */}
-              <View style={tw`bg-white`}>
+              <View style={tw`bg-[${Colors.surface}]`}>
                 {group.transactions.map((transaction, index) =>
                   renderTransactionItem(transaction, index)
                 )}
@@ -294,9 +331,11 @@ const SavingsHistoryScreen: React.FC = () => {
       </ScrollView>
 
       {/* Bottom Action */}
-      <View style={tw`p-4 bg-white border-t border-gray-200`}>
+      <View
+        style={tw`p-4 bg-[${Colors.surface}] border-t border-[${Colors.border}]`}
+      >
         <TouchableOpacity
-          style={tw`bg-indigo-600 rounded-lg py-3 items-center`}
+          style={tw`bg-[${Colors.accent}] rounded-lg py-3 items-center`}
           onPress={() => {
             navigation.navigate("AddSavingsTransaction", {
               savingsId: saving.id,
@@ -304,7 +343,7 @@ const SavingsHistoryScreen: React.FC = () => {
             });
           }}
         >
-          <Text style={tw`text-white font-semibold`}>
+          <Text style={tw`text-[${Colors.textPrimary}] font-semibold`}>
             + Tambah Transaksi Baru
           </Text>
         </TouchableOpacity>
