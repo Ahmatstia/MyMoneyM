@@ -128,7 +128,7 @@ const OnboardingScreen = ({ navigation }: any) => {
     });
   };
 
-  // Di dalam handleFinish dan handleSkip:
+  // PERBAIKAN: Ganti reset dengan navigation.replace
   const handleFinish = async () => {
     try {
       await AsyncStorage.setItem("@onboarding_completed", "true");
@@ -136,20 +136,15 @@ const OnboardingScreen = ({ navigation }: any) => {
       console.error("Error saving onboarding status:", error);
     }
 
-    // NAVIGASI YANG PASTI BEKERJA
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "MainDrawer" }],
-    });
+    // NAVIGASI YANG BENAR
+    navigation.replace("MainDrawer");
   };
 
   const handleSkip = () => {
-    // Skip juga reset ke MainDrawer
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "MainDrawer" }],
-    });
+    // Skip juga navigasi yang sama
+    navigation.replace("MainDrawer");
   };
+
   const currentSlide = onboardingData[currentPage];
 
   const floatInterpolate = floatAnim.interpolate({

@@ -1,5 +1,3 @@
-// [file name]: src/navigation/AppNavigator.tsx
-// [file content begin]
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -58,7 +56,6 @@ const INFO_COLOR = "#3B82F6"; // Biru terang
 type StackParamList = {
   Onboarding: undefined;
   MainDrawer: undefined;
-  MainStack: undefined;
   Home: undefined;
   Transactions: undefined;
   Budget: undefined;
@@ -77,11 +74,13 @@ type StackParamList = {
   NoteDetail: { noteId: string };
 };
 
-const Stack = createStackNavigator<StackParamList>();
+// BUAT DUA STACK NAVIGATOR TERPISAH
+const MainStack = createStackNavigator<StackParamList>();
+const RootStack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
 
-// Custom Drawer Content
+// Custom Drawer Content (TIDAK BERUBAH)
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = [
     {
@@ -275,10 +274,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   );
 };
 
-// Stack Navigator untuk Main App
+// Main Stack Navigator untuk aplikasi (TIDAK BERUBAH)
 const MainStackNavigator = () => {
   return (
-    <Stack.Navigator
+    <MainStack.Navigator
       screenOptions={({ navigation, route }) => ({
         headerStyle: {
           backgroundColor: PRIMARY_COLOR,
@@ -338,7 +337,7 @@ const MainStackNavigator = () => {
       })}
     >
       {/* Main Screens */}
-      <Stack.Screen
+      <MainStack.Screen
         name="Home"
         component={HomeScreen}
         options={{
@@ -346,7 +345,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Transactions"
         component={TransactionsScreen}
         options={{
@@ -354,7 +353,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Analytics"
         component={AnalyticsScreen}
         options={{
@@ -362,7 +361,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Calendar"
         component={CalendarScreen}
         options={{
@@ -370,7 +369,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Budget"
         component={BudgetScreen}
         options={{
@@ -378,7 +377,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Savings"
         component={SavingsScreen}
         options={{
@@ -387,7 +386,7 @@ const MainStackNavigator = () => {
       />
 
       {/* PROFILE SCREEN */}
-      <Stack.Screen
+      <MainStack.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
@@ -396,7 +395,7 @@ const MainStackNavigator = () => {
       />
 
       {/* Detail Screens */}
-      <Stack.Screen
+      <MainStack.Screen
         name="SavingsDetail"
         component={SavingsDetailScreen}
         options={{
@@ -404,7 +403,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="SavingsHistory"
         component={SavingsHistoryScreen}
         options={{
@@ -413,7 +412,7 @@ const MainStackNavigator = () => {
       />
 
       {/* Add/Edit Screens */}
-      <Stack.Screen
+      <MainStack.Screen
         name="AddTransaction"
         component={AddTransactionScreen}
         options={({ route }: any) => ({
@@ -421,7 +420,7 @@ const MainStackNavigator = () => {
         })}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="AddBudget"
         component={AddBudgetScreen}
         options={({ route }: any) => ({
@@ -429,7 +428,7 @@ const MainStackNavigator = () => {
         })}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="AddSavings"
         component={AddSavingsScreen}
         options={({ route }: any) => ({
@@ -437,7 +436,7 @@ const MainStackNavigator = () => {
         })}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="AddSavingsTransaction"
         component={AddSavingsTransactionScreen}
         options={({ route }: any) => ({
@@ -448,7 +447,7 @@ const MainStackNavigator = () => {
         })}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="Notes"
         component={NotesScreen}
         options={{
@@ -456,7 +455,7 @@ const MainStackNavigator = () => {
         }}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="NoteForm"
         component={NoteFormScreen}
         options={({ route }: any) => ({
@@ -464,18 +463,18 @@ const MainStackNavigator = () => {
         })}
       />
 
-      <Stack.Screen
+      <MainStack.Screen
         name="NoteDetail"
         component={NoteDetailScreen}
         options={{
           title: "Detail Catatan",
         }}
       />
-    </Stack.Navigator>
+    </MainStack.Navigator>
   );
 };
 
-// Drawer Navigator
+// Drawer Navigator (TIDAK BERUBAH)
 const DrawerNavigator = () => (
   <Drawer.Navigator
     drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -494,7 +493,7 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// Main App Navigator
+// Root App Navigator - INI YANG DIPERBAIKI
 const AppNavigator: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -503,7 +502,7 @@ const AppNavigator: React.FC = () => {
       try {
         const value = await AsyncStorage.getItem("@onboarding_completed");
         console.log("DEBUG: Onboarding status =", value);
-        setIsFirstLaunch(value === null); // null = true, "true" = false
+        setIsFirstLaunch(value !== "true"); // true jika belum selesai
       } catch (error) {
         console.error(error);
         setIsFirstLaunch(true);
@@ -525,13 +524,16 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isFirstLaunch ? "Onboarding" : "MainDrawer"}
+      >
         {isFirstLaunch ? (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        ) : (
-          <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-        )}
-      </Stack.Navigator>
+          <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
+        ) : null}
+
+        <RootStack.Screen name="MainDrawer" component={DrawerNavigator} />
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 };

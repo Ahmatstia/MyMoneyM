@@ -1,3 +1,0 @@
-@echo off
-echo 📱 Starting Pixel 4 Emulator...
-"C:\Users\ACER\AppData\Local\Android\Sdk\emulator\emulator.exe" @Pixel_4

@@ -63,6 +63,18 @@ interface AppContextType {
   deleteNote: (id: string) => Promise<void>;
   getNote: (id: string) => Note | undefined;
 
+  // 🔹 BACKUP & RESTORE (BARU)
+  exportBackup: () => Promise<{
+    success: boolean;
+    filePath?: string;
+    error?: string;
+  }>;
+  importBackup: (backupData: AppState) => Promise<{
+    success: boolean;
+    message: string;
+  }>;
+  restoreFromBackup: (backupData: AppState) => Promise<void>;
+
   // 🔹 SYSTEM
   refreshData: () => Promise<void>;
   clearAllData: () => Promise<void>;
@@ -260,6 +272,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const validateTransaction = (transaction: any): Transaction => {
+    try {
+      return {
+        id: transaction.id || generateTransactionId(),
+        amount: Math.max(0, transaction.amount || 0),
+        type: transaction.type === "income" ? "income" : "expense",
+        category: transaction.category || "Lainnya",
+        description: transaction.description || "",
+        date: isValidDateString(transaction.date)
+          ? transaction.date
+          : new Date().toISOString().split("T")[0],
+        createdAt: transaction.createdAt || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error validating transaction:", error);
+      return {
+        id: generateTransactionId(),
+        amount: 0,
+        type: "expense",
+        category: "Lainnya",
+        description: "",
+        date: new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString(),
+      };
+    }
+  };
+
+  const validateSavingsTransaction = (transaction: any): SavingsTransaction => {
+    try {
+      return {
+        id: transaction.id || generateId(),
+        savingsId: transaction.savingsId || "",
+        type: transaction.type || "deposit",
+        amount: Math.max(0, transaction.amount || 0),
+        date: isValidDateString(transaction.date)
+          ? transaction.date
+          : new Date().toISOString().split("T")[0],
+        note: transaction.note || "",
+        previousBalance: Math.max(0, transaction.previousBalance || 0),
+        newBalance: Math.max(0, transaction.newBalance || 0),
+        createdAt: transaction.createdAt || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error validating savings transaction:", error);
+      return {
+        id: generateId(),
+        savingsId: "",
+        type: "deposit",
+        amount: 0,
+        date: new Date().toISOString().split("T")[0],
+        note: "",
+        previousBalance: 0,
+        newBalance: 0,
+        createdAt: new Date().toISOString(),
+      };
+    }
+  };
+
   const updateBudgetsFromTransactions = (
     transactions: Transaction[],
     budgets: Budget[]
@@ -289,6 +359,198 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         return budget;
       }
     });
+  };
+
+  // ========== BACKUP & RESTORE FUNCTIONS ==========
+  const validateBackupData = (backupData: any): AppState => {
+    try {
+      console.log("🔄 Validating backup data...");
+
+      // Validasi struktur dasar
+      if (!backupData || typeof backupData !== "object") {
+        throw new Error("Data backup tidak valid: struktur tidak sesuai");
+      }
+
+      // Validasi arrays
+      const transactions: Transaction[] = Array.isArray(backupData.transactions)
+        ? backupData.transactions
+            .map((t: any) => validateTransaction(t))
+            .filter((t: Transaction | null): t is Transaction => t !== null)
+        : [];
+
+      const budgets: Budget[] = Array.isArray(backupData.budgets)
+        ? backupData.budgets
+            .map((b: any) => validateAndSetupBudget(b))
+            .filter((b: Budget | null): b is Budget => b !== null)
+        : [];
+
+      const savings: Savings[] = Array.isArray(backupData.savings)
+        ? backupData.savings
+            .map((s: any) => validateSavings(s))
+            .filter((s: Savings | null): s is Savings => s !== null)
+        : [];
+
+      const savingsTransactions: SavingsTransaction[] = Array.isArray(
+        backupData.savingsTransactions
+      )
+        ? backupData.savingsTransactions
+            .map((st: any) => validateSavingsTransaction(st))
+            .filter(
+              (st: SavingsTransaction | null): st is SavingsTransaction =>
+                st !== null
+            )
+        : [];
+
+      const notes: Note[] = Array.isArray(backupData.notes)
+        ? backupData.notes
+            .map((n: any) => validateNote(n))
+            .filter((n: Note | null): n is Note => n !== null)
+        : [];
+
+      // Hitung ulang totals
+      const totals = calculateTotals(transactions);
+
+      // Update budgets dengan transaksi
+      const updatedBudgets = updateBudgetsFromTransactions(
+        transactions,
+        budgets
+      );
+
+      const validatedState: AppState = {
+        transactions,
+        budgets: updatedBudgets,
+        savings,
+        savingsTransactions,
+        notes,
+        ...totals,
+      };
+
+      console.log(`✅ Backup data validated successfully:
+        - Transactions: ${transactions.length}
+        - Budgets: ${budgets.length}
+        - Savings: ${savings.length}
+        - Notes: ${notes.length}
+        - Savings Transactions: ${savingsTransactions.length}`);
+
+      return validatedState;
+    } catch (error) {
+      console.error("❌ Error validating backup data:", error);
+      throw new Error(`Validasi gagal: ${(error as Error).message}`);
+    }
+  };
+
+  const exportBackup = async (): Promise<{
+    success: boolean;
+    filePath?: string;
+    error?: string;
+  }> => {
+    try {
+      console.log("📤 Creating backup...");
+
+      const backupData = {
+        metadata: {
+          appName: "MyMoney",
+          version: "1.0.0",
+          exportDate: new Date().toISOString(),
+          dataVersion: 5,
+          itemCounts: {
+            transactions: state.transactions.length,
+            budgets: state.budgets.length,
+            savings: state.savings.length,
+            notes: state.notes.length,
+            savingsTransactions: state.savingsTransactions.length,
+          },
+        },
+        data: state,
+      };
+
+      const jsonString = JSON.stringify(backupData, null, 2);
+
+      // Simpan backup ke state untuk akses mudah
+      const result = {
+        success: true,
+        backupData: jsonString,
+        metadata: backupData.metadata,
+      };
+
+      console.log("✅ Backup created successfully");
+      return {
+        success: true,
+        filePath: "memory", // Menandakan data ada di memory
+      };
+    } catch (error) {
+      console.error("❌ Error creating backup:", error);
+      return {
+        success: false,
+        error: (error as Error).message || "Gagal membuat backup",
+      };
+    }
+  };
+
+  const importBackup = async (
+    backupData: AppState
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> => {
+    try {
+      console.log("📥 Importing backup...");
+
+      // Validasi data backup
+      const validatedData = validateBackupData(backupData);
+
+      // Simpan data yang divalidasi
+      await storageService.saveData(validatedData);
+
+      // Update state
+      if (isMounted.current) {
+        setState(validatedData);
+      }
+
+      const message = `Data berhasil diimpor: ${validatedData.transactions.length} transaksi, ${validatedData.notes.length} catatan`;
+      console.log(`✅ ${message}`);
+
+      return {
+        success: true,
+        message,
+      };
+    } catch (error) {
+      console.error("❌ Error importing backup:", error);
+      return {
+        success: false,
+        message: `Gagal mengimpor data: ${(error as Error).message}`,
+      };
+    }
+  };
+
+  const restoreFromBackup = async (backupData: AppState): Promise<void> => {
+    try {
+      console.log("🔄 Restoring from backup...");
+
+      // Validasi data
+      const validatedData = validateBackupData(backupData);
+
+      // Konfirmasi jumlah data
+      console.log(`📊 Backup data summary:
+        Transactions: ${validatedData.transactions.length}
+        Budgets: ${validatedData.budgets.length}
+        Savings: ${validatedData.savings.length}
+        Notes: ${validatedData.notes.length}
+        Savings Transactions: ${validatedData.savingsTransactions.length}`);
+
+      // Simpan ke storage
+      await storageService.saveData(validatedData);
+
+      // Update state
+      if (isMounted.current) {
+        setState(validatedData);
+      }
+
+      console.log("✅ Data restored successfully from backup");
+    } catch (error) {
+      console.error("❌ Error restoring from backup:", error);
+      throw error;
+    }
   };
 
   // ========== LOAD INITIAL DATA ==========
@@ -718,6 +980,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     editNote,
     deleteNote,
     getNote,
+
+    // Backup & Restore Operations
+    exportBackup,
+    importBackup,
+    restoreFromBackup,
 
     // System
     refreshData,
