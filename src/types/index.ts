@@ -86,6 +86,40 @@ export interface AppState {
   balance: number;
 }
 
+export interface FinancialHealthScore {
+  overallScore: number;
+  category: string;
+  color: string;
+  factors: {
+    savingsRate: {
+      score: number;
+      weight: number;
+      status: "good" | "warning" | "poor";
+    };
+    budgetAdherence: {
+      score: number;
+      weight: number;
+      status: "good" | "warning" | "poor";
+    };
+    emergencyFund: {
+      score: number;
+      weight: number;
+      status: "good" | "warning" | "poor";
+    };
+    expenseControl: {
+      score: number;
+      weight: number;
+      status: "good" | "warning" | "poor";
+    };
+    goalProgress: {
+      score: number;
+      weight: number;
+      status: "good" | "warning" | "poor";
+    };
+  };
+  recommendations: string[];
+}
+
 export type RootStackParamList = {
   Home: undefined;
   MainTabs: undefined;

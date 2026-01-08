@@ -14,6 +14,7 @@ import {
   calculateBudgetAnalytics,
   calculateSavingsAnalytics,
   generateFinancialInsights,
+  calculateFinancialHealthScore,
 } from "../../utils/analytics";
 import {
   formatCurrency,
@@ -34,8 +35,8 @@ const AnalyticsScreen: React.FC = () => {
     "month"
   );
   const [activeTab, setActiveTab] = useState<
-    "summary" | "trends" | "categories" | "insights"
-  >("summary");
+    "health" | "summary" | "trends" | "categories" | "insights"
+  >("health");
 
   // Safe icon helper
   const getSafeIcon = (iconName: string): SafeIconName => {
@@ -46,114 +47,238 @@ const AnalyticsScreen: React.FC = () => {
     return defaultIcon;
   };
 
-  // Analytics calculations with safe values
+  // ==================== SAFE ANALYTICS CALCULATIONS ====================
   const transactionAnalytics = useMemo(() => {
-    const analytics = calculateTransactionAnalytics(
-      state.transactions,
-      timeRange
-    );
-    return {
-      ...analytics,
-      totalIncome: safeNumber(analytics.totalIncome),
-      totalExpense: safeNumber(analytics.totalExpense),
-      netSavings: safeNumber(analytics.netSavings),
-      savingsRate: safeNumber(analytics.savingsRate),
-      avgDailyExpense: safeNumber(analytics.avgDailyExpense),
-    };
+    try {
+      const analytics = calculateTransactionAnalytics(
+        state.transactions || [],
+        timeRange
+      );
+
+      return {
+        ...analytics,
+        totalIncome: safeNumber(analytics.totalIncome),
+        totalExpense: safeNumber(analytics.totalExpense),
+        netSavings: safeNumber(analytics.netSavings),
+        savingsRate: safeNumber(analytics.savingsRate),
+        avgDailyExpense: safeNumber(analytics.avgDailyExpense),
+        transactionCount: analytics.transactionCount || 0,
+        incomeTransactionCount: analytics.incomeTransactionCount || 0,
+        expenseTransactionCount: analytics.expenseTransactionCount || 0,
+        topCategories: analytics.topCategories || [],
+        dailyTrends: analytics.dailyTrends || [],
+      };
+    } catch (error) {
+      console.error("Error calculating transaction analytics:", error);
+      return {
+        totalIncome: 0,
+        totalExpense: 0,
+        netSavings: 0,
+        savingsRate: 0,
+        avgDailyExpense: 0,
+        transactionCount: 0,
+        incomeTransactionCount: 0,
+        expenseTransactionCount: 0,
+        topCategories: [],
+        dailyTrends: [],
+        timeRange,
+        startDate: new Date(),
+        endDate: new Date(),
+      };
+    }
   }, [state.transactions, timeRange]);
 
-  const budgetAnalytics = useMemo(
-    () => calculateBudgetAnalytics(state.budgets),
-    [state.budgets]
-  );
+  const budgetAnalytics = useMemo(() => {
+    try {
+      return calculateBudgetAnalytics(state.budgets || []);
+    } catch (error) {
+      console.error("Error calculating budget analytics:", error);
+      return {
+        totalBudget: 0,
+        totalSpent: 0,
+        utilizationRate: 0,
+        overBudgetCount: 0,
+        underBudgetCount: 0,
+        budgetsAtRisk: [],
+      };
+    }
+  }, [state.budgets]);
 
-  const savingsAnalytics = useMemo(
-    () => calculateSavingsAnalytics(state.savings),
-    [state.savings]
-  );
+  const savingsAnalytics = useMemo(() => {
+    try {
+      return calculateSavingsAnalytics(state.savings || []);
+    } catch (error) {
+      console.error("Error calculating savings analytics:", error);
+      return {
+        totalTarget: 0,
+        totalCurrent: 0,
+        overallProgress: 0,
+        completedSavings: 0,
+        activeSavings: 0,
+        nearingCompletion: [],
+      };
+    }
+  }, [state.savings]);
 
-  const insights = useMemo(
-    () =>
-      generateFinancialInsights(
+  // ==================== FINANCIAL HEALTH SCORE ====================
+  const financialHealthScore = useMemo(() => {
+    try {
+      return calculateFinancialHealthScore(
         transactionAnalytics,
         budgetAnalytics,
         savingsAnalytics
-      ),
-    [transactionAnalytics, budgetAnalytics, savingsAnalytics]
-  );
+      );
+    } catch (error) {
+      console.error("Error calculating health score:", error);
+      return {
+        overallScore: 50,
+        category: "Cukup",
+        color: Colors.warning,
+        factors: {
+          savingsRate: { score: 50, weight: 0.3, status: "warning" },
+          budgetAdherence: { score: 50, weight: 0.25, status: "warning" },
+          emergencyFund: { score: 50, weight: 0.2, status: "warning" },
+          expenseControl: { score: 50, weight: 0.15, status: "warning" },
+          goalProgress: { score: 50, weight: 0.1, status: "warning" },
+        },
+        recommendations: [
+          "Mulai dengan mencatat semua transaksi secara rutin",
+          "Buat anggaran untuk kategori pengeluaran utama",
+        ],
+      };
+    }
+  }, [transactionAnalytics, budgetAnalytics, savingsAnalytics]);
 
-  // Calculate vs last month (comparative analysis) with safe values
+  const insights = useMemo(() => {
+    try {
+      return generateFinancialInsights(
+        transactionAnalytics,
+        budgetAnalytics,
+        savingsAnalytics
+      );
+    } catch (error) {
+      console.error("Error generating insights:", error);
+      return [
+        {
+          type: "info",
+          title: "Data Dimuat",
+          message: "Analitik keuangan Anda sedang diproses",
+          icon: "information-circle",
+          color: Colors.info,
+        },
+      ];
+    }
+  }, [transactionAnalytics, budgetAnalytics, savingsAnalytics]);
+
+  // ==================== SAFE COMPARATIVE DATA ====================
   const getComparativeData = () => {
-    const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    try {
+      const now = new Date();
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const lastMonthTransactions = state.transactions.filter((t) => {
-      try {
-        const transDate = new Date(t.date);
-        if (isNaN(transDate.getTime())) return false;
+      const lastMonthTransactions = (state.transactions || []).filter((t) => {
+        try {
+          if (!t || !t.date) return false;
+          const transDate = new Date(t.date);
+          if (isNaN(transDate.getTime())) return false;
 
-        return (
-          transDate.getMonth() === lastMonth.getMonth() &&
-          transDate.getFullYear() === lastMonth.getFullYear()
-        );
-      } catch (error) {
-        return false;
-      }
-    });
+          return (
+            transDate.getMonth() === lastMonth.getMonth() &&
+            transDate.getFullYear() === lastMonth.getFullYear()
+          );
+        } catch (error) {
+          return false;
+        }
+      });
 
-    const lastMonthAnalytics = calculateTransactionAnalytics(
-      lastMonthTransactions,
-      "month"
-    );
+      const lastMonthAnalytics = calculateTransactionAnalytics(
+        lastMonthTransactions,
+        "month"
+      );
 
-    const incomeChange = safeNumber(
-      transactionAnalytics.totalIncome - lastMonthAnalytics.totalIncome
-    );
-    const expenseChange = safeNumber(
-      transactionAnalytics.totalExpense - lastMonthAnalytics.totalExpense
-    );
-    const savingsRateChange = safeNumber(
-      transactionAnalytics.savingsRate - lastMonthAnalytics.savingsRate
-    );
+      const safeCurrentIncome = safeNumber(transactionAnalytics.totalIncome);
+      const safeCurrentExpense = safeNumber(transactionAnalytics.totalExpense);
+      const safeCurrentSavingsRate = safeNumber(
+        transactionAnalytics.savingsRate
+      );
 
-    return {
-      current: transactionAnalytics,
-      previous: {
-        ...lastMonthAnalytics,
-        savingsRate: safeNumber(lastMonthAnalytics.savingsRate),
-      },
-      incomeChange,
-      expenseChange,
-      savingsRateChange,
-    };
+      const safeLastMonthIncome = safeNumber(lastMonthAnalytics.totalIncome);
+      const safeLastMonthExpense = safeNumber(lastMonthAnalytics.totalExpense);
+      const safeLastMonthSavingsRate = safeNumber(
+        lastMonthAnalytics.savingsRate
+      );
+
+      return {
+        current: {
+          totalIncome: safeCurrentIncome,
+          totalExpense: safeCurrentExpense,
+          savingsRate: safeCurrentSavingsRate,
+        },
+        previous: {
+          totalIncome: safeLastMonthIncome,
+          totalExpense: safeLastMonthExpense,
+          savingsRate: safeLastMonthSavingsRate,
+        },
+        incomeChange: safeCurrentIncome - safeLastMonthIncome,
+        expenseChange: safeCurrentExpense - safeLastMonthExpense,
+        savingsRateChange: safeCurrentSavingsRate - safeLastMonthSavingsRate,
+      };
+    } catch (error) {
+      console.error("Error in getComparativeData:", error);
+      return {
+        current: {
+          totalIncome: 0,
+          totalExpense: 0,
+          savingsRate: 0,
+        },
+        previous: {
+          totalIncome: 0,
+          totalExpense: 0,
+          savingsRate: 0,
+        },
+        incomeChange: 0,
+        expenseChange: 0,
+        savingsRateChange: 0,
+      };
+    }
   };
 
   const comparativeData = getComparativeData();
 
-  // Cash flow forecast with safe values
+  // ==================== SAFE CASH FLOW FORECAST ====================
   const getCashFlowForecast = () => {
-    const dailyAvgSpending = safeNumber(transactionAnalytics.avgDailyExpense);
-    const daysRemaining = Math.max(0, 30 - new Date().getDate());
-    const forecast = safeNumber(
-      transactionAnalytics.netSavings - dailyAvgSpending * daysRemaining
-    );
+    try {
+      const dailyAvgSpending = safeNumber(transactionAnalytics.avgDailyExpense);
+      const daysRemaining = Math.max(0, 30 - new Date().getDate());
+      const forecast = safeNumber(
+        transactionAnalytics.netSavings - dailyAvgSpending * daysRemaining
+      );
 
-    return {
-      dailyAvg: dailyAvgSpending,
-      daysRemaining,
-      forecast,
-      status:
-        forecast > 100000 ? "safe" : forecast > -100000 ? "warning" : "danger",
-    };
+      return {
+        dailyAvg: dailyAvgSpending,
+        daysRemaining,
+        forecast,
+        status:
+          forecast > 100000
+            ? "safe"
+            : forecast > -100000
+            ? "warning"
+            : "danger",
+      };
+    } catch (error) {
+      console.error("Error in cash flow forecast:", error);
+      return {
+        dailyAvg: 0,
+        daysRemaining: 0,
+        forecast: 0,
+        status: "safe",
+      };
+    }
   };
 
   const cashFlowForecast = getCashFlowForecast();
 
-  // Type-safe category benchmarks
-  type CategoryPercentages = {
-    [key: string]: number;
-  };
-
+  // ==================== SAFE CATEGORY BENCHMARKS ====================
   type BenchmarkItem = {
     category: string;
     yourPercentage: number;
@@ -163,131 +288,53 @@ const AnalyticsScreen: React.FC = () => {
   };
 
   const getCategoryBenchmarks = (): BenchmarkItem[] => {
-    const averagePercentages: CategoryPercentages = {
-      Makanan: 30,
-      Transportasi: 20,
-      Belanja: 15,
-      Hiburan: 10,
-      Tagihan: 15,
-      Lainnya: 10,
-    };
+    try {
+      const averagePercentages: Record<string, number> = {
+        Makanan: 30,
+        Transportasi: 20,
+        Belanja: 15,
+        Hiburan: 10,
+        Tagihan: 15,
+        Lainnya: 10,
+      };
 
-    return transactionAnalytics.topCategories.map(
-      ([category, amount]): BenchmarkItem => {
-        const yourPercentage = getSafePercentage(
-          amount,
-          transactionAnalytics.totalExpense
-        );
-        const avgPercentage = averagePercentages[category] || 15;
-        const difference = safeNumber(yourPercentage - avgPercentage);
+      const totalExpense = safeNumber(transactionAnalytics.totalExpense);
+      if (totalExpense <= 0) return [];
 
-        let status: "above" | "below" | "normal";
-        if (difference > 5) {
-          status = "above";
-        } else if (difference < -5) {
-          status = "below";
-        } else {
-          status = "normal";
+      return (transactionAnalytics.topCategories || []).map(
+        ([category, amount]): BenchmarkItem => {
+          const safeAmount = safeNumber(amount);
+          const yourPercentage = getSafePercentage(safeAmount, totalExpense);
+          const avgPercentage = averagePercentages[category] || 15;
+          const difference = safeNumber(yourPercentage - avgPercentage);
+
+          let status: "above" | "below" | "normal";
+          if (difference > 5) {
+            status = "above";
+          } else if (difference < -5) {
+            status = "below";
+          } else {
+            status = "normal";
+          }
+
+          return {
+            category,
+            yourPercentage,
+            avgPercentage,
+            difference,
+            status,
+          };
         }
-
-        return {
-          category,
-          yourPercentage,
-          avgPercentage,
-          difference,
-          status,
-        };
-      }
-    );
+      );
+    } catch (error) {
+      console.error("Error in category benchmarks:", error);
+      return [];
+    }
   };
 
   const categoryBenchmarks = getCategoryBenchmarks();
 
-  // Quick wins analysis
-  type QuickWin = {
-    icon: SafeIconName;
-    title: string;
-    description: string;
-    tip: string;
-    potential: number;
-  };
-
-  const getQuickWins = (): QuickWin[] => {
-    const wins: QuickWin[] = [];
-
-    // Check for food delivery spending
-    const foodSpending = transactionAnalytics.topCategories.find(
-      ([cat]) => cat === "Makanan"
-    );
-    if (foodSpending && foodSpending[1] > 1000000) {
-      const potentialSavings = safeNumber(Math.round(foodSpending[1] * 0.3));
-      wins.push({
-        icon: "restaurant-outline",
-        title: "Pengeluaran Makan",
-        description: `Rp ${(foodSpending[1] / 1000000).toFixed(1)}jt/bulan`,
-        tip: `Masak 3x/minggu bisa hemat Rp ${(potentialSavings / 1000).toFixed(
-          0
-        )}rb`,
-        potential: potentialSavings,
-      });
-    }
-
-    // Check subscriptions
-    const subscriptionCount = state.transactions.filter(
-      (t) =>
-        t.category === "Hiburan" &&
-        t.description.toLowerCase().includes("langganan")
-    ).length;
-
-    if (subscriptionCount > 2) {
-      const potentialSavings = safeNumber(150000 * subscriptionCount);
-      wins.push({
-        icon: "play-circle-outline",
-        title: "Langganan Streaming",
-        description: `${subscriptionCount} layanan aktif`,
-        tip: `Rotasi layanan bisa hemat Rp ${(potentialSavings / 1000).toFixed(
-          0
-        )}rb/bulan`,
-        potential: potentialSavings,
-      });
-    }
-
-    return wins.slice(0, 3);
-  };
-
-  const quickWins = getQuickWins();
-
-  // Budget optimization suggestions
-  type BudgetSuggestion = {
-    message: string;
-    totalOver: number;
-    suggestion: string;
-  } | null;
-
-  const getBudgetSuggestions = (): BudgetSuggestion => {
-    if (
-      !budgetAnalytics.budgetsAtRisk ||
-      budgetAnalytics.budgetsAtRisk.length === 0
-    )
-      return null;
-
-    const totalOver = budgetAnalytics.budgetsAtRisk.reduce((sum, b) => {
-      const over = safeNumber(b.spent) - safeNumber(b.limit);
-      return over > 0 ? sum + over : sum;
-    }, 0);
-
-    if (totalOver === 0) return null;
-
-    return {
-      message: `${budgetAnalytics.budgetsAtRisk.length} anggaran melebihi limit`,
-      totalOver,
-      suggestion: "Tinjau ulang limit anggaran atau kurangi pengeluaran",
-    };
-  };
-
-  const budgetSuggestion = getBudgetSuggestions();
-
-  // Export function
+  // ==================== EXPORT FUNCTION ====================
   const handleExport = async () => {
     try {
       const summary = `
@@ -298,12 +345,8 @@ PENGELUARAN: ${formatCurrency(transactionAnalytics.totalExpense)}
 TABUNGAN BERSIH: ${formatCurrency(transactionAnalytics.netSavings)}
 RASIO TABUNGAN: ${safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
 
-📈 TREN: ${comparativeData.incomeChange >= 0 ? "+" : ""}${formatCurrency(
-        comparativeData.incomeChange
-      )} vs bulan lalu
-${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
-        comparativeData.savingsRateChange >= 0 ? "naik" : "turun"
-      } ${Math.abs(safeNumber(comparativeData.savingsRateChange)).toFixed(1)}%
+📈 SKOR KESEHATAN KEUANGAN: ${financialHealthScore.overallScore}/100
+Kategori: ${financialHealthScore.category}
 
 💡 INSIGHT: ${insights[0]?.message || "Keuangan dalam kondisi stabil"}
 
@@ -327,28 +370,31 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
     }
   };
 
-  // Format change indicator
+  // ==================== HELPER FUNCTIONS ====================
   const formatChange = (value: number, isPercent = false) => {
-    const safeValue = safeNumber(value);
-    const absValue = Math.abs(safeValue);
-    const prefix = safeValue >= 0 ? "+" : "-";
+    try {
+      const safeValue = safeNumber(value);
+      const absValue = Math.abs(safeValue);
+      const prefix = safeValue >= 0 ? "+" : "-";
 
-    if (isPercent) {
-      return `${prefix}${absValue.toFixed(1)}%`;
+      if (isPercent) {
+        return `${prefix}${absValue.toFixed(1)}%`;
+      }
+
+      if (absValue >= 1000000) {
+        return `${prefix}Rp ${(absValue / 1000000).toFixed(1)}jt`;
+      }
+
+      if (absValue >= 1000) {
+        return `${prefix}Rp ${(absValue / 1000).toFixed(0)}rb`;
+      }
+
+      return `${prefix}Rp ${absValue}`;
+    } catch (error) {
+      return "+Rp 0";
     }
-
-    if (absValue >= 1000000) {
-      return `${prefix}Rp ${(absValue / 1000000).toFixed(1)}jt`;
-    }
-
-    if (absValue >= 1000) {
-      return `${prefix}Rp ${(absValue / 1000).toFixed(0)}rb`;
-    }
-
-    return `${prefix}Rp ${absValue}`;
   };
 
-  // Render category benchmark item
   const renderBenchmarkItem = (item: BenchmarkItem) => (
     <View key={item.category} style={tw`mb-3`}>
       <View style={tw`flex-row justify-between items-center mb-1`}>
@@ -417,6 +463,234 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
       </View>
     </View>
   );
+
+  // ==================== RENDER HEALTH SCORE ====================
+  const renderHealthScore = () => {
+    const { overallScore, category, color, factors, recommendations } =
+      financialHealthScore;
+
+    const getScoreDescription = (score: number) => {
+      if (score >= 80) return "Sangat Sehat";
+      if (score >= 60) return "Sehat";
+      if (score >= 40) return "Cukup";
+      if (score >= 20) return "Perlu Perbaikan";
+      return "Kritis";
+    };
+
+    const getScoreColor = (score: number) => {
+      if (score >= 80) return Colors.success;
+      if (score >= 60) return Colors.info;
+      if (score >= 40) return Colors.warning;
+      if (score >= 20) return Colors.error;
+      return Colors.errorDark;
+    };
+
+    return (
+      <View style={tw`mb-4`}>
+        {/* Main Score Card */}
+        <View
+          style={tw.style(`rounded-xl p-4 mb-3 border`, {
+            backgroundColor: Colors.surface,
+            borderColor: Colors.border,
+          })}
+        >
+          <Text
+            style={tw.style(`text-lg font-semibold mb-4`, {
+              color: Colors.textPrimary,
+            })}
+          >
+            Skor Kesehatan Keuangan
+          </Text>
+
+          {/* Score Circle */}
+          <View style={tw`items-center mb-6`}>
+            <View
+              style={[
+                tw`w-32 h-32 rounded-full justify-center items-center`,
+                {
+                  backgroundColor: `${getScoreColor(overallScore)}20`,
+                  borderWidth: 4,
+                  borderColor: getScoreColor(overallScore),
+                },
+              ]}
+            >
+              <Text
+                style={tw.style(`text-4xl font-bold`, {
+                  color: getScoreColor(overallScore),
+                })}
+              >
+                {overallScore}
+              </Text>
+              <Text
+                style={tw.style(`text-base mt-1`, {
+                  color: Colors.textPrimary,
+                })}
+              >
+                / 100
+              </Text>
+            </View>
+            <Text
+              style={[
+                tw.style(`text-lg font-semibold mt-4`, {
+                  color: getScoreColor(overallScore),
+                }),
+              ]}
+            >
+              {getScoreDescription(overallScore)}
+            </Text>
+            <Text
+              style={tw.style(`text-sm text-center mt-1`, {
+                color: Colors.textSecondary,
+              })}
+            >
+              {category}
+            </Text>
+          </View>
+
+          {/* Score Breakdown */}
+          <View style={tw`mb-4`}>
+            <Text
+              style={tw.style(`text-sm font-medium mb-3`, {
+                color: Colors.textPrimary,
+              })}
+            >
+              Detail Skor
+            </Text>
+
+            {Object.entries(factors).map(([key, factor]) => (
+              <View key={key} style={tw`mb-3`}>
+                <View style={tw`flex-row justify-between items-center mb-1`}>
+                  <Text
+                    style={tw.style(`text-sm`, { color: Colors.textPrimary })}
+                  >
+                    {key === "savingsRate" && "Rasio Tabungan"}
+                    {key === "budgetAdherence" && "Kepatuhan Anggaran"}
+                    {key === "emergencyFund" && "Dana Darurat"}
+                    {key === "expenseControl" && "Kontrol Pengeluaran"}
+                    {key === "goalProgress" && "Progress Target"}
+                  </Text>
+                  <Text
+                    style={tw.style(`text-sm`, { color: Colors.textPrimary })}
+                  >
+                    {factor.score}/100
+                  </Text>
+                </View>
+                <ProgressBar
+                  progress={Math.max(0, Math.min(factor.score / 100, 1))}
+                  color={getScoreColor(factor.score)}
+                  style={tw.style(`h-2 rounded-full`, {
+                    backgroundColor: Colors.surfaceLight,
+                  })}
+                />
+                <View style={tw`flex-row justify-between mt-1`}>
+                  <Text
+                    style={tw.style(`text-xs`, { color: Colors.textTertiary })}
+                  >
+                    Bobot: {(factor.weight * 100).toFixed(0)}%
+                  </Text>
+                  <Text
+                    style={tw.style(`text-xs`, {
+                      color:
+                        factor.status === "good"
+                          ? Colors.success
+                          : factor.status === "warning"
+                          ? Colors.warning
+                          : Colors.error,
+                    })}
+                  >
+                    {factor.status === "good"
+                      ? "✓ Baik"
+                      : factor.status === "warning"
+                      ? "⚠ Perlu perbaikan"
+                      : "✗ Perlu perhatian"}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Recommendations */}
+          {recommendations.length > 0 && (
+            <View
+              style={tw.style(`mt-4 p-3 rounded-lg border`, {
+                backgroundColor: Colors.surfaceLight,
+                borderColor: Colors.border,
+              })}
+            >
+              <Text
+                style={tw.style(`text-sm font-medium mb-2`, {
+                  color: Colors.textPrimary,
+                })}
+              >
+                Rekomendasi Perbaikan
+              </Text>
+              {recommendations.map((rec, index) => (
+                <View key={index} style={tw`flex-row items-start mb-2`}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={Colors.success}
+                    style={tw`mt-0.5 mr-2`}
+                  />
+                  <Text
+                    style={tw.style(`text-sm flex-1`, {
+                      color: Colors.textSecondary,
+                    })}
+                  >
+                    {rec}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Health Score Legend */}
+        <View
+          style={tw.style(`rounded-xl p-3 border`, {
+            backgroundColor: Colors.surface,
+            borderColor: Colors.border,
+          })}
+        >
+          <Text
+            style={tw.style(`text-sm font-medium mb-2`, {
+              color: Colors.textPrimary,
+            })}
+          >
+            Keterangan Skor
+          </Text>
+          <View style={tw`flex-row flex-wrap gap-2`}>
+            {[
+              { range: "80-100", label: "Sangat Sehat", color: Colors.success },
+              { range: "60-79", label: "Sehat", color: Colors.info },
+              { range: "40-59", label: "Cukup", color: Colors.warning },
+              { range: "20-39", label: "Perlu Perbaikan", color: Colors.error },
+              { range: "0-19", label: "Kritis", color: Colors.errorDark },
+            ].map((item) => (
+              <View
+                key={item.range}
+                style={tw.style(`flex-row items-center px-2 py-1 rounded-lg`, {
+                  backgroundColor: Colors.surfaceLight,
+                })}
+              >
+                <View
+                  style={[
+                    tw`w-3 h-3 rounded-full mr-2`,
+                    { backgroundColor: item.color },
+                  ]}
+                />
+                <Text
+                  style={tw.style(`text-xs`, { color: Colors.textPrimary })}
+                >
+                  {item.range}: {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
@@ -489,7 +763,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
         </View>
       </View>
 
-      {/* Main Tabs */}
+      {/* Main Tabs - Added Health Tab */}
       <View
         style={tw.style(`border-b`, {
           backgroundColor: Colors.surface,
@@ -502,6 +776,11 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
           contentContainerStyle={tw`px-4 py-2 flex-row gap-2`}
         >
           {[
+            {
+              key: "health",
+              label: "Kesehatan",
+              icon: "heart-outline" as SafeIconName,
+            },
             {
               key: "summary",
               label: "Ringkasan",
@@ -557,6 +836,9 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
 
       {/* Main Content */}
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4 pb-8`}>
+        {/* Health Tab */}
+        {activeTab === "health" && renderHealthScore()}
+
         {/* Summary Tab */}
         {activeTab === "summary" && (
           <>
@@ -1087,44 +1369,6 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                   style={tw.style(`my-4`, { backgroundColor: Colors.border })}
                 />
 
-                {/* Budget Optimization */}
-                {budgetSuggestion && (
-                  <View
-                    style={tw.style(`p-3 rounded-lg border`, {
-                      backgroundColor: `${Colors.warning}10`,
-                      borderColor: `${Colors.warning}30`,
-                    })}
-                  >
-                    <View style={tw`flex-row items-start mb-2`}>
-                      <Ionicons
-                        name="alert-circle-outline"
-                        size={20}
-                        color={Colors.warning}
-                      />
-                      <Text
-                        style={tw.style(`text-sm font-medium ml-2 flex-1`, {
-                          color: Colors.warning,
-                        })}
-                      >
-                        {budgetSuggestion.message}
-                      </Text>
-                    </View>
-                    <Text
-                      style={tw.style(`text-sm`, { color: Colors.warning })}
-                    >
-                      Total kelebihan:{" "}
-                      {formatCurrency(budgetSuggestion.totalOver)}
-                    </Text>
-                    <Text
-                      style={tw.style(`text-xs mt-1`, {
-                        color: Colors.warningLight,
-                      })}
-                    >
-                      💡 {budgetSuggestion.suggestion}
-                    </Text>
-                  </View>
-                )}
-
                 {/* Top Spending Alert */}
                 {transactionAnalytics.topCategories[0] &&
                   safeNumber(transactionAnalytics.topCategories[0][1]) >
@@ -1194,7 +1438,7 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
             {/* Financial Insights */}
             {insights.length > 0 && (
               <View
-                style={tw.style(`rounded-xl p-4 border`, {
+                style={tw.style(`rounded-xl p-4 mb-3 border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1274,83 +1518,6 @@ ${comparativeData.savingsRateChange >= 0 ? "✅" : "⚠️"} Rasio tabungan ${
                       </View>
                     </View>
                   </View>
-                ))}
-              </View>
-            )}
-
-            {/* Quick Wins */}
-            {quickWins.length > 0 && (
-              <View
-                style={tw.style(`rounded-xl p-4 border`, {
-                  backgroundColor: Colors.surface,
-                  borderColor: Colors.border,
-                })}
-              >
-                <Text
-                  style={tw.style(`text-lg font-semibold mb-4`, {
-                    color: Colors.textPrimary,
-                  })}
-                >
-                  Quick Wins
-                </Text>
-                {quickWins.map((win, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={tw.style(`p-3 rounded-lg mb-3 border`, {
-                      backgroundColor: Colors.surfaceLight,
-                      borderColor: Colors.border,
-                    })}
-                    activeOpacity={0.7}
-                  >
-                    <View style={tw`flex-row items-start`}>
-                      <View
-                        style={tw.style(
-                          `w-10 h-10 rounded-lg justify-center items-center mr-3`,
-                          {
-                            backgroundColor: `${Colors.accent}20`,
-                          }
-                        )}
-                      >
-                        <Ionicons
-                          name={win.icon}
-                          size={20}
-                          color={Colors.accent}
-                        />
-                      </View>
-                      <View style={tw`flex-1`}>
-                        <Text
-                          style={tw.style(`text-sm font-semibold mb-1`, {
-                            color: Colors.textPrimary,
-                          })}
-                        >
-                          {win.title}
-                        </Text>
-                        <Text
-                          style={tw.style(`text-sm mb-2`, {
-                            color: Colors.textSecondary,
-                          })}
-                        >
-                          {win.description}
-                        </Text>
-                        <View style={tw`flex-row items-center justify-between`}>
-                          <Text
-                            style={tw.style(`text-xs font-medium`, {
-                              color: Colors.success,
-                            })}
-                          >
-                            💡 {win.tip}
-                          </Text>
-                          <Text
-                            style={tw.style(`text-xs font-semibold`, {
-                              color: Colors.success,
-                            })}
-                          >
-                            Potensi +{formatCurrency(win.potential)}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
                 ))}
               </View>
             )}

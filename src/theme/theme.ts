@@ -1,58 +1,57 @@
-// [file name]: src/theme/theme.ts
-// [file content begin]
+// File: src/theme/theme.ts
 export const Colors = {
-  // TEMA NAVY BLUE
-  primary: "#0F172A", // Navy blue gelap
-  primaryDark: "#020617", // Navy blue lebih gelap
-  primaryLight: "#1E293B", // Navy blue medium
+  // TEMA NAVY BLUE (existing - tidak diubah)
+  primary: "#0F172A",
+  primaryDark: "#020617",
+  primaryLight: "#1E293B",
 
-  accent: "#22D3EE", // Cyan terang
-  accentDark: "#0EA5E9", // Cyan medium
-  accentLight: "#67E8F9", // Cyan sangat terang
+  accent: "#22D3EE",
+  accentDark: "#0EA5E9",
+  accentLight: "#67E8F9",
 
-  background: "#0F172A", // Background navy blue gelap
-  surface: "#1E293B", // Permukaan navy blue medium
-  surfaceLight: "#334155", // Permukaan navy blue terang
-  surfaceDark: "#0F172A", // Permukaan navy blue gelap
+  background: "#0F172A",
+  surface: "#1E293B",
+  surfaceLight: "#334155",
+  surfaceDark: "#0F172A",
 
   // Text Colors
-  textPrimary: "#F8FAFC", // Teks utama putih
-  textSecondary: "#CBD5E1", // Teks sekunder abu-abu muda
-  textTertiary: "#94A3B8", // Teks tersier abu-abu
-  textDisabled: "#64748B", // Teks disabled
+  textPrimary: "#F8FAFC",
+  textSecondary: "#CBD5E1",
+  textTertiary: "#94A3B8",
+  textDisabled: "#64748B",
 
   // Border Colors
-  border: "#334155", // Border navy blue terang
-  borderLight: "#475569", // Border lebih terang
-  borderDark: "#1E293B", // Border lebih gelap
+  border: "#334155",
+  borderLight: "#475569",
+  borderDark: "#1E293B",
 
   // Status Colors
-  success: "#10B981", // Hijau
-  successLight: "#34D399", // Hijau terang
-  successDark: "#059669", // Hijau gelap
+  success: "#10B981",
+  successLight: "#34D399",
+  successDark: "#059669",
 
-  warning: "#F59E0B", // Kuning
-  warningLight: "#FBBF24", // Kuning terang
-  warningDark: "#D97706", // Kuning gelap
+  warning: "#F59E0B",
+  warningLight: "#FBBF24",
+  warningDark: "#D97706",
 
-  error: "#EF4444", // Merah
-  errorLight: "#F87171", // Merah terang
-  errorDark: "#DC2626", // Merah gelap
+  error: "#EF4444",
+  errorLight: "#F87171",
+  errorDark: "#DC2626", // <-- SUDAH ADA DI TEMA
 
-  info: "#3B82F6", // Biru terang
-  infoLight: "#60A5FA", // Biru lebih terang
-  infoDark: "#2563EB", // Biru gelap
+  info: "#3B82F6",
+  infoLight: "#60A5FA",
+  infoDark: "#2563EB",
 
-  // Special Colors - TAMBAHKAN INI
-  purple: "#8B5CF6", // Ungu
-  purpleLight: "#A78BFA", // Ungu terang
-  purpleDark: "#7C3AED", // Ungu gelap
+  // Special Colors - SUDAH ADA
+  purple: "#8B5CF6",
+  purpleLight: "#A78BFA",
+  purpleDark: "#7C3AED",
 
-  pink: "#EC4899", // Pink
-  pinkLight: "#F472B6", // Pink terang
-  pinkDark: "#DB2777", // Pink gelap
+  pink: "#EC4899",
+  pinkLight: "#F472B6",
+  pinkDark: "#DB2777",
 
-  // Neutral Colors
+  // Neutral Colors - SUDAH ADA
   gray50: "#F8FAFC",
   gray100: "#F1F5F9",
   gray200: "#E2E8F0",
@@ -64,12 +63,12 @@ export const Colors = {
   gray800: "#1E293B",
   gray900: "#0F172A",
 
-  // Opacity Variants
+  // Opacity Variants - SUDAH ADA
   transparent: "transparent",
   white: "#FFFFFF",
   black: "#000000",
 
-  // Gradients
+  // Gradients - SUDAH ADA
   gradient: {
     primary: ["#0F172A", "#1E293B", "#334155"],
     accent: ["#22D3EE", "#0EA5E9", "#0284C7"],
@@ -77,7 +76,7 @@ export const Colors = {
     purple: ["#8B5CF6", "#7C3AED", "#6D28D9"],
   },
 
-  // Shadow colors untuk depth
+  // Shadow colors - SUDAH ADA
   shadow: {
     light: "rgba(15, 23, 42, 0.8)",
     medium: "rgba(2, 6, 23, 0.9)",
@@ -142,4 +141,3 @@ export const Theme = {
     },
   },
 };
-// [file content end]

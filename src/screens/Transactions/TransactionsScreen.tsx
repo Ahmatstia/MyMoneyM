@@ -467,28 +467,6 @@ const TransactionsScreen: React.FC = () => {
           },
         ]}
       >
-        <View style={tw`flex-row justify-between items-center mb-3`}>
-          <View>
-            <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
-              Transaksi
-            </Text>
-            <Text style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}>
-              {filteredTransactions.length} transaksi
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[
-              tw`w-9 h-9 rounded-lg justify-center items-center`,
-              {
-                backgroundColor: Colors.surfaceLight,
-              },
-            ]}
-            onPress={() => navigation.navigate("AddTransaction")}
-          >
-            <Ionicons name="add" size={18} color={ACCENT_COLOR} />
-          </TouchableOpacity>
-        </View>
-
         {/* Search Bar - Compact */}
         <View style={tw`flex-row items-center mb-2`}>
           <View

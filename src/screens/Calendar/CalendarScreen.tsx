@@ -152,17 +152,9 @@ const CalendarScreen: React.FC = () => {
         contentContainerStyle={tw`pb-24`}
       >
         {/* Header */}
-        <View style={tw`px-5 pt-3 pb-4`}>
-          <Text style={[tw`text-2xl font-bold mb-1`, { color: TEXT_PRIMARY }]}>
-            Kalender Keuangan
-          </Text>
-          <Text style={[tw`text-sm`, { color: TEXT_SECONDARY }]}>
-            Pantau aktivitas keuangan berdasarkan waktu
-          </Text>
-        </View>
 
         {/* Monthly Stats */}
-        <View style={tw`px-5 mb-6`}>
+        <View style={tw`px-5 mb-6 pt-5`}>
           <View
             style={[
               tw`rounded-2xl p-4`,

@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert, Share } from "react-native";
+import { View, ScrollView, Alert, Share } from "react-native";
 import {
   Card,
-  Title,
-  Paragraph,
   Button,
   Chip,
   useTheme,
@@ -27,326 +25,179 @@ const NoteDetailScreen = () => {
   const route = useRoute();
   const theme = useTheme();
 
-  // Perbaiki: Type assertion untuk params
   const params = route.params as { noteId?: string };
-  const noteId = params?.noteId;
-  const note = notes.find((n) => n.id === noteId);
+  const note = notes.find((n) => n.id === params?.noteId);
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
-  if (!note) {
-    return (
-      <View
-        style={[
-          tw`flex-1 bg-[${theme.colors.background}] items-center justify-center p-8`,
-        ]}
-      >
-        <IconButton
-          icon="alert-circle-outline"
-          size={80}
-          iconColor={theme.colors.error}
-          style={tw`mb-4`}
-        />
-        <Title style={[tw`mb-4`, { color: theme.colors.onSurface }]}>
-          Catatan Tidak Ditemukan
-        </Title>
-        <Button mode="contained" onPress={() => navigation.goBack()}>
-          Kembali
-        </Button>
-      </View>
-    );
-  }
+  if (!note) return null;
 
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      financial_decision: "Keputusan Finansial",
-      expense_reflection: "Refleksi Pengeluaran",
-      goal_progress: "Progress Tujuan",
-      investment_idea: "Ide Investasi",
-      budget_analysis: "Analisis Budget",
-      general: "Catatan Umum",
-    };
-    return labels[type] || type;
-  };
-
-  const getTypeIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      financial_decision: "cash-check",
-      expense_reflection: "chart-bar",
-      goal_progress: "flag-checkered",
-      investment_idea: "lightbulb-on",
-      budget_analysis: "chart-pie",
-      general: "note-text",
-    };
-    return icons[type] || "note-text";
-  };
-
-  const getMoodIcon = (mood?: string) => {
-    const icons: Record<string, string> = {
-      positive: "emoticon-happy-outline",
-      neutral: "emoticon-neutral-outline",
-      negative: "emoticon-sad-outline",
-      reflective: "thought-bubble-outline",
-    };
-    return icons[mood || "neutral"] || "emoticon-neutral-outline";
-  };
-
-  const getImpactIcon = (impact?: string) => {
-    const icons: Record<string, string> = {
-      positive: "trending-up",
-      neutral: "trending-neutral",
-      negative: "trending-down",
-    };
-    return icons[impact || "neutral"] || "trending-neutral";
-  };
-
-  const getImpactColor = (impact?: string) => {
-    const colors: Record<string, string> = {
-      positive: "#10B981",
-      neutral: "#6B7280",
-      negative: "#EF4444",
-    };
-    return colors[impact || "neutral"] || "#6B7280";
+  const typeColor: Record<string, string> = {
+    financial_decision: "#3B82F6",
+    expense_reflection: "#10B981",
+    goal_progress: "#8B5CF6",
+    investment_idea: "#F59E0B",
+    budget_analysis: "#EC4899",
+    general: "#6B7280",
   };
 
   const handleShare = async () => {
     try {
-      const message = `📝 ${note.title}\n\n${note.content}\n\n💰 ${
-        note.amount
-          ? `Rp ${note.amount.toLocaleString("id-ID")}`
-          : "Tidak ada jumlah"
-      }\n📅 ${format(new Date(note.date), "dd MMMM yyyy", { locale: id })}`;
-
       await Share.share({
-        message,
         title: note.title,
+        message: `${note.title}\n\n${note.content}`,
       });
-    } catch (error) {
-      console.error("Error sharing:", error);
-      Alert.alert("Error", "Gagal membagikan catatan");
+    } catch {
+      Alert.alert("Gagal", "Tidak bisa membagikan catatan");
     }
-  };
-
-  const handleDelete = () => {
-    deleteNote(note.id);
-    navigation.goBack();
-  };
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "EEEE, dd MMMM yyyy", { locale: id });
   };
 
   return (
     <>
       <ScrollView
-        style={[tw`flex-1`, { backgroundColor: theme.colors.background }]}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={tw`px-4 pb-32`}
+        style={{ backgroundColor: theme.colors.background }}
       >
-        {/* Header dengan Menu */}
-        <View style={tw`p-4 flex-row justify-between items-center`}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => navigation.goBack()}
-          />
-          <Title
-            style={[tw`flex-1 text-center`, { color: theme.colors.onSurface }]}
-          >
-            Detail Catatan
-          </Title>
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <IconButton
-                icon="dots-vertical"
-                size={24}
-                onPress={() => setMenuVisible(true)}
-              />
-            }
-          >
-            <Menu.Item
-              leadingIcon="pencil"
-              onPress={() => {
-                setMenuVisible(false);
-                navigation.navigate("NoteForm", { noteId: note.id });
-              }}
-              title="Edit"
-            />
-            <Menu.Item
-              leadingIcon="share-variant"
-              onPress={() => {
-                setMenuVisible(false);
-                handleShare();
-              }}
-              title="Bagikan"
-            />
-            <Divider />
-            <Menu.Item
-              leadingIcon="delete"
-              onPress={() => {
-                setMenuVisible(false);
-                setDeleteDialogVisible(true);
-              }}
-              title="Hapus"
-              titleStyle={{ color: theme.colors.error }}
-            />
-          </Menu>
-        </View>
-
-        {/* Konten Catatan */}
-        <Card style={tw`mx-4 mb-4`}>
-          <Card.Content>
-            {/* Header dengan Type dan Mood */}
-            <View style={tw`flex-row justify-between items-start mb-4`}>
-              <View style={tw`flex-row items-center`}>
+        <Card
+          style={[
+            tw`mt-4`,
+            {
+              borderRadius: 24,
+              backgroundColor: theme.colors.surface,
+            },
+          ]}
+        >
+          <Card.Content style={tw`p-5`}>
+            {/* HEADER DALAM CARD */}
+            <View style={tw`flex-row justify-between items-start `}>
+              <View>
                 <Chip
-                  mode="outlined"
-                  icon={getTypeIcon(note.type)}
-                  style={tw`mr-2`}
+                  compact
+                  style={{
+                    backgroundColor: typeColor[note.type] + "20",
+                  }}
+                  textStyle={{
+                    color: typeColor[note.type],
+                    fontWeight: "600",
+                  }}
                 >
-                  {getTypeLabel(note.type)}
+                  {note.type.replace("_", " ")}
                 </Chip>
-                {note.mood && (
-                  <Chip mode="outlined" icon={getMoodIcon(note.mood)}>
-                    {note.mood}
-                  </Chip>
-                )}
               </View>
-
-              {note.financialImpact && (
-                <Chip
-                  mode="outlined"
-                  icon={getImpactIcon(note.financialImpact)}
-                  textStyle={{ color: getImpactColor(note.financialImpact) }}
-                  style={{ borderColor: getImpactColor(note.financialImpact) }}
-                >
-                  {note.financialImpact}
-                </Chip>
-              )}
+              {/* MENU TITIK 3 */}
+              <Menu
+                visible={menuVisible}
+                onDismiss={() => setMenuVisible(false)}
+                anchor={
+                  <IconButton
+                    icon="dots-vertical"
+                    size={20}
+                    onPress={() => setMenuVisible(true)}
+                  />
+                }
+              >
+                <Menu.Item
+                  leadingIcon="pencil"
+                  title="Edit"
+                  onPress={() => {
+                    setMenuVisible(false);
+                    navigation.navigate("NoteForm", { noteId: note.id });
+                  }}
+                />
+                <Menu.Item
+                  leadingIcon="share-variant"
+                  title="Bagikan"
+                  onPress={() => {
+                    setMenuVisible(false);
+                    handleShare();
+                  }}
+                />
+                <Divider />
+                <Menu.Item
+                  leadingIcon="delete"
+                  title="Hapus"
+                  titleStyle={{ color: theme.colors.error }}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    setDeleteDialogVisible(true);
+                  }}
+                />
+              </Menu>
             </View>
 
-            {/* Judul */}
-            <Title style={[tw`mb-3`, { color: theme.colors.onSurface }]}>
-              {note.title}
-            </Title>
-
-            {/* Tanggal */}
-            <Paragraph
-              style={[
-                tw`mb-4 text-sm`,
-                { color: theme.colors.onSurfaceVariant },
-              ]}
+            {/* TITLE */}
+            <Text
+              style={[tw`text-xl font-bold`, { color: theme.colors.onSurface }]}
             >
-              📅 {formatDate(note.date)}
-            </Paragraph>
+              {note.title}
+            </Text>
 
-            {/* Jumlah dan Kategori */}
-            {(note.amount || note.category) && (
-              <View style={tw`flex-row flex-wrap mb-4`}>
-                {note.amount && (
-                  <Chip mode="outlined" icon="cash" style={tw`mr-2 mb-2`}>
-                    Rp {note.amount.toLocaleString("id-ID")}
-                  </Chip>
-                )}
-                {note.category && (
-                  <Chip mode="outlined" icon="tag" style={tw`mr-2 mb-2`}>
-                    {note.category}
-                  </Chip>
-                )}
-              </View>
-            )}
-
-            {/* Isi Catatan */}
-            <View style={tw`mb-4`}>
+            {/* AMOUNT */}
+            {note.amount && (
               <Text
                 style={[
-                  tw`text-sm mb-2 font-medium`,
-                  { color: theme.colors.onSurfaceVariant },
+                  tw`text-lg font-semibold mb-3`,
+                  { color: theme.colors.primary },
                 ]}
               >
-                Isi Catatan:
+                Rp {note.amount.toLocaleString("id-ID")}
               </Text>
-              <Paragraph
-                style={[
-                  tw`text-base leading-6`,
-                  { color: theme.colors.onSurface },
-                ]}
-              >
-                {note.content}
-              </Paragraph>
-            </View>
+            )}
 
-            {/* Tags */}
+            {/* CONTENT */}
+            <Text
+              style={[
+                tw`text-base leading-6 mb-6`,
+                { color: theme.colors.onSurface },
+              ]}
+            >
+              {note.content}
+            </Text>
+
+            {/* TAGS */}
             {note.tags.length > 0 && (
-              <View style={tw`mb-4`}>
-                <Text
-                  style={[
-                    tw`text-sm mb-2 font-medium`,
-                    { color: theme.colors.onSurfaceVariant },
-                  ]}
-                >
-                  Tags:
-                </Text>
-                <View style={tw`flex-row flex-wrap`}>
-                  {note.tags.map((tag) => (
-                    <Chip key={tag} style={tw`mr-2 mb-2`} mode="outlined">
-                      {tag}
-                    </Chip>
-                  ))}
-                </View>
+              <View style={tw`flex-row flex-wrap mb-4`}>
+                {note.tags.map((tag) => (
+                  <Chip key={tag} compact style={tw`mr-2 mb-2`} mode="outlined">
+                    {tag}
+                  </Chip>
+                ))}
               </View>
             )}
 
-            {/* Metadata */}
-            <View style={tw`mt-6 pt-4 border-t`}>
-              <Paragraph
-                style={[tw`text-xs`, { color: theme.colors.onSurfaceVariant }]}
+            {/* META */}
+            <Divider />
+            <View style={tw`mt-4`}>
+              <Text
+                style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}
               >
                 Dibuat:{" "}
-                {format(new Date(note.createdAt), "dd MMM yyyy HH:mm", {
+                {format(new Date(note.createdAt), "dd MMM yyyy • HH:mm", {
                   locale: id,
                 })}
-              </Paragraph>
+              </Text>
               {note.updatedAt && (
-                <Paragraph
-                  style={[
-                    tw`text-xs`,
-                    { color: theme.colors.onSurfaceVariant },
-                  ]}
+                <Text
+                  style={{
+                    color: theme.colors.onSurfaceVariant,
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
                 >
-                  Diupdate:{" "}
-                  {format(new Date(note.updatedAt), "dd MMM yyyy HH:mm", {
+                  Diperbarui:{" "}
+                  {format(new Date(note.updatedAt), "dd MMM yyyy • HH:mm", {
                     locale: id,
                   })}
-                </Paragraph>
+                </Text>
               )}
             </View>
           </Card.Content>
         </Card>
-
-        {/* Tombol Aksi */}
-        <View style={tw`px-4 pb-8`}>
-          <Button
-            mode="contained"
-            icon="pencil"
-            onPress={() => navigation.navigate("NoteForm", { noteId: note.id })}
-            style={tw`mb-3`}
-          >
-            Edit Catatan
-          </Button>
-          <Button
-            mode="outlined"
-            icon="share-variant"
-            onPress={handleShare}
-            style={tw`mb-3`}
-          >
-            Bagikan
-          </Button>
-        </View>
       </ScrollView>
 
-      {/* Dialog Hapus */}
+      {/* DELETE DIALOG */}
       <Portal>
         <Dialog
           visible={deleteDialogVisible}
@@ -354,14 +205,17 @@ const NoteDetailScreen = () => {
         >
           <Dialog.Title>Hapus Catatan</Dialog.Title>
           <Dialog.Content>
-            <Paragraph>
-              Apakah Anda yakin ingin menghapus catatan "{note.title}"? Tindakan
-              ini tidak dapat dibatalkan.
-            </Paragraph>
+            <Text>Catatan ini akan dihapus permanen.</Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeleteDialogVisible(false)}>Batal</Button>
-            <Button onPress={handleDelete} textColor={theme.colors.error}>
+            <Button
+              textColor={theme.colors.error}
+              onPress={() => {
+                deleteNote(note.id);
+                navigation.goBack();
+              }}
+            >
               Hapus
             </Button>
           </Dialog.Actions>
