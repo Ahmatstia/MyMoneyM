@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import * as Print from "expo-print";
+// import * as Print from "expo-print";
 import { Alert, Platform } from "react-native";
 import {
   AppState,
@@ -680,42 +680,24 @@ const generatePDFHTML = (appState: AppState): string => {
 export const exportToPDF = async (
   appState: AppState
 ): Promise<string | null> => {
+  Alert.alert("Info", "Fitur PDF sementara dinonaktifkan");
+  return null;
+
+  /*
+  // KODE ASLI DI-COMMENT
   try {
     console.log("🔄 Memulai ekspor ke PDF...");
-
-    // Buat HTML untuk PDF
     const html = generatePDFHTML(appState);
-
-    // Generate PDF
     const { uri } = await Print.printToFileAsync({
       html,
       base64: false,
     });
-
-    // Ubah nama file
-    const timestamp = formatDateForFilename();
-    const newFileName = `mymoney_report_${timestamp}.pdf`;
-
-    const documentDir = FileSystem.documentDirectory;
-    if (!documentDir) {
-      console.error("Document directory not available");
-      return null;
-    }
-
-    const newPath = `${documentDir}${newFileName}`;
-
-    // Pindahkan file ke lokasi yang diinginkan
-    await FileSystem.moveAsync({
-      from: uri,
-      to: newPath,
-    });
-
-    console.log(`✅ PDF report saved to: ${newPath}`);
-    return newPath;
+    // ... sisa kode
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
     return null;
   }
+  */
 };
 
 // Bagikan file

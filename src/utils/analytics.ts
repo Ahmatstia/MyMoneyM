@@ -1,4 +1,4 @@
-// File: src/utils/analytics.ts
+// File: src/utils/analytics.ts (DIPERBAIKI)
 import { Transaction, Budget, Savings } from "../types";
 import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
 import { safeNumber, getSafePercentage } from "./calculations";
@@ -323,12 +323,63 @@ export interface FinancialHealthScore {
   recommendations: string[];
 }
 
+type FactorStatus = "good" | "warning" | "poor";
+
 export const calculateFinancialHealthScore = (
   transactionAnalytics: ReturnType<typeof calculateTransactionAnalytics>,
   budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>,
   savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
 ): FinancialHealthScore => {
   try {
+    // ✅ CHECK IF NO DATA EXISTS
+    const hasTransactions = transactionAnalytics.transactionCount > 0;
+    const hasBudgets =
+      budgetAnalytics.overBudgetCount > 0 ||
+      budgetAnalytics.underBudgetCount > 0 ||
+      budgetAnalytics.totalBudget > 0;
+    const hasSavings =
+      savingsAnalytics.totalTarget > 0 || savingsAnalytics.totalCurrent > 0;
+
+    if (!hasTransactions && !hasBudgets && !hasSavings) {
+      return {
+        overallScore: 0,
+        category: "Belum Ada Data",
+        color: "#64748B", // gray500
+        factors: {
+          savingsRate: {
+            score: 0,
+            weight: 0.3,
+            status: "poor" as FactorStatus,
+          },
+          budgetAdherence: {
+            score: 0,
+            weight: 0.25,
+            status: "poor" as FactorStatus,
+          },
+          emergencyFund: {
+            score: 0,
+            weight: 0.2,
+            status: "poor" as FactorStatus,
+          },
+          expenseControl: {
+            score: 0,
+            weight: 0.15,
+            status: "poor" as FactorStatus,
+          },
+          goalProgress: {
+            score: 0,
+            weight: 0.1,
+            status: "poor" as FactorStatus,
+          },
+        },
+        recommendations: [
+          "Mulai dengan mencatat transaksi pertama Anda",
+          "Buat anggaran sederhana untuk pengeluaran utama",
+          "Tetapkan target tabungan kecil untuk memulai",
+        ],
+      };
+    }
+
     // Factor 1: Savings Rate (30%)
     const savingsRateScore = calculateSavingsRateScore(
       safeNumber(transactionAnalytics.savingsRate)
@@ -388,17 +439,29 @@ export const calculateFinancialHealthScore = (
     };
   } catch (error) {
     console.error("Error calculating health score:", error);
-    // Return safe default dengan warna dari tema
+    // Return safe default dengan status "Belum Ada Data"
     return {
-      overallScore: 50,
-      category: "Cukup",
-      color: "#F59E0B", // warning color dari tema
+      overallScore: 0,
+      category: "Belum Ada Data",
+      color: "#64748B", // gray500
       factors: {
-        savingsRate: { score: 50, weight: 0.3, status: "warning" },
-        budgetAdherence: { score: 50, weight: 0.25, status: "warning" },
-        emergencyFund: { score: 50, weight: 0.2, status: "warning" },
-        expenseControl: { score: 50, weight: 0.15, status: "warning" },
-        goalProgress: { score: 50, weight: 0.1, status: "warning" },
+        savingsRate: { score: 0, weight: 0.3, status: "poor" as FactorStatus },
+        budgetAdherence: {
+          score: 0,
+          weight: 0.25,
+          status: "poor" as FactorStatus,
+        },
+        emergencyFund: {
+          score: 0,
+          weight: 0.2,
+          status: "poor" as FactorStatus,
+        },
+        expenseControl: {
+          score: 0,
+          weight: 0.15,
+          status: "poor" as FactorStatus,
+        },
+        goalProgress: { score: 0, weight: 0.1, status: "poor" as FactorStatus },
       },
       recommendations: [
         "Mulai dengan mencatat semua transaksi secara rutin",
@@ -411,7 +474,7 @@ export const calculateFinancialHealthScore = (
 // Helper functions for health score calculation
 const calculateSavingsRateScore = (savingsRate: number) => {
   let score: number;
-  let status: "good" | "warning" | "poor";
+  let status: FactorStatus;
 
   if (savingsRate >= 20) {
     score = 100;
@@ -423,7 +486,7 @@ const calculateSavingsRateScore = (savingsRate: number) => {
     score = 40;
     status = "warning";
   } else {
-    score = 10;
+    score = 0; // Perbaikan: 0 bukan 10
     status = "poor";
   }
 
@@ -437,9 +500,13 @@ const calculateBudgetAdherenceScore = (
   const overBudgetCount = budgetAnalytics.overBudgetCount;
 
   let score: number;
-  let status: "good" | "warning" | "poor";
+  let status: FactorStatus;
 
-  if (overBudgetCount === 0) {
+  // Jika tidak ada anggaran sama sekali
+  if (budgetAnalytics.totalBudget === 0 && budgetAnalytics.totalSpent === 0) {
+    score = 0;
+    status = "poor";
+  } else if (overBudgetCount === 0) {
     if (utilizationRate <= 90) {
       score = 100;
       status = "good";
@@ -462,10 +529,15 @@ const calculateEmergencyFundScore = (
   monthlyExpense: number,
   totalSavings: number
 ) => {
+  // Perbaikan: Jika tidak ada data sama sekali
+  if (monthlyExpense === 0 && totalSavings === 0) {
+    return { score: 0, weight: 0.2, status: "poor" as FactorStatus };
+  }
+
   const monthsCovered = monthlyExpense > 0 ? totalSavings / monthlyExpense : 0;
 
   let score: number;
-  let status: "good" | "warning" | "poor";
+  let status: FactorStatus;
 
   if (monthsCovered >= 6) {
     score = 100;
@@ -477,7 +549,7 @@ const calculateEmergencyFundScore = (
     score = 50;
     status = "warning";
   } else {
-    score = 20;
+    score = 0; // Perbaikan: 0 bukan 20
     status = "poor";
   }
 
@@ -488,10 +560,15 @@ const calculateExpenseControlScore = (
   totalIncome: number,
   totalExpense: number
 ) => {
+  // Perbaikan: Jika tidak ada data sama sekali
+  if (totalIncome === 0 && totalExpense === 0) {
+    return { score: 0, weight: 0.15, status: "poor" as FactorStatus };
+  }
+
   const expenseRatio = totalIncome > 0 ? totalExpense / totalIncome : 1;
 
   let score: number;
-  let status: "good" | "warning" | "poor";
+  let status: FactorStatus;
 
   if (expenseRatio <= 0.7) {
     score = 100;
@@ -503,7 +580,7 @@ const calculateExpenseControlScore = (
     score = 40;
     status = "warning";
   } else {
-    score = 10;
+    score = 0; // Perbaikan: 0 bukan 10
     status = "poor";
   }
 
@@ -519,11 +596,11 @@ const calculateGoalProgressScore = (
     savingsAnalytics.activeSavings + savingsAnalytics.completedSavings;
 
   let score: number;
-  let status: "good" | "warning" | "poor";
+  let status: FactorStatus;
 
   if (totalCount === 0) {
-    score = 50; // Neutral score if no goals
-    status = "warning";
+    score = 0; // ⚠️ PERBAIKAN: 0 bukan 50
+    status = "poor";
   } else if (completedCount === totalCount) {
     score = 100;
     status = "good";
@@ -534,7 +611,7 @@ const calculateGoalProgressScore = (
     score = 50;
     status = "warning";
   } else {
-    score = 20;
+    score = 0; // Perbaikan: 0 bukan 20
     status = "poor";
   }
 
@@ -543,7 +620,9 @@ const calculateGoalProgressScore = (
 
 // MENGUNAKAN WARNA DARI TEMA YANG SUDAH ADA
 const getScoreCategory = (score: number) => {
-  if (score >= 80) {
+  if (score === 0) {
+    return { category: "Belum Ada Data", color: "#64748B" }; // gray500
+  } else if (score >= 80) {
     return { category: "Sangat Sehat", color: "#10B981" }; // success dari tema
   } else if (score >= 60) {
     return { category: "Sehat", color: "#3B82F6" }; // info dari tema
@@ -557,13 +636,28 @@ const getScoreCategory = (score: number) => {
 };
 
 const generateRecommendations = (factors: {
-  savingsRateScore: { score: number; status: string };
-  budgetAdherenceScore: { score: number; status: string };
-  emergencyFundScore: { score: number; status: string };
-  expenseControlScore: { score: number; status: string };
-  goalProgressScore: { score: number; status: string };
+  savingsRateScore: { score: number; status: FactorStatus };
+  budgetAdherenceScore: { score: number; status: FactorStatus };
+  emergencyFundScore: { score: number; status: FactorStatus };
+  expenseControlScore: { score: number; status: FactorStatus };
+  goalProgressScore: { score: number; status: FactorStatus };
 }) => {
   const recommendations: string[] = [];
+
+  // Jika semua skor 0 (belum ada data)
+  if (
+    factors.savingsRateScore.score === 0 &&
+    factors.budgetAdherenceScore.score === 0 &&
+    factors.emergencyFundScore.score === 0 &&
+    factors.expenseControlScore.score === 0 &&
+    factors.goalProgressScore.score === 0
+  ) {
+    return [
+      "Mulai dengan mencatat transaksi pertama Anda",
+      "Buat anggaran sederhana untuk pengeluaran utama",
+      "Tetapkan target tabungan kecil untuk memulai",
+    ];
+  }
 
   // Savings rate recommendations
   if (
@@ -654,6 +748,23 @@ export const generateFinancialInsights = (
 ) => {
   try {
     const insights = [];
+
+    // Check if no data
+    if (
+      transactionAnalytics.transactionCount === 0 &&
+      budgetAnalytics.totalBudget === 0 &&
+      savingsAnalytics.totalTarget === 0
+    ) {
+      insights.push({
+        type: "info",
+        title: "Mulai Catat Keuangan",
+        message:
+          "Belum ada data transaksi. Mulai catat pengeluaran dan pemasukan untuk melihat analitik.",
+        icon: "document-text-outline",
+        color: "#64748B", // gray500
+      });
+      return insights;
+    }
 
     // Transaction insights
     const savingsRate = safeNumber(transactionAnalytics.savingsRate) || 0;

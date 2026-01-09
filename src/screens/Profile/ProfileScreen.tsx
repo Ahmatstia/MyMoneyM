@@ -16,7 +16,7 @@ import tw from "twrnc";
 import * as FileSystem from "expo-file-system";
 import * as DocumentPicker from "expo-document-picker";
 import * as Sharing from "expo-sharing";
-import * as Print from "expo-print";
+// import * as Print from "expo-print";
 
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
@@ -584,105 +584,62 @@ const ProfileScreen: React.FC = () => {
 
   // Fungsi ekspor ke PDF
   const handleExportPDF = async () => {
-    try {
-      setIsExporting(true);
-      setBackupProgress("Membuat laporan PDF...");
+    Alert.alert(
+      "⏳ Fitur PDF Sementara Dinonaktifkan",
+      "Fitur export PDF sedang dalam perbaikan teknis.\n\n" +
+        "Untuk backup data, Anda masih bisa:\n" +
+        "✅ Export backup JSON (lengkap)\n" +
+        "✅ Lihat file backup\n" +
+        "✅ Share file backup\n\n" +
+        "Fitur PDF akan tersedia di update berikutnya!",
+      [{ text: "Export JSON Sekarang", onPress: () => handleExportJSON() }]
+    );
+    return;
 
-      // Generate HTML
-      const html = generatePDFHTML(state);
+    // KODE ASLI DI-COMMENT:
+    /*
+  try {
+    setIsExporting(true);
+    setBackupProgress("Membuat laporan PDF...");
 
-      // Create PDF
-      const { uri } = await Print.printToFileAsync({
-        html,
-        base64: false,
-      });
-
-      setBackupProgress("Menyimpan file PDF...");
-
-      // Rename and move file
-      const timestamp = formatDateForFilename();
-      const fileName = `mymoney_report_${timestamp}.pdf`;
-
-      const documentDir = FileSystem.documentDirectory;
-      if (!documentDir) {
-        throw new Error("Document directory tidak tersedia");
-      }
-
-      const newPath = `${documentDir}${fileName}`;
-
-      await FileSystem.moveAsync({
-        from: uri,
-        to: newPath,
-      });
-
-      setBackupProgress("PDF berhasil dibuat!");
-
-      // Get file info
-      const fileInfo = await FileSystem.getInfoAsync(newPath);
-      const fileSize =
-        fileInfo.exists && fileInfo.size
-          ? `${(fileInfo.size / 1024).toFixed(2)} KB`
-          : "0 KB";
-
-      Alert.alert(
-        "📄 PDF Siap",
-        `Laporan PDF berhasil dibuat!\n\nFile: ${fileName}\nUkuran: ${fileSize}`,
-        [
-          {
-            text: "Bagikan",
-            onPress: async () => {
-              try {
-                if (await Sharing.isAvailableAsync()) {
-                  await Sharing.shareAsync(newPath, {
-                    mimeType: "application/pdf",
-                    dialogTitle: "Bagikan Laporan PDF",
-                    UTI: "com.adobe.pdf",
-                  });
-                }
-              } catch (error) {
-                console.error("Error sharing PDF:", error);
-              }
-            },
-          },
-          {
-            text: "Lihat File",
-            onPress: () => {
-              Alert.alert("Info File", `Path: ${newPath}\nUkuran: ${fileSize}`);
-            },
-          },
-          { text: "OK", style: "default" },
-        ]
-      );
-
-      // Refresh list
-      await loadBackupFiles();
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      Alert.alert("❌ Error", "Gagal membuat PDF: " + (error as Error).message);
-    } finally {
-      setIsExporting(false);
-      setBackupProgress("");
-    }
+    const html = generatePDFHTML(state);
+    const { uri } = await Print.printToFileAsync({
+      html,
+      base64: false,
+    });
+    
+    // ... sisa kode
+  } catch (error) {
+    Alert.alert("❌ Error", "Gagal membuat PDF");
+  } finally {
+    setIsExporting(false);
+    setBackupProgress("");
+  }
+  */
   };
 
+  // Fungsi import dari JSON
   // Fungsi import dari JSON
   const handleImportData = async () => {
     try {
       setIsImporting(true);
       setBackupProgress("Memilih file backup...");
 
+      // ========== PAKAI expo-document-picker ==========
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/json",
-        copyToCacheDirectory: true,
+        type: ["application/json"],
+        multiple: false,
       });
 
-      if (result.canceled || !result.assets?.[0]) {
+      if (result.canceled || result.assets.length === 0) {
         setIsImporting(false);
         setBackupProgress("");
         return;
       }
 
       const fileUri = result.assets[0].uri;
+      // ========== SAMPAI SINI ==========
+
       setBackupProgress("Membaca file...");
 
       // Read file
@@ -738,10 +695,20 @@ const ProfileScreen: React.FC = () => {
       );
     } catch (error) {
       console.error("Error importing:", error);
-      Alert.alert(
-        "❌ Error",
-        "Gagal mengimpor data: " + (error as Error).message
-      );
+
+      // Type casting untuk error
+      const err = error as any;
+
+      // Error handling untuk expo-document-picker
+      if (err.code === "ERR_DOCUMENT_PICKER_CANCELED") {
+        console.log("User cancelled document picker");
+      } else {
+        Alert.alert(
+          "❌ Error",
+          "Gagal mengimpor data: " + (err.message || "Unknown error")
+        );
+      }
+
       setIsImporting(false);
       setBackupProgress("");
     }

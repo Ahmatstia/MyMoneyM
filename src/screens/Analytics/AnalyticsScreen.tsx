@@ -47,6 +47,15 @@ const AnalyticsScreen: React.FC = () => {
     return defaultIcon;
   };
 
+  // ==================== CHECK IF HAS DATA ====================
+  const hasData = useMemo(() => {
+    return (
+      state.transactions.length > 0 ||
+      state.budgets.length > 0 ||
+      state.savings.length > 0
+    );
+  }, [state]);
+
   // ==================== SAFE ANALYTICS CALCULATIONS ====================
   const transactionAnalytics = useMemo(() => {
     try {
@@ -131,19 +140,20 @@ const AnalyticsScreen: React.FC = () => {
     } catch (error) {
       console.error("Error calculating health score:", error);
       return {
-        overallScore: 50,
-        category: "Cukup",
-        color: Colors.warning,
+        overallScore: 0,
+        category: "Belum Ada Data",
+        color: Colors.gray500,
         factors: {
-          savingsRate: { score: 50, weight: 0.3, status: "warning" },
-          budgetAdherence: { score: 50, weight: 0.25, status: "warning" },
-          emergencyFund: { score: 50, weight: 0.2, status: "warning" },
-          expenseControl: { score: 50, weight: 0.15, status: "warning" },
-          goalProgress: { score: 50, weight: 0.1, status: "warning" },
+          savingsRate: { score: 0, weight: 0.3, status: "poor" },
+          budgetAdherence: { score: 0, weight: 0.25, status: "poor" },
+          emergencyFund: { score: 0, weight: 0.2, status: "poor" },
+          expenseControl: { score: 0, weight: 0.15, status: "poor" },
+          goalProgress: { score: 0, weight: 0.1, status: "poor" },
         },
         recommendations: [
-          "Mulai dengan mencatat semua transaksi secara rutin",
-          "Buat anggaran untuk kategori pengeluaran utama",
+          "Mulai dengan mencatat transaksi pertama Anda",
+          "Buat anggaran sederhana untuk pengeluaran utama",
+          "Tetapkan target tabungan kecil untuk memulai",
         ],
       };
     }
@@ -169,6 +179,233 @@ const AnalyticsScreen: React.FC = () => {
       ];
     }
   }, [transactionAnalytics, budgetAnalytics, savingsAnalytics]);
+
+  // ==================== NO DATA SCREEN ====================
+  if (!hasData) {
+    return (
+      <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
+        {/* Header Minimalis */}
+        <View
+          style={tw.style(`px-4 pt-3 pb-4 border-b`, {
+            backgroundColor: Colors.surface,
+            borderColor: Colors.border,
+          })}
+        >
+          <View style={tw`flex-row justify-between items-center`}>
+            <View>
+              <Text
+                style={tw.style(`text-2xl font-bold`, {
+                  color: Colors.textPrimary,
+                })}
+              >
+                Analitik
+              </Text>
+              <Text
+                style={tw.style(`text-sm mt-0.5`, {
+                  color: Colors.textSecondary,
+                })}
+              >
+                {getCurrentMonth()}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* No Data Content */}
+        <ScrollView
+          contentContainerStyle={tw.style(
+            `flex-1 justify-center items-center p-6`
+          )}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={tw`items-center`}>
+            <Ionicons
+              name="analytics-outline"
+              size={80}
+              color={Colors.gray500}
+              style={tw`mb-6`}
+            />
+
+            <Text
+              style={tw.style(`text-xl font-bold mb-3 text-center`, {
+                color: Colors.textPrimary,
+              })}
+            >
+              Belum Ada Data Keuangan
+            </Text>
+
+            <Text
+              style={tw.style(`text-base text-center mb-6`, {
+                color: Colors.textSecondary,
+              })}
+            >
+              Mulai catat transaksi, buat anggaran, atau tambah target tabungan
+              untuk melihat analitik kesehatan keuangan Anda.
+            </Text>
+
+            {/* Health Score Card - Empty State */}
+            <View
+              style={tw.style(`rounded-xl p-6 w-full border`, {
+                backgroundColor: Colors.surface,
+                borderColor: Colors.border,
+              })}
+            >
+              <View style={tw`items-center mb-4`}>
+                <View
+                  style={[
+                    tw`w-32 h-32 rounded-full justify-center items-center`,
+                    {
+                      backgroundColor: `${Colors.gray500}20`,
+                      borderWidth: 4,
+                      borderColor: Colors.gray500,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={tw.style(`text-4xl font-bold`, {
+                      color: Colors.gray500,
+                    })}
+                  >
+                    0
+                  </Text>
+                  <Text
+                    style={tw.style(`text-base mt-1`, {
+                      color: Colors.textSecondary,
+                    })}
+                  >
+                    / 100
+                  </Text>
+                </View>
+                <Text
+                  style={tw.style(`text-xl font-bold mt-4`, {
+                    color: Colors.gray500,
+                  })}
+                >
+                  Belum Ada Data
+                </Text>
+                <Text
+                  style={tw.style(`text-sm text-center mt-1`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
+                  Mulai catat keuangan untuk melihat skor
+                </Text>
+              </View>
+
+              {/* Quick Actions */}
+              <View style={tw`mt-6`}>
+                <Text
+                  style={tw.style(`text-sm font-medium mb-3`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
+                  Mulai Dari Sini
+                </Text>
+                <View style={tw`flex-row gap-3 mb-4`}>
+                  <TouchableOpacity
+                    style={tw.style(
+                      `flex-1 p-3 rounded-xl border items-center`,
+                      {
+                        backgroundColor: Colors.surfaceLight,
+                        borderColor: Colors.border,
+                      }
+                    )}
+                    onPress={() => navigation.navigate("AddTransaction")}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={24}
+                      color={Colors.accent}
+                    />
+                    <Text
+                      style={tw.style(`text-xs font-medium mt-2`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
+                      Transaksi Pertama
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={tw.style(
+                      `flex-1 p-3 rounded-xl border items-center`,
+                      {
+                        backgroundColor: Colors.surfaceLight,
+                        borderColor: Colors.border,
+                      }
+                    )}
+                    onPress={() => navigation.navigate("AddBudget")}
+                  >
+                    <Ionicons
+                      name="pie-chart-outline"
+                      size={24}
+                      color={Colors.purple}
+                    />
+                    <Text
+                      style={tw.style(`text-xs font-medium mt-2`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
+                      Buat Anggaran
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={tw.style(
+                      `flex-1 p-3 rounded-xl border items-center`,
+                      {
+                        backgroundColor: Colors.surfaceLight,
+                        borderColor: Colors.border,
+                      }
+                    )}
+                    onPress={() => navigation.navigate("AddSavings")}
+                  >
+                    <Ionicons
+                      name="wallet-outline"
+                      size={24}
+                      color={Colors.pink}
+                    />
+                    <Text
+                      style={tw.style(`text-xs font-medium mt-2`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
+                      Target Tabungan
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Tips Untuk Pemula */}
+              <View
+                style={tw.style(`mt-4 p-4 rounded-lg`, {
+                  backgroundColor: `${Colors.accent}10`,
+                })}
+              >
+                <Text
+                  style={tw.style(`text-sm font-medium mb-2`, {
+                    color: Colors.accent,
+                  })}
+                >
+                  💡 Tips Untuk Pemula
+                </Text>
+                <Text
+                  style={tw.style(`text-sm`, {
+                    color: Colors.textSecondary,
+                  })}
+                >
+                  1. Catat semua pemasukan dan pengeluaran{"\n"}
+                  2. Buat anggaran untuk 3 kategori utama{"\n"}
+                  3. Tetapkan target tabungan kecil{"\n"}
+                  4. Review mingguan progress Anda
+                </Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   // ==================== SAFE COMPARATIVE DATA ====================
   const getComparativeData = () => {
@@ -474,10 +711,12 @@ Kategori: ${financialHealthScore.category}
       if (score >= 60) return "Sehat";
       if (score >= 40) return "Cukup";
       if (score >= 20) return "Perlu Perbaikan";
+      if (score === 0) return "Belum Ada Data";
       return "Kritis";
     };
 
     const getScoreColor = (score: number) => {
+      if (score === 0) return Colors.gray500;
       if (score >= 80) return Colors.success;
       if (score >= 60) return Colors.info;
       if (score >= 40) return Colors.warning;
@@ -661,11 +900,12 @@ Kategori: ${financialHealthScore.category}
           </Text>
           <View style={tw`flex-row flex-wrap gap-2`}>
             {[
+              { range: "0", label: "Belum Ada Data", color: Colors.gray500 },
               { range: "80-100", label: "Sangat Sehat", color: Colors.success },
               { range: "60-79", label: "Sehat", color: Colors.info },
               { range: "40-59", label: "Cukup", color: Colors.warning },
               { range: "20-39", label: "Perlu Perbaikan", color: Colors.error },
-              { range: "0-19", label: "Kritis", color: Colors.errorDark },
+              { range: "1-19", label: "Kritis", color: Colors.errorDark },
             ].map((item) => (
               <View
                 key={item.range}
