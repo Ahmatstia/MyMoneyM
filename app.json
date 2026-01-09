@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.princcesrachel.mymoney",
-      "versionCode": 11,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#0F172A"
