@@ -9,9 +9,7 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug",
-        "enableProguardInReleaseBuilds": false,
-        "enableShrinkResourcesInReleaseBuilds": false
+        "gradleCommand": ":app:assembleDebug"
       },
       "env": {
         "EXPO_NO_NEW_ARCH": "true"
@@ -20,9 +18,7 @@
     "preview": {
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease",
-        "enableProguardInReleaseBuilds": false,
-        "enableShrinkResourcesInReleaseBuilds": false
+        "gradleCommand": ":app:assembleRelease"
       },
       "env": {
         "EXPO_NO_NEW_ARCH": "true",
@@ -34,9 +30,7 @@
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease",
-        "enableProguardInReleaseBuilds": false,
-        "enableShrinkResourcesInReleaseBuilds": false
+        "gradleCommand": ":app:bundleRelease"
       },
       "env": {
         "EXPO_NO_NEW_ARCH": "true",
@@ -50,8 +44,8 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-play-key.json",
-        "track": "production"
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
