@@ -180,13 +180,13 @@ const ProfileScreen: React.FC = () => {
               💡 Informasi
             </Text>
             <Text style={[tw`text-sm`, { color: TEXT_SECONDARY }]}>
-              • Data tersimpan lokal di perangkat Anda
+              Data tersimpan lokal di perangkat Anda
             </Text>
             <Text style={[tw`text-sm mt-1`, { color: TEXT_SECONDARY }]}>
-              • Aplikasi berfungsi tanpa internet
+              Aplikasi berfungsi tanpa internet
             </Text>
             <Text style={[tw`text-sm mt-1`, { color: TEXT_SECONDARY }]}>
-              • Update aplikasi untuk fitur terbaru
+              Update aplikasi untuk fitur terbaru
             </Text>
           </View>
 
@@ -315,7 +315,7 @@ const ProfileScreen: React.FC = () => {
                   { color: Colors.textTertiary },
                 ]}
               >
-                © 2024 - Dibuat dengan ❤️
+                © Lexanova 2026
               </Text>
             </View>
           </View>

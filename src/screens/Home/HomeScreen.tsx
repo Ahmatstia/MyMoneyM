@@ -1705,9 +1705,6 @@ const HomeScreen: React.FC = () => {
               ? "Keuangan yang sehat dimulai dari kebiasaan kecil yang konsisten."
               : "Langkah pertama menuju kebebasan finansial dimulai dari pencatatan yang baik."}
           </Text>
-          <Text style={[tw`text-xs`, { color: ACCENT_COLOR }]}>
-            #MyMoneyTips
-          </Text>
         </View>
 
         {/* Spacer untuk floating button */}

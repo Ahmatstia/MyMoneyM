@@ -1,4 +1,4 @@
-// File: src/utils/analytics.ts (DIPERBAIKI)
+// File: src/utils/analytics.ts (DIPERBAIKI - tanpa dana darurat)
 import { Transaction, Budget, Savings } from "../types";
 import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
 import { safeNumber, getSafePercentage } from "./calculations";
@@ -287,7 +287,7 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
   }
 };
 
-// ==================== FINANCIAL HEALTH SCORE ====================
+// ==================== FINANCIAL HEALTH SCORE (DIPERBAIKI - tanpa dana darurat) ====================
 
 export interface FinancialHealthScore {
   overallScore: number;
@@ -300,11 +300,6 @@ export interface FinancialHealthScore {
       status: "good" | "warning" | "poor";
     };
     budgetAdherence: {
-      score: number;
-      weight: number;
-      status: "good" | "warning" | "poor";
-    };
-    emergencyFund: {
       score: number;
       weight: number;
       status: "good" | "warning" | "poor";
@@ -353,22 +348,17 @@ export const calculateFinancialHealthScore = (
           },
           budgetAdherence: {
             score: 0,
-            weight: 0.25,
-            status: "poor" as FactorStatus,
-          },
-          emergencyFund: {
-            score: 0,
-            weight: 0.2,
+            weight: 0.3,
             status: "poor" as FactorStatus,
           },
           expenseControl: {
             score: 0,
-            weight: 0.15,
+            weight: 0.25,
             status: "poor" as FactorStatus,
           },
           goalProgress: {
             score: 0,
-            weight: 0.1,
+            weight: 0.15,
             status: "poor" as FactorStatus,
           },
         },
@@ -385,29 +375,22 @@ export const calculateFinancialHealthScore = (
       safeNumber(transactionAnalytics.savingsRate)
     );
 
-    // Factor 2: Budget Adherence (25%)
+    // Factor 2: Budget Adherence (30%)
     const budgetAdherenceScore = calculateBudgetAdherenceScore(budgetAnalytics);
 
-    // Factor 3: Emergency Fund (20%)
-    const emergencyFundScore = calculateEmergencyFundScore(
-      safeNumber(transactionAnalytics.totalExpense),
-      safeNumber(savingsAnalytics.totalCurrent)
-    );
-
-    // Factor 4: Expense Control (15%)
+    // Factor 3: Expense Control (25%) - GANTI DANA DARURAT DENGAN EXPENSE CONTROL
     const expenseControlScore = calculateExpenseControlScore(
       safeNumber(transactionAnalytics.totalIncome),
       safeNumber(transactionAnalytics.totalExpense)
     );
 
-    // Factor 5: Goal Progress (10%)
+    // Factor 4: Goal Progress (15%)
     const goalProgressScore = calculateGoalProgressScore(savingsAnalytics);
 
     // Calculate weighted overall score
     const overallScore = Math.round(
       savingsRateScore.score * savingsRateScore.weight +
         budgetAdherenceScore.score * budgetAdherenceScore.weight +
-        emergencyFundScore.score * emergencyFundScore.weight +
         expenseControlScore.score * expenseControlScore.weight +
         goalProgressScore.score * goalProgressScore.weight
     );
@@ -419,7 +402,6 @@ export const calculateFinancialHealthScore = (
     const recommendations = generateRecommendations({
       savingsRateScore,
       budgetAdherenceScore,
-      emergencyFundScore,
       expenseControlScore,
       goalProgressScore,
     });
@@ -431,7 +413,6 @@ export const calculateFinancialHealthScore = (
       factors: {
         savingsRate: savingsRateScore,
         budgetAdherence: budgetAdherenceScore,
-        emergencyFund: emergencyFundScore,
         expenseControl: expenseControlScore,
         goalProgress: goalProgressScore,
       },
@@ -439,7 +420,7 @@ export const calculateFinancialHealthScore = (
     };
   } catch (error) {
     console.error("Error calculating health score:", error);
-    // Return safe default dengan status "Belum Ada Data"
+    // Return safe default tanpa dana darurat
     return {
       overallScore: 0,
       category: "Belum Ada Data",
@@ -448,20 +429,19 @@ export const calculateFinancialHealthScore = (
         savingsRate: { score: 0, weight: 0.3, status: "poor" as FactorStatus },
         budgetAdherence: {
           score: 0,
-          weight: 0.25,
-          status: "poor" as FactorStatus,
-        },
-        emergencyFund: {
-          score: 0,
-          weight: 0.2,
+          weight: 0.3,
           status: "poor" as FactorStatus,
         },
         expenseControl: {
           score: 0,
+          weight: 0.25,
+          status: "poor" as FactorStatus,
+        },
+        goalProgress: {
+          score: 0,
           weight: 0.15,
           status: "poor" as FactorStatus,
         },
-        goalProgress: { score: 0, weight: 0.1, status: "poor" as FactorStatus },
       },
       recommendations: [
         "Mulai dengan mencatat semua transaksi secara rutin",
@@ -486,7 +466,7 @@ const calculateSavingsRateScore = (savingsRate: number) => {
     score = 40;
     status = "warning";
   } else {
-    score = 0; // Perbaikan: 0 bukan 10
+    score = 0;
     status = "poor";
   }
 
@@ -522,47 +502,17 @@ const calculateBudgetAdherenceScore = (
     status = overBudgetCount > 2 ? "poor" : "warning";
   }
 
-  return { score, weight: 0.25, status };
+  return { score, weight: 0.3, status };
 };
 
-const calculateEmergencyFundScore = (
-  monthlyExpense: number,
-  totalSavings: number
-) => {
-  // Perbaikan: Jika tidak ada data sama sekali
-  if (monthlyExpense === 0 && totalSavings === 0) {
-    return { score: 0, weight: 0.2, status: "poor" as FactorStatus };
-  }
-
-  const monthsCovered = monthlyExpense > 0 ? totalSavings / monthlyExpense : 0;
-
-  let score: number;
-  let status: FactorStatus;
-
-  if (monthsCovered >= 6) {
-    score = 100;
-    status = "good";
-  } else if (monthsCovered >= 3) {
-    score = 75;
-    status = "warning";
-  } else if (monthsCovered >= 1) {
-    score = 50;
-    status = "warning";
-  } else {
-    score = 0; // Perbaikan: 0 bukan 20
-    status = "poor";
-  }
-
-  return { score, weight: 0.2, status };
-};
-
+// PERBAIKAN: Ganti emergency fund dengan expense control yang lebih relevan
 const calculateExpenseControlScore = (
   totalIncome: number,
   totalExpense: number
 ) => {
   // Perbaikan: Jika tidak ada data sama sekali
   if (totalIncome === 0 && totalExpense === 0) {
-    return { score: 0, weight: 0.15, status: "poor" as FactorStatus };
+    return { score: 0, weight: 0.25, status: "poor" as FactorStatus };
   }
 
   const expenseRatio = totalIncome > 0 ? totalExpense / totalIncome : 1;
@@ -580,11 +530,11 @@ const calculateExpenseControlScore = (
     score = 40;
     status = "warning";
   } else {
-    score = 0; // Perbaikan: 0 bukan 10
+    score = 0;
     status = "poor";
   }
 
-  return { score, weight: 0.15, status };
+  return { score, weight: 0.25, status };
 };
 
 const calculateGoalProgressScore = (
@@ -599,7 +549,7 @@ const calculateGoalProgressScore = (
   let status: FactorStatus;
 
   if (totalCount === 0) {
-    score = 0; // ⚠️ PERBAIKAN: 0 bukan 50
+    score = 0;
     status = "poor";
   } else if (completedCount === totalCount) {
     score = 100;
@@ -611,11 +561,11 @@ const calculateGoalProgressScore = (
     score = 50;
     status = "warning";
   } else {
-    score = 0; // Perbaikan: 0 bukan 20
+    score = 0;
     status = "poor";
   }
 
-  return { score, weight: 0.1, status };
+  return { score, weight: 0.15, status };
 };
 
 // MENGUNAKAN WARNA DARI TEMA YANG SUDAH ADA
@@ -635,10 +585,10 @@ const getScoreCategory = (score: number) => {
   }
 };
 
+// PERBAIKAN: Update generate recommendations tanpa emergency fund
 const generateRecommendations = (factors: {
   savingsRateScore: { score: number; status: FactorStatus };
   budgetAdherenceScore: { score: number; status: FactorStatus };
-  emergencyFundScore: { score: number; status: FactorStatus };
   expenseControlScore: { score: number; status: FactorStatus };
   goalProgressScore: { score: number; status: FactorStatus };
 }) => {
@@ -648,7 +598,6 @@ const generateRecommendations = (factors: {
   if (
     factors.savingsRateScore.score === 0 &&
     factors.budgetAdherenceScore.score === 0 &&
-    factors.emergencyFundScore.score === 0 &&
     factors.expenseControlScore.score === 0 &&
     factors.goalProgressScore.score === 0
   ) {
@@ -687,19 +636,7 @@ const generateRecommendations = (factors: {
     );
   }
 
-  // Emergency fund recommendations
-  if (
-    factors.emergencyFundScore.status === "poor" ||
-    factors.emergencyFundScore.score < 40
-  ) {
-    recommendations.push("Buat dana darurat minimal 3x pengeluaran bulanan");
-  } else if (factors.emergencyFundScore.status === "warning") {
-    recommendations.push(
-      "Tingkatkan dana darurat hingga 6x pengeluaran bulanan"
-    );
-  }
-
-  // Expense control recommendations
+  // Expense control recommendations (ganti emergency fund)
   if (
     factors.expenseControlScore.status === "poor" ||
     factors.expenseControlScore.score < 40

@@ -211,12 +211,10 @@ const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* No Data Content */}
+        {/* No Data Content - DIPERBAIKI: Gunakan ScrollView dengan contentContainerStyle yang benar */}
         <ScrollView
-          contentContainerStyle={tw.style(
-            `flex-1 justify-center items-center p-6`
-          )}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={tw`py-6 px-6`} // DIPERBAIKI: tambah px-6
         >
           <View style={tw`items-center`}>
             <Ionicons
@@ -376,19 +374,26 @@ const AnalyticsScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Tips Untuk Pemula */}
+              {/* Tips Untuk Pemula - DIPERBAIKI: menggunakan komponen Text untuk semua teks */}
               <View
                 style={tw.style(`mt-4 p-4 rounded-lg`, {
                   backgroundColor: `${Colors.accent}10`,
                 })}
               >
-                <Text
-                  style={tw.style(`text-sm font-medium mb-2`, {
-                    color: Colors.accent,
-                  })}
-                >
-                  💡 Tips Untuk Pemula
-                </Text>
+                <View style={tw`flex-row items-center mb-2`}>
+                  <Ionicons
+                    name="bulb-outline"
+                    size={16}
+                    color={Colors.accent}
+                  />
+                  <Text
+                    style={tw.style(`text-sm font-medium ml-2`, {
+                      color: Colors.accent,
+                    })}
+                  >
+                    Tips Untuk Pemula
+                  </Text>
+                </View>
                 <Text
                   style={tw.style(`text-sm`, {
                     color: Colors.textSecondary,
@@ -804,7 +809,6 @@ Kategori: ${financialHealthScore.category}
                   >
                     {key === "savingsRate" && "Rasio Tabungan"}
                     {key === "budgetAdherence" && "Kepatuhan Anggaran"}
-                    {key === "emergencyFund" && "Dana Darurat"}
                     {key === "expenseControl" && "Kontrol Pengeluaran"}
                     {key === "goalProgress" && "Progress Target"}
                   </Text>
