@@ -39,6 +39,8 @@ import NotesScreen from "../screens/Notes/NotesScreen";
 import NoteFormScreen from "../screens/Notes/NoteFormScreen";
 import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
 
+import NotificationSettingsScreen from "../screens/Profile/NotificationSettingsScreen";
+
 // TEMA NAVY BLUE YANG DISEMPURNAKAN
 const PRIMARY_COLOR = "#0F172A"; // Navy blue gelap (utama)
 const ACCENT_COLOR = "#22D3EE"; // Cyan terang (aksen)
@@ -72,6 +74,7 @@ type StackParamList = {
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   NoteForm: { noteId?: string };
   NoteDetail: { noteId: string };
+  NotificationSettings: undefined; // ✅ TAMBAHKAN INI
 };
 
 // BUAT DUA STACK NAVIGATOR TERPISAH
@@ -80,7 +83,8 @@ const RootStack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
 
-// Custom Drawer Content (TIDAK BERUBAH)
+// Custom Drawer Content (DIPERBAIKI)
+// Custom Drawer Content (DIPERBAIKI LAGI)
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = [
     {
@@ -88,49 +92,49 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       label: "Beranda",
       icon: "home-outline" as const,
       activeIcon: "home" as const,
-      color: ACCENT_COLOR, // Cyan untuk highlight
+      color: "#22D3EE",
     },
     {
       name: "Transactions",
       label: "Transaksi",
       icon: "swap-horizontal-outline" as const,
       activeIcon: "swap-horizontal" as const,
-      color: SUCCESS_COLOR, // Hijau untuk transaksi
+      color: "#10B981",
     },
     {
       name: "Calendar",
       label: "Kalender",
       icon: "calendar-outline" as const,
       activeIcon: "calendar" as const,
-      color: INFO_COLOR, // Biru untuk kalender
+      color: "#3B82F6",
     },
     {
       name: "Analytics",
       label: "Analitik",
       icon: "stats-chart-outline" as const,
       activeIcon: "stats-chart" as const,
-      color: WARNING_COLOR, // Kuning untuk analitik
+      color: "#F59E0B",
     },
     {
       name: "Budget",
       label: "Anggaran",
       icon: "pie-chart-outline" as const,
       activeIcon: "pie-chart" as const,
-      color: "#8B5CF6", // Ungu untuk anggaran
+      color: "#8B5CF6",
     },
     {
       name: "Savings",
       label: "Tabungan",
       icon: "wallet-outline" as const,
       activeIcon: "wallet" as const,
-      color: ACCENT_COLOR, // Cyan untuk tabungan
+      color: "#22D3EE",
     },
     {
-      name: "Notes", // TAMBAHKAN INI
+      name: "Notes",
       label: "Catatan",
       icon: "document-text-outline" as const,
       activeIcon: "document-text" as const,
-      color: "#EC4899", // Pink untuk catatan
+      color: "#EC4899",
     },
   ];
 
@@ -144,28 +148,29 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     props.navigation.closeDrawer();
   };
 
+  const handleOpenNotificationSettings = () => {
+    props.navigation.navigate("NotificationSettings");
+    props.navigation.closeDrawer();
+  };
+
   return (
-    <View style={tw`flex-1 bg-[${BACKGROUND_COLOR}]`}>
-      {/* Header */}
-      <View
-        style={tw`pt-10 pb-6 px-6 bg-[${PRIMARY_COLOR}] border-b border-[${BORDER_COLOR}]`}
-      >
+    <View style={tw`flex-1 bg-[#0F172A]`}>
+      {/* Header - SEMUA HARUS DALAM TEXT COMPONENT */}
+      <View style={tw`pt-10 pb-6 px-6 bg-[#0F172A] border-b border-[#334155]`}>
         <TouchableOpacity onPress={handleOpenProfile} activeOpacity={0.8}>
           <View style={tw`flex-row items-center`}>
             <View
-              style={tw`w-14 h-14 bg-[${SURFACE_COLOR}] border border-[${BORDER_COLOR}] rounded-full items-center justify-center`}
+              style={tw`w-14 h-14 bg-[#1E293B] border border-[#334155] rounded-full items-center justify-center`}
             >
-              <Ionicons name="person" size={24} color={ACCENT_COLOR} />
+              <Ionicons name="person" size={24} color="#22D3EE" />
             </View>
             <View style={tw`ml-4 flex-1`}>
-              <Text style={tw`text-[${TEXT_PRIMARY}] text-lg font-bold`}>
-                MyMoney
-              </Text>
-              <Text style={tw`text-[${TEXT_SECONDARY}] text-xs mt-0.5`}>
+              <Text style={tw`text-[#F8FAFC] text-lg font-bold`}>MyMoney</Text>
+              <Text style={tw`text-[#CBD5E1] text-xs mt-0.5`}>
                 Keuangan Pribadi
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
+            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </View>
         </TouchableOpacity>
       </View>
@@ -176,97 +181,108 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         contentContainerStyle={tw`pt-4`}
         showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={tw`text-[${TEXT_SECONDARY}] text-xs font-medium px-6 mb-3 uppercase tracking-wider`}
-        >
-          Menu Utama
-        </Text>
+        {/* PASTIKAN SEMUA TEXT DALAM <Text> */}
+        <View style={tw`px-6 mb-3`}>
+          <Text
+            style={tw`text-[#CBD5E1] text-xs font-medium uppercase tracking-wider`}
+          >
+            Menu Utama
+          </Text>
+        </View>
 
         {menuItems.map((item) => (
           <TouchableOpacity
             key={item.name}
-            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-1 active:bg-[${SURFACE_COLOR}]`}
+            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-1 active:bg-[#1E293B]`}
             onPress={() => navigateToScreen(item.name as keyof StackParamList)}
             activeOpacity={0.7}
           >
             <View
-              style={tw`w-10 h-10 rounded-lg bg-[${SURFACE_COLOR}] border border-[${BORDER_COLOR}] items-center justify-center mr-3`}
+              style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
             >
               <Ionicons name={item.icon} size={20} color={item.color} />
             </View>
 
-            <Text style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium flex-1`}>
+            <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
               {item.label}
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={BORDER_COLOR} />
+            <Ionicons name="chevron-forward" size={16} color="#334155" />
           </TouchableOpacity>
         ))}
 
-        {/* Divider */}
-        <View style={tw`h-px bg-[${BORDER_COLOR}] my-6 mx-6`} />
+        {/* Divider - HANYA VIEW, TIDAK ADA TEXT */}
+        <View style={tw`h-px bg-[#334155] my-6 mx-6`} />
 
         {/* Menu Profil */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[${SURFACE_COLOR}]`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
           onPress={handleOpenProfile}
         >
           <View
-            style={tw`w-10 h-10 rounded-lg bg-[${SURFACE_COLOR}] border border-[${BORDER_COLOR}] items-center justify-center mr-3`}
+            style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
           >
-            <Ionicons name="person-outline" size={20} color={ACCENT_COLOR} />
+            <Ionicons name="person-outline" size={20} color="#22D3EE" />
           </View>
-          <Text style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium flex-1`}>
+          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
             Profil Saya
           </Text>
-          <Ionicons name="chevron-forward" size={16} color={BORDER_COLOR} />
+          <Ionicons name="chevron-forward" size={16} color="#334155" />
+        </TouchableOpacity>
+
+        {/* Notification Settings */}
+        <TouchableOpacity
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
+          onPress={handleOpenNotificationSettings}
+        >
+          <View
+            style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
+          >
+            <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
+          </View>
+          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
+            Pengaturan Notifikasi
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
 
         {/* Bantuan */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[${SURFACE_COLOR}]`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
           onPress={() => Alert.alert("Bantuan", "Hubungi: support@mymoney.app")}
         >
           <View
-            style={tw`w-10 h-10 rounded-lg bg-[${SURFACE_COLOR}] border border-[${BORDER_COLOR}] items-center justify-center mr-3`}
+            style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
           >
-            <Ionicons
-              name="help-circle-outline"
-              size={20}
-              color={WARNING_COLOR}
-            />
+            <Ionicons name="help-circle-outline" size={20} color="#F59E0B" />
           </View>
-          <Text style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium flex-1`}>
+          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
             Bantuan & FAQ
           </Text>
-          <Ionicons name="chevron-forward" size={16} color={BORDER_COLOR} />
+          <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
 
         {/* Pengaturan */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl active:bg-[${SURFACE_COLOR}]`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl active:bg-[#1E293B]`}
           onPress={() =>
             Alert.alert("Pengaturan", "Fitur pengaturan akan segera hadir")
           }
         >
           <View
-            style={tw`w-10 h-10 rounded-lg bg-[${SURFACE_COLOR}] border border-[${BORDER_COLOR}] items-center justify-center mr-3`}
+            style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
           >
-            <Ionicons
-              name="settings-outline"
-              size={20}
-              color={TEXT_SECONDARY}
-            />
+            <Ionicons name="settings-outline" size={20} color="#CBD5E1" />
           </View>
-          <Text style={tw`text-[${TEXT_PRIMARY}] text-sm font-medium flex-1`}>
+          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
             Pengaturan
           </Text>
-          <Ionicons name="chevron-forward" size={16} color={BORDER_COLOR} />
+          <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
       </DrawerContentScrollView>
 
       {/* Footer */}
-      <View style={tw`p-6 border-t border-[${BORDER_COLOR}]`}>
-        <Text style={tw`text-[${TEXT_SECONDARY}] text-xs text-center`}>
+      <View style={tw`p-6 border-t border-[#334155]`}>
+        <Text style={tw`text-[#CBD5E1] text-xs text-center`}>
           MyMoney v1.0 • © Lexa
         </Text>
       </View>
@@ -274,20 +290,20 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   );
 };
 
-// Main Stack Navigator untuk aplikasi (TIDAK BERUBAH)
+// Main Stack Navigator untuk aplikasi (DIPERBAIKI)
 const MainStackNavigator = () => {
   return (
     <MainStack.Navigator
       screenOptions={({ navigation, route }) => ({
         headerStyle: {
-          backgroundColor: PRIMARY_COLOR,
+          backgroundColor: "#0F172A",
           elevation: 0,
           shadowOpacity: 0,
           height: Platform.OS === "ios" ? 100 : 80,
           borderBottomWidth: 1,
-          borderBottomColor: BORDER_COLOR,
+          borderBottomColor: "#334155",
         },
-        headerTintColor: TEXT_PRIMARY,
+        headerTintColor: "#F8FAFC",
         headerTitleStyle: {
           fontWeight: "700",
           fontSize: 20,
@@ -299,35 +315,37 @@ const MainStackNavigator = () => {
             return (
               <TouchableOpacity
                 onPress={() => navigation.openDrawer()}
-                style={tw`ml-4 p-2 rounded-lg active:bg-[${SURFACE_COLOR}]`}
+                style={tw`ml-4 p-2 rounded-lg active:bg-[#1E293B]`}
               >
-                <Ionicons name="menu" size={26} color={ACCENT_COLOR} />
+                <Ionicons name="menu" size={26} color="#22D3EE" />
               </TouchableOpacity>
             );
           }
           return (
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={tw`ml-4 p-2 rounded-lg active:bg-[${SURFACE_COLOR}]`}
+              style={tw`ml-4 p-2 rounded-lg active:bg-[#1E293B]`}
             >
-              <Ionicons name="arrow-back" size={26} color={ACCENT_COLOR} />
+              <Ionicons name="arrow-back" size={26} color="#22D3EE" />
             </TouchableOpacity>
           );
         },
         headerRight: () => {
-          // Tambahkan aksi di header kanan jika perlu
+          // Tambahkan notifikasi badge di Home
           if (route.name === "Home") {
             return (
               <TouchableOpacity
-                onPress={() =>
-                  Alert.alert("Notifikasi", "Tidak ada notifikasi baru")
-                }
-                style={tw`mr-4 p-2 rounded-lg active:bg-[${SURFACE_COLOR}]`}
+                onPress={() => navigation.navigate("NotificationSettings")}
+                style={tw`mr-4 p-2 rounded-lg active:bg-[#1E293B] relative`}
               >
                 <Ionicons
                   name="notifications-outline"
                   size={24}
-                  color={TEXT_SECONDARY}
+                  color="#CBD5E1"
+                />
+                {/* Notification badge */}
+                <View
+                  style={tw`absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full`}
                 />
               </TouchableOpacity>
             );
@@ -391,6 +409,15 @@ const MainStackNavigator = () => {
         component={ProfileScreen}
         options={{
           title: "Profil Saya",
+        }}
+      />
+
+      {/* NOTIFICATION SETTINGS SCREEN */}
+      <MainStack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{
+          title: "Pengaturan Notifikasi",
         }}
       />
 
@@ -474,14 +501,14 @@ const MainStackNavigator = () => {
   );
 };
 
-// Drawer Navigator (TIDAK BERUBAH)
+// Drawer Navigator
 const DrawerNavigator = () => (
   <Drawer.Navigator
     drawerContent={(props) => <CustomDrawerContent {...props} />}
     screenOptions={{
       drawerStyle: {
         width: width * 0.8,
-        backgroundColor: "transparent",
+        backgroundColor: "#0F172A",
       },
       drawerType: "front",
       overlayColor: "rgba(0,0,0,0.7)",
@@ -493,7 +520,7 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
-// Root App Navigator - INI YANG DIPERBAIKI
+// Root App Navigator
 const AppNavigator: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -502,7 +529,7 @@ const AppNavigator: React.FC = () => {
       try {
         const value = await AsyncStorage.getItem("@onboarding_completed");
         console.log("DEBUG: Onboarding status =", value);
-        setIsFirstLaunch(value !== "true"); // true jika belum selesai
+        setIsFirstLaunch(value !== "true");
       } catch (error) {
         console.error(error);
         setIsFirstLaunch(true);

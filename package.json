@@ -38,7 +38,8 @@
     "react-native-screens": "~3.29.0",
     "react-native-svg": "14.1.0",
     "twrnc": "^4.16.0",
-    "victory-native": "^36.6.11"
+    "victory-native": "^36.6.11",
+    "expo-device": "~5.9.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

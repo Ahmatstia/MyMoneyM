@@ -1,15 +1,9 @@
-// File: App.tsx
 import "react-native-gesture-handler";
-import React from "react";
+import React, { useEffect } from "react";
 import { StatusBar } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  PaperProvider,
-  MD3DarkTheme,
-  MD3LightTheme,
-  adaptNavigationTheme,
-} from "react-native-paper";
+import { PaperProvider, MD3DarkTheme } from "react-native-paper";
 import {
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
@@ -17,10 +11,11 @@ import {
 import { AppProvider } from "./src/context/AppContext";
 import { Colors } from "./src/theme/theme";
 import AppNavigator from "./src/navigation/AppNavigator";
+import * as Notifications from "expo-notifications";
+import { adaptNavigationTheme } from "react-native-paper";
 
 // Adaptasi tema navigasi dengan React Native Paper
-const { LightTheme, DarkTheme } = adaptNavigationTheme({
-  reactNavigationLight: NavigationDefaultTheme,
+const { DarkTheme } = adaptNavigationTheme({
   reactNavigationDark: NavigationDarkTheme,
 });
 
@@ -29,69 +24,98 @@ const CustomDarkTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    // Override dengan warna Navy Blue Anda
-    primary: Colors.accent, // Cyan sebagai primary
-    primaryContainer: Colors.surfaceLight, // Container untuk primary
-    secondary: Colors.info, // Biru sebagai secondary
-    secondaryContainer: Colors.surface, // Container untuk secondary
-    tertiary: Colors.warning, // Kuning sebagai tertiary
-    tertiaryContainer: Colors.surface, // Container untuk tertiary
-    surface: Colors.surface, // Surface navy blue medium
-    surfaceVariant: Colors.surfaceLight, // Surface variant
-    background: Colors.background, // Background navy blue gelap
-    error: Colors.error, // Merah
-    errorContainer: Colors.error + "20", // Container error dengan opacity
-    onPrimary: Colors.textPrimary, // Teks di atas primary
-    onPrimaryContainer: Colors.textPrimary, // Teks di atas primary container
-    onSecondary: Colors.textPrimary, // Teks di atas secondary
-    onSecondaryContainer: Colors.textPrimary, // Teks di atas secondary container
-    onSurface: Colors.textPrimary, // Teks di atas surface
-    onSurfaceVariant: Colors.textSecondary, // Teks di atas surface variant
-    onBackground: Colors.textPrimary, // Teks di atas background
-    outline: Colors.border, // Outline/border
-    outlineVariant: Colors.borderLight, // Outline variant
-    inverseSurface: Colors.textPrimary, // Inverse surface
-    inverseOnSurface: Colors.primary, // Teks di atas inverse surface
-    inversePrimary: Colors.accent, // Inverse primary
-    shadow: Colors.primaryDark, // Shadow
-    scrim: Colors.primaryDark + "CC", // Scrim dengan opacity
-    surfaceDisabled: Colors.surface + "80", // Surface disabled
-    onSurfaceDisabled: Colors.textTertiary + "80", // Teks di surface disabled
-    backdrop: Colors.primaryDark + "CC", // Backdrop
+    primary: Colors.accent,
+    primaryContainer: Colors.surfaceLight,
+    secondary: Colors.info,
+    secondaryContainer: Colors.surface,
+    tertiary: Colors.warning,
+    tertiaryContainer: Colors.surface,
+    surface: Colors.surface,
+    surfaceVariant: Colors.surfaceLight,
+    background: Colors.background,
+    error: Colors.error,
+    errorContainer: Colors.error + "20",
+    onPrimary: Colors.textPrimary,
+    onPrimaryContainer: Colors.textPrimary,
+    onSecondary: Colors.textPrimary,
+    onSecondaryContainer: Colors.textPrimary,
+    onSurface: Colors.textPrimary,
+    onSurfaceVariant: Colors.textSecondary,
+    onBackground: Colors.textPrimary,
+    outline: Colors.border,
+    outlineVariant: Colors.borderLight,
+    inverseSurface: Colors.textPrimary,
+    inverseOnSurface: Colors.primary,
+    inversePrimary: Colors.accent,
+    shadow: Colors.primaryDark,
+    scrim: Colors.primaryDark + "CC",
+    surfaceDisabled: Colors.surface + "80",
+    onSurfaceDisabled: Colors.textTertiary + "80",
+    backdrop: Colors.primaryDark + "CC",
     elevation: {
       level0: "transparent",
-      level1: Colors.surface, // Elevation level 1
-      level2: Colors.surfaceLight, // Elevation level 2
-      level3: Colors.surfaceLight, // Elevation level 3
-      level4: Colors.surfaceLight, // Elevation level 4
-      level5: Colors.surfaceLight, // Elevation level 5
+      level1: Colors.surface,
+      level2: Colors.surfaceLight,
+      level3: Colors.surfaceLight,
+      level4: Colors.surfaceLight,
+      level5: Colors.surfaceLight,
     },
-  },
-  // Custom roundness
-  roundness: 14,
-};
-
-// Jika ingin versi light theme juga (opsional)
-const CustomLightTheme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    primary: Colors.primary,
-    background: Colors.background,
-    surface: Colors.surface,
-    // ... tambahkan override lainnya jika perlu
   },
   roundness: 14,
 };
 
 export default function App() {
+  // Configure notification behavior
+  useEffect(() => {
+    // Listen for notifications when app is foreground
+    const subscription = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log(
+          "📱 Notification received:",
+          notification.request.content.title
+        );
+      }
+    );
+
+    // Handle notification response (user taps)
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(
+          "👆 Notification tapped:",
+          response.notification.request.content.data
+        );
+
+        // Here you can handle navigation based on notification type
+        const data = response.notification.request.content.data;
+
+        // Example: Navigate based on notification type
+        // if (data.type === 'BUDGET_WARNING') {
+        //   // Use navigation ref or context to navigate
+        // }
+      });
+
+    // Configure notification appearance
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+
+    return () => {
+      subscription.remove();
+      responseSubscription.remove();
+    };
+  }, []);
+
   return (
     <PaperProvider theme={CustomDarkTheme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <StatusBar
-            backgroundColor={Colors.primary} // Navy blue gelap
-            barStyle="light-content" // Teks putih di status bar
+            backgroundColor={Colors.primary}
+            barStyle="light-content"
             translucent={false}
           />
           <AppProvider>

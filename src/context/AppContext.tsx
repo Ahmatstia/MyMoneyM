@@ -21,6 +21,7 @@ import {
   generateSavingsId,
   generateId,
 } from "../utils/idGenerator";
+import { notificationService } from "../utils/notifications";
 
 interface AppContextType {
   state: AppState;
@@ -55,13 +56,16 @@ interface AppContextType {
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
-  // 🔹 NOTES (BARU)
+  // 🔹 NOTES
   addNote: (
     note: Omit<Note, "id" | "createdAt" | "updatedAt">
   ) => Promise<void>;
   editNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   getNote: (id: string) => Note | undefined;
+
+  // 🔹 NOTIFICATIONS
+  triggerNotificationCheck: () => Promise<void>;
 
   // 🔹 SYSTEM
   refreshData: () => Promise<void>;
@@ -116,7 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       return {
         id: note.id || generateId(),
         title: note.title?.trim() || "Catatan tanpa judul",
-        content: note.content?.trim() || "", // Boleh kosong
+        content: note.content?.trim() || "",
         type: validTypes.includes(note.type) ? note.type : "general",
         mood: validMoods.includes(note.mood) ? note.mood : undefined,
         financialImpact: validImpacts.includes(note.financialImpact)
@@ -390,6 +394,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // ========== NOTIFICATIONS SETUP ==========
+  useEffect(() => {
+    const setupNotifications = async () => {
+      try {
+        if (!isLoading) {
+          // Request permission
+          await notificationService.registerForPushNotificationsAsync();
+
+          // Initialize notifications with current state
+          await notificationService.initialize(state);
+        }
+      } catch (error) {
+        console.error("❌ Error setting up notifications:", error);
+      }
+    };
+
+    setupNotifications();
+  }, [isLoading]);
+
+  // Update notifications when state changes
+  useEffect(() => {
+    if (!isLoading) {
+      notificationService.updateNotifications(state);
+    }
+  }, [
+    state.transactions,
+    state.budgets,
+    state.savings,
+    state.notes,
+    isLoading,
+  ]);
+
   // ========== SYSTEM FUNCTIONS ==========
   const refreshData = async () => {
     try {
@@ -422,6 +458,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.debugStorage();
   };
 
+  const triggerNotificationCheck = async () => {
+    await notificationService.checkImmediateAlerts(state);
+  };
+
   // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt">
@@ -451,6 +491,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
 
+    // Send notifications
+    await notificationService.updateNotifications(newState);
+
+    // Specific notification for large transaction
+    if (transaction.amount >= 1000000) {
+      await notificationService.sendNotification({
+        title: "💰 Transaksi Besar",
+        body: `Transaksi ${
+          transaction.type === "income" ? "pemasukan" : "pengeluaran"
+        } Rp ${transaction.amount.toLocaleString("id-ID")} tercatat`,
+        data: { type: "NEW_TRANSACTION", transactionId: newTransaction.id },
+      });
+    }
+
     console.log(`✅ Transaction added. Total: ${updatedTransactions.length}`);
   };
 
@@ -474,6 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const deleteTransaction = async (id: string) => {
@@ -501,6 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
 
     console.log(
       `✅ Transaction deleted. Remaining: ${updatedTransactions.length}`
@@ -531,6 +587,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+
+    // Send notification
+    await notificationService.updateNotifications(newState);
+    await notificationService.sendNotification({
+      title: "📊 Budget Baru",
+      body: `Budget ${budget.category} Rp ${budget.limit.toLocaleString(
+        "id-ID"
+      )} dibuat`,
+      data: { type: "NEW_BUDGET", budgetId: newBudget.id },
+    });
   };
 
   const editBudget = async (id: string, updates: Partial<Budget>) => {
@@ -550,6 +616,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const deleteBudget = async (id: string) => {
@@ -560,6 +627,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   // ========== SAVINGS FUNCTIONS ==========
@@ -595,6 +663,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+
+    // Send notification
+    await notificationService.updateNotifications(newState);
+    await notificationService.sendNotification({
+      title: "🏦 Tabungan Baru",
+      body: `Tabungan "${
+        savings.name
+      }" dengan target Rp ${savings.target.toLocaleString("id-ID")} dibuat`,
+      data: { type: "NEW_SAVINGS", savingsId: newSavings.id },
+    });
   };
 
   const editSavings = async (id: string, updates: Partial<Savings>) => {
@@ -609,6 +687,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const deleteSavings = async (id: string) => {
@@ -622,6 +701,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const addSavingsTransaction = async (
@@ -672,6 +752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const getSavingsTransactions = (savingsId: string): SavingsTransaction[] => {
@@ -680,7 +761,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  // ========== NOTES FUNCTIONS (BARU) ==========
+  // ========== NOTES FUNCTIONS ==========
   const addNote = async (
     note: Omit<Note, "id" | "createdAt" | "updatedAt">
   ) => {
@@ -700,6 +781,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+
+    // Send notification
+    await notificationService.updateNotifications(newState);
+    await notificationService.sendNotification({
+      title: "📔 Catatan Baru",
+      body: `Catatan "${note.title.substring(0, 30)}${
+        note.title.length > 30 ? "..." : ""
+      }" disimpan`,
+      data: { type: "NEW_NOTE", noteId: newNote.id },
+    });
 
     console.log(`✅ Note added. Total: ${updatedNotes.length}`);
   };
@@ -730,6 +821,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
 
     console.log(`✅ Note updated: ${updatedNote.title}`);
   };
@@ -745,6 +837,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
 
     console.log(`✅ Note deleted. Remaining: ${updatedNotes.length}`);
   };
@@ -776,6 +869,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     editNote,
     deleteNote,
     getNote,
+
+    // Notification Operations
+    triggerNotificationCheck,
+
     // System
     refreshData,
     clearAllData,
