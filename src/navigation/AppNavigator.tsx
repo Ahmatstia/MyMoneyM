@@ -34,12 +34,11 @@ import AddSavingsTransactionScreen from "../screens/Savings/AddSavingsTransactio
 import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
+import SettingsScreen from "../screens/Settings/SettingsScreen"; // ✅ TAMBAH INI
 
 import NotesScreen from "../screens/Notes/NotesScreen";
 import NoteFormScreen from "../screens/Notes/NoteFormScreen";
 import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
-
-import NotificationSettingsScreen from "../screens/Profile/NotificationSettingsScreen";
 
 // TEMA NAVY BLUE YANG DISEMPURNAKAN
 const PRIMARY_COLOR = "#0F172A"; // Navy blue gelap (utama)
@@ -66,6 +65,7 @@ type StackParamList = {
   Calendar: undefined;
   Profile: undefined;
   Notes: undefined;
+  Settings: undefined; // ✅ TAMBAH INI
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -74,7 +74,6 @@ type StackParamList = {
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   NoteForm: { noteId?: string };
   NoteDetail: { noteId: string };
-  NotificationSettings: undefined; // ✅ TAMBAHKAN INI
 };
 
 // BUAT DUA STACK NAVIGATOR TERPISAH
@@ -84,7 +83,6 @@ const Drawer = createDrawerNavigator();
 const { width } = Dimensions.get("window");
 
 // Custom Drawer Content (DIPERBAIKI)
-// Custom Drawer Content (DIPERBAIKI LAGI)
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const menuItems = [
     {
@@ -148,14 +146,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     props.navigation.closeDrawer();
   };
 
-  const handleOpenNotificationSettings = () => {
-    props.navigation.navigate("NotificationSettings");
+  const handleOpenSettings = () => {
+    props.navigation.navigate("Settings"); // ✅ GANTI KE Settings
     props.navigation.closeDrawer();
   };
 
   return (
     <View style={tw`flex-1 bg-[#0F172A]`}>
-      {/* Header - SEMUA HARUS DALAM TEXT COMPONENT */}
+      {/* Header */}
       <View style={tw`pt-10 pb-6 px-6 bg-[#0F172A] border-b border-[#334155]`}>
         <TouchableOpacity onPress={handleOpenProfile} activeOpacity={0.8}>
           <View style={tw`flex-row items-center`}>
@@ -181,7 +179,6 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         contentContainerStyle={tw`pt-4`}
         showsVerticalScrollIndicator={false}
       >
-        {/* PASTIKAN SEMUA TEXT DALAM <Text> */}
         <View style={tw`px-6 mb-3`}>
           <Text
             style={tw`text-[#CBD5E1] text-xs font-medium uppercase tracking-wider`}
@@ -193,7 +190,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {menuItems.map((item) => (
           <TouchableOpacity
             key={item.name}
-            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-1 active:bg-[#1E293B]`}
+            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-1`}
             onPress={() => navigateToScreen(item.name as keyof StackParamList)}
             activeOpacity={0.7}
           >
@@ -210,12 +207,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           </TouchableOpacity>
         ))}
 
-        {/* Divider - HANYA VIEW, TIDAK ADA TEXT */}
+        {/* Divider */}
         <View style={tw`h-px bg-[#334155] my-6 mx-6`} />
 
         {/* Menu Profil */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2`}
           onPress={handleOpenProfile}
         >
           <View
@@ -229,52 +226,34 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
 
-        {/* Notification Settings */}
+        {/* Pengaturan (Sekarang termasuk notifikasi) */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
-          onPress={handleOpenNotificationSettings}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2`}
+          onPress={handleOpenSettings}
         >
           <View
             style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
           >
-            <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
+            <Ionicons name="settings-outline" size={20} color="#F59E0B" />
           </View>
           <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
-            Pengaturan Notifikasi
+            Pengaturan
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
 
         {/* Bantuan */}
         <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2 active:bg-[#1E293B]`}
+          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2`}
           onPress={() => Alert.alert("Bantuan", "Hubungi: support@mymoney.app")}
         >
           <View
             style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
           >
-            <Ionicons name="help-circle-outline" size={20} color="#F59E0B" />
+            <Ionicons name="help-circle-outline" size={20} color="#3B82F6" />
           </View>
           <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
             Bantuan & FAQ
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color="#334155" />
-        </TouchableOpacity>
-
-        {/* Pengaturan */}
-        <TouchableOpacity
-          style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl active:bg-[#1E293B]`}
-          onPress={() =>
-            Alert.alert("Pengaturan", "Fitur pengaturan akan segera hadir")
-          }
-        >
-          <View
-            style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}
-          >
-            <Ionicons name="settings-outline" size={20} color="#CBD5E1" />
-          </View>
-          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>
-            Pengaturan
           </Text>
           <Ionicons name="chevron-forward" size={16} color="#334155" />
         </TouchableOpacity>
@@ -283,14 +262,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       {/* Footer */}
       <View style={tw`p-6 border-t border-[#334155]`}>
         <Text style={tw`text-[#CBD5E1] text-xs text-center`}>
-          MyMoney v1.0 • © Lexa
+          MyMoney v1.0.1 • © Lexa
         </Text>
       </View>
     </View>
   );
 };
 
-// Main Stack Navigator untuk aplikasi (DIPERBAIKI)
+// Main Stack Navigator untuk aplikasi
 const MainStackNavigator = () => {
   return (
     <MainStack.Navigator
@@ -315,7 +294,7 @@ const MainStackNavigator = () => {
             return (
               <TouchableOpacity
                 onPress={() => navigation.openDrawer()}
-                style={tw`ml-4 p-2 rounded-lg active:bg-[#1E293B]`}
+                style={tw`ml-4 p-2 rounded-lg`}
               >
                 <Ionicons name="menu" size={26} color="#22D3EE" />
               </TouchableOpacity>
@@ -324,33 +303,11 @@ const MainStackNavigator = () => {
           return (
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              style={tw`ml-4 p-2 rounded-lg active:bg-[#1E293B]`}
+              style={tw`ml-4 p-2 rounded-lg`}
             >
               <Ionicons name="arrow-back" size={26} color="#22D3EE" />
             </TouchableOpacity>
           );
-        },
-        headerRight: () => {
-          // Tambahkan notifikasi badge di Home
-          if (route.name === "Home") {
-            return (
-              <TouchableOpacity
-                onPress={() => navigation.navigate("NotificationSettings")}
-                style={tw`mr-4 p-2 rounded-lg active:bg-[#1E293B] relative`}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={24}
-                  color="#CBD5E1"
-                />
-                {/* Notification badge */}
-                <View
-                  style={tw`absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full`}
-                />
-              </TouchableOpacity>
-            );
-          }
-          return null;
         },
       })}
     >
@@ -412,12 +369,21 @@ const MainStackNavigator = () => {
         }}
       />
 
-      {/* NOTIFICATION SETTINGS SCREEN */}
+      {/* SETTINGS SCREEN (REPLACES NotificationSettings) */}
       <MainStack.Screen
-        name="NotificationSettings"
-        component={NotificationSettingsScreen}
+        name="Settings"
+        component={SettingsScreen}
         options={{
-          title: "Pengaturan Notifikasi",
+          title: "Pengaturan",
+        }}
+      />
+
+      {/* NOTES SCREEN */}
+      <MainStack.Screen
+        name="Notes"
+        component={NotesScreen}
+        options={{
+          title: "Catatan Finansial",
         }}
       />
 
@@ -435,6 +401,14 @@ const MainStackNavigator = () => {
         component={SavingsHistoryScreen}
         options={{
           title: "Riwayat Transaksi",
+        }}
+      />
+
+      <MainStack.Screen
+        name="NoteDetail"
+        component={NoteDetailScreen}
+        options={{
+          title: "Detail Catatan",
         }}
       />
 
@@ -475,27 +449,11 @@ const MainStackNavigator = () => {
       />
 
       <MainStack.Screen
-        name="Notes"
-        component={NotesScreen}
-        options={{
-          title: "Catatan Finansial",
-        }}
-      />
-
-      <MainStack.Screen
         name="NoteForm"
         component={NoteFormScreen}
         options={({ route }: any) => ({
           title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru",
         })}
-      />
-
-      <MainStack.Screen
-        name="NoteDetail"
-        component={NoteDetailScreen}
-        options={{
-          title: "Detail Catatan",
-        }}
       />
     </MainStack.Navigator>
   );

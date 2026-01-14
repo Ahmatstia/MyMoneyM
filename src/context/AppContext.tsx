@@ -426,6 +426,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoading,
   ]);
 
+  useEffect(() => {
+    // Check notifications every 5 minutes when app is active
+    const interval = setInterval(async () => {
+      if (!isLoading) {
+        await triggerNotificationCheck();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   // ========== SYSTEM FUNCTIONS ==========
   const refreshData = async () => {
     try {

@@ -15,7 +15,28 @@ import {
 // Key untuk menyimpan settings
 const NOTIFICATION_SETTINGS_KEY = "@mymoney_notification_settings";
 
-// Default settings
+// Advanced notification settings types - HARUS SAMA PERSIS dengan SettingsScreen
+export interface AdvancedNotificationSettings {
+  customSchedule?: {
+    morning?: string;
+    morningEnabled?: boolean;
+    evening?: string;
+    eveningEnabled?: boolean;
+    financialTip?: string;
+    financialTipEnabled?: boolean;
+  };
+  quietHours?: {
+    enabled?: boolean; // UBAH: jadi optional
+    start?: string;
+    end?: string;
+    ignoreUrgent?: boolean;
+  };
+  activeDays?: number[];
+  vibrationPattern?: "light" | "medium" | "heavy";
+  soundEnabled?: boolean;
+}
+
+// Default settings with advanced features
 const DEFAULT_SETTINGS = {
   dailyReminders: true,
   budgetAlerts: true,
@@ -24,7 +45,26 @@ const DEFAULT_SETTINGS = {
   notesReminders: true,
   weeklyReports: true,
   financialTips: true,
-  enabled: true, // Master switch
+  enabled: true,
+  advanced: {
+    customSchedule: {
+      morning: "07:30",
+      morningEnabled: true,
+      evening: "20:00",
+      eveningEnabled: true,
+      financialTip: "10:00",
+      financialTipEnabled: true,
+    },
+    quietHours: {
+      enabled: false,
+      start: "22:00",
+      end: "07:00",
+      ignoreUrgent: false,
+    },
+    activeDays: [0, 1, 2, 3, 4, 5, 6], // All days
+    vibrationPattern: "medium" as const,
+    soundEnabled: true,
+  } as AdvancedNotificationSettings,
 };
 
 // Configure notification handler
@@ -55,7 +95,26 @@ export class NotificationService {
         NOTIFICATION_SETTINGS_KEY
       );
       if (savedSettings) {
-        return JSON.parse(savedSettings);
+        const parsed = JSON.parse(savedSettings);
+        // Ensure advanced settings exist dengan default values
+        const loadedAdvanced = {
+          ...DEFAULT_SETTINGS.advanced,
+          ...(parsed.advanced || {}),
+          quietHours: {
+            ...DEFAULT_SETTINGS.advanced.quietHours,
+            ...(parsed.advanced?.quietHours || {}),
+          },
+          customSchedule: {
+            ...DEFAULT_SETTINGS.advanced.customSchedule,
+            ...(parsed.advanced?.customSchedule || {}),
+          },
+        };
+
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          advanced: loadedAdvanced,
+        };
       }
       return DEFAULT_SETTINGS;
     } catch (error) {
@@ -67,9 +126,26 @@ export class NotificationService {
   // Save settings ke AsyncStorage
   async saveSettings(settings: typeof DEFAULT_SETTINGS): Promise<void> {
     try {
+      // Ensure all advanced fields have values
+      const safeSettings = {
+        ...settings,
+        advanced: {
+          ...DEFAULT_SETTINGS.advanced,
+          ...settings.advanced,
+          quietHours: {
+            ...DEFAULT_SETTINGS.advanced.quietHours,
+            ...settings.advanced?.quietHours,
+          },
+          customSchedule: {
+            ...DEFAULT_SETTINGS.advanced.customSchedule,
+            ...settings.advanced?.customSchedule,
+          },
+        },
+      };
+
       await AsyncStorage.setItem(
         NOTIFICATION_SETTINGS_KEY,
-        JSON.stringify(settings)
+        JSON.stringify(safeSettings)
       );
     } catch (error) {
       console.error("❌ Error saving notification settings:", error);
@@ -113,37 +189,39 @@ export class NotificationService {
     }
   }
 
-  // Update scheduled notifications berdasarkan settings
-  async updateScheduledNotificationsBySettings(): Promise<void> {
-    try {
-      const settings = await this.loadSettings();
-      const scheduled = await this.getScheduledNotifications();
+  // Check if within quiet hours
+  private isWithinQuietHours(
+    quietHours: AdvancedNotificationSettings["quietHours"]
+  ): boolean {
+    // Use optional chaining dengan fallback ke default
+    if (!quietHours?.enabled) return false;
 
-      // Jika notifications disabled secara keseluruhan, cancel semua
-      if (!settings.enabled) {
-        await this.cancelAllNotifications();
-        return;
-      }
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
 
-      // Cancel specific notifications berdasarkan settings
-      for (const notification of scheduled) {
-        const notificationType = notification.content.data?.type;
+    const startTime = this.timeToMinutes(quietHours.start || "22:00");
+    const endTime = this.timeToMinutes(quietHours.end || "07:00");
 
-        if (
-          notificationType &&
-          !(await this.isNotificationTypeEnabled(notificationType))
-        ) {
-          await Notifications.cancelScheduledNotificationAsync(
-            notification.identifier
-          );
-        }
-      }
-    } catch (error) {
-      console.error(
-        "❌ Error updating scheduled notifications by settings:",
-        error
-      );
+    // Handle overnight quiet hours (e.g., 22:00 to 07:00)
+    if (startTime > endTime) {
+      return currentTime >= startTime || currentTime < endTime;
     }
+
+    return currentTime >= startTime && currentTime < endTime;
+  }
+
+  private timeToMinutes(timeStr: string | undefined): number {
+    if (!timeStr) return 0;
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return hours * 60 + minutes;
+  }
+
+  // Check if today is active day
+  private isActiveDay(activeDays?: number[]): boolean {
+    if (!activeDays || activeDays.length === 0) return true;
+
+    const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+    return activeDays.includes(today);
   }
 
   // ==================== PERMISSION & SETUP ====================
@@ -207,7 +285,7 @@ export class NotificationService {
 
       // Only schedule if notifications enabled
       if (settings.enabled) {
-        // Schedule daily reminders
+        // Schedule daily reminders dengan custom schedule
         await this.scheduleDailyReminders(appState);
 
         // Check for immediate alerts
@@ -222,7 +300,7 @@ export class NotificationService {
 
   // ==================== SCHEDULING ====================
 
-  // Schedule daily reminders
+  // Schedule daily reminders dengan custom schedule
   private async scheduleDailyReminders(appState: AppState): Promise<void> {
     try {
       console.log("⏰ Menjadwalkan pengingat harian...");
@@ -230,19 +308,26 @@ export class NotificationService {
       // Check settings sebelum schedule
       const settings = await this.loadSettings();
 
-      // Morning reminder (7:30 AM) - hanya jika dailyReminders enabled
-      if (settings.dailyReminders) {
+      // Morning reminder dengan custom time
+      if (
+        settings.dailyReminders &&
+        settings.advanced?.customSchedule?.morningEnabled !== false
+      ) {
+        const morningTime =
+          settings.advanced?.customSchedule?.morning || "07:30";
+        const [morningHour, morningMinute] = morningTime.split(":").map(Number);
+
         await this.sendScheduledNotification({
           title: "🌅 Pagi yang produktif!",
           body: "Jangan lupa catat semua transaksi hari ini untuk tracking yang akurat!",
-          hour: 7,
-          minute: 30,
+          hour: morningHour,
+          minute: morningMinute,
           repeats: true,
           data: { type: "MORNING_REMINDER" },
         });
       }
 
-      // Budget check reminder (12:00 PM) - hanya jika dailyReminders enabled
+      // Budget check reminder (12:00 PM)
       if (settings.dailyReminders) {
         await this.sendScheduledNotification({
           title: "🍽️ Cek Budget Makan Siang",
@@ -254,7 +339,7 @@ export class NotificationService {
         });
       }
 
-      // Transaction reminder (3:00 PM) - hanya jika dailyReminders enabled
+      // Transaction reminder (3:00 PM)
       if (settings.dailyReminders) {
         await this.sendScheduledNotification({
           title: "📝 Ingat Catat Transaksi",
@@ -266,31 +351,45 @@ export class NotificationService {
         });
       }
 
-      // Evening summary (8:00 PM) - hanya jika dailyReminders enabled
-      if (settings.dailyReminders) {
+      // Evening summary dengan custom time
+      if (
+        settings.dailyReminders &&
+        settings.advanced?.customSchedule?.eveningEnabled !== false
+      ) {
+        const eveningTime =
+          settings.advanced?.customSchedule?.evening || "20:00";
+        const [eveningHour, eveningMinute] = eveningTime.split(":").map(Number);
         const eveningSummary = generateDailySummary(appState);
+
         await this.sendScheduledNotification({
           title: "🌙 Waktunya Review Harian",
           body: eveningSummary,
-          hour: 20,
-          minute: 0,
+          hour: eveningHour,
+          minute: eveningMinute,
           repeats: true,
           data: { type: "EVENING_SUMMARY" },
         });
       }
 
-      // Random financial tip (10:00 AM) - hanya jika financialTips enabled
-      if (settings.financialTips) {
+      // Random financial tip dengan custom time
+      if (
+        settings.financialTips &&
+        settings.advanced?.customSchedule?.financialTipEnabled !== false
+      ) {
+        const tipTime =
+          settings.advanced?.customSchedule?.financialTip || "10:00";
+        const [tipHour, tipMinute] = tipTime.split(":").map(Number);
         const randomTip =
           NotificationMessages.financialTips[
             Math.floor(
               Math.random() * NotificationMessages.financialTips.length
             )
           ];
+
         await this.sendScheduledNotification({
           ...randomTip,
-          hour: 10,
-          minute: 0,
+          hour: tipHour,
+          minute: tipMinute,
           repeats: true,
         });
       }
@@ -303,19 +402,23 @@ export class NotificationService {
 
   // ==================== NOTIFICATION SENDING ====================
 
-  // Send single notification (immediate) dengan cek settings
+  // Send single notification (immediate) dengan cek advanced settings
   async sendNotification({
     title,
     body,
     data = {},
     sound = true,
+    urgent = false,
   }: {
     title: string;
     body: string;
     data?: any;
     sound?: boolean;
+    urgent?: boolean;
   }): Promise<void> {
     try {
+      const settings = await this.loadSettings();
+
       // Cek apakah notification type ini enabled
       if (data.type && !(await this.isNotificationTypeEnabled(data.type))) {
         console.log(
@@ -324,12 +427,36 @@ export class NotificationService {
         return;
       }
 
+      // Cek quiet hours dengan safe access
+      if (
+        settings.advanced?.quietHours &&
+        this.isWithinQuietHours(settings.advanced.quietHours)
+      ) {
+        // Jika urgent dan ignoreUrgent false, tetap kirim
+        if (urgent && !settings.advanced.quietHours.ignoreUrgent) {
+          console.log("🔔 Urgent notification sent during quiet hours");
+        } else {
+          console.log("🔕 Notification skipped (quiet hours)");
+          return;
+        }
+      }
+
+      // Cek active days
+      if (!this.isActiveDay(settings.advanced?.activeDays)) {
+        console.log("🔕 Notification skipped (inactive day)");
+        return;
+      }
+
+      // Use custom sound setting dengan safe access
+      const useSound =
+        settings.advanced?.soundEnabled !== false ? sound : false;
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
           data,
-          sound: sound,
+          sound: useSound,
         },
         trigger: null, // Immediate
       });
@@ -339,7 +466,7 @@ export class NotificationService {
     }
   }
 
-  // Send scheduled notification dengan cek settings
+  // Send scheduled notification dengan cek advanced settings
   async sendScheduledNotification({
     title,
     body,
@@ -356,6 +483,8 @@ export class NotificationService {
     data?: any;
   }): Promise<void> {
     try {
+      const settings = await this.loadSettings();
+
       // Cek apakah notification type ini enabled
       if (data.type && !(await this.isNotificationTypeEnabled(data.type))) {
         console.log(
@@ -364,11 +493,18 @@ export class NotificationService {
         return;
       }
 
+      // Cek active days untuk scheduled notifications
+      if (!this.isActiveDay(settings.advanced?.activeDays)) {
+        console.log("🔕 Scheduled notification skipped (inactive day)");
+        return;
+      }
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
           body,
           data,
+          sound: settings.advanced?.soundEnabled !== false,
         },
         trigger: {
           hour,
@@ -446,7 +582,15 @@ export class NotificationService {
 
       // Send immediate notifications if any
       for (const alert of allAlerts) {
-        await this.sendNotification(alert);
+        // Mark budget exceeded as urgent
+        const isUrgent =
+          alert.data?.type === "BUDGET_EXCEEDED" ||
+          alert.data?.type === "SAVINGS_DEADLINE";
+
+        await this.sendNotification({
+          ...alert,
+          urgent: isUrgent,
+        });
       }
 
       // Check monthly reminders (jika weekly reports enabled)
@@ -506,7 +650,10 @@ export class NotificationService {
 
       // Update evening summary if needed
       const settings = await this.loadSettings();
-      if (settings.dailyReminders) {
+      if (
+        settings.dailyReminders &&
+        settings.advanced?.customSchedule?.eveningEnabled !== false
+      ) {
         const scheduled = await this.getScheduledNotifications();
         const eveningNotification = scheduled.find(
           (n) => n.content.data?.type === "EVENING_SUMMARY"
@@ -518,11 +665,17 @@ export class NotificationService {
             eveningNotification.identifier
           );
 
+          const eveningTime =
+            settings.advanced?.customSchedule?.evening || "20:00";
+          const [eveningHour, eveningMinute] = eveningTime
+            .split(":")
+            .map(Number);
+
           await this.sendScheduledNotification({
             title: "🌙 Waktunya Review Harian",
             body: newSummary,
-            hour: 20,
-            minute: 0,
+            hour: eveningHour,
+            minute: eveningMinute,
             repeats: true,
             data: { type: "EVENING_SUMMARY" },
           });
@@ -546,20 +699,38 @@ export class NotificationService {
     try {
       const oldSettings = await this.loadSettings();
 
-      // Save new settings
-      await this.saveSettings(newSettings);
+      // Save new settings dengan safe merge
+      const safeNewSettings = {
+        ...newSettings,
+        advanced: {
+          ...DEFAULT_SETTINGS.advanced,
+          ...newSettings.advanced,
+          quietHours: {
+            ...DEFAULT_SETTINGS.advanced.quietHours,
+            ...newSettings.advanced?.quietHours,
+          },
+          customSchedule: {
+            ...DEFAULT_SETTINGS.advanced.customSchedule,
+            ...newSettings.advanced?.customSchedule,
+          },
+        },
+      };
+
+      await this.saveSettings(safeNewSettings);
 
       // Jika ada perubahan pada enabled status atau type settings, reinitialize
       if (
-        oldSettings.enabled !== newSettings.enabled ||
-        oldSettings.dailyReminders !== newSettings.dailyReminders ||
-        oldSettings.budgetAlerts !== newSettings.budgetAlerts ||
-        oldSettings.financialTips !== newSettings.financialTips
+        oldSettings.enabled !== safeNewSettings.enabled ||
+        oldSettings.dailyReminders !== safeNewSettings.dailyReminders ||
+        oldSettings.budgetAlerts !== safeNewSettings.budgetAlerts ||
+        oldSettings.financialTips !== safeNewSettings.financialTips ||
+        JSON.stringify(oldSettings.advanced?.customSchedule) !==
+          JSON.stringify(safeNewSettings.advanced?.customSchedule) ||
+        JSON.stringify(oldSettings.advanced?.activeDays) !==
+          JSON.stringify(safeNewSettings.advanced?.activeDays)
       ) {
         if (appState) {
           await this.reinitializeNotifications(appState);
-        } else {
-          await this.updateScheduledNotificationsBySettings();
         }
       }
 
@@ -573,5 +744,5 @@ export class NotificationService {
 // Export singleton instance
 export const notificationService = NotificationService.getInstance();
 
-// Export DEFAULT_SETTINGS untuk digunakan di NotificationSettingsScreen
+// Export DEFAULT_SETTINGS untuk digunakan di SettingsScreen
 export { DEFAULT_SETTINGS };
