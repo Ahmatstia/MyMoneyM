@@ -306,9 +306,9 @@ const SettingsScreen = () => {
     []
   );
   const [isLoading, setIsLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<
-    "general" | "notifications" | "data"
-  >("notifications");
+  const [activeSection, setActiveSection] = useState<"notifications" | "data">(
+    "notifications"
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [timePickerConfig, setTimePickerConfig] = useState<{
     visible: boolean;
@@ -585,7 +585,7 @@ const SettingsScreen = () => {
 
       {/* Tab Navigation */}
       <View style={tw`flex-row border-b border-[#334155]`}>
-        {["general", "notifications", "data"].map((section) => (
+        {["notifications", "data"].map((section) => (
           <TouchableOpacity
             key={section}
             style={[
@@ -602,7 +602,6 @@ const SettingsScreen = () => {
                   : tw`text-[#CBD5E1]`,
               ]}
             >
-              {section === "general" && "Umum"}
               {section === "notifications" && "Notifikasi"}
               {section === "data" && "Data"}
             </Text>
@@ -612,99 +611,6 @@ const SettingsScreen = () => {
 
       <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
         <View style={tw`p-6`}>
-          {/* GENERAL SETTINGS */}
-          {activeSection === "general" && (
-            <>
-              <View style={tw`mb-8`}>
-                <Text style={tw`text-white text-lg font-semibold mb-4`}>
-                  Tampilan
-                </Text>
-                <View style={tw`mb-4`}>
-                  <View
-                    style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4 mb-3`}
-                  >
-                    <Text style={tw`text-white`}>Tampilkan Saldo</Text>
-                    <Switch
-                      value={appSettings.showBalance}
-                      onValueChange={() => toggleAppSetting("showBalance")}
-                      trackColor={{ false: "#64748B", true: "#22D3EE" }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  <View
-                    style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4 mb-3`}
-                  >
-                    <Text style={tw`text-white`}>Getar (Haptic)</Text>
-                    <Switch
-                      value={appSettings.hapticFeedback}
-                      onValueChange={() => toggleAppSetting("hapticFeedback")}
-                      trackColor={{ false: "#64748B", true: "#22D3EE" }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  <View
-                    style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4 mb-3`}
-                  >
-                    <Text style={tw`text-white`}>Login dengan Biometrik</Text>
-                    <Switch
-                      value={appSettings.biometricLogin}
-                      onValueChange={() => toggleAppSetting("biometricLogin")}
-                      trackColor={{ false: "#64748B", true: "#22D3EE" }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  <View
-                    style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4`}
-                  >
-                    <Text style={tw`text-white`}>Backup Otomatis</Text>
-                    <Switch
-                      value={appSettings.autoBackup}
-                      onValueChange={() => toggleAppSetting("autoBackup")}
-                      trackColor={{ false: "#64748B", true: "#22D3EE" }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-                </View>
-              </View>
-
-              <View>
-                <Text style={tw`text-white text-lg font-semibold mb-4`}>
-                  Mata Uang
-                </Text>
-                <View style={tw`flex-row gap-2`}>
-                  {["IDR", "USD", "EUR"].map((currency) => (
-                    <TouchableOpacity
-                      key={currency}
-                      style={[
-                        tw`flex-1 py-3 rounded-lg items-center`,
-                        appSettings.currency === currency
-                          ? tw`bg-[#22D3EE]`
-                          : tw`bg-[#1E293B]`,
-                      ]}
-                      onPress={() =>
-                        saveAppSettings({ ...appSettings, currency })
-                      }
-                    >
-                      <Text
-                        style={[
-                          tw``,
-                          appSettings.currency === currency
-                            ? tw`text-white font-bold`
-                            : tw`text-[#CBD5E1]`,
-                        ]}
-                      >
-                        {currency}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </>
-          )}
-
           {/* NOTIFICATION SETTINGS */}
           {activeSection === "notifications" && (
             <>

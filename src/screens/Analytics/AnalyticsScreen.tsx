@@ -1,4 +1,4 @@
-// File: src/screens/Analytics/AnalyticsScreen.tsx
+// File: src/screens/Analytics/AnalyticsScreen.tsx - PERBAIKAN TABUNGAN
 import React, { useState, useMemo } from "react";
 import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
@@ -49,12 +49,26 @@ const AnalyticsScreen: React.FC = () => {
 
   // ==================== CHECK IF HAS DATA ====================
   const hasData = useMemo(() => {
-    return (
-      state.transactions.length > 0 ||
-      state.budgets.length > 0 ||
-      state.savings.length > 0
-    );
-  }, [state]);
+    console.log("📊 HAS DATA CHECK:", {
+      transactions: state.transactions.length,
+      budgets: state.budgets.length,
+      savings: state.savings.length,
+    });
+
+    // PERBAIKAN: Cek dengan lebih hati-hati
+    const hasTransactions = state.transactions.length > 0;
+    const hasBudgets = state.budgets.length > 0;
+    const hasSavings = state.savings.length > 0;
+
+    console.log("📊 HAS DATA RESULT:", {
+      hasTransactions,
+      hasBudgets,
+      hasSavings,
+      total: hasTransactions || hasBudgets || hasSavings,
+    });
+
+    return hasTransactions || hasBudgets || hasSavings;
+  }, [state.transactions, state.budgets, state.savings]);
 
   // ==================== SAFE ANALYTICS CALCULATIONS ====================
   const transactionAnalytics = useMemo(() => {
@@ -97,11 +111,29 @@ const AnalyticsScreen: React.FC = () => {
     }
   }, [state.transactions, timeRange]);
 
+  // Budget Analytics
   const budgetAnalytics = useMemo(() => {
+    console.log(
+      "🔄 Calculating budget analytics with:",
+      state.budgets.length,
+      "budgets"
+    );
     try {
-      return calculateBudgetAnalytics(state.budgets || []);
+      const result = calculateBudgetAnalytics(state.budgets || []);
+      console.log("📊 Budget Analytics Result:", {
+        totalBudget: result.totalBudget,
+        totalSpent: result.totalSpent,
+        overBudgetCount: result.overBudgetCount,
+        underBudgetCount: result.underBudgetCount,
+        hasBudgets: result.hasBudgets,
+      });
+      return result;
     } catch (error) {
-      console.error("Error calculating budget analytics:", error);
+      console.error(
+        "Error calculating budget analytics:",
+        error,
+        state.budgets
+      );
       return {
         totalBudget: 0,
         totalSpent: 0,
@@ -109,15 +141,44 @@ const AnalyticsScreen: React.FC = () => {
         overBudgetCount: 0,
         underBudgetCount: 0,
         budgetsAtRisk: [],
+        hasBudgets: false,
       };
     }
   }, [state.budgets]);
 
+  // PERBAIKAN: Savings Analytics dengan debug
   const savingsAnalytics = useMemo(() => {
+    console.log(
+      "💰 Calculating savings analytics with:",
+      state.savings.length,
+      "savings"
+    );
+    console.log(
+      "💰 Savings data:",
+      state.savings.map((s) => ({
+        name: s.name,
+        target: s.target,
+        current: s.current,
+      }))
+    );
+
     try {
-      return calculateSavingsAnalytics(state.savings || []);
+      const result = calculateSavingsAnalytics(state.savings || []);
+      console.log("💰 Savings Analytics Result:", {
+        totalTarget: result.totalTarget,
+        totalCurrent: result.totalCurrent,
+        overallProgress: result.overallProgress,
+        completedSavings: result.completedSavings,
+        activeSavings: result.activeSavings,
+        hasSavings: result.hasSavings,
+      });
+      return result;
     } catch (error) {
-      console.error("Error calculating savings analytics:", error);
+      console.error(
+        "Error calculating savings analytics:",
+        error,
+        state.savings
+      );
       return {
         totalTarget: 0,
         totalCurrent: 0,
@@ -125,9 +186,10 @@ const AnalyticsScreen: React.FC = () => {
         completedSavings: 0,
         activeSavings: 0,
         nearingCompletion: [],
+        hasSavings: false,
       };
     }
-  }, [state.savings]);
+  }, [state.savings]); // PERBAIKAN: Hanya depend on savings
 
   // ==================== FINANCIAL HEALTH SCORE ====================
   const financialHealthScore = useMemo(() => {
@@ -145,10 +207,9 @@ const AnalyticsScreen: React.FC = () => {
         color: Colors.gray500,
         factors: {
           savingsRate: { score: 0, weight: 0.3, status: "poor" },
-          budgetAdherence: { score: 0, weight: 0.25, status: "poor" },
-          emergencyFund: { score: 0, weight: 0.2, status: "poor" },
-          expenseControl: { score: 0, weight: 0.15, status: "poor" },
-          goalProgress: { score: 0, weight: 0.1, status: "poor" },
+          budgetAdherence: { score: 0, weight: 0.3, status: "poor" },
+          expenseControl: { score: 0, weight: 0.25, status: "poor" },
+          goalProgress: { score: 0, weight: 0.15, status: "poor" },
         },
         recommendations: [
           "Mulai dengan mencatat transaksi pertama Anda",
@@ -211,10 +272,10 @@ const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* No Data Content - DIPERBAIKI: Gunakan ScrollView dengan contentContainerStyle yang benar */}
+        {/* No Data Content */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={tw`py-6 px-6`} // DIPERBAIKI: tambah px-6
+          contentContainerStyle={tw`py-6 px-6`}
         >
           <View style={tw`items-center`}>
             <Ionicons
@@ -374,7 +435,7 @@ const AnalyticsScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Tips Untuk Pemula - DIPERBAIKI: menggunakan komponen Text untuk semua teks */}
+              {/* Tips Untuk Pemula */}
               <View
                 style={tw.style(`mt-4 p-4 rounded-lg`, {
                   backgroundColor: `${Colors.accent}10`,
@@ -589,6 +650,12 @@ RASIO TABUNGAN: ${safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
 
 📈 SKOR KESEHATAN KEUANGAN: ${financialHealthScore.overallScore}/100
 Kategori: ${financialHealthScore.category}
+
+💰 TABUNGAN: ${formatCurrency(
+        savingsAnalytics.totalCurrent
+      )} / ${formatCurrency(
+        savingsAnalytics.totalTarget
+      )} (${savingsAnalytics.overallProgress.toFixed(1)}%)
 
 💡 INSIGHT: ${insights[0]?.message || "Keuangan dalam kondisi stabil"}
 
@@ -810,7 +877,7 @@ Kategori: ${financialHealthScore.category}
                     {key === "savingsRate" && "Rasio Tabungan"}
                     {key === "budgetAdherence" && "Kepatuhan Anggaran"}
                     {key === "expenseControl" && "Kontrol Pengeluaran"}
-                    {key === "goalProgress" && "Progress Target"}
+                    {key === "goalProgress" && "Progress Target Tabungan"}
                   </Text>
                   <Text
                     style={tw.style(`text-sm`, { color: Colors.textPrimary })}
@@ -1083,7 +1150,7 @@ Kategori: ${financialHealthScore.category}
         {/* Health Tab */}
         {activeTab === "health" && renderHealthScore()}
 
-        {/* Summary Tab */}
+        {/* Summary Tab - PERBAIKAN: Tampilkan tabungan dengan benar */}
         {activeTab === "summary" && (
           <>
             {/* Main Stats Card */}
@@ -1281,7 +1348,7 @@ Kategori: ${financialHealthScore.category}
               )}
             </View>
 
-            {/* Quick Stats */}
+            {/* Quick Stats - PERBAIKAN: Tampilkan tabungan dengan benar */}
             <View style={tw`flex-row gap-3 mb-4`}>
               <View
                 style={tw.style(`flex-1 p-3 rounded-xl border`, {
@@ -1311,6 +1378,7 @@ Kategori: ${financialHealthScore.category}
                 </Text>
               </View>
 
+              {/* Card Anggaran */}
               <View
                 style={tw.style(`flex-1 p-3 rounded-xl border`, {
                   backgroundColor: Colors.surface,
@@ -1326,20 +1394,40 @@ Kategori: ${financialHealthScore.category}
                 </Text>
                 <Text
                   style={tw.style(`text-lg font-bold`, {
-                    color: Colors.textPrimary,
+                    color:
+                      budgetAnalytics.overBudgetCount > 0
+                        ? Colors.error
+                        : budgetAnalytics.hasBudgets
+                        ? Colors.success
+                        : Colors.textPrimary,
                   })}
                 >
-                  {budgetAnalytics.overBudgetCount}
+                  {budgetAnalytics.hasBudgets ? (
+                    budgetAnalytics.overBudgetCount > 0 ? (
+                      <Text style={{ color: Colors.error }}>
+                        {budgetAnalytics.overBudgetCount} ⚠️
+                      </Text>
+                    ) : (
+                      <Text style={{ color: Colors.success }}>
+                        {budgetAnalytics.underBudgetCount} ✓
+                      </Text>
+                    )
+                  ) : (
+                    "0"
+                  )}
                 </Text>
                 <Text
                   style={tw.style(`text-xs`, { color: Colors.textTertiary })}
                 >
-                  {budgetAnalytics.overBudgetCount > 0
-                    ? "Melebihi limit"
-                    : "Semua aman"}
+                  {budgetAnalytics.hasBudgets
+                    ? budgetAnalytics.overBudgetCount > 0
+                      ? "Melebihi limit"
+                      : "Semua aman"
+                    : "Belum ada anggaran"}
                 </Text>
               </View>
 
+              {/* PERBAIKAN: Card Tabungan dengan tampilan yang benar */}
               <View
                 style={tw.style(`flex-1 p-3 rounded-xl border`, {
                   backgroundColor: Colors.surface,
@@ -1355,20 +1443,270 @@ Kategori: ${financialHealthScore.category}
                 </Text>
                 <Text
                   style={tw.style(`text-lg font-bold`, {
-                    color: Colors.textPrimary,
+                    color: savingsAnalytics.hasSavings
+                      ? savingsAnalytics.overallProgress >= 100
+                        ? Colors.success
+                        : savingsAnalytics.overallProgress >= 50
+                        ? Colors.warning
+                        : Colors.textPrimary
+                      : Colors.textPrimary,
                   })}
                 >
-                  {savingsAnalytics.completedSavings}/
-                  {savingsAnalytics.activeSavings +
-                    savingsAnalytics.completedSavings}
+                  {savingsAnalytics.hasSavings
+                    ? `${savingsAnalytics.completedSavings}/${
+                        savingsAnalytics.activeSavings +
+                        savingsAnalytics.completedSavings
+                      }`
+                    : "0"}
                 </Text>
                 <Text
                   style={tw.style(`text-xs`, { color: Colors.textTertiary })}
                 >
-                  {savingsAnalytics.overallProgress.toFixed(0)}% tercapai
+                  {savingsAnalytics.hasSavings
+                    ? savingsAnalytics.overallProgress > 0
+                      ? `${savingsAnalytics.overallProgress.toFixed(
+                          0
+                        )}% tercapai`
+                      : "Belum ada progress"
+                    : "Belum ada tabungan"}
                 </Text>
               </View>
             </View>
+
+            {/* PERBAIKAN: Savings Progress Section */}
+            {savingsAnalytics.hasSavings && (
+              <View
+                style={tw.style(`rounded-xl p-4 mb-4 border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
+              >
+                <Text
+                  style={tw.style(`text-lg font-semibold mb-4`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
+                  Progress Tabungan
+                </Text>
+
+                <View style={tw`mb-3`}>
+                  <View style={tw`flex-row justify-between items-center mb-2`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
+                      Total Tabungan
+                    </Text>
+                    <Text
+                      style={tw.style(`text-sm`, { color: Colors.textPrimary })}
+                    >
+                      {formatCurrency(savingsAnalytics.totalCurrent)} /{" "}
+                      {formatCurrency(savingsAnalytics.totalTarget)}
+                    </Text>
+                  </View>
+                  <ProgressBar
+                    progress={Math.max(
+                      0,
+                      Math.min(
+                        safeNumber(savingsAnalytics.overallProgress) / 100,
+                        1
+                      )
+                    )}
+                    color={
+                      savingsAnalytics.overallProgress >= 100
+                        ? Colors.success
+                        : savingsAnalytics.overallProgress >= 75
+                        ? Colors.info
+                        : savingsAnalytics.overallProgress >= 50
+                        ? Colors.warning
+                        : Colors.accent
+                    }
+                    style={tw.style(`h-2 rounded-full`, {
+                      backgroundColor: Colors.surfaceLight,
+                    })}
+                  />
+                  <View style={tw`flex-row justify-between mt-1`}>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textTertiary,
+                      })}
+                    >
+                      Terkumpul: {formatCurrency(savingsAnalytics.totalCurrent)}
+                    </Text>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textTertiary,
+                      })}
+                    >
+                      {savingsAnalytics.overallProgress.toFixed(1)}%
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Savings Status Summary */}
+                <View style={tw`flex-row justify-between`}>
+                  <View style={tw`items-center flex-1`}>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
+                      Selesai
+                    </Text>
+                    <Text
+                      style={tw.style(`text-base font-bold`, {
+                        color: Colors.success,
+                      })}
+                    >
+                      {savingsAnalytics.completedSavings}
+                    </Text>
+                  </View>
+                  <View style={tw`items-center flex-1`}>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
+                      Aktif
+                    </Text>
+                    <Text
+                      style={tw.style(`text-base font-bold`, {
+                        color: Colors.accent,
+                      })}
+                    >
+                      {savingsAnalytics.activeSavings}
+                    </Text>
+                  </View>
+                  <View style={tw`items-center flex-1`}>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textSecondary,
+                      })}
+                    >
+                      Hampir
+                    </Text>
+                    <Text
+                      style={tw.style(`text-base font-bold`, {
+                        color: Colors.warning,
+                      })}
+                    >
+                      {savingsAnalytics.nearingCompletion?.length || 0}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Nearing Completion Info */}
+                {savingsAnalytics.nearingCompletion &&
+                  savingsAnalytics.nearingCompletion.length > 0 && (
+                    <View style={tw`mt-3`}>
+                      <Text
+                        style={tw.style(`text-xs font-medium mb-1`, {
+                          color: Colors.textSecondary,
+                        })}
+                      >
+                        Hampir Tercapai:
+                      </Text>
+                      {savingsAnalytics.nearingCompletion
+                        .slice(0, 2)
+                        .map((saving, index) => (
+                          <View
+                            key={index}
+                            style={tw`flex-row justify-between items-center mb-1`}
+                          >
+                            <Text
+                              style={tw.style(`text-xs`, {
+                                color: Colors.textPrimary,
+                              })}
+                            >
+                              {saving.name}
+                            </Text>
+                            <Text
+                              style={tw.style(`text-xs font-bold`, {
+                                color: Colors.warning,
+                              })}
+                            >
+                              {((saving.current / saving.target) * 100).toFixed(
+                                0
+                              )}
+                              %
+                            </Text>
+                          </View>
+                        ))}
+                    </View>
+                  )}
+              </View>
+            )}
+
+            {/* Budget Progress Section */}
+            {budgetAnalytics.hasBudgets && (
+              <View
+                style={tw.style(`rounded-xl p-4 mb-4 border`, {
+                  backgroundColor: Colors.surface,
+                  borderColor: Colors.border,
+                })}
+              >
+                <Text
+                  style={tw.style(`text-lg font-semibold mb-4`, {
+                    color: Colors.textPrimary,
+                  })}
+                >
+                  Progress Anggaran
+                </Text>
+
+                <View style={tw`mb-3`}>
+                  <View style={tw`flex-row justify-between items-center mb-2`}>
+                    <Text
+                      style={tw.style(`text-sm font-medium`, {
+                        color: Colors.textPrimary,
+                      })}
+                    >
+                      Total Anggaran
+                    </Text>
+                    <Text
+                      style={tw.style(`text-sm`, { color: Colors.textPrimary })}
+                    >
+                      {formatCurrency(budgetAnalytics.totalBudget)}
+                    </Text>
+                  </View>
+                  <ProgressBar
+                    progress={Math.max(
+                      0,
+                      Math.min(
+                        safeNumber(budgetAnalytics.utilizationRate) / 100,
+                        1
+                      )
+                    )}
+                    color={
+                      budgetAnalytics.utilizationRate <= 80
+                        ? Colors.success
+                        : budgetAnalytics.utilizationRate <= 100
+                        ? Colors.warning
+                        : Colors.error
+                    }
+                    style={tw.style(`h-2 rounded-full`, {
+                      backgroundColor: Colors.surfaceLight,
+                    })}
+                  />
+                  <View style={tw`flex-row justify-between mt-1`}>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textTertiary,
+                      })}
+                    >
+                      Terpakai: {formatCurrency(budgetAnalytics.totalSpent)}
+                    </Text>
+                    <Text
+                      style={tw.style(`text-xs`, {
+                        color: Colors.textTertiary,
+                      })}
+                    >
+                      {budgetAnalytics.utilizationRate.toFixed(1)}%
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </>
         )}
 

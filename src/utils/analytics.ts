@@ -1,4 +1,4 @@
-// File: src/utils/analytics.ts (DIPERBAIKI - tanpa dana darurat)
+// File: src/utils/analytics.ts (DIPERBAIKI - fix savings analytics)
 import { Transaction, Budget, Savings } from "../types";
 import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
 import { safeNumber, getSafePercentage } from "./calculations";
@@ -152,10 +152,14 @@ export const calculateTransactionAnalytics = (
   }
 };
 
-// Calculate budget utilization analytics
+// PERBAIKAN: Calculate budget utilization analytics - FIXED
 export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
   try {
-    if (!budgets || budgets.length === 0) {
+    console.log("📊 DEBUG - Budgets received for analytics:", budgets.length);
+
+    // Jika budgets adalah array kosong atau null/undefined
+    if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
+      console.log("📊 DEBUG - No budgets available");
       return {
         totalBudget: 0,
         totalSpent: 0,
@@ -163,30 +167,61 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
         overBudgetCount: 0,
         underBudgetCount: 0,
         budgetsAtRisk: [] as Budget[],
+        hasBudgets: false,
       };
     }
 
-    const totalBudget = budgets.reduce(
+    // Filter hanya budgets yang valid
+    const validBudgets = budgets.filter(
+      (b) =>
+        b &&
+        typeof b === "object" &&
+        typeof b.limit === "number" &&
+        typeof b.spent === "number" &&
+        !isNaN(b.limit) &&
+        !isNaN(b.spent)
+    );
+
+    console.log("📊 DEBUG - Valid budgets count:", validBudgets.length);
+
+    const totalBudget = validBudgets.reduce(
       (sum, b) => sum + safeNumber(b.limit),
       0
     );
-    const totalSpent = budgets.reduce((sum, b) => sum + safeNumber(b.spent), 0);
+
+    const totalSpent = validBudgets.reduce(
+      (sum, b) => sum + safeNumber(b.spent),
+      0
+    );
+
+    console.log(
+      "📊 DEBUG - Total Budget:",
+      totalBudget,
+      "Total Spent:",
+      totalSpent
+    );
+
     const utilizationRate =
       totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-    const overBudgetCount = budgets.filter(
+    const overBudgetCount = validBudgets.filter(
       (b) => safeNumber(b.spent) > safeNumber(b.limit)
     ).length;
-    const underBudgetCount = budgets.filter(
+
+    const underBudgetCount = validBudgets.filter(
       (b) => safeNumber(b.spent) <= safeNumber(b.limit)
     ).length;
 
-    const budgetsAtRisk = budgets
-      .filter((b) => safeNumber(b.spent) > safeNumber(b.limit) * 0.8)
+    const budgetsAtRisk = validBudgets
+      .filter((b) => {
+        const limit = safeNumber(b.limit);
+        const spent = safeNumber(b.spent);
+        return limit > 0 && spent > limit * 0.8 && spent <= limit;
+      })
       .sort((a, b) => {
         const ratioA =
-          safeNumber(b.limit) > 0
-            ? safeNumber(b.spent) / safeNumber(b.limit)
+          safeNumber(a.limit) > 0
+            ? safeNumber(a.spent) / safeNumber(a.limit)
             : 0;
         const ratioB =
           safeNumber(b.limit) > 0
@@ -202,6 +237,7 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
       overBudgetCount,
       underBudgetCount,
       budgetsAtRisk,
+      hasBudgets: validBudgets.length > 0,
     };
   } catch (error) {
     console.error("Error in calculateBudgetAnalytics:", error);
@@ -212,14 +248,19 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
       overBudgetCount: 0,
       underBudgetCount: 0,
       budgetsAtRisk: [],
+      hasBudgets: false,
     };
   }
 };
 
-// Calculate savings progress analytics
+// PERBAIKAN BESAR: Calculate savings progress analytics - FIXED
 export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
   try {
-    if (!savings || savings.length === 0) {
+    console.log("💰 DEBUG - Savings received for analytics:", savings?.length);
+
+    // Jika savings adalah array kosong atau null/undefined
+    if (!savings || !Array.isArray(savings) || savings.length === 0) {
+      console.log("💰 DEBUG - No savings available");
       return {
         totalTarget: 0,
         totalCurrent: 0,
@@ -227,28 +268,52 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
         completedSavings: 0,
         activeSavings: 0,
         nearingCompletion: [] as Savings[],
+        hasSavings: false, // PERBAIKAN: Tambah flag hasSavings
       };
     }
 
-    const totalTarget = savings.reduce(
+    // Filter hanya savings yang valid
+    const validSavings = savings.filter(
+      (s) =>
+        s &&
+        typeof s === "object" &&
+        typeof s.target === "number" &&
+        typeof s.current === "number" &&
+        !isNaN(s.target) &&
+        !isNaN(s.current)
+    );
+
+    console.log("💰 DEBUG - Valid savings count:", validSavings.length);
+
+    const totalTarget = validSavings.reduce(
       (sum, s) => sum + safeNumber(s.target),
       0
     );
-    const totalCurrent = savings.reduce(
+
+    const totalCurrent = validSavings.reduce(
       (sum, s) => sum + safeNumber(s.current),
       0
     );
+
+    console.log(
+      "💰 DEBUG - Total Target:",
+      totalTarget,
+      "Total Current:",
+      totalCurrent
+    );
+
     const overallProgress =
       totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
-    const completedSavings = savings.filter(
+    const completedSavings = validSavings.filter(
       (s) => safeNumber(s.current) >= safeNumber(s.target)
     ).length;
-    const activeSavings = savings.filter(
+
+    const activeSavings = validSavings.filter(
       (s) => safeNumber(s.current) < safeNumber(s.target)
     ).length;
 
-    const nearingCompletion = savings
+    const nearingCompletion = validSavings
       .filter((s) => {
         const target = safeNumber(s.target);
         const current = safeNumber(s.current);
@@ -273,6 +338,7 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
       completedSavings,
       activeSavings,
       nearingCompletion,
+      hasSavings: validSavings.length > 0, // PERBAIKAN: Tambah flag
     };
   } catch (error) {
     console.error("Error in calculateSavingsAnalytics:", error);
@@ -283,11 +349,12 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
       completedSavings: 0,
       activeSavings: 0,
       nearingCompletion: [],
+      hasSavings: false,
     };
   }
 };
 
-// ==================== FINANCIAL HEALTH SCORE (DIPERBAIKI - tanpa dana darurat) ====================
+// ==================== FINANCIAL HEALTH SCORE (DIPERBAIKI - fix savings scoring) ====================
 
 export interface FinancialHealthScore {
   overallScore: number;
@@ -326,20 +393,22 @@ export const calculateFinancialHealthScore = (
   savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
 ): FinancialHealthScore => {
   try {
+    console.log("🏥 DEBUG - Calculating health score with:", {
+      hasTransactions: transactionAnalytics.transactionCount > 0,
+      hasBudgets: budgetAnalytics.hasBudgets,
+      hasSavings: savingsAnalytics.hasSavings, // PERBAIKAN: Gunakan flag hasSavings
+    });
+
     // ✅ CHECK IF NO DATA EXISTS
     const hasTransactions = transactionAnalytics.transactionCount > 0;
-    const hasBudgets =
-      budgetAnalytics.overBudgetCount > 0 ||
-      budgetAnalytics.underBudgetCount > 0 ||
-      budgetAnalytics.totalBudget > 0;
-    const hasSavings =
-      savingsAnalytics.totalTarget > 0 || savingsAnalytics.totalCurrent > 0;
+    const hasBudgets = budgetAnalytics.hasBudgets;
+    const hasSavings = savingsAnalytics.hasSavings; // PERBAIKAN: Gunakan flag
 
     if (!hasTransactions && !hasBudgets && !hasSavings) {
       return {
         overallScore: 0,
         category: "Belum Ada Data",
-        color: "#64748B", // gray500
+        color: "#64748B",
         factors: {
           savingsRate: {
             score: 0,
@@ -378,13 +447,13 @@ export const calculateFinancialHealthScore = (
     // Factor 2: Budget Adherence (30%)
     const budgetAdherenceScore = calculateBudgetAdherenceScore(budgetAnalytics);
 
-    // Factor 3: Expense Control (25%) - GANTI DANA DARURAT DENGAN EXPENSE CONTROL
+    // Factor 3: Expense Control (25%)
     const expenseControlScore = calculateExpenseControlScore(
       safeNumber(transactionAnalytics.totalIncome),
       safeNumber(transactionAnalytics.totalExpense)
     );
 
-    // Factor 4: Goal Progress (15%)
+    // Factor 4: Goal Progress (15%) - PERBAIKAN
     const goalProgressScore = calculateGoalProgressScore(savingsAnalytics);
 
     // Calculate weighted overall score
@@ -395,7 +464,7 @@ export const calculateFinancialHealthScore = (
         goalProgressScore.score * goalProgressScore.weight
     );
 
-    // Determine category and color - MENGGUNAKAN WARNA DARI TEMA
+    // Determine category and color
     const { category, color } = getScoreCategory(overallScore);
 
     // Generate recommendations
@@ -404,6 +473,15 @@ export const calculateFinancialHealthScore = (
       budgetAdherenceScore,
       expenseControlScore,
       goalProgressScore,
+      hasBudgets,
+      hasSavings, // PERBAIKAN: Tambah parameter
+    });
+
+    console.log("🏥 DEBUG - Health score calculated:", {
+      overallScore,
+      category,
+      goalProgressScore,
+      hasSavings,
     });
 
     return {
@@ -420,11 +498,10 @@ export const calculateFinancialHealthScore = (
     };
   } catch (error) {
     console.error("Error calculating health score:", error);
-    // Return safe default tanpa dana darurat
     return {
       overallScore: 0,
       category: "Belum Ada Data",
-      color: "#64748B", // gray500
+      color: "#64748B",
       factors: {
         savingsRate: { score: 0, weight: 0.3, status: "poor" as FactorStatus },
         budgetAdherence: {
@@ -476,36 +553,46 @@ const calculateSavingsRateScore = (savingsRate: number) => {
 const calculateBudgetAdherenceScore = (
   budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>
 ) => {
+  // Jika tidak ada anggaran sama sekali
+  if (!budgetAnalytics.hasBudgets) {
+    return { score: 0, weight: 0.3, status: "poor" as FactorStatus };
+  }
+
   const utilizationRate = safeNumber(budgetAnalytics.utilizationRate);
   const overBudgetCount = budgetAnalytics.overBudgetCount;
+  const totalBudgets =
+    budgetAnalytics.overBudgetCount + budgetAnalytics.underBudgetCount;
 
   let score: number;
   let status: FactorStatus;
 
-  // Jika tidak ada anggaran sama sekali
-  if (budgetAnalytics.totalBudget === 0 && budgetAnalytics.totalSpent === 0) {
+  if (totalBudgets === 0) {
     score = 0;
     status = "poor";
   } else if (overBudgetCount === 0) {
-    if (utilizationRate <= 90) {
+    if (utilizationRate <= 80) {
       score = 100;
       status = "good";
-    } else if (utilizationRate <= 100) {
+    } else if (utilizationRate <= 90) {
       score = 80;
       status = "warning";
+    } else if (utilizationRate <= 100) {
+      score = 60;
+      status = "warning";
     } else {
-      score = 50;
+      score = 40;
       status = "warning";
     }
   } else {
-    score = Math.max(0, 100 - overBudgetCount * 20);
-    status = overBudgetCount > 2 ? "poor" : "warning";
+    const penaltyPerOverBudget = Math.min(20, Math.floor(100 / totalBudgets));
+    const penalty = overBudgetCount * penaltyPerOverBudget;
+    score = Math.max(0, 100 - penalty);
+    status = overBudgetCount > totalBudgets * 0.5 ? "poor" : "warning";
   }
 
   return { score, weight: 0.3, status };
 };
 
-// PERBAIKAN: Ganti emergency fund dengan expense control yang lebih relevan
 const calculateExpenseControlScore = (
   totalIncome: number,
   totalExpense: number
@@ -537,9 +624,23 @@ const calculateExpenseControlScore = (
   return { score, weight: 0.25, status };
 };
 
+// PERBAIKAN BESAR: Goal Progress Score - FIXED
 const calculateGoalProgressScore = (
   savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
 ) => {
+  console.log("🎯 DEBUG - Calculating goal progress score:", {
+    hasSavings: savingsAnalytics.hasSavings,
+    overallProgress: savingsAnalytics.overallProgress,
+    completedCount: savingsAnalytics.completedSavings,
+    activeCount: savingsAnalytics.activeSavings,
+  });
+
+  // Jika tidak ada tabungan sama sekali
+  if (!savingsAnalytics.hasSavings) {
+    console.log("🎯 DEBUG - No savings, score = 0");
+    return { score: 0, weight: 0.15, status: "poor" as FactorStatus };
+  }
+
   const overallProgress = safeNumber(savingsAnalytics.overallProgress);
   const completedCount = savingsAnalytics.completedSavings;
   const totalCount =
@@ -549,48 +650,63 @@ const calculateGoalProgressScore = (
   let status: FactorStatus;
 
   if (totalCount === 0) {
+    // Tidak mungkin terjadi karena hasSavings = true, tapi tetap handle
     score = 0;
     status = "poor";
-  } else if (completedCount === totalCount) {
+  } else if (completedCount === totalCount && totalCount > 0) {
+    // Semua tabungan sudah tercapai
     score = 100;
     status = "good";
+  } else if (overallProgress >= 75) {
+    // Progress sangat baik
+    score = 85;
+    status = "good";
   } else if (overallProgress >= 50) {
-    score = 75;
+    // Progress baik
+    score = 70;
     status = "warning";
-  } else if (overallProgress > 0) {
+  } else if (overallProgress >= 25) {
+    // Progress sedang
     score = 50;
     status = "warning";
+  } else if (overallProgress > 0) {
+    // Progress sedikit
+    score = 30;
+    status = "poor";
   } else {
+    // Belum ada progress sama sekali
     score = 0;
     status = "poor";
   }
 
+  console.log("🎯 DEBUG - Goal progress score calculated:", { score, status });
   return { score, weight: 0.15, status };
 };
 
-// MENGUNAKAN WARNA DARI TEMA YANG SUDAH ADA
 const getScoreCategory = (score: number) => {
   if (score === 0) {
-    return { category: "Belum Ada Data", color: "#64748B" }; // gray500
+    return { category: "Belum Ada Data", color: "#64748B" };
   } else if (score >= 80) {
-    return { category: "Sangat Sehat", color: "#10B981" }; // success dari tema
+    return { category: "Sangat Sehat", color: "#10B981" };
   } else if (score >= 60) {
-    return { category: "Sehat", color: "#3B82F6" }; // info dari tema
+    return { category: "Sehat", color: "#3B82F6" };
   } else if (score >= 40) {
-    return { category: "Cukup", color: "#F59E0B" }; // warning dari tema
+    return { category: "Cukup", color: "#F59E0B" };
   } else if (score >= 20) {
-    return { category: "Perlu Perbaikan", color: "#EF4444" }; // error dari tema
+    return { category: "Perlu Perbaikan", color: "#EF4444" };
   } else {
-    return { category: "Kritis", color: "#DC2626" }; // errorDark dari tema
+    return { category: "Kritis", color: "#DC2626" };
   }
 };
 
-// PERBAIKAN: Update generate recommendations tanpa emergency fund
+// PERBAIKAN: Update generate recommendations dengan parameter hasSavings
 const generateRecommendations = (factors: {
   savingsRateScore: { score: number; status: FactorStatus };
   budgetAdherenceScore: { score: number; status: FactorStatus };
   expenseControlScore: { score: number; status: FactorStatus };
   goalProgressScore: { score: number; status: FactorStatus };
+  hasBudgets: boolean;
+  hasSavings: boolean; // PERBAIKAN: Tambah parameter
 }) => {
   const recommendations: string[] = [];
 
@@ -608,6 +724,24 @@ const generateRecommendations = (factors: {
     ];
   }
 
+  // Budget recommendations
+  if (factors.hasBudgets) {
+    if (
+      factors.budgetAdherenceScore.status === "poor" ||
+      factors.budgetAdherenceScore.score < 40
+    ) {
+      recommendations.push(
+        "Tinjau ulang anggaran yang melebihi limit dan sesuaikan pengeluaran"
+      );
+    } else if (factors.budgetAdherenceScore.status === "warning") {
+      recommendations.push(
+        "Monitor anggaran yang mendekati limit untuk menghindari kelebihan"
+      );
+    }
+  } else {
+    recommendations.push("Buat anggaran untuk kategori pengeluaran utama Anda");
+  }
+
   // Savings rate recommendations
   if (
     factors.savingsRateScore.status === "poor" ||
@@ -622,21 +756,7 @@ const generateRecommendations = (factors: {
     );
   }
 
-  // Budget adherence recommendations
-  if (
-    factors.budgetAdherenceScore.status === "poor" ||
-    factors.budgetAdherenceScore.score < 40
-  ) {
-    recommendations.push(
-      "Tinjau ulang anggaran yang melebihi limit dan sesuaikan pengeluaran"
-    );
-  } else if (factors.budgetAdherenceScore.status === "warning") {
-    recommendations.push(
-      "Monitor anggaran yang mendekati limit untuk menghindari kelebihan"
-    );
-  }
-
-  // Expense control recommendations (ganti emergency fund)
+  // Expense control recommendations
   if (
     factors.expenseControlScore.status === "poor" ||
     factors.expenseControlScore.score < 40
@@ -650,17 +770,24 @@ const generateRecommendations = (factors: {
     );
   }
 
-  // Goal progress recommendations
-  if (
-    factors.goalProgressScore.status === "poor" ||
-    factors.goalProgressScore.score < 40
-  ) {
+  // Goal progress recommendations - PERBAIKAN: Cek dulu apakah ada tabungan
+  if (factors.hasSavings) {
+    if (
+      factors.goalProgressScore.status === "poor" ||
+      factors.goalProgressScore.score < 40
+    ) {
+      recommendations.push(
+        "Tingkatkan kontribusi tabungan untuk mencapai target lebih cepat"
+      );
+    } else if (factors.goalProgressScore.status === "warning") {
+      recommendations.push(
+        "Pertahankan konsistensi menabung untuk mencapai target"
+      );
+    }
+  } else {
+    // Jika tidak ada tabungan sama sekali
     recommendations.push(
-      "Buat target tabungan yang realistis dan mulailah menabung"
-    );
-  } else if (factors.goalProgressScore.status === "warning") {
-    recommendations.push(
-      "Tingkatkan kontribusi tabungan untuk mencapai target lebih cepat"
+      "Mulai buat target tabungan untuk tujuan finansial Anda"
     );
   }
 
@@ -672,7 +799,7 @@ const generateRecommendations = (factors: {
     );
   }
 
-  return recommendations.slice(0, 4); // Max 4 recommendations
+  return recommendations.slice(0, 4);
 };
 
 // ==================== FINANCIAL INSIGHTS ====================
@@ -686,11 +813,17 @@ export const generateFinancialInsights = (
   try {
     const insights = [];
 
+    console.log("💡 DEBUG - Generating insights:", {
+      hasTransactions: transactionAnalytics.transactionCount > 0,
+      hasBudgets: budgetAnalytics.hasBudgets,
+      hasSavings: savingsAnalytics.hasSavings,
+    });
+
     // Check if no data
     if (
       transactionAnalytics.transactionCount === 0 &&
-      budgetAnalytics.totalBudget === 0 &&
-      savingsAnalytics.totalTarget === 0
+      !budgetAnalytics.hasBudgets &&
+      !savingsAnalytics.hasSavings // PERBAIKAN: Gunakan hasSavings
     ) {
       insights.push({
         type: "info",
@@ -698,7 +831,7 @@ export const generateFinancialInsights = (
         message:
           "Belum ada data transaksi. Mulai catat pengeluaran dan pemasukan untuk melihat analitik.",
         icon: "document-text-outline",
-        color: "#64748B", // gray500
+        color: "#64748B",
       });
       return insights;
     }
@@ -712,7 +845,7 @@ export const generateFinancialInsights = (
         title: "Defisit Terdeteksi",
         message: "Pengeluaran Anda melebihi pemasukan bulan ini.",
         icon: "warning",
-        color: "#EF4444", // error dari tema
+        color: "#EF4444",
       });
     } else if (savingsRate < 20) {
       insights.push({
@@ -720,7 +853,7 @@ export const generateFinancialInsights = (
         title: "Rasio Tabungan Rendah",
         message: "Coba tingkatkan rasio tabungan minimal 20% dari pemasukan.",
         icon: "info",
-        color: "#F59E0B", // warning dari tema
+        color: "#F59E0B",
       });
     } else {
       insights.push({
@@ -728,55 +861,96 @@ export const generateFinancialInsights = (
         title: "Rasio Tabungan Baik",
         message: "Rasio tabungan Anda di atas 20%, pertahankan!",
         icon: "checkmark",
-        color: "#10B981", // success dari tema
+        color: "#10B981",
       });
     }
 
     // Budget insights
-    const overBudgetCount = budgetAnalytics.overBudgetCount || 0;
-    if (overBudgetCount > 0) {
-      insights.push({
-        type: "warning",
-        title: `${overBudgetCount} Anggaran Melebihi Limit`,
-        message: "Beberapa kategori pengeluaran melebihi batas anggaran.",
-        icon: "pie-chart",
-        color: "#EF4444", // error dari tema
-      });
-    }
+    if (budgetAnalytics.hasBudgets) {
+      const overBudgetCount = budgetAnalytics.overBudgetCount || 0;
+      if (overBudgetCount > 0) {
+        insights.push({
+          type: "warning",
+          title: `${overBudgetCount} Anggaran Melebihi Limit`,
+          message: "Beberapa kategori pengeluaran melebihi batas anggaran.",
+          icon: "pie-chart",
+          color: "#EF4444",
+        });
+      }
 
-    const budgetsAtRisk = budgetAnalytics.budgetsAtRisk || [];
-    if (budgetsAtRisk.length > 0) {
+      const budgetsAtRisk = budgetAnalytics.budgetsAtRisk || [];
+      if (budgetsAtRisk.length > 0) {
+        insights.push({
+          type: "info",
+          title: `${budgetsAtRisk.length} Anggaran Mendekati Limit`,
+          message: "Beberapa kategori hampir mencapai batas anggaran.",
+          icon: "alert",
+          color: "#F59E0B",
+        });
+      }
+    } else {
       insights.push({
         type: "info",
-        title: `${budgetsAtRisk.length} Anggaran Mendekati Limit`,
-        message: "Beberapa kategori hampir mencapai batas anggaran.",
-        icon: "alert",
-        color: "#F59E0B", // warning dari tema
+        title: "Belum Ada Anggaran",
+        message: "Buat anggaran untuk kategori pengeluaran utama Anda.",
+        icon: "pie-chart-outline",
+        color: "#64748B",
       });
     }
 
-    // Savings insights
-    const nearingCompletion = savingsAnalytics.nearingCompletion || [];
-    if (nearingCompletion.length > 0) {
-      insights.push({
-        type: "success",
-        title: `${nearingCompletion.length} Target Tabungan Hampir Tercapai`,
-        message: "Beberapa target tabungan Anda hampir tercapai!",
-        icon: "trophy",
-        color: "#10B981", // success dari tema
-      });
-    }
+    // PERBAIKAN BESAR: Savings insights - Cek dulu apakah ada tabungan
+    if (savingsAnalytics.hasSavings) {
+      const nearingCompletion = savingsAnalytics.nearingCompletion || [];
+      if (nearingCompletion.length > 0) {
+        insights.push({
+          type: "success",
+          title: `${nearingCompletion.length} Target Tabungan Hampir Tercapai`,
+          message: "Beberapa target tabungan Anda hampir tercapai!",
+          icon: "trophy",
+          color: "#10B981",
+        });
+      }
 
-    const overallProgress = safeNumber(savingsAnalytics.overallProgress) || 0;
-    if (overallProgress >= 50) {
+      const overallProgress = safeNumber(savingsAnalytics.overallProgress) || 0;
+      if (overallProgress >= 75) {
+        insights.push({
+          type: "success",
+          title: "Progress Tabungan Sangat Baik",
+          message: `Anda telah mencapai ${overallProgress.toFixed(
+            1
+          )}% dari total target tabungan.`,
+          icon: "trophy",
+          color: "#10B981",
+        });
+      } else if (overallProgress >= 50) {
+        insights.push({
+          type: "info",
+          title: "Progress Tabungan Baik",
+          message: `Anda telah mencapai ${overallProgress.toFixed(
+            1
+          )}% dari total target tabungan.`,
+          icon: "trending-up",
+          color: "#3B82F6",
+        });
+      } else if (overallProgress > 0) {
+        insights.push({
+          type: "info",
+          title: "Mulai Menabung",
+          message: `Anda telah memulai dengan ${overallProgress.toFixed(
+            1
+          )}% dari target tabungan.`,
+          icon: "trending-up",
+          color: "#3B82F6",
+        });
+      }
+    } else {
+      // Insight jika belum ada tabungan
       insights.push({
         type: "info",
-        title: "Progress Tabungan Baik",
-        message: `Anda telah mencapai ${overallProgress.toFixed(
-          1
-        )}% dari total target tabungan.`,
-        icon: "trending-up",
-        color: "#3B82F6", // info dari tema
+        title: "Belum Ada Target Tabungan",
+        message: "Buat target tabungan untuk mencapai tujuan finansial Anda.",
+        icon: "wallet-outline",
+        color: "#64748B",
       });
     }
 
@@ -787,11 +961,11 @@ export const generateFinancialInsights = (
         title: "Keuangan Sehat",
         message: "Semua indikator keuangan Anda dalam kondisi baik.",
         icon: "heart",
-        color: "#10B981", // success dari tema
+        color: "#10B981",
       });
     }
 
-    return insights.slice(0, 3); // Return max 3 insights
+    return insights.slice(0, 3);
   } catch (error) {
     console.error("Error generating insights:", error);
     return [
@@ -800,7 +974,7 @@ export const generateFinancialInsights = (
         title: "Analitik Dimuat",
         message: "Sistem analitik sedang memproses data Anda",
         icon: "information-circle",
-        color: "#3B82F6", // info dari tema
+        color: "#3B82F6",
       },
     ];
   }
