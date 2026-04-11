@@ -676,8 +676,8 @@ const TransactionsScreen: React.FC = () => {
               </View>
 
               {/* Transactions */}
-              <View style={tw`px-2`}>
-                {transactions.map((transaction) => (
+              <View style={tw`bg-white rounded-2xl overflow-hidden mb-2 mx-4 border border-[${BORDER_COLOR}]`}>
+                {transactions.map((transaction, index) => (
                   <Swipeable
                     key={transaction.id}
                     ref={(ref) => {
@@ -688,9 +688,8 @@ const TransactionsScreen: React.FC = () => {
                       }
                     }}
                     renderRightActions={() => renderRightActions(transaction)}
-                    overshootRight={false}
                     friction={2}
-                    containerStyle={tw`mb-1.5 mx-1`}
+                    containerStyle={tw`bg-white`}
                     onSwipeableWillOpen={() => {
                       // Close other swipeables
                       Object.keys(swipeableRefs.current).forEach((id) => {
@@ -709,11 +708,11 @@ const TransactionsScreen: React.FC = () => {
                   >
                     <TouchableOpacity
                       style={[
-                        tw`p-3 rounded-2xl`,
+                        tw`px-4 py-3`,
                         {
                           backgroundColor: SURFACE_COLOR,
-                          borderWidth: 1,
-                          borderColor: BORDER_COLOR,
+                          borderBottomWidth: index === transactions.length - 1 ? 0 : 1,
+                          borderBottomColor: BORDER_COLOR,
                         },
                       ]}
                       activeOpacity={0.7}
@@ -784,33 +783,6 @@ const TransactionsScreen: React.FC = () => {
                               >
                                 {formatDisplayDate(transaction.date)}
                               </Text>
-                              <View
-                                style={[
-                                  tw`w-1 h-1 rounded-full mx-2`,
-                                  { backgroundColor: BORDER_COLOR },
-                                ]}
-                              />
-                              <View
-                                style={[
-                                  tw`px-1.5 py-0.5 rounded-full`,
-                                  transaction.type === "income"
-                                    ? { backgroundColor: Colors.success + "20" }
-                                    : { backgroundColor: Colors.error + "20" },
-                                ]}
-                              >
-                                <Text
-                                  style={[
-                                    tw`text-xs`,
-                                    transaction.type === "income"
-                                      ? { color: SUCCESS_COLOR }
-                                      : { color: ERROR_COLOR },
-                                  ]}
-                                >
-                                  {transaction.type === "income"
-                                    ? "Masuk"
-                                    : "Keluar"}
-                                </Text>
-                              </View>
                             </View>
                           </View>
                         </View>

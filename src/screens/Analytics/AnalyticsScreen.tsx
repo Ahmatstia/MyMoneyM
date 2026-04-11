@@ -956,43 +956,7 @@ Kategori: ${financialHealthScore.category}
 
   return (
     <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
-      {/* Header Compact */}
-      <View
-        style={tw.style(`px-4 pt-3 pb-3.5 border-b`, {
-          backgroundColor: Colors.surface,
-          borderColor: Colors.border,
-        })}
-      >
-        <View style={tw`flex-row justify-between items-center`}>
-          <View>
-            <Text
-              style={tw.style(`text-xl font-bold`, {
-                color: Colors.textPrimary,
-              })}
-            >
-              Analitik
-            </Text>
-            <Text
-              style={tw.style(`text-sm mt-0.5`, {
-                color: Colors.textSecondary,
-              })}
-            >
-              {getCurrentMonth()}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={tw.style(
-              `w-9 h-9 rounded-full justify-center items-center`,
-              {
-                backgroundColor: `${Colors.accent}20`,
-              }
-            )}
-            onPress={handleExport}
-          >
-            <Ionicons name="share-outline" size={18} color={Colors.accent} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Tabs Menu */}
 
       {/* Main Tabs - Added Health Tab */}
       <View
@@ -1067,6 +1031,37 @@ Kategori: ${financialHealthScore.category}
 
       {/* Main Content */}
       <ScrollView style={tw`flex-1`} contentContainerStyle={tw`px-4 pt-4 pb-8`}>
+        {/* Large Title Header - now scrolls with content */}
+        <View style={tw`flex-row justify-between items-center mb-6`}>
+          <View>
+            <Text
+              style={tw.style(`text-2xl font-bold`, {
+                color: Colors.textPrimary,
+              })}
+            >
+              Analitik
+            </Text>
+            <Text
+              style={tw.style(`text-sm mt-0.5`, {
+                color: Colors.textSecondary,
+              })}
+            >
+              {getCurrentMonth()}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={tw.style(
+              `w-10 h-10 rounded-full justify-center items-center`,
+              {
+                backgroundColor: `${Colors.accent}20`,
+              }
+            )}
+            onPress={handleExport}
+          >
+            <Ionicons name="share-outline" size={20} color={Colors.accent} />
+          </TouchableOpacity>
+        </View>
+
         {/* Time Range Tabs - inside scroll */}
         <View style={tw`flex-row gap-2 mb-4`}>
           {[

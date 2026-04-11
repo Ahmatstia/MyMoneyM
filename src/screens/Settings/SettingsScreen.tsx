@@ -578,11 +578,7 @@ const SettingsScreen = () => {
 
   return (
     <View style={tw`flex-1 bg-[#0F172A]`}>
-      {/* Header */}
-      <View style={tw`pt-3 px-4 pb-3.5 border-b border-[#334155]`}>
-        <Text style={tw`text-xl font-bold text-white`}>Pengaturan</Text>
-        <Text style={tw`text-[#CBD5E1] text-sm mt-0.5`}>Kelola aplikasi sesuai kebutuhan</Text>
-      </View>
+      {/* Header Removed */}
 
       {/* Tab Navigation */}
       <View style={tw`flex-row border-b border-[#334155]`}>
@@ -612,6 +608,12 @@ const SettingsScreen = () => {
 
       <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
         <View style={tw`px-4 pt-4`}>
+          {/* Large Title - scrolls with content */}
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-2xl font-bold text-white`}>Pengaturan</Text>
+            <Text style={tw`text-[#CBD5E1] text-sm mt-0.5`}>Kelola aplikasi sesuai kebutuhan</Text>
+          </View>
+
           {/* NOTIFICATION SETTINGS */}
           {activeSection === "notifications" && (
             <>

@@ -200,21 +200,7 @@ const BudgetScreen: React.FC = () => {
 
   return (
     <View style={pageContainer}>
-      {/* ====== COMPACT HEADER ====== */}
-      <View style={[headerBar, tw`flex-row justify-between items-center`]}>
-        <View>
-          <Text style={headerTitle}>Anggaran</Text>
-          <Text style={headerSubtitle}>
-            {state.budgets.length} anggaran aktif
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={headerFAB}
-          onPress={() => navigation.navigate("AddBudget")}
-        >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+      {/* Static Header Removed */}
 
       {/* ====== SCROLLABLE CONTENT ====== */}
       <ScrollView
@@ -222,6 +208,16 @@ const BudgetScreen: React.FC = () => {
         contentContainerStyle={scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Large Title Header - now scrolls */}
+        <View style={tw`flex-row justify-between items-center mb-6`}>
+          <View>
+            <Text style={[headerTitle, { fontSize: 24 }]}>Anggaran</Text>
+            <Text style={headerSubtitle}>
+              {state.budgets.length} anggaran aktif
+            </Text>
+          </View>
+        </View>
+
         {/* Summary Stats — now inside scroll */}
         <View style={[cardPadded, tw`mb-4`]}>
           <View style={tw`flex-row justify-between items-center`}>
@@ -472,6 +468,18 @@ const BudgetScreen: React.FC = () => {
           })
         )}
       </ScrollView>
+
+      {/* FAB Add Budget */}
+      <TouchableOpacity
+        style={[
+          tw`absolute bottom-5 right-4 w-14 h-14 rounded-2xl justify-center items-center shadow-lg`,
+          { backgroundColor: DS.accent },
+        ]}
+        onPress={() => navigation.navigate("AddBudget")}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 };

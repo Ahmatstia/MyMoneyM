@@ -162,21 +162,7 @@ const SavingsScreen: React.FC = () => {
 
   return (
     <View style={pageContainer}>
-      {/* ====== COMPACT HEADER ====== */}
-      <View style={[headerBar, tw`flex-row justify-between items-center`]}>
-        <View>
-          <Text style={headerTitle}>Tabungan</Text>
-          <Text style={headerSubtitle}>
-            {savings.length} target tabungan
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={headerFAB}
-          onPress={() => navigation.navigate("AddSavings")}
-        >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+      {/* Static Header Removed */}
 
       {/* ====== SCROLLABLE CONTENT ====== */}
       <ScrollView
@@ -187,6 +173,16 @@ const SavingsScreen: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {/* Large Title Header - now scrolls */}
+        <View style={tw`flex-row justify-between items-center mb-6`}>
+          <View>
+            <Text style={[headerTitle, { fontSize: 24 }]}>Tabungan</Text>
+            <Text style={headerSubtitle}>
+              {savings.length} target tabungan
+            </Text>
+          </View>
+        </View>
+
         {/* Summary Stats — inside scroll */}
         {savings.length > 0 && (
           <View style={[cardPadded, tw`mb-4`]}>
@@ -475,6 +471,18 @@ const SavingsScreen: React.FC = () => {
           })
         )}
       </ScrollView>
+
+      {/* FAB Add Savings */}
+      <TouchableOpacity
+        style={[
+          tw`absolute bottom-5 right-4 w-14 h-14 rounded-2xl justify-center items-center shadow-lg`,
+          { backgroundColor: DS.accent },
+        ]}
+        onPress={() => navigation.navigate("AddSavings")}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 };
