@@ -304,7 +304,7 @@ const AnalyticsScreen: React.FC = () => {
 
             {/* Health Score Card - Empty State */}
             <View
-              style={tw.style(`rounded-xl p-6 w-full border`, {
+              style={tw.style(`rounded-2xl p-6 w-full border`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}
@@ -363,7 +363,7 @@ const AnalyticsScreen: React.FC = () => {
                 <View style={tw`flex-row gap-3 mb-4`}>
                   <TouchableOpacity
                     style={tw.style(
-                      `flex-1 p-3 rounded-xl border items-center`,
+                      `flex-1 p-3 rounded-2xl border items-center`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: Colors.border,
@@ -387,7 +387,7 @@ const AnalyticsScreen: React.FC = () => {
 
                   <TouchableOpacity
                     style={tw.style(
-                      `flex-1 p-3 rounded-xl border items-center`,
+                      `flex-1 p-3 rounded-2xl border items-center`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: Colors.border,
@@ -411,7 +411,7 @@ const AnalyticsScreen: React.FC = () => {
 
                   <TouchableOpacity
                     style={tw.style(
-                      `flex-1 p-3 rounded-xl border items-center`,
+                      `flex-1 p-3 rounded-2xl border items-center`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: Colors.border,
@@ -800,7 +800,7 @@ Kategori: ${financialHealthScore.category}
       <View style={tw`mb-4`}>
         {/* Main Score Card */}
         <View
-          style={tw.style(`rounded-xl p-4 mb-3 border`, {
+          style={tw.style(`rounded-2xl p-4 mb-3 border`, {
             backgroundColor: Colors.surface,
             borderColor: Colors.border,
           })}
@@ -957,7 +957,7 @@ Kategori: ${financialHealthScore.category}
 
         {/* Health Score Legend */}
         <View
-          style={tw.style(`rounded-xl p-3 border`, {
+          style={tw.style(`rounded-2xl p-3 border`, {
             backgroundColor: Colors.surface,
             borderColor: Colors.border,
           })}
@@ -1155,7 +1155,7 @@ Kategori: ${financialHealthScore.category}
           <>
             {/* Main Stats Card */}
             <View
-              style={tw.style(`rounded-xl p-4 mb-4 border`, {
+              style={tw.style(`rounded-2xl p-4 mb-4 border`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}
@@ -1351,7 +1351,7 @@ Kategori: ${financialHealthScore.category}
             {/* Quick Stats - PERBAIKAN: Tampilkan tabungan dengan benar */}
             <View style={tw`flex-row gap-3 mb-4`}>
               <View
-                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                style={tw.style(`flex-1 p-3 rounded-2xl border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1380,7 +1380,7 @@ Kategori: ${financialHealthScore.category}
 
               {/* Card Anggaran */}
               <View
-                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                style={tw.style(`flex-1 p-3 rounded-2xl border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1429,7 +1429,7 @@ Kategori: ${financialHealthScore.category}
 
               {/* PERBAIKAN: Card Tabungan dengan tampilan yang benar */}
               <View
-                style={tw.style(`flex-1 p-3 rounded-xl border`, {
+                style={tw.style(`flex-1 p-3 rounded-2xl border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1476,7 +1476,7 @@ Kategori: ${financialHealthScore.category}
             {/* PERBAIKAN: Savings Progress Section */}
             {savingsAnalytics.hasSavings && (
               <View
-                style={tw.style(`rounded-xl p-4 mb-4 border`, {
+                style={tw.style(`rounded-2xl p-4 mb-4 border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1641,7 +1641,7 @@ Kategori: ${financialHealthScore.category}
             {/* Budget Progress Section */}
             {budgetAnalytics.hasBudgets && (
               <View
-                style={tw.style(`rounded-xl p-4 mb-4 border`, {
+                style={tw.style(`rounded-2xl p-4 mb-4 border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -1713,7 +1713,7 @@ Kategori: ${financialHealthScore.category}
         {/* Trends Tab */}
         {activeTab === "trends" && (
           <View
-            style={tw.style(`rounded-xl p-4 border`, {
+            style={tw.style(`rounded-2xl p-4 border`, {
               backgroundColor: Colors.surface,
               borderColor: Colors.border,
             })}
@@ -1930,7 +1930,7 @@ Kategori: ${financialHealthScore.category}
         {/* Categories Tab */}
         {activeTab === "categories" && (
           <View
-            style={tw.style(`rounded-xl p-4 border`, {
+            style={tw.style(`rounded-2xl p-4 border`, {
               backgroundColor: Colors.surface,
               borderColor: Colors.border,
             })}
@@ -2020,7 +2020,7 @@ Kategori: ${financialHealthScore.category}
             {/* Financial Insights */}
             {insights.length > 0 && (
               <View
-                style={tw.style(`rounded-xl p-4 mb-3 border`, {
+                style={tw.style(`rounded-2xl p-4 mb-3 border`, {
                   backgroundColor: Colors.surface,
                   borderColor: Colors.border,
                 })}
@@ -2106,7 +2106,7 @@ Kategori: ${financialHealthScore.category}
 
             {/* Tips Card */}
             <View
-              style={tw.style(`rounded-xl p-4 border`, {
+              style={tw.style(`rounded-2xl p-4 border`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}
@@ -2243,7 +2243,7 @@ Kategori: ${financialHealthScore.category}
           </Text>
           <View style={tw`flex-row gap-3`}>
             <TouchableOpacity
-              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+              style={tw.style(`flex-1 p-3 rounded-2xl border items-center`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}
@@ -2264,7 +2264,7 @@ Kategori: ${financialHealthScore.category}
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+              style={tw.style(`flex-1 p-3 rounded-2xl border items-center`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}
@@ -2285,7 +2285,7 @@ Kategori: ${financialHealthScore.category}
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={tw.style(`flex-1 p-3 rounded-xl border items-center`, {
+              style={tw.style(`flex-1 p-3 rounded-2xl border items-center`, {
                 backgroundColor: Colors.surface,
                 borderColor: Colors.border,
               })}

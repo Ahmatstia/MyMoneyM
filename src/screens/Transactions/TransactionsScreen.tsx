@@ -605,46 +605,7 @@ const TransactionsScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Compact Summary Cards */}
-      <View
-        style={[
-          tw`px-4 py-2`,
-          {
-            backgroundColor: SURFACE_COLOR,
-            borderBottomWidth: 1,
-            borderBottomColor: BORDER_COLOR,
-          },
-        ]}
-      >
-        <View style={tw`flex-row justify-between items-center`}>
-          <View style={tw`items-center flex-1`}>
-            <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
-              Saldo
-            </Text>
-            <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>
-              {formatCurrency(totals.balance)}
-            </Text>
-          </View>
-          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
-          <View style={tw`items-center flex-1`}>
-            <Text style={[tw`text-xs mb-0.5`, { color: SUCCESS_COLOR }]}>
-              Pemasukan
-            </Text>
-            <Text style={[tw`text-sm font-bold`, { color: SUCCESS_COLOR }]}>
-              {formatCurrency(totals.totalIncome)}
-            </Text>
-          </View>
-          <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
-          <View style={tw`items-center flex-1`}>
-            <Text style={[tw`text-xs mb-0.5`, { color: ERROR_COLOR }]}>
-              Pengeluaran
-            </Text>
-            <Text style={[tw`text-sm font-bold`, { color: ERROR_COLOR }]}>
-              {formatCurrency(totals.totalExpense)}
-            </Text>
-          </View>
-        </View>
-      </View>
+      {/* Compact Summary Cards - moved inside scroll */}
 
       {/* Transactions List - Minimal */}
       <ScrollView
@@ -660,6 +621,46 @@ const TransactionsScreen: React.FC = () => {
           />
         }
       >
+        {/* Summary inside scroll */}
+        <View
+          style={[
+            tw`mx-4 mt-4 mb-3 p-3 rounded-2xl`,
+            {
+              backgroundColor: SURFACE_COLOR,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            },
+          ]}
+        >
+          <View style={tw`flex-row justify-between items-center`}>
+            <View style={tw`items-center flex-1`}>
+              <Text style={[tw`text-xs mb-0.5`, { color: TEXT_SECONDARY }]}>
+                Saldo
+              </Text>
+              <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>
+                {formatCurrency(totals.balance)}
+              </Text>
+            </View>
+            <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
+            <View style={tw`items-center flex-1`}>
+              <Text style={[tw`text-xs mb-0.5`, { color: SUCCESS_COLOR }]}>
+                Pemasukan
+              </Text>
+              <Text style={[tw`text-sm font-bold`, { color: SUCCESS_COLOR }]}>
+                {formatCurrency(totals.totalIncome)}
+              </Text>
+            </View>
+            <View style={[tw`w-px h-6`, { backgroundColor: BORDER_COLOR }]} />
+            <View style={tw`items-center flex-1`}>
+              <Text style={[tw`text-xs mb-0.5`, { color: ERROR_COLOR }]}>
+                Pengeluaran
+              </Text>
+              <Text style={[tw`text-sm font-bold`, { color: ERROR_COLOR }]}>
+                {formatCurrency(totals.totalExpense)}
+              </Text>
+            </View>
+          </View>
+        </View>
         {Object.entries(groupedByDay).length > 0 ? (
           Object.entries(groupedByDay).map(([day, transactions]) => (
             <View key={day} style={tw`mb-3`}>
@@ -708,7 +709,7 @@ const TransactionsScreen: React.FC = () => {
                   >
                     <TouchableOpacity
                       style={[
-                        tw`p-3 rounded-xl`,
+                        tw`p-3 rounded-2xl`,
                         {
                           backgroundColor: SURFACE_COLOR,
                           borderWidth: 1,
@@ -906,7 +907,7 @@ const TransactionsScreen: React.FC = () => {
       {/* Add FAB - Smaller */}
       <TouchableOpacity
         style={[
-          tw`absolute bottom-5 right-4 w-14 h-14 rounded-xl justify-center items-center shadow-lg`,
+          tw`absolute bottom-5 right-4 w-14 h-14 rounded-2xl justify-center items-center shadow-lg`,
           { backgroundColor: ACCENT_COLOR },
         ]}
         onPress={() => navigation.navigate("AddTransaction")}

@@ -296,7 +296,7 @@ const AddTransactionScreen: React.FC = () => {
     <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`p-5 pb-8`}
+        contentContainerStyle={tw`px-4 pt-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
         {/* Transaction Type - 2 Columns Compact */}
@@ -310,7 +310,7 @@ const AddTransactionScreen: React.FC = () => {
             {/* Pengeluaran */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-2.5 border`,
+                tw`flex-1 rounded-2xl px-3 py-2.5 border`,
                 type === "expense"
                   ? {
                       backgroundColor: ERROR_COLOR + "15",
@@ -346,7 +346,7 @@ const AddTransactionScreen: React.FC = () => {
             {/* Pemasukan */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-2.5 border`,
+                tw`flex-1 rounded-2xl px-3 py-2.5 border`,
                 type === "income"
                   ? {
                       backgroundColor: SUCCESS_COLOR + "15",
@@ -399,7 +399,7 @@ const AddTransactionScreen: React.FC = () => {
                   <TouchableOpacity
                     key={value}
                     style={[
-                      tw`rounded-xl px-4 py-2 mr-2`,
+                      tw`rounded-2xl px-4 py-2 mr-2`,
                       {
                         backgroundColor: SURFACE_COLOR,
                         borderWidth: 1,

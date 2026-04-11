@@ -1,4 +1,4 @@
-// File: src/screens/SavingsScreen.tsx - FIXED VERSION
+// File: src/screens/SavingsScreen.tsx — REDESIGNED with Design System
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -7,7 +7,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
-import { Text, ProgressBar } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
@@ -21,6 +21,37 @@ import {
 import { formatDateShort } from "../../utils/formatters";
 import { Savings } from "../../types";
 import { Colors } from "../../theme/theme";
+import {
+  DS,
+  pageContainer,
+  headerBar,
+  headerTitle,
+  headerSubtitle,
+  headerFAB,
+  cardPadded,
+  scrollContent,
+  filterPill,
+  filterPillActive,
+  filterPillText,
+  filterPillTextActive,
+  statColumn,
+  statLabel,
+  statValue,
+  statDivider,
+  iconButton,
+  badge,
+  badgeText,
+  progressTrack,
+  progressFill,
+  emptyState,
+  emptyTitle,
+  emptySubtitle,
+  primaryButton,
+  primaryButtonText,
+  cardSeparator,
+} from "../../theme/designSystem";
+
+type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 const SavingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -30,7 +61,6 @@ const SavingsScreen: React.FC = () => {
 
   const savings = state.savings || [];
 
-  // Hitung total progress
   const totalStats = useMemo(() => {
     const totalTarget = savings.reduce(
       (sum, s) => sum + safeNumber(s.target),
@@ -41,37 +71,23 @@ const SavingsScreen: React.FC = () => {
       0
     );
     const overallProgress = getSafePercentage(totalCurrent, totalTarget);
-
-    const activeSavings = savings.filter(
+    const activeCount = savings.filter(
       (s) => safeNumber(s.current) < safeNumber(s.target)
-    );
-    const completedSavings = savings.filter(
+    ).length;
+    const completedCount = savings.filter(
       (s) => safeNumber(s.current) >= safeNumber(s.target)
-    );
+    ).length;
 
-    return {
-      totalTarget,
-      totalCurrent,
-      overallProgress,
-      activeCount: activeSavings.length,
-      completedCount: completedSavings.length,
-    };
+    return { totalTarget, totalCurrent, overallProgress, activeCount, completedCount };
   }, [savings]);
 
-  // Filter savings
   const filteredSavings = useMemo(() => {
-    return savings.filter((saving) => {
-      const current = safeNumber(saving.current);
-      const target = safeNumber(saving.target);
-      const isCompleted = current >= target;
-
+    return savings.filter((s) => {
+      const isCompleted = safeNumber(s.current) >= safeNumber(s.target);
       switch (filter) {
-        case "active":
-          return !isCompleted;
-        case "completed":
-          return isCompleted;
-        default:
-          return true;
+        case "active": return !isCompleted;
+        case "completed": return isCompleted;
+        default: return true;
       }
     });
   }, [savings, filter]);
@@ -82,68 +98,45 @@ const SavingsScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  // Dapatkan icon berdasarkan kategori
-  const getIcon = (saving: Savings) => {
-    if (saving.icon) return saving.icon;
-
-    switch (saving.category) {
-      case "emergency":
-        return "shield";
-      case "vacation":
-        return "airplane";
-      case "gadget":
-        return "phone-portrait";
-      case "education":
-        return "school";
-      case "house":
-        return "home";
-      case "car":
-        return "car";
-      case "health":
-        return "medical";
-      case "wedding":
-        return "heart";
-      default:
-        return "wallet";
-    }
+  const getIcon = (s: Savings): SafeIconName => {
+    if (s.icon) return s.icon as SafeIconName;
+    const map: Record<string, SafeIconName> = {
+      emergency: "shield", vacation: "airplane", gadget: "phone-portrait",
+      education: "school", house: "home", car: "car",
+      health: "medical", wedding: "heart",
+    };
+    return map[s.category || ""] || "wallet";
   };
 
-  // Dapatkan warna berdasarkan progress
-  const getProgressColor = (progress: number) => {
-    if (progress >= 100) return Colors.success; // hijau
-    if (progress >= 75) return Colors.info; // biru
-    if (progress >= 50) return Colors.warning; // kuning
-    if (progress >= 25) return Colors.error; // merah
-    return Colors.textTertiary; // abu-abu
+  const getProgressColor = (p: number) => {
+    if (p >= 100) return DS.success;
+    if (p >= 75) return DS.info;
+    if (p >= 50) return DS.warning;
+    if (p >= 25) return DS.error;
+    return DS.textMuted;
   };
 
-  // Format deadline
   const formatDeadline = (deadline?: string) => {
     if (!deadline) return "Tanpa deadline";
-
     try {
-      const deadlineDate = new Date(deadline);
-      const today = new Date();
-      const diffTime = deadlineDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays < 0) return "Terlambat";
-      if (diffDays === 0) return "Hari ini";
-      if (diffDays === 1) return "Besok";
-      if (diffDays < 7) return `${diffDays} hari lagi`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} minggu lagi`;
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)} bulan lagi`;
-      return `${Math.floor(diffDays / 365)} tahun lagi`;
+      const d = new Date(deadline);
+      const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      if (diff < 0) return "Terlambat";
+      if (diff === 0) return "Hari ini";
+      if (diff === 1) return "Besok";
+      if (diff < 7) return `${diff} hari lagi`;
+      if (diff < 30) return `${Math.floor(diff / 7)} minggu lagi`;
+      if (diff < 365) return `${Math.floor(diff / 30)} bulan lagi`;
+      return `${Math.floor(diff / 365)} tahun lagi`;
     } catch {
       return deadline;
     }
   };
 
-  // Handle delete savings
-  const handleDelete = (saving: Savings) => {
+  const handleDelete = (s: Savings) => {
     Alert.alert(
       "Hapus Tabungan",
-      `Hapus tabungan "${saving.name}"?\n\nSemua riwayat transaksi juga akan dihapus.`,
+      `Hapus tabungan "${s.name}"?\n\nSemua riwayat transaksi juga akan dihapus.`,
       [
         { text: "Batal", style: "cancel" },
         {
@@ -151,9 +144,8 @@ const SavingsScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteSavings(saving.id);
-              Alert.alert("✅ Berhasil", "Tabungan telah dihapus");
-            } catch (error) {
+              await deleteSavings(s.id);
+            } catch {
               Alert.alert("Error", "Gagal menghapus tabungan");
             }
           },
@@ -162,367 +154,326 @@ const SavingsScreen: React.FC = () => {
     );
   };
 
-  // Empty state component
-  const renderEmptyState = () => (
-    <View style={tw`items-center py-12`}>
-      <Ionicons name="wallet-outline" size={48} color={Colors.textTertiary} />
-      <Text
-        style={tw`text-lg font-semibold text-[${Colors.textPrimary}] mt-4 mb-2 text-center`}
-      >
-        {filter === "all" ? "Belum ada tabungan" : "Tidak ada tabungan"}
-      </Text>
-      <Text
-        style={tw`text-sm text-[${Colors.textSecondary}] text-center mb-6 leading-5`}
-      >
-        {filter === "all"
-          ? "Mulai dengan membuat target tabungan pertama Anda"
-          : `Tidak ada tabungan dengan status "${filter}"`}
-      </Text>
-      {filter === "all" && (
-        <TouchableOpacity
-          style={tw`flex-row items-center bg-[${Colors.accent}] px-5 py-3 rounded-lg gap-2`}
-          onPress={() => navigation.navigate("AddSavings")}
-        >
-          <Ionicons name="add-circle" size={20} color={Colors.textPrimary} />
-          <Text style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}>
-            Buat Target Tabungan
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // Render savings card
-  const renderSavingsCard = (saving: Savings) => {
-    const current = safeNumber(saving.current);
-    const target = safeNumber(saving.target);
-    const progress = getSafePercentage(current, target);
-    const remaining = target - current;
-    const progressNormalized = Math.min(progress / 100, 1);
-    const progressColor = getProgressColor(progress);
-    const iconName = getIcon(saving) as keyof typeof Ionicons.glyphMap;
-    const isCompleted = current >= target;
-
-    return (
-      <View
-        key={saving.id}
-        style={tw`bg-[${Colors.surface}] rounded-xl p-4 mb-3 border border-[${Colors.border}]`}
-      >
-        {/* Card Header */}
-        <View style={tw`flex-row justify-between items-start mb-3`}>
-          <View style={tw`flex-row items-center gap-2`}>
-            <View
-              style={[
-                tw`w-10 h-10 rounded-full items-center justify-center`,
-                { backgroundColor: `${progressColor}20` }, // 20% opacity
-              ]}
-            >
-              <Ionicons name={iconName} size={20} color={progressColor} />
-            </View>
-            <View>
-              <Text
-                style={tw`text-base font-semibold text-[${Colors.textPrimary}]`}
-              >
-                {saving.name}
-              </Text>
-              {saving.category && (
-                <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
-                  {saving.category.charAt(0).toUpperCase() +
-                    saving.category.slice(1)}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          <View style={tw`flex-row gap-2`}>
-            <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
-              onPress={() => {
-                navigation.navigate("AddSavingsTransaction", {
-                  savingsId: saving.id,
-                  type: "deposit",
-                });
-              }}
-            >
-              <Ionicons name="add" size={18} color={Colors.accent} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
-              onPress={() => {
-                navigation.navigate("AddSavings", {
-                  editMode: true,
-                  savingsData: saving,
-                });
-              }}
-            >
-              <Ionicons name="pencil-outline" size={18} color={Colors.accent} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={tw`w-8 h-8 rounded-lg bg-[${Colors.surfaceLight}] justify-center items-center`}
-              onPress={() => handleDelete(saving)}
-            >
-              <Ionicons name="trash-outline" size={18} color={Colors.error} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={tw`mb-4`}>
-          <View style={tw`flex-row justify-between items-center mb-1`}>
-            <Text
-              style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}
-            >
-              {formatCurrency(current)} / {formatCurrency(target)}
-            </Text>
-            <Text
-              style={tw`text-sm font-semibold ${
-                isCompleted
-                  ? "text-[${Colors.success}]"
-                  : "text-[${Colors.accent}]"
-              }`}
-            >
-              {progress.toFixed(1)}%
-            </Text>
-          </View>
-          <ProgressBar
-            progress={progressNormalized}
-            color={progressColor}
-            style={tw`h-2 rounded-full bg-[${Colors.surfaceLight}]`}
-          />
-          <View style={tw`flex-row justify-between mt-1`}>
-            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>Rp0</Text>
-            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
-              {formatCurrency(target)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Details */}
-        <View style={tw`flex-row justify-between items-center mb-3`}>
-          <View>
-            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-              Sisa
-            </Text>
-            <Text
-              style={tw`text-sm font-semibold ${
-                remaining >= 0
-                  ? "text-[${Colors.success}]"
-                  : "text-[${Colors.error}]"
-              }`}
-            >
-              {formatCurrency(remaining)}
-            </Text>
-          </View>
-
-          <View>
-            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-              Deadline
-            </Text>
-            <Text
-              style={tw`text-sm font-semibold ${
-                saving.deadline
-                  ? "text-[${Colors.textPrimary}]"
-                  : "text-[${Colors.textTertiary}]"
-              }`}
-            >
-              {formatDeadline(saving.deadline)}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={tw`px-3 py-1.5 rounded-lg bg-[${Colors.accent}]/20`}
-            onPress={() =>
-              navigation.navigate("SavingsDetail", { savingsId: saving.id })
-            }
-          >
-            <Text style={tw`text-xs font-medium text-[${Colors.accent}]`}>
-              Detail
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Status Badge */}
-        <View style={tw`mt-2 pt-3 border-t border-[${Colors.border}]`}>
-          <View style={tw`flex-row justify-between items-center`}>
-            <View style={tw`flex-row items-center gap-2`}>
-              {isCompleted ? (
-                <View style={tw`flex-row items-center gap-1`}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={16}
-                    color={Colors.success}
-                  />
-                  <Text
-                    style={tw`text-xs font-medium text-[${Colors.success}]`}
-                  >
-                    Tercapai
-                  </Text>
-                </View>
-              ) : (
-                <View style={tw`flex-row items-center gap-1`}>
-                  <Ionicons name="time" size={16} color={progressColor} />
-                  <Text
-                    style={[tw`text-xs font-medium`, { color: progressColor }]}
-                  >
-                    {progress >= 50 ? "Sedang berjalan" : "Baru dimulai"}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={tw`text-xs text-[${Colors.textTertiary}]`}>
-              Dibuat: {formatDateShort(saving.createdAt)}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const filterTabs = [
+    { key: "all", label: "Semua", count: savings.length },
+    { key: "active", label: "Aktif", count: totalStats.activeCount },
+    { key: "completed", label: "Tercapai", count: totalStats.completedCount },
+  ];
 
   return (
-    <View style={tw`flex-1 bg-[${Colors.background}]`}>
-      {/* Header */}
-      <View
-        style={tw`px-4 pt-3 pb-4 bg-[${Colors.surface}] border-b border-[${Colors.border}]`}
-      >
-        <View style={tw`flex-row justify-between items-center mb-3`}>
-          <View>
-            <Text style={tw`text-2xl font-bold text-[${Colors.textPrimary}]`}>
-              Tabungan
-            </Text>
-            <Text style={tw`text-sm text-[${Colors.textSecondary}] mt-0.5`}>
-              {savings.length} target tabungan
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={tw`w-10 h-10 rounded-full bg-[${Colors.accent}] justify-center items-center`}
-            onPress={() => navigation.navigate("AddSavings")}
-          >
-            <Ionicons name="add" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Overall Stats - FIXED: Tanpa gradient */}
-        <View
-          style={tw`bg-[${Colors.surfaceLight}] rounded-xl p-4 border border-[${Colors.border}]`}
-        >
-          <Text
-            style={tw`text-sm font-semibold text-[${Colors.textPrimary}] mb-3`}
-          >
-            Progress Tabungan Total
+    <View style={pageContainer}>
+      {/* ====== COMPACT HEADER ====== */}
+      <View style={[headerBar, tw`flex-row justify-between items-center`]}>
+        <View>
+          <Text style={headerTitle}>Tabungan</Text>
+          <Text style={headerSubtitle}>
+            {savings.length} target tabungan
           </Text>
+        </View>
+        <TouchableOpacity
+          style={headerFAB}
+          onPress={() => navigation.navigate("AddSavings")}
+        >
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
 
-          <View style={tw`mb-3`}>
-            <View style={tw`flex-row justify-between items-center mb-1`}>
-              <Text
-                style={tw`text-sm font-medium text-[${Colors.textPrimary}]`}
-              >
+      {/* ====== SCROLLABLE CONTENT ====== */}
+      <ScrollView
+        style={tw`flex-1`}
+        contentContainerStyle={scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Summary Stats — inside scroll */}
+        {savings.length > 0 && (
+          <View style={[cardPadded, tw`mb-4`]}>
+            {/* Progress */}
+            <View style={tw`flex-row justify-between items-center mb-2`}>
+              <Text style={{ fontSize: 13, fontWeight: "600", color: DS.text }}>
                 {formatCurrency(totalStats.totalCurrent)} /{" "}
                 {formatCurrency(totalStats.totalTarget)}
               </Text>
-              <Text style={tw`text-sm font-bold text-[${Colors.accent}]`}>
+              <Text
+                style={{ fontSize: 13, fontWeight: "700", color: DS.accent }}
+              >
                 {totalStats.overallProgress.toFixed(1)}%
               </Text>
             </View>
-            <ProgressBar
-              progress={Math.min(totalStats.overallProgress / 100, 1)}
-              color={Colors.accent}
-              style={tw`h-2 rounded-full bg-[${Colors.surfaceLight}]`}
-            />
-          </View>
-
-          <View style={tw`flex-row justify-between`}>
-            <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-                Aktif
-              </Text>
-              <Text style={tw`text-lg font-bold text-[${Colors.accent}]`}>
-                {totalStats.activeCount}
-              </Text>
+            <View style={progressTrack}>
+              <View
+                style={progressFill(
+                  DS.accent,
+                  Math.min(totalStats.overallProgress, 100)
+                )}
+              />
             </View>
 
-            <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
-
-            <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-                Tercapai
-              </Text>
-              <Text style={tw`text-lg font-bold text-[${Colors.success}]`}>
-                {totalStats.completedCount}
-              </Text>
-            </View>
-
-            <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
-
-            <View style={tw`items-center`}>
-              <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-                Total
-              </Text>
-              <Text style={tw`text-lg font-bold text-[${Colors.textPrimary}]`}>
-                {savings.length}
-              </Text>
+            {/* Stats Row */}
+            <View style={tw`flex-row justify-between mt-3`}>
+              <View style={statColumn}>
+                <Text style={statLabel}>Aktif</Text>
+                <Text style={[statValue, { color: DS.accent }]}>
+                  {totalStats.activeCount}
+                </Text>
+              </View>
+              <View style={statDivider} />
+              <View style={statColumn}>
+                <Text style={statLabel}>Tercapai</Text>
+                <Text style={[statValue, { color: DS.success }]}>
+                  {totalStats.completedCount}
+                </Text>
+              </View>
+              <View style={statDivider} />
+              <View style={statColumn}>
+                <Text style={statLabel}>Total</Text>
+                <Text style={statValue}>{savings.length}</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </View>
+        )}
 
-      {/* Filter Tabs */}
-      <View
-        style={tw`bg-[${Colors.surface}] border-b border-[${Colors.border}] py-2 px-4`}
-      >
+        {/* Filter Tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={tw`mb-4`}
           contentContainerStyle={tw`flex-row gap-2`}
         >
-          {[
-            { key: "all", label: "Semua", count: savings.length },
-            { key: "active", label: "Aktif", count: totalStats.activeCount },
-            {
-              key: "completed",
-              label: "Tercapai",
-              count: totalStats.completedCount,
-            },
-          ].map((tab) => (
+          {filterTabs.map((tab) => (
             <TouchableOpacity
               key={tab.key}
-              style={[
-                tw`px-3 py-1.5 rounded-full`,
-                filter === tab.key
-                  ? tw`bg-[${Colors.accent}]/20`
-                  : tw`bg-[${Colors.surfaceLight}]`,
-              ]}
+              style={filter === tab.key ? filterPillActive : filterPill}
               onPress={() => setFilter(tab.key as any)}
             >
               <Text
-                style={[
-                  tw`text-xs font-medium`,
-                  filter === tab.key
-                    ? tw`text-[${Colors.accent}]`
-                    : tw`text-[${Colors.textSecondary}]`,
-                ]}
+                style={
+                  filter === tab.key ? filterPillTextActive : filterPillText
+                }
               >
                 {tab.label} ({tab.count})
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
 
-      {/* Savings List */}
-      <ScrollView
-        style={tw`flex-1`}
-        contentContainerStyle={tw`p-4 pb-8`}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {filteredSavings.length === 0
-          ? renderEmptyState()
-          : filteredSavings.map(renderSavingsCard)}
+        {/* Savings Cards */}
+        {filteredSavings.length === 0 ? (
+          <View style={emptyState}>
+            <Ionicons name="wallet-outline" size={48} color={DS.textMuted} />
+            <Text style={emptyTitle}>
+              {filter === "all"
+                ? "Belum ada tabungan"
+                : "Tidak ada tabungan"}
+            </Text>
+            <Text style={emptySubtitle}>
+              {filter === "all"
+                ? "Mulai dengan membuat target tabungan pertama Anda"
+                : `Tidak ada tabungan dengan status "${filter}"`}
+            </Text>
+            {filter === "all" && (
+              <TouchableOpacity
+                style={primaryButton}
+                onPress={() => navigation.navigate("AddSavings")}
+              >
+                <Ionicons name="add-circle" size={18} color="#FFFFFF" />
+                <Text style={primaryButtonText}>Buat Target Tabungan</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          filteredSavings.map((saving) => {
+            const current = safeNumber(saving.current);
+            const target = safeNumber(saving.target);
+            const progress = getSafePercentage(current, target);
+            const remaining = target - current;
+            const progressColor = getProgressColor(progress);
+            const iconName = getIcon(saving);
+            const isCompleted = current >= target;
+
+            return (
+              <View key={saving.id} style={[cardPadded, tw`mb-3`]}>
+                {/* Row 1: Icon + Name + Actions */}
+                <View
+                  style={tw`flex-row justify-between items-center mb-3`}
+                >
+                  <View style={tw`flex-row items-center gap-3 flex-1`}>
+                    <View
+                      style={[
+                        tw`w-10 h-10 rounded-full items-center justify-center`,
+                        { backgroundColor: progressColor + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={iconName}
+                        size={18}
+                        color={progressColor}
+                      />
+                    </View>
+                    <View style={tw`flex-1`}>
+                      <Text
+                        style={{
+                          fontSize: 15,
+                          fontWeight: "600",
+                          color: DS.text,
+                        }}
+                      >
+                        {saving.name}
+                      </Text>
+                      {saving.category && (
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            color: DS.textMuted,
+                          }}
+                        >
+                          {saving.category.charAt(0).toUpperCase() +
+                            saving.category.slice(1)}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={tw`flex-row gap-2`}>
+                    <TouchableOpacity
+                      style={iconButton}
+                      onPress={() =>
+                        navigation.navigate("AddSavingsTransaction", {
+                          savingsId: saving.id,
+                          type: "deposit",
+                        })
+                      }
+                    >
+                      <Ionicons name="add" size={16} color={DS.accent} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={iconButton}
+                      onPress={() =>
+                        navigation.navigate("AddSavings", {
+                          editMode: true,
+                          savingsData: saving,
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name="pencil-outline"
+                        size={16}
+                        color={DS.accent}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={iconButton}
+                      onPress={() => handleDelete(saving)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={DS.error}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Row 2: Progress */}
+                <View style={tw`mb-3`}>
+                  <View
+                    style={tw`flex-row justify-between items-center mb-1`}
+                  >
+                    <Text style={{ fontSize: 12, color: DS.textSub }}>
+                      {formatCurrency(current)} / {formatCurrency(target)}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: isCompleted ? DS.success : DS.accent,
+                      }}
+                    >
+                      {progress.toFixed(1)}%
+                    </Text>
+                  </View>
+                  <View style={progressTrack}>
+                    <View
+                      style={progressFill(
+                        progressColor,
+                        Math.min(progress, 100)
+                      )}
+                    />
+                  </View>
+                </View>
+
+                {/* Row 3: Details */}
+                <View style={tw`flex-row justify-between items-center`}>
+                  <View>
+                    <Text style={statLabel}>Sisa</Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: remaining > 0 ? DS.success : DS.error,
+                      }}
+                    >
+                      {formatCurrency(remaining)}
+                    </Text>
+                  </View>
+                  <View style={tw`items-end`}>
+                    <Text style={statLabel}>Deadline</Text>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: "600",
+                        color: saving.deadline ? DS.text : DS.textMuted,
+                      }}
+                    >
+                      {formatDeadline(saving.deadline)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={badge(DS.accent)}
+                    onPress={() =>
+                      navigation.navigate("SavingsDetail", {
+                        savingsId: saving.id,
+                      })
+                    }
+                  >
+                    <Text style={badgeText(DS.accent)}>Detail</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Row 4: Status */}
+                <View style={cardSeparator} />
+                <View style={tw`flex-row justify-between items-center`}>
+                  <View style={tw`flex-row items-center gap-1`}>
+                    <Ionicons
+                      name={
+                        isCompleted ? "checkmark-circle" : "time"
+                      }
+                      size={14}
+                      color={isCompleted ? DS.success : progressColor}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: "500",
+                        color: isCompleted ? DS.success : progressColor,
+                      }}
+                    >
+                      {isCompleted
+                        ? "Tercapai"
+                        : progress >= 50
+                        ? "Sedang berjalan"
+                        : "Baru dimulai"}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 11, color: DS.textMuted }}>
+                    Dibuat: {formatDateShort(saving.createdAt)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );

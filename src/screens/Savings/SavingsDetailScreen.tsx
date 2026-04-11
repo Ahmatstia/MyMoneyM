@@ -551,7 +551,7 @@ const SavingsDetailScreen: React.FC = () => {
 
         {/* Transactions Section */}
         <View
-          style={tw.style(`mx-4 mt-4 rounded-xl border`, {
+          style={tw.style(`mx-4 mt-4 rounded-2xl border`, {
             backgroundColor: Colors.surface,
             borderColor: Colors.border,
           })}
@@ -646,7 +646,7 @@ const SavingsDetailScreen: React.FC = () => {
         <View style={tw`mx-4 mt-4 mb-8`}>
           {!isCompleted && (
             <TouchableOpacity
-              style={tw.style(`rounded-xl py-3 items-center shadow-sm`, {
+              style={tw.style(`rounded-2xl py-3 items-center shadow-sm`, {
                 backgroundColor: Colors.accent,
               })}
               onPress={() => {
@@ -666,7 +666,7 @@ const SavingsDetailScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[
-              tw.style(`border rounded-xl py-3 items-center`, {
+              tw.style(`border rounded-2xl py-3 items-center`, {
                 borderColor: Colors.border,
               }),
               !isCompleted && tw`mt-3`,

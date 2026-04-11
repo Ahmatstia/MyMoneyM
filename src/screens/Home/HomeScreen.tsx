@@ -971,7 +971,7 @@ const HomeScreen: React.FC = () => {
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={tw`px-5 pb-24`}
+        contentContainerStyle={tw`px-4 pb-24`}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

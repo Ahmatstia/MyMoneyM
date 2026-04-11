@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Colors } from "../../theme/theme";
 
 // Key untuk menyimpan settings
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -578,9 +579,9 @@ const SettingsScreen = () => {
   return (
     <View style={tw`flex-1 bg-[#0F172A]`}>
       {/* Header */}
-      <View style={tw`pt-3 px-6 pb-4 border-b border-[#334155]`}>
-        <Text style={tw`text-2xl font-bold text-white mb-2`}>Pengaturan</Text>
-        <Text style={tw`text-[#CBD5E1]`}>Kelola aplikasi sesuai kebutuhan</Text>
+      <View style={tw`pt-3 px-4 pb-3.5 border-b border-[#334155]`}>
+        <Text style={tw`text-xl font-bold text-white`}>Pengaturan</Text>
+        <Text style={tw`text-[#CBD5E1] text-sm mt-0.5`}>Kelola aplikasi sesuai kebutuhan</Text>
       </View>
 
       {/* Tab Navigation */}
@@ -610,12 +611,12 @@ const SettingsScreen = () => {
       </View>
 
       <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
-        <View style={tw`p-6`}>
+        <View style={tw`px-4 pt-4`}>
           {/* NOTIFICATION SETTINGS */}
           {activeSection === "notifications" && (
             <>
               {/* Master Switch Section */}
-              <View style={tw`bg-[#1E293B] rounded-xl p-5 mb-6`}>
+              <View style={tw`bg-[#1E293B] rounded-2xl p-5 mb-6`}>
                 <View style={tw`flex-row items-center justify-between mb-4`}>
                   <View>
                     <Text style={tw`text-white text-lg font-semibold`}>
@@ -714,7 +715,7 @@ const SettingsScreen = () => {
               ].map(({ key, label, desc }) => (
                 <View
                   key={key}
-                  style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4 mb-3`}
+                  style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-2xl p-4 mb-3`}
                 >
                   <View style={tw`flex-1`}>
                     <Text style={tw`text-white font-medium`}>{label}</Text>
@@ -736,7 +737,7 @@ const SettingsScreen = () => {
 
               {/* Advanced Notification Settings */}
               <TouchableOpacity
-                style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-xl p-4 mt-6 mb-4`}
+                style={tw`flex-row items-center justify-between bg-[#1E293B] rounded-2xl p-4 mt-6 mb-4`}
                 onPress={() => setShowAdvanced(!showAdvanced)}
               >
                 <View style={tw`flex-row items-center`}>
@@ -758,7 +759,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
 
               {showAdvanced && (
-                <View style={tw`bg-[#1E293B] rounded-xl p-4 mb-6`}>
+                <View style={tw`bg-[#1E293B] rounded-2xl p-4 mb-6`}>
                   {/* CUSTOM SCHEDULE */}
                   <Text style={tw`text-white font-medium mb-3`}>
                     ⏰ Jadwal Kustom
@@ -1041,7 +1042,7 @@ const SettingsScreen = () => {
           {activeSection === "data" && (
             <View style={tw`mb-4`}>
               <TouchableOpacity
-                style={tw`bg-[#1E293B] rounded-xl p-5 items-center mb-4`}
+                style={tw`bg-[#1E293B] rounded-2xl p-5 items-center mb-4`}
                 onPress={handleExportData}
               >
                 <Ionicons name="download-outline" size={32} color="#22D3EE" />
@@ -1054,7 +1055,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={tw`bg-[#1E293B] rounded-xl p-5 items-center mb-4`}
+                style={tw`bg-[#1E293B] rounded-2xl p-5 items-center mb-4`}
                 onPress={handleDebug}
               >
                 <Ionicons name="bug-outline" size={32} color="#F59E0B" />
@@ -1067,7 +1068,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={tw`bg-[#EF4444] rounded-xl p-5 items-center`}
+                style={tw`bg-[#EF4444] rounded-2xl p-5 items-center`}
                 onPress={handleClearData}
               >
                 <Ionicons name="trash-outline" size={32} color="#FFFFFF" />

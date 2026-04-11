@@ -127,7 +127,7 @@ const ProfileScreen: React.FC = () => {
         <View style={tw`p-4`}>
           <View
             style={[
-              tw`rounded-xl p-5 mb-6`,
+              tw`rounded-2xl p-5 mb-6`,
               { backgroundColor: SURFACE_COLOR },
             ]}
           >
@@ -172,7 +172,7 @@ const ProfileScreen: React.FC = () => {
           {/* Info Simple */}
           <View
             style={[
-              tw`rounded-xl p-5 mb-6`,
+              tw`rounded-2xl p-5 mb-6`,
               { backgroundColor: Colors.surfaceLight },
             ]}
           >
@@ -203,7 +203,7 @@ const ProfileScreen: React.FC = () => {
 
             <TouchableOpacity
               style={[
-                tw`p-4 rounded-xl flex-row items-center mb-3`,
+                tw`p-4 rounded-2xl flex-row items-center mb-3`,
                 {
                   backgroundColor: SURFACE_COLOR,
                   borderWidth: 1,
@@ -239,7 +239,7 @@ const ProfileScreen: React.FC = () => {
             {/* Clear All Data */}
             <TouchableOpacity
               style={[
-                tw`p-4 rounded-xl flex-row items-center`,
+                tw`p-4 rounded-2xl flex-row items-center`,
                 {
                   backgroundColor: Colors.error + "10",
                   borderWidth: 1,
@@ -296,7 +296,7 @@ const ProfileScreen: React.FC = () => {
           <View style={tw`mt-8 mb-8`}>
             <View
               style={[
-                tw`p-4 rounded-xl`,
+                tw`p-4 rounded-2xl`,
                 {
                   backgroundColor: Colors.surfaceLight,
                   borderWidth: 1,

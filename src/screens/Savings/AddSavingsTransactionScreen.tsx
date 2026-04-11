@@ -274,7 +274,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
     <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`p-5 pb-8`}
+        contentContainerStyle={tw`px-4 pt-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
         {/* Savings Info */}
@@ -317,7 +317,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
           <View style={tw`flex-row gap-2`}>
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-2.5 border`,
+                tw`flex-1 rounded-2xl px-3 py-2.5 border`,
                 transactionType === "deposit"
                   ? {
                       backgroundColor: SUCCESS_COLOR + "15",
@@ -359,7 +359,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-2.5 border`,
+                tw`flex-1 rounded-2xl px-3 py-2.5 border`,
                 transactionType === "withdrawal"
                   ? {
                       backgroundColor: ERROR_COLOR + "15",
@@ -447,7 +447,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       key={preset.label}
                       style={[
-                        tw`rounded-xl px-4 py-2 mr-2`,
+                        tw`rounded-2xl px-4 py-2 mr-2`,
                         {
                           backgroundColor: SURFACE_COLOR,
                           borderWidth: 1,

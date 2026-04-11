@@ -154,7 +154,7 @@ const CalendarScreen: React.FC = () => {
         {/* Header */}
 
         {/* Monthly Stats */}
-        <View style={tw`px-5 mb-6 pt-5`}>
+        <View style={tw`px-4 mb-6 pt-5`}>
           <View
             style={[
               tw`rounded-2xl p-4`,
@@ -245,7 +245,7 @@ const CalendarScreen: React.FC = () => {
         </View>
 
         {/* Calendar */}
-        <View style={tw`px-5 mb-6`}>
+        <View style={tw`px-4 mb-6`}>
           <View
             style={[
               tw`rounded-2xl overflow-hidden`,
@@ -284,7 +284,7 @@ const CalendarScreen: React.FC = () => {
 
         {/* Insights Section */}
         {calendarInsights.length > 0 && (
-          <View style={tw`px-5 mb-6`}>
+          <View style={tw`px-4 mb-6`}>
             <Text
               style={[tw`text-lg font-semibold mb-3`, { color: TEXT_PRIMARY }]}
             >
@@ -300,7 +300,7 @@ const CalendarScreen: React.FC = () => {
                 <View
                   key={index}
                   style={[
-                    tw`w-64 rounded-xl p-4 mr-3`,
+                    tw`w-64 rounded-2xl p-4 mr-3`,
                     {
                       backgroundColor: SURFACE_COLOR,
                       borderWidth: 1,
@@ -375,13 +375,13 @@ const CalendarScreen: React.FC = () => {
         )}
 
         {/* Stats Grid */}
-        <View style={tw`px-5 mb-6`}>
+        <View style={tw`px-4 mb-6`}>
           <View style={tw`flex-row flex-wrap -mx-1`}>
             {/* Busiest Days */}
             <View style={tw`w-1/2 px-1 mb-2`}>
               <View
                 style={[
-                  tw`rounded-xl p-3`,
+                  tw`rounded-2xl p-3`,
                   {
                     backgroundColor: SURFACE_COLOR,
                     borderWidth: 1,
@@ -428,7 +428,7 @@ const CalendarScreen: React.FC = () => {
             <View style={tw`w-1/2 px-1 mb-2`}>
               <View
                 style={[
-                  tw`rounded-xl p-3`,
+                  tw`rounded-2xl p-3`,
                   {
                     backgroundColor: SURFACE_COLOR,
                     borderWidth: 1,
@@ -468,7 +468,7 @@ const CalendarScreen: React.FC = () => {
         </View>
 
         {/* Selected Day Summary */}
-        <View style={tw`px-5`}>
+        <View style={tw`px-4`}>
           <TouchableOpacity
             style={[
               tw`rounded-2xl p-4`,
@@ -565,10 +565,10 @@ const CalendarScreen: React.FC = () => {
         </View>
 
         {/* Legend */}
-        <View style={tw`px-5 mt-6`}>
+        <View style={tw`px-4 mt-6`}>
           <View
             style={[
-              tw`rounded-xl p-3`,
+              tw`rounded-2xl p-3`,
               {
                 backgroundColor: SURFACE_COLOR,
                 borderWidth: 1,

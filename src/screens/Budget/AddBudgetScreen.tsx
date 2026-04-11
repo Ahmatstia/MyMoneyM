@@ -459,7 +459,7 @@ const AddBudgetScreen: React.FC = () => {
     <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`p-5 pb-8`}
+        contentContainerStyle={tw`px-4 pt-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
         {/* Info jika edit mode - STYLE KONSISTEN */}
@@ -628,7 +628,7 @@ const AddBudgetScreen: React.FC = () => {
               <TouchableOpacity
                 key={p.key}
                 style={[
-                  tw`flex-1 min-w-[48%] rounded-xl px-3 py-2.5 border`,
+                  tw`flex-1 min-w-[48%] rounded-2xl px-3 py-2.5 border`,
                   period === p.key
                     ? {
                         backgroundColor: ACCENT_COLOR + "15",
@@ -687,7 +687,7 @@ const AddBudgetScreen: React.FC = () => {
                   <TouchableOpacity
                     key={preset.label}
                     style={[
-                      tw`rounded-xl px-4 py-2 mr-2`,
+                      tw`rounded-2xl px-4 py-2 mr-2`,
                       {
                         backgroundColor: SURFACE_COLOR,
                         borderWidth: 1,
@@ -829,7 +829,7 @@ const AddBudgetScreen: React.FC = () => {
 
             <View
               style={[
-                tw`flex-row items-center rounded-xl px-4 py-3 mb-4`,
+                tw`flex-row items-center rounded-2xl px-4 py-3 mb-4`,
                 {
                   backgroundColor: Colors.surfaceLight,
                   borderWidth: 1,
@@ -866,7 +866,7 @@ const AddBudgetScreen: React.FC = () => {
                   {/* Per Hari */}
                   <TouchableOpacity
                     style={[
-                      tw`flex-row justify-between items-center p-4 rounded-xl border mb-3`,
+                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: BORDER_COLOR,
@@ -910,7 +910,7 @@ const AddBudgetScreen: React.FC = () => {
                   {/* Per Minggu */}
                   <TouchableOpacity
                     style={[
-                      tw`flex-row justify-between items-center p-4 rounded-xl border mb-3`,
+                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: BORDER_COLOR,
@@ -954,7 +954,7 @@ const AddBudgetScreen: React.FC = () => {
                   {/* Per Bulan */}
                   <TouchableOpacity
                     style={[
-                      tw`flex-row justify-between items-center p-4 rounded-xl border mb-3`,
+                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
                       {
                         backgroundColor: Colors.surfaceLight,
                         borderColor: BORDER_COLOR,
@@ -1010,7 +1010,7 @@ const AddBudgetScreen: React.FC = () => {
             {/* Calculation Info */}
             <View
               style={[
-                tw`p-4 rounded-xl`,
+                tw`p-4 rounded-2xl`,
                 {
                   backgroundColor: INFO_COLOR + "10",
                   borderWidth: 1,
