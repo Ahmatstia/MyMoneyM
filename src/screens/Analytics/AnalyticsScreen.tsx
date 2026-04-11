@@ -49,24 +49,9 @@ const AnalyticsScreen: React.FC = () => {
 
   // ==================== CHECK IF HAS DATA ====================
   const hasData = useMemo(() => {
-    console.log("📊 HAS DATA CHECK:", {
-      transactions: state.transactions.length,
-      budgets: state.budgets.length,
-      savings: state.savings.length,
-    });
-
-    // PERBAIKAN: Cek dengan lebih hati-hati
     const hasTransactions = state.transactions.length > 0;
     const hasBudgets = state.budgets.length > 0;
     const hasSavings = state.savings.length > 0;
-
-    console.log("📊 HAS DATA RESULT:", {
-      hasTransactions,
-      hasBudgets,
-      hasSavings,
-      total: hasTransactions || hasBudgets || hasSavings,
-    });
-
     return hasTransactions || hasBudgets || hasSavings;
   }, [state.transactions, state.budgets, state.savings]);
 
@@ -113,20 +98,8 @@ const AnalyticsScreen: React.FC = () => {
 
   // Budget Analytics
   const budgetAnalytics = useMemo(() => {
-    console.log(
-      "🔄 Calculating budget analytics with:",
-      state.budgets.length,
-      "budgets"
-    );
     try {
       const result = calculateBudgetAnalytics(state.budgets || []);
-      console.log("📊 Budget Analytics Result:", {
-        totalBudget: result.totalBudget,
-        totalSpent: result.totalSpent,
-        overBudgetCount: result.overBudgetCount,
-        underBudgetCount: result.underBudgetCount,
-        hasBudgets: result.hasBudgets,
-      });
       return result;
     } catch (error) {
       console.error(
@@ -148,30 +121,8 @@ const AnalyticsScreen: React.FC = () => {
 
   // PERBAIKAN: Savings Analytics dengan debug
   const savingsAnalytics = useMemo(() => {
-    console.log(
-      "💰 Calculating savings analytics with:",
-      state.savings.length,
-      "savings"
-    );
-    console.log(
-      "💰 Savings data:",
-      state.savings.map((s) => ({
-        name: s.name,
-        target: s.target,
-        current: s.current,
-      }))
-    );
-
     try {
       const result = calculateSavingsAnalytics(state.savings || []);
-      console.log("💰 Savings Analytics Result:", {
-        totalTarget: result.totalTarget,
-        totalCurrent: result.totalCurrent,
-        overallProgress: result.overallProgress,
-        completedSavings: result.completedSavings,
-        activeSavings: result.activeSavings,
-        hasSavings: result.hasSavings,
-      });
       return result;
     } catch (error) {
       console.error(
@@ -247,7 +198,7 @@ const AnalyticsScreen: React.FC = () => {
       <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
         {/* Header Minimalis */}
         <View
-          style={tw.style(`px-4 pt-3 pb-4 border-b`, {
+          style={tw.style(`px-4 pt-3 pb-3.5 border-b`, {
             backgroundColor: Colors.surface,
             borderColor: Colors.border,
           })}
@@ -255,7 +206,7 @@ const AnalyticsScreen: React.FC = () => {
           <View style={tw`flex-row justify-between items-center`}>
             <View>
               <Text
-                style={tw.style(`text-2xl font-bold`, {
+                style={tw.style(`text-xl font-bold`, {
                   color: Colors.textPrimary,
                 })}
               >
@@ -275,7 +226,7 @@ const AnalyticsScreen: React.FC = () => {
         {/* No Data Content */}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={tw`py-6 px-6`}
+          contentContainerStyle={tw`px-4 pt-4 pb-8`}
         >
           <View style={tw`items-center`}>
             <Ionicons
@@ -1005,17 +956,17 @@ Kategori: ${financialHealthScore.category}
 
   return (
     <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
-      {/* Header Minimalis */}
+      {/* Header Compact */}
       <View
-        style={tw.style(`px-4 pt-3 pb-4 border-b`, {
+        style={tw.style(`px-4 pt-3 pb-3.5 border-b`, {
           backgroundColor: Colors.surface,
           borderColor: Colors.border,
         })}
       >
-        <View style={tw`flex-row justify-between items-center mb-3`}>
+        <View style={tw`flex-row justify-between items-center`}>
           <View>
             <Text
-              style={tw.style(`text-2xl font-bold`, {
+              style={tw.style(`text-xl font-bold`, {
                 color: Colors.textPrimary,
               })}
             >
@@ -1031,46 +982,15 @@ Kategori: ${financialHealthScore.category}
           </View>
           <TouchableOpacity
             style={tw.style(
-              `w-10 h-10 rounded-full justify-center items-center`,
+              `w-9 h-9 rounded-full justify-center items-center`,
               {
                 backgroundColor: `${Colors.accent}20`,
               }
             )}
             onPress={handleExport}
           >
-            <Ionicons name="share-outline" size={20} color={Colors.accent} />
+            <Ionicons name="share-outline" size={18} color={Colors.accent} />
           </TouchableOpacity>
-        </View>
-
-        {/* Time Range Tabs */}
-        <View style={tw`flex-row gap-2`}>
-          {[
-            { key: "week", label: "Minggu" },
-            { key: "month", label: "Bulan" },
-            { key: "year", label: "Tahun" },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={[
-                tw`px-4 py-2 rounded-full`,
-                timeRange === tab.key
-                  ? { backgroundColor: Colors.accent }
-                  : { backgroundColor: Colors.surfaceLight },
-              ]}
-              onPress={() => setTimeRange(tab.key as any)}
-            >
-              <Text
-                style={[
-                  tw`text-sm font-medium`,
-                  timeRange === tab.key
-                    ? { color: Colors.textPrimary }
-                    : { color: Colors.textSecondary },
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
         </View>
       </View>
 
@@ -1146,7 +1066,37 @@ Kategori: ${financialHealthScore.category}
       </View>
 
       {/* Main Content */}
-      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`p-4 pb-8`}>
+      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`px-4 pt-4 pb-8`}>
+        {/* Time Range Tabs - inside scroll */}
+        <View style={tw`flex-row gap-2 mb-4`}>
+          {[
+            { key: "week", label: "Minggu" },
+            { key: "month", label: "Bulan" },
+            { key: "year", label: "Tahun" },
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                tw`px-3.5 py-1.5 rounded-full`,
+                timeRange === tab.key
+                  ? { backgroundColor: Colors.accent }
+                  : { backgroundColor: Colors.surfaceLight },
+              ]}
+              onPress={() => setTimeRange(tab.key as any)}
+            >
+              <Text
+                style={[
+                  tw`text-xs font-medium`,
+                  timeRange === tab.key
+                    ? { color: Colors.textPrimary }
+                    : { color: Colors.textSecondary },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         {/* Health Tab */}
         {activeTab === "health" && renderHealthScore()}
 
