@@ -94,11 +94,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const isMounted = useRef(true);
 
   // ========== HELPER FUNCTIONS ==========
+  // BUG-11 FIX: Accept YYYY-MM-DD and YYYY-M-D formats
   const isValidDateString = (dateStr: string): boolean => {
     try {
       if (!dateStr || typeof dateStr !== "string") return false;
+      // Accept YYYY-MM-DD or YYYY-M-D formats
+      if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(dateStr)) return false;
       const date = new Date(dateStr);
-      return !isNaN(date.getTime()) && dateStr.length === 10;
+      return !isNaN(date.getTime());
     } catch {
       return false;
     }

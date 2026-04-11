@@ -86,6 +86,7 @@ export interface AppState {
   balance: number;
 }
 
+// BUG-03 FIX: Sinkronkan interface dengan implementasi di analytics.ts
 export interface FinancialHealthScore {
   overallScore: number;
   category: string;
@@ -97,11 +98,6 @@ export interface FinancialHealthScore {
       status: "good" | "warning" | "poor";
     };
     budgetAdherence: {
-      score: number;
-      weight: number;
-      status: "good" | "warning" | "poor";
-    };
-    emergencyFund: {
       score: number;
       weight: number;
       status: "good" | "warning" | "poor";

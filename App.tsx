@@ -94,14 +94,7 @@ export default function App() {
         // }
       });
 
-    // Configure notification appearance
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
+    // BUG-16 FIX: Removed duplicate setNotificationHandler — already configured in notifications/index.ts
 
     return () => {
       subscription.remove();

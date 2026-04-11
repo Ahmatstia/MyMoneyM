@@ -27,12 +27,18 @@ export const budgetService = {
     return newData;
   },
 
+  // BUG-08 FIX: Filter transactions by budget date range
   async updateBudgetSpent(): Promise<AppState> {
     const currentData = await storageService.loadData();
 
     const updatedBudgets = currentData.budgets.map((budget) => {
       const categoryExpenses = currentData.transactions
-        .filter((t) => t.type === "expense" && t.category === budget.category)
+        .filter((t) => {
+          if (t.type !== "expense") return false;
+          if (t.category !== budget.category) return false;
+          // Only count transactions within budget date range
+          return t.date >= budget.startDate && t.date <= budget.endDate;
+        })
         .reduce((sum, t) => sum + t.amount, 0);
 
       return { ...budget, spent: categoryExpenses };

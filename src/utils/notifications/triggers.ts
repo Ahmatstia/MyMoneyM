@@ -192,10 +192,10 @@ export const generateDailySummary = (appState: AppState): string => {
 
     const biggestExpense = todayTransactions
       .filter((t) => t.type === "expense")
-      .reduce((max, t) => (t.amount > max.amount ? t : max), {
-        amount: 0,
-        category: "Tidak ada",
-      });
+      .reduce(
+        (max, t) => (t.amount > max.amount ? t : max),
+        { amount: 0, category: "Tidak ada" } as { amount: number; category: string }
+      );
 
     const notesCount = appState.notes.filter((n) => n.date === today).length;
 

@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { formatCurrency, safeNumber, safePositiveNumber } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
 
@@ -115,23 +115,18 @@ const HomeScreen: React.FC = () => {
           category: "Belum Ada Data",
           color: Colors.gray400,
           factors: {
-            savingsRate: { score: 0, weight: 0.3, status: "neutral" as const },
+            savingsRate: { score: 0, weight: 0.3, status: "poor" as const },
             budgetAdherence: {
               score: 0,
-              weight: 0.25,
-              status: "neutral" as const,
-            },
-            emergencyFund: {
-              score: 0,
-              weight: 0.2,
-              status: "neutral" as const,
+              weight: 0.3,
+              status: "poor" as const,
             },
             expenseControl: {
               score: 0,
-              weight: 0.15,
-              status: "neutral" as const,
+              weight: 0.25,
+              status: "poor" as const,
             },
-            goalProgress: { score: 0, weight: 0.1, status: "neutral" as const },
+            goalProgress: { score: 0, weight: 0.15, status: "poor" as const },
           },
           recommendations: [
             "Mulai dengan mencatat semua transaksi secara rutin",
@@ -142,65 +137,67 @@ const HomeScreen: React.FC = () => {
 
       // Hitung budget analytics sederhana untuk home screen
       const budgetAnalytics = {
+        hasBudgets: state.budgets.length > 0,
         totalBudget: state.budgets.reduce(
-          (sum, b) => sum + safeNumber(b.limit),
+          (sum, b) => sum + safePositiveNumber(b.limit),
           0
         ),
         totalSpent: state.budgets.reduce(
-          (sum, b) => sum + safeNumber(b.spent),
+          (sum, b) => sum + safePositiveNumber(b.spent),
           0
         ),
         utilizationRate:
-          state.budgets.reduce((sum, b) => sum + safeNumber(b.limit), 0) > 0
-            ? (state.budgets.reduce((sum, b) => sum + safeNumber(b.spent), 0) /
+          state.budgets.reduce((sum, b) => sum + safePositiveNumber(b.limit), 0) > 0
+            ? (state.budgets.reduce((sum, b) => sum + safePositiveNumber(b.spent), 0) /
                 state.budgets.reduce(
-                  (sum, b) => sum + safeNumber(b.limit),
+                  (sum, b) => sum + safePositiveNumber(b.limit),
                   0
                 )) *
               100
             : 0,
         overBudgetCount: state.budgets.filter(
-          (b) => safeNumber(b.spent) > safeNumber(b.limit)
+          (b) => safePositiveNumber(b.spent) > safePositiveNumber(b.limit)
         ).length,
         underBudgetCount: state.budgets.filter(
-          (b) => safeNumber(b.spent) <= safeNumber(b.limit)
+          (b) => safePositiveNumber(b.spent) <= safePositiveNumber(b.limit)
         ).length,
         budgetsAtRisk: state.budgets.filter(
-          (b) => safeNumber(b.spent) > safeNumber(b.limit) * 0.8
+          (b) => safePositiveNumber(b.spent) > safePositiveNumber(b.limit) * 0.8
         ),
       };
 
       // Hitung savings analytics sederhana untuk home screen
       const savingsAnalytics = {
+        hasSavings: state.savings.length > 0,
         totalTarget: state.savings.reduce(
-          (sum, s) => sum + safeNumber(s.target),
+          (sum, s) => sum + safePositiveNumber(s.target),
           0
         ),
         totalCurrent: state.savings.reduce(
-          (sum, s) => sum + safeNumber(s.current),
+          (sum, s) => sum + safePositiveNumber(s.current),
           0
         ),
         overallProgress:
-          state.savings.reduce((sum, s) => sum + safeNumber(s.target), 0) > 0
+          state.savings.reduce((sum, s) => sum + safePositiveNumber(s.target), 0) > 0
             ? (state.savings.reduce(
-                (sum, s) => sum + safeNumber(s.current),
+                (sum, s) => sum + safePositiveNumber(s.current),
                 0
               ) /
                 state.savings.reduce(
-                  (sum, s) => sum + safeNumber(s.target),
+                  (sum, s) => sum + safePositiveNumber(s.target),
                   0
                 )) *
               100
             : 0,
         completedSavings: state.savings.filter(
-          (s) => safeNumber(s.current) >= safeNumber(s.target)
+          (s) => safePositiveNumber(s.current) >= safePositiveNumber(s.target)
         ).length,
         activeSavings: state.savings.filter(
-          (s) => safeNumber(s.current) < safeNumber(s.target)
+          (s) => safePositiveNumber(s.current) < safePositiveNumber(s.target)
         ).length,
         nearingCompletion: state.savings.filter((s) => {
-          const target = safeNumber(s.target);
-          const current = safeNumber(s.current);
+          const target = safePositiveNumber(s.target);
+          const current = safePositiveNumber(s.current);
           return target > 0 && current / target >= 0.8 && current < target;
         }),
       };
@@ -220,16 +217,15 @@ const HomeScreen: React.FC = () => {
           savingsRate: { score: 50, weight: 0.3, status: "warning" as const },
           budgetAdherence: {
             score: 50,
+            weight: 0.3,
+            status: "warning" as const,
+          },
+          expenseControl: {
+            score: 50,
             weight: 0.25,
             status: "warning" as const,
           },
-          emergencyFund: { score: 50, weight: 0.2, status: "warning" as const },
-          expenseControl: {
-            score: 50,
-            weight: 0.15,
-            status: "warning" as const,
-          },
-          goalProgress: { score: 50, weight: 0.1, status: "warning" as const },
+          goalProgress: { score: 50, weight: 0.15, status: "warning" as const },
         },
         recommendations: [
           "Mulai dengan mencatat semua transaksi secara rutin",
@@ -420,7 +416,6 @@ const HomeScreen: React.FC = () => {
       state.budgets,
       state.savings,
       financialHealthScore,
-      navigation,
     ]
   );
 
@@ -1043,9 +1038,9 @@ const HomeScreen: React.FC = () => {
             style={tw`-mx-5 pl-5 mb-4`}
             contentContainerStyle={tw`pr-5`}
           >
-            {smartInsights.map((insight) => (
+            {smartInsights.map((insight, index) => (
               <TouchableOpacity
-                key={`${insight.title}-${Date.now()}`}
+                key={`insight-${index}`}
                 style={[
                   tw`w-64 rounded-xl p-3 mr-3`,
                   {

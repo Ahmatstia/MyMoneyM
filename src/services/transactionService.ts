@@ -46,6 +46,11 @@ export const transactionService = {
     return newData;
   },
 
+  /**
+   * Get transactions filtered by month and year.
+   * @param month - 0-indexed month (0 = January, 11 = December). Uses current month if not provided.
+   * @param year - Full year (e.g., 2026). Uses current year if not provided.
+   */
   async getTransactionsByMonth(
     month?: number,
     year?: number

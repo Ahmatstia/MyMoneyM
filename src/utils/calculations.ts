@@ -1,7 +1,7 @@
 // File: src/utils/calculations.ts
 import { Transaction, Budget, Savings } from "../types";
 
-// Safe number helper with better error handling
+// Safe number helper - ALLOWS NEGATIVE (needed for balance/deficit)
 export const safeNumber = (num: any): number => {
   if (num === undefined || num === null) return 0;
 
@@ -11,15 +11,20 @@ export const safeNumber = (num: any): number => {
       // Remove any non-numeric characters except decimal point and minus sign
       const cleaned = num.replace(/[^\d.-]/g, "");
       const parsed = parseFloat(cleaned);
-      return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed);
+      return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
     }
 
     const parsed = Number(num);
-    return isNaN(parsed) || !isFinite(parsed) ? 0 : Math.max(0, parsed);
+    return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
   } catch (error) {
     console.warn("Error in safeNumber:", error, "value:", num);
     return 0;
   }
+};
+
+// Safe positive number helper - for amounts, limits, spent (must be >= 0)
+export const safePositiveNumber = (num: any): number => {
+  return Math.max(0, safeNumber(num));
 };
 
 export const calculateTotals = (transactions: Transaction[] = []) => {
@@ -32,7 +37,8 @@ export const calculateTotals = (transactions: Transaction[] = []) => {
       .filter((t) => t?.type === "expense")
       .reduce((sum, t) => sum + safeNumber(t?.amount), 0);
 
-    const balance = safeNumber(totalIncome - totalExpense);
+    // BUG-02 FIX: Balance MUST be allowed to be negative (deficit)
+    const balance = totalIncome - totalExpense;
 
     return { totalIncome, totalExpense, balance };
   } catch (error) {
@@ -117,7 +123,8 @@ export const formatResetDate = (dateString?: string): string => {
 
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // BUG-12 FIX: Math.floor so "today" shows correctly (Math.ceil made it always >= 1)
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Hari ini";
     if (diffDays === 1) return "Kemarin";

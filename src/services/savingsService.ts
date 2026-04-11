@@ -4,14 +4,14 @@ import { generateId } from "../utils/idGenerator";
 
 export const savingsService = {
   async addSavings(
-    savings: Omit<Savings, "id"> // ✅ Hapus "| 'createdAt'" karena Savings tidak punya createdAt
+    savings: Omit<Savings, "id" | "createdAt">
   ): Promise<AppState> {
     const currentData = await storageService.loadData();
 
     const newSavings: Savings = {
       ...savings,
       id: generateId(),
-      // ✅ HAPUS createdAt karena interface Savings tidak memilikinya
+      createdAt: new Date().toISOString(),
     };
 
     const updatedSavings = [...currentData.savings, newSavings];
@@ -25,6 +25,7 @@ export const savingsService = {
     return newData;
   },
 
+  // BUG-06 FIX: Allow savings to exceed target (user may want to save more)
   async updateSavings(id: string, amount: number): Promise<AppState> {
     const currentData = await storageService.loadData();
 
@@ -32,7 +33,7 @@ export const savingsService = {
       if (saving.id === id) {
         return {
           ...saving,
-          current: Math.min(saving.current + amount, saving.target),
+          current: Math.max(0, saving.current + amount),
         };
       }
       return saving;
