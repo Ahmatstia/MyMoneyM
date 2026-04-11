@@ -398,14 +398,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ========== NOTIFICATIONS SETUP ==========
+  const notificationsInitialized = useRef(false);
+
   useEffect(() => {
     const setupNotifications = async () => {
       try {
-        if (!isLoading) {
+        // Only initialize once when loading completes
+        if (!isLoading && !notificationsInitialized.current) {
+          notificationsInitialized.current = true;
+
           // Request permission
           await notificationService.registerForPushNotificationsAsync();
 
-          // Initialize notifications with current state
+          // Initialize notifications with current state — this schedules daily reminders
+          // and checks immediate alerts ONCE on app startup
           await notificationService.initialize(state);
         }
       } catch (error) {
@@ -416,18 +422,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setupNotifications();
   }, [isLoading]);
 
-  // Update notifications when state changes
-  useEffect(() => {
-    if (!isLoading) {
-      notificationService.updateNotifications(state);
-    }
-  }, [
-    state.transactions,
-    state.budgets,
-    state.savings,
-    state.notes,
-    isLoading,
-  ]);
+  // REMOVED: The second useEffect that watched [state.transactions, state.budgets, etc.]
+  // was causing DUPLICATE notifications because:
+  // 1. initialize() already calls checkImmediateAlerts()
+  // 2. Every mutation function (addTransaction, addBudget, etc.) already calls
+  //    notificationService.updateNotifications(newState) directly
+  // 3. This useEffect was a third layer firing the same alerts again
 
   useEffect(() => {
     // Check notifications every 5 minutes when app is active

@@ -78,12 +78,32 @@ Notifications.setNotificationHandler({
 
 export class NotificationService {
   private static instance: NotificationService;
+  // Cooldown map to prevent duplicate notifications within a time window
+  private sentAlertCooldown: Map<string, number> = new Map();
+  private static COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes cooldown
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
       NotificationService.instance = new NotificationService();
     }
     return NotificationService.instance;
+  }
+
+  // Check if a notification type is on cooldown (prevents duplicates)
+  private isOnCooldown(type: string): boolean {
+    const lastSent = this.sentAlertCooldown.get(type);
+    if (!lastSent) return false;
+    return Date.now() - lastSent < NotificationService.COOLDOWN_MS;
+  }
+
+  // Mark a notification type as sent
+  private markAsSent(type: string): void {
+    this.sentAlertCooldown.set(type, Date.now());
+  }
+
+  // Clear all cooldowns (used on reinitialize)
+  private clearCooldowns(): void {
+    this.sentAlertCooldown.clear();
   }
 
   // ==================== SETTINGS MANAGEMENT ====================
@@ -402,7 +422,7 @@ export class NotificationService {
 
   // ==================== NOTIFICATION SENDING ====================
 
-  // Send single notification (immediate) dengan cek advanced settings
+  // Send single notification (immediate) dengan cek advanced settings + cooldown dedup
   async sendNotification({
     title,
     body,
@@ -423,6 +443,14 @@ export class NotificationService {
       if (data.type && !(await this.isNotificationTypeEnabled(data.type))) {
         console.log(
           `🔕 Notification skipped (type: ${data.type}) - disabled in settings`
+        );
+        return;
+      }
+
+      // DEDUP: Skip if same alert type was sent recently (30 min cooldown)
+      if (data.type && this.isOnCooldown(data.type)) {
+        console.log(
+          `🔕 Notification skipped (type: ${data.type}) - on cooldown`
         );
         return;
       }
@@ -460,6 +488,12 @@ export class NotificationService {
         },
         trigger: null, // Immediate
       });
+
+      // Mark this type as sent for cooldown
+      if (data.type) {
+        this.markAsSent(data.type);
+      }
+
       console.log(`📨 Notifikasi terkirim: ${title}`);
     } catch (error) {
       console.error("❌ Error mengirim notifikasi:", error);
@@ -627,6 +661,9 @@ export class NotificationService {
       // Cancel semua notifikasi lama
       await this.cancelAllNotifications();
 
+      // Clear cooldowns so alerts can fire fresh
+      this.clearCooldowns();
+
       // Load current settings
       const settings = await this.loadSettings();
 
@@ -643,10 +680,11 @@ export class NotificationService {
   }
 
   // Update notifications when app state changes
+  // NOTE: Does NOT call checkImmediateAlerts — that's done by initialize() on startup
+  // and by cooldown-protected sendNotification() in mutation functions
   async updateNotifications(appState: AppState): Promise<void> {
     try {
-      // Check for new alerts based on state changes
-      await this.checkImmediateAlerts(appState);
+      // Only update evening summary with latest data — no immediate alerts here
 
       // Update evening summary if needed
       const settings = await this.loadSettings();

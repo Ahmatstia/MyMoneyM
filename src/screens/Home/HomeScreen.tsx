@@ -996,38 +996,91 @@ const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Health Score Badge - SAMA SEPERTI ANALITIK */}
-          <TouchableOpacity
-            style={[
-              tw`px-3 py-2 rounded-xl items-center justify-center`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
-            onPress={() => navigation.navigate("Analytics", { tab: "health" })}
-            activeOpacity={0.7}
-          >
-            <View style={tw`flex-row items-center`}>
-              <Ionicons
-                name="heart-outline"
-                size={16}
-                color={getScoreColor(financialHealthScore.overallScore)}
-              />
-              <Text
-                style={[
-                  tw`ml-1 font-bold`,
-                  { color: getScoreColor(financialHealthScore.overallScore) },
-                ]}
-              >
-                {financialHealthScore.overallScore}
-              </Text>
-            </View>
-            <Text style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}>
-              {getScoreDescription(financialHealthScore.overallScore)}
-            </Text>
-          </TouchableOpacity>
+          {/* Health Score Badge - Premium Design */}
+          {hasFinancialData ? (
+            <TouchableOpacity
+              style={[
+                tw`rounded-2xl items-center justify-center px-3 py-2`,
+                {
+                  backgroundColor: `${getScoreColor(financialHealthScore.overallScore)}15`,
+                  borderWidth: 1.5,
+                  borderColor: `${getScoreColor(financialHealthScore.overallScore)}40`,
+                },
+              ]}
+              onPress={() => navigation.navigate("Analytics", { tab: "health" })}
+              activeOpacity={0.7}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View
+                  style={[
+                    tw`w-8 h-8 rounded-full items-center justify-center mr-2`,
+                    {
+                      backgroundColor: `${getScoreColor(financialHealthScore.overallScore)}25`,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      tw`text-sm font-bold`,
+                      { color: getScoreColor(financialHealthScore.overallScore) },
+                    ]}
+                  >
+                    {financialHealthScore.overallScore}
+                  </Text>
+                </View>
+                <View>
+                  <Text
+                    style={[
+                      tw`text-xs font-semibold`,
+                      { color: getScoreColor(financialHealthScore.overallScore) },
+                    ]}
+                  >
+                    {getScoreDescription(financialHealthScore.overallScore)}
+                  </Text>
+                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
+                    Skor Keuangan
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[
+                tw`rounded-2xl items-center justify-center px-3 py-2`,
+                {
+                  backgroundColor: `${ACCENT_COLOR}15`,
+                  borderWidth: 1.5,
+                  borderColor: `${ACCENT_COLOR}40`,
+                },
+              ]}
+              onPress={() => navigation.navigate("AddTransaction")}
+              activeOpacity={0.7}
+            >
+              <View style={tw`flex-row items-center`}>
+                <View
+                  style={[
+                    tw`w-8 h-8 rounded-full items-center justify-center mr-2`,
+                    { backgroundColor: `${ACCENT_COLOR}25` },
+                  ]}
+                >
+                  <Ionicons name="rocket-outline" size={16} color={ACCENT_COLOR} />
+                </View>
+                <View>
+                  <Text
+                    style={[
+                      tw`text-xs font-semibold`,
+                      { color: ACCENT_COLOR },
+                    ]}
+                  >
+                    Mulai!
+                  </Text>
+                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
+                    Catat Keuangan
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* SMART INSIGHTS CARDS */}
