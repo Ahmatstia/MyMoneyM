@@ -209,31 +209,43 @@ export class NotificationService {
     }
   }
 
-  // Check if within quiet hours
+  // Check if a specific time or current time is within quiet hours
   private isWithinQuietHours(
-    quietHours: AdvancedNotificationSettings["quietHours"]
+    quietHours: AdvancedNotificationSettings["quietHours"],
+    checkHour?: number,
+    checkMinute?: number
   ): boolean {
-    // Use optional chaining dengan fallback ke default
     if (!quietHours?.enabled) return false;
 
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
+    let totalMinutes: number;
+    if (checkHour !== undefined && checkMinute !== undefined) {
+      totalMinutes = checkHour * 60 + checkMinute;
+    } else {
+      const now = new Date();
+      totalMinutes = now.getHours() * 60 + now.getMinutes();
+    }
 
     const startTime = this.timeToMinutes(quietHours.start || "22:00");
     const endTime = this.timeToMinutes(quietHours.end || "07:00");
 
-    // Handle overnight quiet hours (e.g., 22:00 to 07:00)
     if (startTime > endTime) {
-      return currentTime >= startTime || currentTime < endTime;
+      return totalMinutes >= startTime || totalMinutes < endTime;
     }
 
-    return currentTime >= startTime && currentTime < endTime;
+    return totalMinutes >= startTime && totalMinutes < endTime;
   }
 
   private timeToMinutes(timeStr: string | undefined): number {
-    if (!timeStr) return 0;
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    return hours * 60 + minutes;
+    if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":"))
+      return 0;
+    try {
+      const [hours, minutes] = timeStr.split(":").map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return 0;
+      return Math.max(0, Math.min(23, hours)) * 60 +
+        Math.max(0, Math.min(59, minutes));
+    } catch {
+      return 0;
+    }
   }
 
   // Check if today is active day
@@ -323,98 +335,112 @@ export class NotificationService {
   // Schedule daily reminders dengan custom schedule
   private async scheduleDailyReminders(appState: AppState): Promise<void> {
     try {
-      console.log("⏰ Menjadwalkan pengingat harian...");
+      console.log("⏰ Menjadwalkan pengingat harian (Per Hari Aktif)...");
 
-      // Check settings sebelum schedule
       const settings = await this.loadSettings();
+      const activeDays = settings.advanced?.activeDays || [0, 1, 2, 3, 4, 5, 6];
 
-      // Morning reminder dengan custom time
-      if (
-        settings.dailyReminders &&
-        settings.advanced?.customSchedule?.morningEnabled !== false
-      ) {
-        const morningTime =
-          settings.advanced?.customSchedule?.morning || "07:30";
-        const [morningHour, morningMinute] = morningTime.split(":").map(Number);
+      // Alih-alih 1 notifikasi harian yang mengabaikan hari aktif,
+      // kita buat notifikasi mingguan untuk setiap hari yang aktif.
+      // Expo: 1=Sunday, 2=Monday, ..., 7=Saturday
+      for (const day of activeDays) {
+        const expoWeekday = day + 1;
 
-        await this.sendScheduledNotification({
-          title: "🌅 Pagi yang produktif!",
-          body: "Jangan lupa catat semua transaksi hari ini untuk tracking yang akurat!",
-          hour: morningHour,
-          minute: morningMinute,
-          repeats: true,
-          data: { type: "MORNING_REMINDER" },
-        });
+        // 1. Morning reminder
+        if (
+          settings.dailyReminders &&
+          settings.advanced?.customSchedule?.morningEnabled !== false
+        ) {
+          const morningTime =
+            settings.advanced?.customSchedule?.morning || "07:30";
+          const [hour, minute] = morningTime.split(":").map(Number);
+
+          await this.sendScheduledNotification({
+            title: "🌅 Pagi yang produktif!",
+            body: "Jangan lupa catat semua transaksi hari ini untuk tracking yang akurat!",
+            hour,
+            minute,
+            weekday: expoWeekday,
+            repeats: true,
+            data: { type: "MORNING_REMINDER" },
+          });
+        }
+
+        // 2. Budget check (12:00)
+        if (settings.dailyReminders) {
+          await this.sendScheduledNotification({
+            title: "🍽️ Cek Budget Makan Siang",
+            body: "Jangan lupa periksa budget makan siang hari ini",
+            hour: 12,
+            minute: 0,
+            weekday: expoWeekday,
+            repeats: true,
+            data: { type: "MIDDAY_CHECK" },
+          });
+        }
+
+        // 3. Transaction reminders (15:00)
+        if (settings.dailyReminders) {
+          await this.sendScheduledNotification({
+            title: "📝 Ingat Catat Transaksi",
+            body: "Jangan lupa catat semua transaksi yang sudah dilakukan hari ini!",
+            hour: 15,
+            minute: 0,
+            weekday: expoWeekday,
+            repeats: true,
+            data: { type: "TRANSACTION_REMINDER" },
+          });
+        }
+
+        // 4. Evening summary
+        if (
+          settings.dailyReminders &&
+          settings.advanced?.customSchedule?.eveningEnabled !== false
+        ) {
+          const eveningTime =
+            settings.advanced?.customSchedule?.evening || "20:00";
+          const [hour, minute] = eveningTime.split(":").map(Number);
+          const eveningSummary = generateDailySummary(appState);
+
+          await this.sendScheduledNotification({
+            title: "🌙 Waktunya Review Harian",
+            body: eveningSummary,
+            hour,
+            minute,
+            weekday: expoWeekday,
+            repeats: true,
+            data: { type: "EVENING_SUMMARY" },
+          });
+        }
+
+        // 5. Financial Tip
+        if (
+          settings.financialTips &&
+          settings.advanced?.customSchedule?.financialTipEnabled !== false
+        ) {
+          const tipTime =
+            settings.advanced?.customSchedule?.financialTip || "10:00";
+          const [hour, minute] = tipTime.split(":").map(Number);
+          const randomTip =
+            NotificationMessages.financialTips[
+              Math.floor(
+                Math.random() * NotificationMessages.financialTips.length
+              )
+            ];
+
+          await this.sendScheduledNotification({
+            ...randomTip,
+            hour,
+            minute,
+            weekday: expoWeekday,
+            repeats: true,
+          });
+        }
       }
 
-      // Budget check reminder (12:00 PM)
-      if (settings.dailyReminders) {
-        await this.sendScheduledNotification({
-          title: "🍽️ Cek Budget Makan Siang",
-          body: "Jangan lupa periksa budget makan siang hari ini",
-          hour: 12,
-          minute: 0,
-          repeats: true,
-          data: { type: "MIDDAY_CHECK" },
-        });
-      }
-
-      // Transaction reminder (3:00 PM)
-      if (settings.dailyReminders) {
-        await this.sendScheduledNotification({
-          title: "📝 Ingat Catat Transaksi",
-          body: "Jangan lupa catat semua transaksi yang sudah dilakukan hari ini!",
-          hour: 15,
-          minute: 0,
-          repeats: true,
-          data: { type: "TRANSACTION_REMINDER" },
-        });
-      }
-
-      // Evening summary dengan custom time
-      if (
-        settings.dailyReminders &&
-        settings.advanced?.customSchedule?.eveningEnabled !== false
-      ) {
-        const eveningTime =
-          settings.advanced?.customSchedule?.evening || "20:00";
-        const [eveningHour, eveningMinute] = eveningTime.split(":").map(Number);
-        const eveningSummary = generateDailySummary(appState);
-
-        await this.sendScheduledNotification({
-          title: "🌙 Waktunya Review Harian",
-          body: eveningSummary,
-          hour: eveningHour,
-          minute: eveningMinute,
-          repeats: true,
-          data: { type: "EVENING_SUMMARY" },
-        });
-      }
-
-      // Random financial tip dengan custom time
-      if (
-        settings.financialTips &&
-        settings.advanced?.customSchedule?.financialTipEnabled !== false
-      ) {
-        const tipTime =
-          settings.advanced?.customSchedule?.financialTip || "10:00";
-        const [tipHour, tipMinute] = tipTime.split(":").map(Number);
-        const randomTip =
-          NotificationMessages.financialTips[
-            Math.floor(
-              Math.random() * NotificationMessages.financialTips.length
-            )
-          ];
-
-        await this.sendScheduledNotification({
-          ...randomTip,
-          hour: tipHour,
-          minute: tipMinute,
-          repeats: true,
-        });
-      }
-
-      console.log("✅ Pengingat harian terjadwal");
+      console.log(
+        `✅ ${activeDays.length * 5} pengingat terjadwal untuk hari aktif`
+      );
     } catch (error) {
       console.error("❌ Error menjadwalkan pengingat harian:", error);
     }
@@ -506,6 +532,7 @@ export class NotificationService {
     body,
     hour,
     minute,
+    weekday,
     repeats = false,
     data = {},
   }: {
@@ -513,25 +540,34 @@ export class NotificationService {
     body: string;
     hour: number;
     minute: number;
+    weekday?: number;
     repeats?: boolean;
     data?: any;
   }): Promise<void> {
     try {
       const settings = await this.loadSettings();
 
-      // Cek apakah notification type ini enabled
+      // 1. Cek master switch
+      if (!settings.enabled) return;
+
+      // 2. Cek apakah notification type ini enabled
       if (data.type && !(await this.isNotificationTypeEnabled(data.type))) {
+        return;
+      }
+
+      // 3. PENTING: Cek Quiet Hours untuk waktu terjadwal ini
+      // Jika waktu yang dijadwalkan masuk jam tenang, jangan schedule
+      if (this.isWithinQuietHours(settings.advanced?.quietHours, hour, minute)) {
         console.log(
-          `🔕 Scheduled notification skipped (type: ${data.type}) - disabled in settings`
+          `🔕 Scheduled notification (type: ${data.type}) skipped - falls into quiet hours (${hour}:${minute})`
         );
         return;
       }
 
-      // Cek active days untuk scheduled notifications
-      if (!this.isActiveDay(settings.advanced?.activeDays)) {
-        console.log("🔕 Scheduled notification skipped (inactive day)");
-        return;
-      }
+      // 4. Construct trigger (Daily atau Weekly)
+      const trigger: Notifications.NotificationTriggerInput = weekday
+        ? { weekday, hour, minute, repeats } // Weekly
+        : { hour, minute, repeats }; // Daily
 
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -540,11 +576,7 @@ export class NotificationService {
           data,
           sound: settings.advanced?.soundEnabled !== false,
         },
-        trigger: {
-          hour,
-          minute,
-          repeats,
-        },
+        trigger,
       });
     } catch (error) {
       console.error("❌ Error menjadwalkan notifikasi:", error);
@@ -684,39 +716,44 @@ export class NotificationService {
   // and by cooldown-protected sendNotification() in mutation functions
   async updateNotifications(appState: AppState): Promise<void> {
     try {
-      // Only update evening summary with latest data — no immediate alerts here
-
-      // Update evening summary if needed
+      // Update evening summaries if needed (handles multiple per-day schedules)
       const settings = await this.loadSettings();
       if (
         settings.dailyReminders &&
         settings.advanced?.customSchedule?.eveningEnabled !== false
       ) {
         const scheduled = await this.getScheduledNotifications();
-        const eveningNotification = scheduled.find(
+        const eveningNotifications = scheduled.filter(
           (n) => n.content.data?.type === "EVENING_SUMMARY"
         );
 
-        if (eveningNotification) {
+        if (eveningNotifications.length > 0) {
           const newSummary = generateDailySummary(appState);
-          await Notifications.cancelScheduledNotificationAsync(
-            eveningNotification.identifier
-          );
-
           const eveningTime =
             settings.advanced?.customSchedule?.evening || "20:00";
           const [eveningHour, eveningMinute] = eveningTime
             .split(":")
             .map(Number);
 
-          await this.sendScheduledNotification({
-            title: "🌙 Waktunya Review Harian",
-            body: newSummary,
-            hour: eveningHour,
-            minute: eveningMinute,
-            repeats: true,
-            data: { type: "EVENING_SUMMARY" },
-          });
+          for (const notification of eveningNotifications) {
+            // Get the weekday if it exists in trigger
+            const trigger = notification.trigger as any;
+            const weekday = trigger?.weekday;
+
+            await Notifications.cancelScheduledNotificationAsync(
+              notification.identifier
+            );
+
+            await this.sendScheduledNotification({
+              title: "🌙 Waktunya Review Harian",
+              body: newSummary,
+              hour: eveningHour,
+              minute: eveningMinute,
+              weekday: weekday,
+              repeats: true,
+              data: { type: "EVENING_SUMMARY" },
+            });
+          }
         }
       }
     } catch (error) {
