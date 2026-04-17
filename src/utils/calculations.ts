@@ -190,8 +190,22 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
   }
 
   if (latestCycleStart) {
-    const startDate = new Date(latestCycleStart);
-    startDate.setHours(0, 0, 0, 0);
+    const originalStartDate = new Date(latestCycleStart);
+    originalStartDate.setHours(0, 0, 0, 0);
+
+    const nowTime = now.getTime();
+    const startTime = originalStartDate.getTime();
+    
+    // Hitung berapa kali siklus telah lewat
+    let cyclesPassed = 0;
+    if (nowTime >= startTime) {
+      const diffTime = Math.abs(nowTime - startTime);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      cyclesPassed = Math.floor(diffDays / activePeriod);
+    }
+
+    const startDate = new Date(originalStartDate);
+    startDate.setDate(originalStartDate.getDate() + (cyclesPassed * activePeriod));
 
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + activePeriod - 1);
