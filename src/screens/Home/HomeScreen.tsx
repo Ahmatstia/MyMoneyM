@@ -404,111 +404,43 @@ const HomeScreen: React.FC = () => {
     [hasFinancialData, transactionAnalytics, state.budgets, state.savings, financialHealthScore]
   );
 
-  // ── Dynamic quick actions (sama dengan asli) ──────────────────────────────
+  // ── Static quick actions ──────────────────────────────
   const getDynamicQuickActions = () => {
-    const hour      = new Date().getHours();
-    const isWeekend = [0, 6].includes(new Date().getDay());
-    const actions   = [];
-
-    actions.push({
-      id: "transactions",
-      title: "Transaksi",
-      icon: "swap-horizontal-outline" as SafeIconName,
-      color: ACCENT_COLOR,
-      onPress: () => navigation.navigate("Transactions"),
-    });
-
-    actions.push({
-      id: "analytics",
-      title: "Analitik",
-      icon: "stats-chart-outline" as SafeIconName,
-      color: SUCCESS_COLOR,
-      onPress: () => navigation.navigate("Analytics"),
-    });
-
-    if (hour < 12) {
-      actions.push({
-        id: "review",
-        title: "Review Hari",
-        icon: "calendar-outline" as SafeIconName,
-        color: WARNING_COLOR,
-        onPress: () => navigation.navigate("Budget"),
-      });
-    } else if (hour > 18) {
-      actions.push({
-        id: "record",
-        title: "Catat Hari",
-        icon: "checkmark-circle-outline" as SafeIconName,
-        color: Colors.info,
-        onPress: () => navigation.navigate("AddTransaction"),
-      });
-    } else {
-      actions.push({
+    return [
+      {
+        id: "transactions",
+        title: "Transaksi",
+        icon: "swap-horizontal-outline" as SafeIconName,
+        color: ACCENT_COLOR,
+        onPress: () => navigation.navigate("Transactions"),
+      },
+      {
         id: "budget",
         title: "Anggaran",
         icon: "pie-chart-outline" as SafeIconName,
         color: WARNING_COLOR,
         onPress: () => navigation.navigate("Budget"),
-      });
-    }
-
-    if (isWeekend) {
-      actions.push({
-        id: "weekly-review",
-        title: "Review Minggu",
-        icon: "document-text-outline" as SafeIconName,
-        color: Colors.purple,
+      },
+      {
+        id: "analytics",
+        title: "Analitik",
+        icon: "stats-chart-outline" as SafeIconName,
+        color: SUCCESS_COLOR,
         onPress: () => navigation.navigate("Analytics"),
-      });
-    } else {
-      actions.push({
+      },
+      {
         id: "savings",
         title: "Tabungan",
         icon: "wallet-outline" as SafeIconName,
         color: ACCENT_COLOR,
         onPress: () => navigation.navigate("Savings"),
-      });
-    }
-
-    if (!hasFinancialData) {
-      return [
-        {
-          id: "start",
-          title: "Mulai Catat",
-          icon: "add-circle-outline" as SafeIconName,
-          color: ACCENT_COLOR,
-          onPress: () => navigation.navigate("AddTransaction"),
-        },
-        {
-          id: "tutorial",
-          title: "Tutorial",
-          icon: "help-circle-outline" as SafeIconName,
-          color: SUCCESS_COLOR,
-          onPress: () => navigation.navigate("Analytics"),
-        },
-        {
-          id: "budget-new",
-          title: "Anggaran",
-          icon: "pie-chart-outline" as SafeIconName,
-          color: WARNING_COLOR,
-          onPress: () => navigation.navigate("Budget"),
-        },
-        {
-          id: "savings-new",
-          title: "Tabungan",
-          icon: "wallet-outline" as SafeIconName,
-          color: ACCENT_COLOR,
-          onPress: () => navigation.navigate("Savings"),
-        },
-      ];
-    }
-
-    return actions.slice(0, 4);
+      },
+    ];
   };
 
   const dynamicQuickActions = useMemo(
     () => getDynamicQuickActions(),
-    [hasFinancialData, navigation]
+    [navigation]
   );
 
   // ── Monthly progress (sama dengan asli) ───────────────────────────────────
@@ -573,9 +505,9 @@ const HomeScreen: React.FC = () => {
   const getQuickStats = () => {
     if (!hasFinancialData) {
       return [
-        { id: "start",  label: "Mulai Dengan", value: "Transaksi", unit: "Pertama",  trend: "✨", color: ACCENT_COLOR },
-        { id: "track",  label: "Pantau",        value: "Pengeluaran",                trend: "📊", color: SUCCESS_COLOR },
-        { id: "target", label: "Buat",          value: "Target",    unit: "Tabungan", trend: "🎯", color: WARNING_COLOR },
+        { id: "start",  label: "Mulai Dengan", value: "Transaksi", unit: "Pertama", color: ACCENT_COLOR },
+        { id: "track",  label: "Pantau",        value: "Pengeluaran",                color: SUCCESS_COLOR },
+        { id: "target", label: "Buat",          value: "Target",    unit: "Tabungan", color: WARNING_COLOR },
       ];
     }
 
@@ -1019,40 +951,6 @@ const HomeScreen: React.FC = () => {
         <Sep />
 
         {/* ════════════════════════════════════════
-            SMART INSIGHT PILLS
-        ════════════════════════════════════════ */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -16, marginBottom: 20 }}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-        >
-          {smartInsights.map((insight, index) => (
-            <TouchableOpacity
-              key={`insight-pill-${index}`}
-              onPress={insight.onPress}
-              activeOpacity={0.7}
-              style={[
-                tw`flex-row items-center rounded-full mr-2 px-3 py-1.5`,
-                { backgroundColor: SURFACE_COLOR },
-              ]}
-            >
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: insight.color,
-                  marginRight: 7,
-                }}
-              />
-              <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{insight.title}</Text>
-              <Ionicons name="chevron-forward" size={10} color={Colors.gray400} style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ════════════════════════════════════════
             DYNAMIC QUICK ACTIONS
         ════════════════════════════════════════ */}
         <SectionHeader title="Aksi Cepat" />
@@ -1122,7 +1020,6 @@ const HomeScreen: React.FC = () => {
               {stat.unit && (
                 <Text style={{ color: Colors.gray400, fontSize: 9, marginTop: 1 }}>{stat.unit}</Text>
               )}
-              <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>{stat.trend}</Text>
             </View>
           ))}
         </View>
