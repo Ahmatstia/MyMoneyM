@@ -1,7 +1,7 @@
 // File: src/utils/analytics.ts (DIPERBAIKI - fix savings analytics)
 import { Transaction, Budget, Savings } from "../types";
 import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
-import { safeNumber, getSafePercentage } from "./calculations";
+import { safeNumber, getSafePercentage, filterTransactionsByTime, getActiveCycleInfo } from "./calculations";
 
 // ==================== SAFE ANALYTICS FUNCTIONS ====================
 
@@ -11,42 +11,38 @@ export const calculateTransactionAnalytics = (
   timeRange: "week" | "month" | "year" = "month"
 ) => {
   try {
-    let startDate: Date;
-    let endDate: Date;
+    // Filter transactions by date range / cycle using the shared utility
+    const filteredTransactions = filterTransactionsByTime(
+      transactions,
+      timeRange === "week" ? "weekly" : timeRange === "month" ? "monthly" : timeRange === "year" ? "yearly" : "all"
+    );
 
-    switch (timeRange) {
-      case "week":
-        const weekRange = getWeekRange();
-        startDate = weekRange.start;
-        endDate = weekRange.end;
-        break;
-      case "month":
-        const monthRange = getMonthRange();
-        startDate = monthRange.start;
-        endDate = monthRange.end;
-        break;
-      case "year":
-        const yearRange = getYearRange();
-        startDate = yearRange.start;
-        endDate = yearRange.end;
-        break;
-      default:
-        const defaultRange = getMonthRange();
-        startDate = defaultRange.start;
-        endDate = defaultRange.end;
-    }
-
-    // Filter transactions by date range with error handling
-    const filteredTransactions = transactions.filter((t) => {
-      try {
-        if (!t || !t.date) return false;
-        const transactionDate = new Date(t.date);
-        if (isNaN(transactionDate.getTime())) return false;
-        return transactionDate >= startDate && transactionDate <= endDate;
-      } catch (error) {
-        return false;
+    // Tetap ambil startDate dan endDate statis untuk fallback metadata
+    let startDate = new Date();
+    let endDate = new Date();
+    try {
+      if (filteredTransactions.length > 0) {
+        // Ambil range dari transaksi termuda & tertua atau ikuti week/month range asli
+        // For simplicity we will just generate static dates for display bounds
+        // or re-use the util ranges
+        if (timeRange === "week") {
+            const cycle = getActiveCycleInfo(transactions);
+            if(cycle) {
+                startDate = cycle.startDate;
+                endDate = cycle.endDate;
+            } else {
+                startDate = getWeekRange().start;
+                endDate = getWeekRange().end;
+            }
+        } else if (timeRange === "month") {
+            startDate = getMonthRange().start;
+            endDate = getMonthRange().end;
+        } else if (timeRange === "year") {
+            startDate = getYearRange().start;
+            endDate = getYearRange().end;
+        }
       }
-    });
+    } catch {}
 
     // Calculate totals with safeNumber
     const totalIncome = filteredTransactions
@@ -390,109 +386,122 @@ type FactorStatus = "good" | "warning" | "poor";
 export const calculateFinancialHealthScore = (
   transactionAnalytics: ReturnType<typeof calculateTransactionAnalytics>,
   budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>,
-  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
+  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>,
+  totalActiveDebt: number = 0   // NEW: Total sisa hutang aktif (borrowed)
 ): FinancialHealthScore => {
   try {
-    console.log("🏥 DEBUG - Calculating health score with:", {
-      hasTransactions: transactionAnalytics.transactionCount > 0,
-      hasBudgets: budgetAnalytics.hasBudgets,
-      hasSavings: savingsAnalytics.hasSavings, // PERBAIKAN: Gunakan flag hasSavings
-    });
-
-    // ✅ CHECK IF NO DATA EXISTS
     const hasTransactions = transactionAnalytics.transactionCount > 0;
-    const hasBudgets = budgetAnalytics.hasBudgets;
-    const hasSavings = savingsAnalytics.hasSavings; // PERBAIKAN: Gunakan flag
+    const totalIncome = safeNumber(transactionAnalytics.totalIncome);
+    const totalExpense = safeNumber(transactionAnalytics.totalExpense);
 
-    if (!hasTransactions && !hasBudgets && !hasSavings) {
+    if (!hasTransactions && totalIncome === 0 && totalExpense === 0) {
       return {
         overallScore: 0,
         category: "Belum Ada Data",
         color: "#64748B",
         factors: {
-          savingsRate: {
-            score: 0,
-            weight: 0.3,
-            status: "poor" as FactorStatus,
-          },
-          budgetAdherence: {
-            score: 0,
-            weight: 0.3,
-            status: "poor" as FactorStatus,
-          },
-          expenseControl: {
-            score: 0,
-            weight: 0.25,
-            status: "poor" as FactorStatus,
-          },
-          goalProgress: {
-            score: 0,
-            weight: 0.15,
-            status: "poor" as FactorStatus,
-          },
+          savingsRate: { score: 0, weight: 0, status: "poor" as FactorStatus },
+          budgetAdherence: { score: 0, weight: 0, status: "poor" as FactorStatus },
+          expenseControl: { score: 0, weight: 1, status: "poor" as FactorStatus },
+          goalProgress: { score: 0, weight: 0, status: "poor" as FactorStatus },
         },
         recommendations: [
-          "Mulai dengan mencatat transaksi pertama Anda",
-          "Buat anggaran sederhana untuk pengeluaran utama",
-          "Tetapkan target tabungan kecil untuk memulai",
+          "Mulai dengan mencatat transaksi pemasukan pertama Anda",
         ],
       };
     }
 
-    // Factor 1: Savings Rate (30%)
-    const savingsRateScore = calculateSavingsRateScore(
-      safeNumber(transactionAnalytics.savingsRate)
-    );
+    if (totalIncome <= 0 && totalExpense > 0) {
+      return {
+        overallScore: 20,
+        category: "Kritis",
+        color: "#DC2626",
+        factors: {
+           savingsRate: { score: 0, weight: 0, status: "poor" as FactorStatus },
+           budgetAdherence: { score: 0, weight: 0, status: "poor" as FactorStatus },
+           expenseControl: { score: 20, weight: 1, status: "poor" as FactorStatus },
+           goalProgress: { score: 0, weight: 0, status: "poor" as FactorStatus },
+        },
+        recommendations: [
+          "Tidak ada pemasukan tercatat, tapi ada pengeluaran.",
+          "Tambahkan pemasukan rutin Anda untuk melihat skor akurat."
+        ],
+      };
+    }
 
-    // Factor 2: Budget Adherence (30%)
-    const budgetAdherenceScore = calculateBudgetAdherenceScore(budgetAnalytics);
+    // Hutang dihitung sebagai beban tambahan di atas pengeluaran
+    const safeDebt = safeNumber(totalActiveDebt);
+    const effectiveExpense = totalExpense + safeDebt;
+    const expenseRatio = effectiveExpense / totalIncome;
+    let score = 0;
+    let category = "";
+    let color = "";
+    let recommendations: string[] = [];
+    let status: FactorStatus = "poor";
 
-    // Factor 3: Expense Control (25%)
-    const expenseControlScore = calculateExpenseControlScore(
-      safeNumber(transactionAnalytics.totalIncome),
-      safeNumber(transactionAnalytics.totalExpense)
-    );
-
-    // Factor 4: Goal Progress (15%) - PERBAIKAN
-    const goalProgressScore = calculateGoalProgressScore(savingsAnalytics);
-
-    // Calculate weighted overall score
-    const overallScore = Math.round(
-      savingsRateScore.score * savingsRateScore.weight +
-        budgetAdherenceScore.score * budgetAdherenceScore.weight +
-        expenseControlScore.score * expenseControlScore.weight +
-        goalProgressScore.score * goalProgressScore.weight
-    );
-
-    // Determine category and color
-    const { category, color } = getScoreCategory(overallScore);
-
-    // Generate recommendations
-    const recommendations = generateRecommendations({
-      savingsRateScore,
-      budgetAdherenceScore,
-      expenseControlScore,
-      goalProgressScore,
-      hasBudgets,
-      hasSavings, // PERBAIKAN: Tambah parameter
-    });
-
-    console.log("🏥 DEBUG - Health score calculated:", {
-      overallScore,
-      category,
-      goalProgressScore,
-      hasSavings,
-    });
+    if (expenseRatio <= 0.4) {
+      score = 100;
+      category = "Sangat Sehat";
+      color = "#10B981";
+      status = "good";
+      recommendations = [
+        "Bagus sekali! Pengeluaran Anda berada di bawah 40%.",
+        "Anda menyisihkan porsi tabungan yang sangat sehat.",
+        ...(safeDebt > 0 ? ["💳 Anda masih punya hutang aktif — pertahankan cicilan agar tetap di zona aman."] : []),
+      ];
+    } else if (expenseRatio <= 0.6) {
+      score = 80;
+      category = "Sehat";
+      color = "#3B82F6";
+      status = "good";
+      recommendations = [
+        "Keuangan Anda dalam kondisi sehat.",
+        "Anda berhasil menjaga pengeluaran pada takaran normal.",
+        ...(safeDebt > 0 ? ["💳 Hutang Anda sudah diperhitungkan dalam beban ini. Prioritaskan pelunasan."] : []),
+      ];
+    } else if (expenseRatio <= 0.7) {
+      score = 60;
+      category = "Cukup";
+      color = "#F59E0B";
+      status = "warning";
+      recommendations = [
+        "Pengeluaran Anda mulai mendekati batas tinggi.",
+        "Lebih waspada terhadap belanja-belanja kecil minggu ini.",
+        ...(safeDebt > 0 ? ["💳 Hutang ikut menekan skor Anda! Kurangi hutang untuk memperbaiki kesehatan keuangan."] : []),
+      ];
+    } else if (expenseRatio < 0.8) {
+      score = 40;
+      category = "Perlu Perbaikan";
+      color = "#EF4444";
+      status = "warning";
+      recommendations = [
+        "Warning! Pengeluaran + hutang Anda memakan mayoritas pemasukan.",
+        "Stop pengeluaran tersier, fokus hanya untuk makan dan darurat.",
+        ...(safeDebt > 0 ? ["💳 Segera cicil hutang aktif untuk menurunkan beban keuangan Anda."] : []),
+      ];
+    } else {
+      score = 20;
+      category = "Kritis";
+      color = "#DC2626";
+      status = "poor";
+      recommendations = [
+        safeDebt > 0
+          ? `GAWAT! Pengeluaran + sisa hutang (${(safeDebt/1000).toFixed(0)}rb) mencapai 80%+ dari pemasukan!`
+          : "GAWAT! Pengeluaran Anda mencapai 80% atau lebih dari pemasukan.",
+        "Anda berada di ambang kesulitan finansial. Hentikan pengeluaran yang tidak penting secepatnya!",
+        ...(safeDebt > 0 ? ["💳 Hutang Anda adalah kontributor utama skor kritis ini. Lunasi sesegera mungkin!"] : []),
+      ];
+    }
 
     return {
-      overallScore,
+      overallScore: score,
       category,
       color,
       factors: {
-        savingsRate: savingsRateScore,
-        budgetAdherence: budgetAdherenceScore,
-        expenseControl: expenseControlScore,
-        goalProgress: goalProgressScore,
+        savingsRate: { score: 0, weight: 0, status: "poor" },
+        budgetAdherence: { score: 0, weight: 0, status: "poor" },
+        expenseControl: { score, weight: 1, status },
+        goalProgress: { score: 0, weight: 0, status: "poor" },
       },
       recommendations,
     };
@@ -503,27 +512,12 @@ export const calculateFinancialHealthScore = (
       category: "Belum Ada Data",
       color: "#64748B",
       factors: {
-        savingsRate: { score: 0, weight: 0.3, status: "poor" as FactorStatus },
-        budgetAdherence: {
-          score: 0,
-          weight: 0.3,
-          status: "poor" as FactorStatus,
-        },
-        expenseControl: {
-          score: 0,
-          weight: 0.25,
-          status: "poor" as FactorStatus,
-        },
-        goalProgress: {
-          score: 0,
-          weight: 0.15,
-          status: "poor" as FactorStatus,
-        },
+        savingsRate: { score: 0, weight: 0, status: "poor" },
+        budgetAdherence: { score: 0, weight: 0, status: "poor" },
+        expenseControl: { score: 0, weight: 1, status: "poor" },
+        goalProgress: { score: 0, weight: 0, status: "poor" },
       },
-      recommendations: [
-        "Mulai dengan mencatat semua transaksi secara rutin",
-        "Buat anggaran untuk kategori pengeluaran utama",
-      ],
+      recommendations: ["Maaf terjadi kesalahan kalkulasi skor."],
     };
   }
 };

@@ -12,6 +12,7 @@ import {
   Savings,
   SavingsTransaction,
   Note,
+  Debt,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -64,6 +65,12 @@ interface AppContextType {
   deleteNote: (id: string) => Promise<void>;
   getNote: (id: string) => Note | undefined;
 
+  // 🔹 DEBTS
+  addDebt: (debt: Omit<Debt, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  editDebt: (id: string, updates: Partial<Debt>) => Promise<void>;
+  deleteDebt: (id: string) => Promise<void>;
+  payDebt: (id: string, amount: number) => Promise<void>;
+
   // 🔹 NOTIFICATIONS
   triggerNotificationCheck: () => Promise<void>;
 
@@ -81,6 +88,7 @@ const defaultAppState: AppState = {
   savings: [],
   savingsTransactions: [],
   notes: [],
+  debts: [],
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
@@ -380,6 +388,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ...defaultAppState,
         ...appData,
         notes: appData.notes || [],
+        debts: appData.debts || [],
       };
 
       if (isMounted.current) {
@@ -449,6 +458,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ...defaultAppState,
         ...appData,
         notes: appData.notes || [],
+        debts: appData.debts || [],
       };
       if (isMounted.current) {
         setState(completeAppData);
@@ -861,12 +871,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return state.notes.find((note) => note.id === id);
   };
 
+  // ========== DEBTS FUNCTIONS ==========
+  const addDebt = async (debt: Omit<Debt, "id" | "createdAt" | "updatedAt">) => {
+    const newDebt: Debt = {
+      ...debt,
+      id: generateId(),
+      remaining: debt.amount,
+      status: "active",
+      createdAt: new Date().toISOString(),
+    };
+
+    const newState: AppState = {
+      ...state,
+      debts: [newDebt, ...state.debts],
+    };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const editDebt = async (id: string, updates: Partial<Debt>) => {
+    const updatedDebts = state.debts.map((d) =>
+      d.id === id ? { ...d, ...updates, updatedAt: new Date().toISOString() } : d
+    );
+    const newState: AppState = { ...state, debts: updatedDebts };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const deleteDebt = async (id: string) => {
+    const newState: AppState = {
+      ...state,
+      debts: state.debts.filter((d) => d.id !== id),
+    };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const payDebt = async (id: string, amount: number) => {
+    const debt = state.debts.find((d) => d.id === id);
+    if (!debt) return;
+    const newRemaining = Math.max(0, debt.remaining - amount);
+    const newStatus: Debt["status"] =
+      newRemaining === 0 ? "paid" : newRemaining < debt.amount ? "partial" : "active";
+    await editDebt(id, { remaining: newRemaining, status: newStatus });
+  };
+
   // ========== PROVIDER VALUE ==========
   const contextValue: AppContextType = {
     state,
     isLoading,
 
-    // Data Operations
     addTransaction,
     editTransaction,
     deleteTransaction,
@@ -879,16 +933,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addSavingsTransaction,
     getSavingsTransactions,
 
-    // Notes Operations
     addNote,
     editNote,
     deleteNote,
     getNote,
 
-    // Notification Operations
+    addDebt,
+    editDebt,
+    deleteDebt,
+    payDebt,
+
     triggerNotificationCheck,
 
-    // System
     refreshData,
     clearAllData,
     debugStorage,

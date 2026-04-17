@@ -36,6 +36,23 @@ export interface Savings {
   createdAt: string;
 }
 
+export type DebtType = "borrowed" | "lent"; // borrowed = hutang saya, lent = piutang (saya dipinjami)
+export type DebtStatus = "active" | "partial" | "paid";
+
+export interface Debt {
+  id: string;
+  name: string;          // Nama pemberi hutang / peminjam
+  amount: number;        // Jumlah total hutang
+  remaining: number;     // Sisa hutang
+  type: DebtType;
+  category: string;      // Contoh: Kebutuhan, Darurat, Konsumtif
+  description: string;
+  dueDate?: string;      // Tanggal jatuh tempo (YYYY-MM-DD)
+  status: DebtStatus;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface SavingsTransaction {
   id: string;
   savingsId: string;
@@ -79,7 +96,8 @@ export interface AppState {
   budgets: Budget[];
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];
-  notes: Note[]; // TAMBAHKAN
+  notes: Note[];
+  debts: Debt[]; // NEW: Fitur Hutang
 
   // Calculated totals
   totalIncome: number;
@@ -126,9 +144,14 @@ export type RootStackParamList = {
   Analytics: undefined;
   Calendar: undefined;
   SavingsDetail: { savingsId: string };
-  Notes: undefined; // TAMBAHKAN
-  NoteForm: { noteId?: string }; // TAMBAHKAN
-  NoteDetail: { noteId: string }; // TAMBAHKAN
+  Notes: undefined;
+  NoteForm: { noteId?: string };
+  NoteDetail: { noteId: string };
+  Debt: undefined;       // NEW
+  AddDebt: {
+    editMode?: boolean;
+    debtData?: Debt;
+  };                     // NEW
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;

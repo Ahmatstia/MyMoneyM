@@ -39,6 +39,8 @@ import SettingsScreen from "../screens/Settings/SettingsScreen"; // ✅ TAMBAH I
 import NotesScreen from "../screens/Notes/NotesScreen";
 import NoteFormScreen from "../screens/Notes/NoteFormScreen";
 import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
+import DebtScreen from "../screens/Debt/DebtScreen";
+import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 
 // TEMA NAVY BLUE YANG DISEMPURNAKAN
 const PRIMARY_COLOR = "#0F172A"; // Navy blue gelap (utama)
@@ -65,7 +67,8 @@ type StackParamList = {
   Calendar: undefined;
   Profile: undefined;
   Notes: undefined;
-  Settings: undefined; // ✅ TAMBAH INI
+  Settings: undefined;
+  Debt: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -74,6 +77,7 @@ type StackParamList = {
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   NoteForm: { noteId?: string };
   NoteDetail: { noteId: string };
+  AddDebt: { editMode?: boolean; debtData?: any };
 };
 
 // BUAT DUA STACK NAVIGATOR TERPISAH
@@ -133,6 +137,13 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       icon: "document-text-outline" as const,
       activeIcon: "document-text" as const,
       color: "#EC4899",
+    },
+    {
+      name: "Debt",
+      label: "Hutang",
+      icon: "card-outline" as const,
+      activeIcon: "card" as const,
+      color: "#EF4444",
     },
   ];
 
@@ -453,6 +464,20 @@ const MainStackNavigator = () => {
         component={NoteFormScreen}
         options={({ route }: any) => ({
           title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru",
+        })}
+      />
+
+      {/* DEBT SCREENS */}
+      <MainStack.Screen
+        name="Debt"
+        component={DebtScreen}
+        options={{ title: "Hutang & Piutang" }}
+      />
+      <MainStack.Screen
+        name="AddDebt"
+        component={AddDebtScreen}
+        options={({ route }: any) => ({
+          title: route.params?.editMode ? "Edit Hutang" : "Tambah Hutang",
         })}
       />
     </MainStack.Navigator>

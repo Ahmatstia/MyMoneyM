@@ -228,10 +228,20 @@ const HomeScreen: React.FC = () => {
         }),
       };
 
+      // Hitung total sisa hutang aktif (borrowed) sebagai beban keuangan
+      const totalActiveDebt = (state.debts || [])
+        .filter((d) => d.type === "borrowed" && d.status !== "paid")
+        .reduce((sum, d) => sum + safePositiveNumber(d.remaining), 0);
+
       return calculateFinancialHealthScore(
-        transactionAnalytics,
+        {
+          transactionCount: filteredTransactions.length,
+          totalIncome: filteredIncome,
+          totalExpense: filteredExpense,
+        } as any,
         budgetAnalytics,
-        savingsAnalytics
+        savingsAnalytics,
+        totalActiveDebt
       );
     } catch (error) {
       console.error("Error calculating health score:", error);
@@ -429,11 +439,11 @@ const HomeScreen: React.FC = () => {
         onPress: () => navigation.navigate("Analytics"),
       },
       {
-        id: "savings",
-        title: "Tabungan",
-        icon: "wallet-outline" as SafeIconName,
-        color: ACCENT_COLOR,
-        onPress: () => navigation.navigate("Savings"),
+        id: "debt",
+        title: "Hutang",
+        icon: "card-outline" as SafeIconName,
+        color: ERROR_COLOR,
+        onPress: () => navigation.navigate("Debt"),
       },
     ];
   };

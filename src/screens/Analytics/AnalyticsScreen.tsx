@@ -183,7 +183,16 @@ const AnalyticsScreen: React.FC = () => {
   // ── Financial health score (sama dengan asli) ─────────────────────────────
   const financialHealthScore = useMemo(() => {
     try {
-      return calculateFinancialHealthScore(transactionAnalytics, budgetAnalytics, savingsAnalytics);
+      const totalActiveDebt = (state.debts || [])
+        .filter((d) => d.type === "borrowed" && d.status !== "paid")
+        .reduce((sum, d) => sum + safeNumber(d.remaining), 0);
+
+      return calculateFinancialHealthScore(
+        transactionAnalytics,
+        budgetAnalytics,
+        savingsAnalytics,
+        totalActiveDebt
+      );
     } catch (error) {
       console.error("Error calculating health score:", error);
       return {
@@ -573,38 +582,60 @@ Kategori: ${financialHealthScore.category}
 
         {/* Factor breakdown */}
         <SectionHeader title="Detail Skor" />
-        {Object.entries(factors).map(([key, factor]) => (
-          <View key={key} style={tw`mb-5`}>
-            <View style={tw`flex-row justify-between items-center mb-1.5`}>
-              <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>
-                {key === "savingsRate"     && "Rasio Tabungan"}
-                {key === "budgetAdherence" && "Kepatuhan Anggaran"}
-                {key === "expenseControl"  && "Kontrol Pengeluaran"}
-                {key === "goalProgress"    && "Progress Target Tabungan"}
-              </Text>
-              <Text style={{ color: getScoreColor(factor.score), fontSize: 12, fontWeight: "600" }}>
-                {factor.score}/100
+
+        {/* ── Debt burden card (hanya tampil jika ada hutang aktif) ── */}
+        {(() => {
+          const totalActiveDebt = (state.debts || [])
+            .filter((d) => d.type === "borrowed" && d.status !== "paid")
+            .reduce((sum, d) => sum + safeNumber(d.remaining), 0);
+          const totalIncome = safeNumber(transactionAnalytics.totalIncome);
+          const totalExpense = safeNumber(transactionAnalytics.totalExpense);
+          const debtRatio = totalIncome > 0 ? (totalActiveDebt / totalIncome) * 100 : 0;
+          const expenseRatio = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
+          const effectiveRatio = totalIncome > 0 ? ((totalExpense + totalActiveDebt) / totalIncome) * 100 : 0;
+
+          if (totalActiveDebt <= 0) return null;
+
+          return (
+            <View style={[tw`rounded-2xl p-4 mb-5`, { backgroundColor: `${ERROR_COLOR}10`, borderWidth: 1, borderColor: `${ERROR_COLOR}30` }]}>
+              <View style={tw`flex-row items-center mb-3`}>
+                <View style={[tw`w-6 h-6 rounded-full items-center justify-center mr-2`, { backgroundColor: `${ERROR_COLOR}25` }]}>
+                  <Text style={{ color: ERROR_COLOR, fontSize: 12 }}>💳</Text>
+                </View>
+                <Text style={{ color: ERROR_COLOR, fontSize: 12, fontWeight: "700" }}>BEBAN HUTANG AKTIF</Text>
+              </View>
+
+              {/* Pengeluaran row */}
+              <View style={tw`flex-row justify-between items-center mb-2`}>
+                <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>Pengeluaran</Text>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 12, fontWeight: "600" }}>
+                  {expenseRatio.toFixed(1)}% dari pemasukan
+                </Text>
+              </View>
+              <ThinBar progress={Math.min(expenseRatio / 100, 1)} color={WARNING_COLOR} />
+
+              {/* Hutang row */}
+              <View style={tw`flex-row justify-between items-center mb-2 mt-3`}>
+                <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>+ Sisa Hutang</Text>
+                <Text style={{ color: ERROR_COLOR, fontSize: 12, fontWeight: "600" }}>
+                  {debtRatio.toFixed(1)}% dari pemasukan
+                </Text>
+              </View>
+              <ThinBar progress={Math.min(debtRatio / 100, 1)} color={ERROR_COLOR} />
+
+              {/* Total efektif */}
+              <View style={[tw`flex-row justify-between items-center mt-3 pt-3`, { borderTopWidth: 1, borderTopColor: `${ERROR_COLOR}25` }]}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>Total Beban Efektif</Text>
+                <Text style={{ color: effectiveRatio >= 80 ? ERROR_COLOR : effectiveRatio >= 60 ? WARNING_COLOR : SUCCESS_COLOR, fontSize: 14, fontWeight: "800" }}>
+                  {effectiveRatio.toFixed(1)}%
+                </Text>
+              </View>
+              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 4 }}>
+                Pengeluaran + hutang · Idealnya di bawah 60%
               </Text>
             </View>
-            <ThinBar progress={Math.max(0, Math.min(factor.score / 100, 1))} color={getScoreColor(factor.score)} />
-            <View style={tw`flex-row justify-between mt-1`}>
-              <Text style={{ color: Colors.gray400, fontSize: 10 }}>
-                Bobot: {(factor.weight * 100).toFixed(0)}%
-              </Text>
-              <Text
-                style={{
-                  fontSize: 10,
-                  color:
-                    factor.status === "good"    ? SUCCESS_COLOR :
-                    factor.status === "warning" ? WARNING_COLOR : ERROR_COLOR,
-                }}
-              >
-                {factor.status === "good"    ? "✓ Baik" :
-                 factor.status === "warning" ? "⚠ Perlu perbaikan" : "✗ Perlu perhatian"}
-              </Text>
-            </View>
-          </View>
-        ))}
+          );
+        })()}
 
         {/* Recommendations */}
         {recommendations.length > 0 && (
