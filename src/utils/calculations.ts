@@ -167,3 +167,94 @@ export const formatNumber = (num: number): string => {
     return "0";
   }
 };
+
+// Filter transactions by time period (Weekly, Monthly, Yearly, All)
+export type TimeFilter = "weekly" | "monthly" | "yearly" | "all";
+
+export const getActiveCycleInfo = (transactions: Transaction[]) => {
+  const now = new Date();
+  let latestCycleStart: Date | null = null;
+  let latestTime = 0;
+  let activePeriod = 7;
+
+  for (let i = 0; i < transactions.length; i++) {
+    if (transactions[i].cyclePeriod) {
+      const tDate = new Date(transactions[i].date);
+      const time = tDate.getTime();
+      if (time <= now.getTime() && time > latestTime) {
+        latestTime = time;
+        latestCycleStart = tDate;
+        activePeriod = transactions[i].cyclePeriod!;
+      }
+    }
+  }
+
+  if (latestCycleStart) {
+    const startDate = new Date(latestCycleStart);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + activePeriod - 1);
+    endDate.setHours(23, 59, 59, 999);
+
+    let label = activePeriod === 7 ? "Siklus 7 Hari" : activePeriod === 30 ? "Siklus 30 Hari" : `Siklus ${activePeriod} Hari`;
+
+    return { hasCycle: true, period: activePeriod, startDate, endDate, label };
+  }
+  return null;
+};
+
+export const filterTransactionsByTime = (
+  transactions: Transaction[],
+  timeFilter: TimeFilter
+): Transaction[] => {
+  if (timeFilter === "all" || !transactions?.length) return transactions;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  // Pre-calculate weekly bounds
+  let startOfWeek: Date, endOfWeek: Date;
+  if (timeFilter === "weekly") {
+    const cycle = getActiveCycleInfo(transactions);
+    
+    if (cycle) {
+      // Pintar: Berjalan sesuai durasi siklus semenjak pemasukan tersebut
+      startOfWeek = cycle.startDate;
+      endOfWeek = cycle.endDate;
+    } else {
+      // Fallback: Kalender Mingguan Klasik (Senin - Minggu)
+      const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+      startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - currentDay + 1);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+    }
+  }
+
+  return transactions.filter((t) => {
+    try {
+      const d = new Date(t.date);
+      if (isNaN(d.getTime())) return false;
+
+      if (timeFilter === "yearly") {
+        return d.getFullYear() === currentYear;
+      }
+
+      if (timeFilter === "monthly") {
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      }
+
+      if (timeFilter === "weekly") {
+        return d >= startOfWeek && d <= endOfWeek;
+      }
+      return true; // Fallback
+    } catch {
+      return false;
+    }
+  });
+};

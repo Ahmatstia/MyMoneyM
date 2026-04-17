@@ -16,7 +16,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, safeNumber, safePositiveNumber } from "../../utils/calculations";
+import {
+  formatCurrency,
+  safeNumber,
+  safePositiveNumber,
+  TimeFilter,
+  filterTransactionsByTime,
+  calculateTotals,
+  getActiveCycleInfo,
+} from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
 
@@ -87,6 +95,19 @@ const HomeScreen: React.FC = () => {
   const { state, isLoading, refreshData } = useAppContext();
   const [refreshing, setRefreshing] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("monthly");
+
+  const activeCycle = useMemo(() => getActiveCycleInfo(state.transactions), [state.transactions]);
+
+  const filteredTransactions = useMemo(
+    () => filterTransactionsByTime(state.transactions, timeFilter),
+    [state.transactions, timeFilter]
+  );
+
+  const { totalIncome: filteredIncome, totalExpense: filteredExpense, balance: filteredBalance } = useMemo(
+    () => calculateTotals(filteredTransactions),
+    [filteredTransactions]
+  );
 
   // ── Helper icon aman (sama dengan asli) ──────────────────────────────────
   const getSafeIcon = (iconName: string): SafeIconName => {
@@ -861,6 +882,46 @@ const HomeScreen: React.FC = () => {
         <Sep />
 
         {/* ════════════════════════════════════════
+            TIME FILTER CHIPS
+        ════════════════════════════════════════ */}
+        <View style={tw`flex-row mb-4`}>
+          {(["weekly", "monthly", "yearly", "all"] as TimeFilter[]).map((filter) => {
+            const labels: Record<string, string> = {
+              weekly: activeCycle ? activeCycle.label : "Minggu Ini",
+              monthly: "Bulan Ini",
+              yearly: "Tahun Ini",
+              all: "Semua",
+            };
+            const isActive = timeFilter === filter;
+            return (
+              <TouchableOpacity
+                key={filter}
+                style={[
+                  tw`px-3 py-1.5 rounded-full mr-2`,
+                  {
+                    backgroundColor: isActive ? `${ACCENT_COLOR}15` : SURFACE_COLOR,
+                    borderWidth: 1,
+                    borderColor: isActive ? `${ACCENT_COLOR}35` : "transparent",
+                  },
+                ]}
+                onPress={() => setTimeFilter(filter)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    color: isActive ? ACCENT_COLOR : Colors.gray400,
+                    fontSize: 11,
+                    fontWeight: isActive ? "600" : "500",
+                  }}
+                >
+                  {labels[filter]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* ════════════════════════════════════════
             BALANCE + MONTHLY PROGRESS
         ════════════════════════════════════════ */}
         <View style={tw`pb-1`}>
@@ -890,7 +951,7 @@ const HomeScreen: React.FC = () => {
                 Pemasukan
               </Text>
               <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "600" }}>
-                {formatCurrency(safeNumber(state.totalIncome))}
+                {formatCurrency(safeNumber(filteredIncome))}
               </Text>
             </View>
 
@@ -901,23 +962,18 @@ const HomeScreen: React.FC = () => {
                 Pengeluaran
               </Text>
               <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "600" }}>
-                {formatCurrency(safeNumber(state.totalExpense))}
+                {formatCurrency(safeNumber(filteredExpense))}
               </Text>
-              {hasFinancialData && (
-                <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
-                  {formatCurrency(safeNumber(monthlyProgress.dailyAvgExpense))}/hari
-                </Text>
-              )}
             </View>
 
+            <View style={{ width: 1, height: 32, backgroundColor: SURFACE_COLOR, marginHorizontal: 16 }} />
+
             <View style={{ alignItems: "flex-end" }}>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginBottom: 2 }}>
-                {hasFinancialData
-                  ? `Hari ${monthlyProgress.currentDay}/${monthlyProgress.daysInMonth}`
-                  : "Hari Pertama"}
+              <Text style={{ color: Colors.gray400, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 3 }}>
+                Sisa
               </Text>
-              <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>
-                {hasFinancialData ? `${safeNumber(monthlyProgress.progress).toFixed(0)}%` : "0%"}
+              <Text style={{ color: filteredBalance >= 0 ? TEXT_SECONDARY : ERROR_COLOR, fontSize: 14, fontWeight: "600" }}>
+                {formatCurrency(safeNumber(filteredBalance))}
               </Text>
             </View>
           </View>
@@ -1077,7 +1133,7 @@ const HomeScreen: React.FC = () => {
             RECENT TRANSACTIONS
         ════════════════════════════════════════ */}
         <SectionHeader
-          title={hasFinancialData ? "Transaksi Terbaru" : "Mulai Catat Keuangan"}
+          title={filteredTransactions.length > 0 ? "Transaksi Terbaru" : state.transactions.length > 0 ? "Belum Ada Transaksi" : "Mulai Catat Keuangan"}
           linkLabel={state.transactions.length > 0 ? "Lihat Semua" : "Mulai Sekarang"}
           onPress={() =>
             state.transactions.length > 0
@@ -1086,9 +1142,9 @@ const HomeScreen: React.FC = () => {
           }
         />
 
-        {state.transactions.length > 0 ? (
+        {filteredTransactions.length > 0 ? (
           <View>
-            {state.transactions
+            {filteredTransactions
               .slice()
               .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
               .slice(0, 5)
@@ -1160,8 +1216,16 @@ const HomeScreen: React.FC = () => {
                 </TouchableOpacity>
               ))}
           </View>
+        ) : state.transactions.length > 0 ? (
+          /* Empty state saat terfilter (misal minggu ini kosong) */
+          <View style={[tw`py-6 items-center`]}>
+            <View style={[tw`w-12 h-12 rounded-full items-center justify-center mb-2`, { backgroundColor: `${SURFACE_COLOR}80` }]}>
+              <Ionicons name="documents-outline" size={24} color={Colors.gray400} />
+            </View>
+            <Text style={{ color: Colors.gray400, fontSize: 12 }}>Tidak ada transaksi di periode ini</Text>
+          </View>
         ) : (
-          /* Empty state — lebih compact, tidak pakai card besar */
+          /* Empty state total (belum ada transaksi sama sekali) */
           <TouchableOpacity
             onPress={() => navigation.navigate("AddTransaction")}
             activeOpacity={0.7}

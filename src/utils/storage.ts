@@ -42,6 +42,7 @@ const validateTransaction = (obj: any): Transaction | null => {
       description: obj.description || "",
       date: obj.date || new Date().toISOString().split("T")[0],
       createdAt: obj.createdAt || new Date().toISOString(),
+      cyclePeriod: typeof obj.cyclePeriod === 'number' ? obj.cyclePeriod : undefined,
     };
   } catch (error) {
     console.warn("Transaction validation error:", error);

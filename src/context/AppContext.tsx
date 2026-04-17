@@ -279,6 +279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           ? transaction.date
           : new Date().toISOString().split("T")[0],
         createdAt: transaction.createdAt || new Date().toISOString(),
+        cyclePeriod: typeof transaction.cyclePeriod === 'number' ? transaction.cyclePeriod : undefined,
       };
     } catch (error) {
       console.error("Error validating transaction:", error);

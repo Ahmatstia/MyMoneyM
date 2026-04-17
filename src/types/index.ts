@@ -8,6 +8,7 @@ export interface Transaction {
   description: string;
   date: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
+  cyclePeriod?: number; // NEW: The number of days this income starts a cycle for (7, 30, etc). If undefined, it doesn't establish a cycle.
 }
 
 export interface Budget {

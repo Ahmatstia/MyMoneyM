@@ -7,6 +7,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  Switch,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -67,6 +68,9 @@ const AddTransactionScreen: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [amountError, setAmountError] = useState("");
+  const [isCycleActive, setIsCycleActive] = useState(false);
+  const [cyclePreset, setCyclePreset] = useState<"weekly" | "monthly" | "custom">("weekly");
+  const [customDays, setCustomDays] = useState("14");
 
   const params = route.params || {};
   const isEditMode = params.editMode || false;
@@ -110,6 +114,15 @@ const AddTransactionScreen: React.FC = () => {
       setCategory(transactionData.category);
       setDescription(transactionData.description || "");
       setDate(transactionData.date);
+      if (transactionData.cyclePeriod) {
+        setIsCycleActive(true);
+        if (transactionData.cyclePeriod === 7) setCyclePreset("weekly");
+        else if (transactionData.cyclePeriod === 30) setCyclePreset("monthly");
+        else {
+          setCyclePreset("custom");
+          setCustomDays(transactionData.cyclePeriod.toString());
+        }
+      }
     }
 
     navigation.setOptions({
@@ -223,6 +236,13 @@ const AddTransactionScreen: React.FC = () => {
 
     const amountNum = safeNumber(parseFloat(amount));
 
+    let finalCyclePeriod: number | undefined = undefined;
+    if (type === "income" && isCycleActive) {
+      if (cyclePreset === "weekly") finalCyclePeriod = 7;
+      else if (cyclePreset === "monthly") finalCyclePeriod = 30;
+      else finalCyclePeriod = Math.max(1, safeNumber(parseInt(customDays)) || 7);
+    }
+
     setLoading(true);
     try {
       if (isEditMode && transactionData) {
@@ -232,6 +252,7 @@ const AddTransactionScreen: React.FC = () => {
           category,
           description: description.trim(),
           date,
+          ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : {}),
         });
         Alert.alert("Sukses", "Transaksi berhasil diperbarui", [
           { text: "OK", onPress: () => navigation.goBack() },
@@ -243,6 +264,7 @@ const AddTransactionScreen: React.FC = () => {
           category,
           description: description.trim(),
           date,
+          ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : {}),
         });
         Alert.alert("Sukses", "Transaksi berhasil ditambahkan", [
           { text: "OK", onPress: () => navigation.goBack() },
@@ -579,6 +601,92 @@ const AddTransactionScreen: React.FC = () => {
             />
           </TouchableOpacity>
         </View>
+
+        {/* Start New Cycle Toggle - Only for Income */}
+        {type === "income" && (
+          <View style={tw`mb-5`}>
+            <View
+              style={[
+                tw`rounded-2xl p-4 border`,
+                { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
+                isCycleActive && { borderColor: ACCENT_COLOR, backgroundColor: ACCENT_COLOR + "05" }
+              ]}
+            >
+              <View style={tw`flex-row items-center justify-between`}>
+                <View style={tw`flex-1 mr-4`}>
+                  <View style={tw`flex-row items-center mb-1`}>
+                    <Ionicons name="sync-outline" size={16} color={ACCENT_COLOR} style={tw`mr-2`} />
+                    <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
+                      Atur Sebagai Siklus Uang
+                    </Text>
+                  </View>
+                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
+                    Jadikan uang ini patokan jatah waktu "Minggu Ini" di layar Utama.
+                  </Text>
+                </View>
+                <Switch
+                  value={isCycleActive}
+                  onValueChange={setIsCycleActive}
+                  trackColor={{ false: Colors.gray400, true: ACCENT_COLOR }}
+                  thumbColor={"#FFFFFF"}
+                />
+              </View>
+
+              {/* Cycle Options */}
+              {isCycleActive && (
+                <View style={tw`mt-4 pt-4 border-t border-gray-700`}>
+                  <Text style={[tw`text-xs font-medium mb-3`, { color: TEXT_SECONDARY }]}>DURASI SIKLUS:</Text>
+                  <View style={tw`flex-row gap-2`}>
+                    <TouchableOpacity
+                      style={[
+                        tw`flex-1 py-2 items-center rounded-xl border`,
+                        cyclePreset === "weekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                      ]}
+                      onPress={() => setCyclePreset("weekly")}
+                    >
+                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 Hari</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[
+                        tw`flex-1 py-2 items-center rounded-xl border`,
+                        cyclePreset === "monthly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                      ]}
+                      onPress={() => setCyclePreset("monthly")}
+                    >
+                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 Hari</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        tw`flex-1 py-2 items-center rounded-xl border`,
+                        cyclePreset === "custom" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                      ]}
+                      onPress={() => setCyclePreset("custom")}
+                    >
+                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "custom" ? ACCENT_COLOR : TEXT_SECONDARY }]}>Kustom</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {cyclePreset === "custom" && (
+                    <View style={tw`mt-3 flex-row items-center bg-gray-800 rounded-xl px-4 py-1 border border-gray-700`}>
+                      <TextInput
+                        style={[tw`flex-1 py-2 text-base font-semibold`, { color: TEXT_PRIMARY }]}
+                        value={customDays}
+                        onChangeText={setCustomDays}
+                        keyboardType="number-pad"
+                        placeholder="Contoh: 15"
+                        placeholderTextColor={Colors.gray400}
+                        maxLength={3}
+                      />
+                      <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>Hari</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Description Input dengan Character Counter */}
         <View style={tw`mb-5`}>
