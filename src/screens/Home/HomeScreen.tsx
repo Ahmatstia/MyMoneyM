@@ -582,7 +582,7 @@ const HomeScreen: React.FC = () => {
     return [
       {
         id: "safe_spend",
-        label: timeFilter === "all" ? "Aset Bersih" : "Batas Uang Jajan",
+        label: timeFilter === "all" ? "Aset Bersih" : "Batas Uang",
         value: safeDailySpend >= 1000000 
           ? `${(safeDailySpend / 1000000).toFixed(1)}jt` 
           : safeDailySpend >= 1000 
