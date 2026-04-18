@@ -22,6 +22,8 @@ import {
   getSafePercentage,
   safeNumber,
   calculateProjection,
+  calculateOpeningBalance,
+  getActiveCycleInfo,
 } from "../../utils/calculations";
 import { Colors } from "../../theme/theme";
 
@@ -288,11 +290,33 @@ const AnalyticsScreen: React.FC = () => {
 
   const comparativeData = getComparativeData();
 
-  // ── Cash flow forecast (DIPERBAIKI: Mengikuti timeRange) ────────────────
+  // ── Cash flow forecast (DIPERBAIKI: Mengikuti timeRange & Balance) ────────────────
   const cashFlowForecast = useMemo(() => {
     try {
+      let startDate = new Date();
+      startDate.setHours(0,0,0,0);
+      let cycleIncomeId: string | undefined;
+
+      if (timeRange === "week") {
+        const cycle = getActiveCycleInfo(state.transactions);
+        if (cycle) {
+          startDate = cycle.startDate;
+          cycleIncomeId = cycle.cycleIncomeId;
+        } else {
+          const currentDay = startDate.getDay() === 0 ? 7 : startDate.getDay();
+          startDate.setDate(startDate.getDate() - currentDay + 1);
+        }
+      } else if (timeRange === "month") {
+        startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      } else if (timeRange === "year") {
+        startDate = new Date(startDate.getFullYear(), 0, 1);
+      }
+
+      const openingBalance = calculateOpeningBalance(state.transactions, startDate, cycleIncomeId);
+      const totalAvailableCash = transactionAnalytics.totalIncome + openingBalance;
+
       const projection = calculateProjection(
-        transactionAnalytics.totalIncome,
+        totalAvailableCash,
         transactionAnalytics.totalExpense,
         transactionAnalytics.startDate,
         transactionAnalytics.endDate
@@ -313,7 +337,7 @@ const AnalyticsScreen: React.FC = () => {
       console.error("Error in cash flow forecast:", error);
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
-  }, [transactionAnalytics]);
+  }, [transactionAnalytics, state.transactions, timeRange]);
 
   // ── Category benchmarks (sama dengan asli) ───────────────────────────────
   type BenchmarkItem = {

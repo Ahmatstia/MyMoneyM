@@ -495,21 +495,35 @@ const HomeScreen: React.FC = () => {
     let endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     let label = "akhir bulan";
 
-    if (timeFilter === "weekly" && activeCycle) {
-      startDate = activeCycle.startDate;
-      endDate = activeCycle.endDate;
-      label = "akhir siklus";
+    if (timeFilter === "weekly") {
+      if (activeCycle) {
+        startDate = activeCycle.startDate;
+        endDate = activeCycle.endDate;
+        label = "akhir siklus";
+      } else {
+        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - currentDay + 1);
+        startDate.setHours(0,0,0,0);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23,59,59,999);
+        label = "akhir minggu";
+      }
     } else if (timeFilter === "yearly") {
       startDate = new Date(now.getFullYear(), 0, 1);
       endDate = new Date(now.getFullYear(), 11, 31);
       label = "akhir tahun";
     }
 
+    // Proyeksi harus memperhitungkan total uang yang tersedia (Saldo Bawaan + Pemasukan)
+    const totalAvailableCash = filteredIncome + openingBalance;
+
     return {
-      ...calculateProjection(filteredIncome, filteredExpense, startDate, endDate, now),
+      ...calculateProjection(totalAvailableCash, filteredExpense, startDate, endDate, now),
       label,
     };
-  }, [hasFinancialData, timeFilter, activeCycle, filteredIncome, filteredExpense]);
+  }, [hasFinancialData, timeFilter, activeCycle, filteredIncome, filteredExpense, openingBalance]);
 
   // ── Goals preview (sama dengan asli) ─────────────────────────────────────
   const getGoalsPreview = () => {
@@ -540,79 +554,59 @@ const HomeScreen: React.FC = () => {
   const getQuickStats = () => {
     if (!hasFinancialData) {
       return [
-        { id: "start",  label: "Mulai Dengan", value: "Transaksi", unit: "Pertama", color: ACCENT_COLOR },
+        { id: "start",  label: "Mulai Dengan", value: "Transaksi", unit: "Pertama", color: Colors.info },
         { id: "track",  label: "Pantau",        value: "Pengeluaran",                color: SUCCESS_COLOR },
         { id: "target", label: "Buat",          value: "Target",    unit: "Tabungan", color: WARNING_COLOR },
       ];
     }
 
-    const today        = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
+    const daysPassed = projectionData?.daysPassed || 7;
+    
+    // Hitung berapa hari unik yang ada pengeluaran dalam filter saat ini
+    const expenseDaysCount = new Set(
+      filteredTransactions
+        .filter((t) => t.type === "expense")
+        .map((t) => new Date(t.date).toDateString())
+    ).size;
 
-    const shoppingTransactions = state.transactions.filter(
-      (t) =>
-        t.type === "expense" &&
-        t.category === "Belanja" &&
-        new Date(t.date) >= sevenDaysAgo
-    );
+    const daysWithoutSpending = Math.max(0, daysPassed - expenseDaysCount);
 
-    const daysWithoutShopping = Math.max(
-      0,
-      7 - new Set(shoppingTransactions.map((t) => new Date(t.date).toDateString())).size
-    );
+    // DIPERBAIKI: Menggunakan rata-rata harian dari siklus aktif (bukan bagi 30 kaku)
+    const avgDaily = projectionData?.dailyAvgExpense || 0;
 
-    const avgDailyExpense = safeNumber(state.totalExpense / Math.max(1, 30));
-
-    const thisMonthTransactions = state.transactions.filter((t) => {
-      try {
-        const transDate = new Date(t.date);
-        return transDate.getMonth() === new Date().getMonth();
-      } catch {
-        return false;
-      }
-    }).length;
-
-    const lastMonthTransactions = state.transactions.filter((t) => {
-      try {
-        const transDate = new Date(t.date);
-        const lastMonth = new Date().getMonth() - 1;
-        return transDate.getMonth() === (lastMonth < 0 ? 11 : lastMonth);
-      } catch {
-        return false;
-      }
-    }).length;
-
-    const transactionGrowth =
-      lastMonthTransactions > 0
-        ? safeNumber(
-            ((thisMonthTransactions - lastMonthTransactions) /
-              Math.max(1, lastMonthTransactions)) * 100
-          )
-        : 100;
-
+    // DIPERBAIKI: Transaksi mengikuti filter waktu yang aktif
+    const currentTransactionCount = filteredTransactions.length;
+    
     return [
       {
-        id: "shopping",
-        label: "Hari Tanpa Belanja",
-        value: daysWithoutShopping.toString(),
+        id: "spending_streak",
+        label: timeFilter === "all" ? "Hari Tanpa Pengeluaran" : `Tanpa Pengeluaran (${timeFilter})`,
+        value: daysWithoutSpending.toString(),
         unit: "hari",
-        trend: daysWithoutShopping >= 4 ? "↓" : "↑",
-        color: SUCCESS_COLOR,
+        trend: daysWithoutSpending >= (daysPassed * 0.5) ? "↓" : "↑",
+        trendLabel: daysWithoutSpending >= (daysPassed * 0.5) ? "Bagus" : "Boros",
+        color: daysWithoutSpending >= (daysPassed * 0.5) ? SUCCESS_COLOR : WARNING_COLOR,
       },
       {
-        id: "daily",
-        label: "Rata-rata/Hari",
-        value: formatCurrency(avgDailyExpense),
-        trend: avgDailyExpense > 100000 ? "↑" : "↓",
-        color: WARNING_COLOR,
+        id: "daily_avg",
+        label: "Rata-rata / Hari",
+        value: avgDaily >= 1000000 
+          ? `${(avgDaily / 1000000).toFixed(1)}jt` 
+          : avgDaily >= 1000 
+            ? `${(avgDaily / 1000).toFixed(0)}rb` 
+            : avgDaily.toString(),
+        unit: "IDR",
+        trend: avgDaily < 100000 ? "↓" : "↑",
+        trendLabel: avgDaily < 100000 ? "Hemat" : "Tinggi",
+        color: avgDaily < 100000 ? SUCCESS_COLOR : ERROR_COLOR,
       },
       {
-        id: "transactions",
+        id: "transactions_count",
         label: "Transaksi",
-        value: thisMonthTransactions.toString(),
-        unit: "bulan ini",
-        trend: transactionGrowth >= 0 ? "↑" : "↓",
+        value: currentTransactionCount.toString(),
+        unit: timeFilter === "all" ? "total" : timeFilter === "weekly" ? "siklus" : "periode",
+        trend: currentTransactionCount > 10 ? "↑" : "↓",
+        trendLabel: timeFilter === "all" ? "Selama ini" : timeFilter === "weekly" ? "Siklus ini" : timeFilter === "monthly" ? "Bulan ini" : "Tahun ini",
         color: ACCENT_COLOR,
       },
     ];
@@ -620,7 +614,7 @@ const HomeScreen: React.FC = () => {
 
   const quickStats = useMemo(
     () => getQuickStats(),
-    [hasFinancialData, state.transactions, state.totalExpense]
+    [hasFinancialData, state.transactions, projectionData, filteredTransactions, timeFilter]
   );
 
   // ── Helper functions (sama dengan asli) ───────────────────────────────────
