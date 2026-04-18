@@ -6,7 +6,8 @@ import {
   Budget,
   Savings,
   SavingsTransaction,
-  Note, // TAMBAHKAN
+  Note,
+  Debt,
 } from "../types";
 import { calculateTotals } from "./calculations";
 
@@ -226,9 +227,39 @@ const validateNote = (obj: any): Note | null => {
   }
 };
 
+const validateDebt = (obj: any): Debt | null => {
+  if (!obj || typeof obj !== "object") return null;
+  try {
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.name !== "string" ||
+      typeof obj.amount !== "number" ||
+      !["borrowed", "lent"].includes(obj.type || "borrowed")
+    ) {
+      return null;
+    }
+    return {
+      id: obj.id,
+      name: obj.name,
+      amount: Math.max(0, obj.amount || 0),
+      remaining: Math.max(0, typeof obj.remaining === "number" ? obj.remaining : (obj.amount || 0)),
+      type: obj.type || "borrowed",
+      status: ["active", "partial", "paid"].includes(obj.status) ? obj.status : "active",
+      category: obj.category || "Lainnya",
+      description: obj.description || "",
+      dueDate: obj.dueDate,
+      createdAt: obj.createdAt || new Date().toISOString(),
+      updatedAt: obj.updatedAt,
+    };
+  } catch (error) {
+    console.warn("Debt validation error:", error);
+    return null;
+  }
+};
+
 // ======================================================
 // HELPER FUNCTIONS
-// ======================================================
+// =======================================================================
 // BUG-11 FIX: Accept YYYY-MM-DD and YYYY-M-D formats
 const isValidDateString = (dateStr: string): boolean => {
   try {
@@ -317,7 +348,8 @@ const migrateOldData = async (): Promise<AppState | null> => {
             budgets,
             savings,
             savingsTransactions,
-            notes, // TAMBAHKAN
+            notes,
+            debts: [], // TAMBAHKAN
             ...totals,
           };
 
@@ -386,11 +418,17 @@ export const storageService = {
               )
           : [];
 
-      // TAMBAHKAN: Validasi notes
       const validatedNotes: Note[] = data.notes
         ? data.notes
             .map((n) => validateNote(n))
             .filter((n: Note | null): n is Note => n !== null)
+        : [];
+
+      // NEW: Validasi hutang
+      const validatedDebts: Debt[] = data.debts
+        ? data.debts
+            .map((d) => validateDebt(d))
+            .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
       const totals = calculateTotals(validatedTransactions);
@@ -400,7 +438,8 @@ export const storageService = {
         budgets: validatedBudgets,
         savings: validatedSavings,
         savingsTransactions: validatedSavingsTransactions,
-        notes: validatedNotes, // TAMBAHKAN
+        notes: validatedNotes,
+        debts: validatedDebts, // NEW
         ...totals,
       };
 
@@ -450,7 +489,8 @@ export const storageService = {
           budgets: [],
           savings: [],
           savingsTransactions: [],
-          notes: [], // TAMBAHKAN
+          notes: [],
+          debts: [], // TAMBAHKAN
           totalIncome: 0,
           totalExpense: 0,
           balance: 0,
@@ -489,11 +529,17 @@ export const storageService = {
             )
         : [];
 
-      // TAMBAHKAN: Load notes
       const notes: Note[] = Array.isArray(parsedData.notes)
         ? parsedData.notes
             .map((n: any) => validateNote(n))
             .filter((n: Note | null): n is Note => n !== null)
+        : [];
+
+      // NEW: Load debts
+      const debts: Debt[] = Array.isArray(parsedData.debts)
+        ? parsedData.debts
+            .map((d: any) => validateDebt(d))
+            .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
       const totals = calculateTotals(transactions);
@@ -503,7 +549,8 @@ export const storageService = {
         budgets,
         savings,
         savingsTransactions,
-        notes, // TAMBAHKAN
+        notes,
+        debts, // NEW
         ...totals,
       };
 
@@ -518,7 +565,8 @@ export const storageService = {
         budgets: [],
         savings: [],
         savingsTransactions: [],
-        notes: [], // TAMBAHKAN
+        notes: [],
+        debts: [], // TAMBAHKAN
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
@@ -564,7 +612,8 @@ export const storageService = {
         console.log("Transactions:", appData.transactions?.length || 0);
         console.log("Budgets:", appData.budgets?.length || 0);
         console.log("Savings:", appData.savings?.length || 0);
-        console.log("Notes:", appData.notes?.length || 0); // TAMBAHKAN
+        console.log("Notes:", appData.notes?.length || 0);
+        console.log("Debts:", appData.debts?.length || 0); // NEW
 
         if (appData.transactions?.length > 0) {
           console.log("Sample transaction:", {

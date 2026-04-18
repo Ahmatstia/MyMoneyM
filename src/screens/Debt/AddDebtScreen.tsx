@@ -7,10 +7,12 @@ import {
   TextInput,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Text } from "react-native-paper";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -20,6 +22,30 @@ import { Colors } from "../../theme/theme";
 type AddDebtRoute = RouteProp<RootStackParamList, "AddDebt">;
 
 const CATEGORIES = ["Kebutuhan", "Darurat", "Konsumtif", "Usaha", "Pendidikan", "Lainnya"];
+
+// ─── Tema warna (Konsisten dengan HomeScreen) ──────────────────────────────────
+const PRIMARY_COLOR    = Colors.primary;
+const ACCENT_COLOR     = Colors.accent;
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const BORDER_COLOR     = Colors.border;
+
+const SectionHeader = ({ title }: { title: string }) => (
+  <Text
+    style={{
+      color: Colors.gray400,
+      fontSize: 10,
+      fontWeight: "600",
+      letterSpacing: 1,
+      textTransform: "uppercase",
+      marginBottom: 10,
+    }}
+  >
+    {title}
+  </Text>
+);
 
 const AddDebtScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -78,197 +104,202 @@ const AddDebtScreen: React.FC = () => {
   };
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: Colors.background }]}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.surface,
-        }}
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={tw`flex-1`}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={tw`mr-3`}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text
-          style={{ color: Colors.textPrimary, fontSize: 18, fontWeight: "700", flex: 1 }}
-        >
-          {editMode ? "Edit Hutang" : "Tambah Hutang"}
-        </Text>
-      </View>
-
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
-        {/* Type selector */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          JENIS
-        </Text>
-        <View style={tw`flex-row gap-3 mb-5`}>
-          {(["borrowed", "lent"] as const).map((t) => {
-            const isActive = type === t;
-            return (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  tw`flex-1 py-3 rounded-xl items-center`,
-                  isActive
-                    ? { backgroundColor: Colors.accent }
-                    : { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
-                ]}
-                onPress={() => setType(t)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ color: isActive ? Colors.background : Colors.textSecondary, fontWeight: "700", fontSize: 13 }}>
-                  {t === "borrowed" ? "🏦 Hutang Saya" : "💳 Piutang"}
-                </Text>
-                <Text style={{ color: isActive ? Colors.background : Colors.gray400, fontSize: 10, marginTop: 2 }}>
-                  {t === "borrowed" ? "Saya yang berhutang" : "Orang lain berhutang ke saya"}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Name */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          {type === "borrowed" ? "NAMA PEMBERI HUTANG" : "NAMA PEMINJAM"}
-        </Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder={type === "borrowed" ? "Contoh: Mama, Bank BRI" : "Contoh: Budi, Siti"}
-          placeholderTextColor={Colors.gray400}
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 14,
-            color: Colors.textPrimary,
-            fontSize: 15,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: Colors.border,
-          }}
-        />
-
-        {/* Amount */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          NOMINAL HUTANG
-        </Text>
-        <TextInput
-          value={amount}
-          onChangeText={(t) => setAmount(t.replace(/\D/g, ""))}
-          keyboardType="numeric"
-          placeholder="0"
-          placeholderTextColor={Colors.gray400}
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 14,
-            color: Colors.textPrimary,
-            fontSize: 22,
-            fontWeight: "800",
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: Colors.border,
-          }}
-        />
-
-        {/* Category */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          KATEGORI
-        </Text>
-        <View style={tw`flex-row flex-wrap gap-2 mb-5`}>
-          {CATEGORIES.map((cat) => {
-            const isActive = category === cat;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  tw`px-3 py-2 rounded-xl`,
-                  isActive
-                    ? { backgroundColor: Colors.accent }
-                    : { backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
-                ]}
-                onPress={() => setCategory(cat)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ color: isActive ? Colors.background : Colors.textSecondary, fontSize: 12, fontWeight: "600" }}>
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Due Date */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          TANGGAL JATUH TEMPO (Opsional)
-        </Text>
-        <TextInput
-          value={dueDate}
-          onChangeText={setDueDate}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor={Colors.gray400}
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 14,
-            color: Colors.textPrimary,
-            fontSize: 15,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: Colors.border,
-          }}
-        />
-
-        {/* Description */}
-        <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600", letterSpacing: 1, marginBottom: 8 }}>
-          KETERANGAN (Opsional)
-        </Text>
-        <TextInput
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Contoh: Untuk beli buku semester ini"
-          placeholderTextColor={Colors.gray400}
-          multiline
-          numberOfLines={3}
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 12,
-            padding: 14,
-            color: Colors.textPrimary,
-            fontSize: 14,
-            marginBottom: 24,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            minHeight: 80,
-            textAlignVertical: "top",
-          }}
-        />
-
-        {/* Save Button */}
-        <TouchableOpacity
-          style={[
-            tw`py-4 rounded-2xl items-center`,
-            { backgroundColor: isLoading ? Colors.gray400 : Colors.accent },
-          ]}
-          onPress={handleSave}
-          disabled={isLoading}
-          activeOpacity={0.8}
-        >
-          <Text style={{ color: Colors.background, fontWeight: "700", fontSize: 16 }}>
-            {isLoading ? "Menyimpan..." : editMode ? "Simpan Perubahan" : "Tambah Hutang"}
+        {/* Header */}
+        <View style={tw`flex-row items-center px-4 py-4 mb-2`}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: `${SURFACE_COLOR}80` }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={20} color={TEXT_PRIMARY} />
+          </TouchableOpacity>
+          <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800" }}>
+            {editMode ? "Edit Catatan" : "Catatan Baru"}
           </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Type Selector (Premium Style consistent with DebtScreen) */}
+          <SectionHeader title="Jenis Transaksi" />
+          <View style={[tw`flex-row p-1 rounded-2xl mb-6`, { backgroundColor: SURFACE_COLOR }]}>
+            {(["borrowed", "lent"] as const).map((t) => {
+              const isActive = type === t;
+              return (
+                <TouchableOpacity
+                  key={t}
+                  style={[
+                    tw`flex-1 py-3 rounded-xl items-center justify-center`,
+                    isActive ? { backgroundColor: ACCENT_COLOR } : null,
+                  ]}
+                  onPress={() => setType(t)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      color: isActive ? BACKGROUND_COLOR : TEXT_SECONDARY,
+                      fontSize: 13,
+                      fontWeight: isActive ? "700" : "500",
+                    }}
+                  >
+                    {t === "borrowed" ? "Hutang Saya" : "Piutang"}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Amount Input (Large & Prominent) */}
+          <SectionHeader title="Nominal" />
+          <View
+            style={[
+              tw`flex-row items-center px-4 py-5 rounded-3xl mb-6`,
+              { backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: BORDER_COLOR }
+            ]}
+          >
+            <Text style={{ color: ACCENT_COLOR, fontSize: 18, fontWeight: "700", marginRight: 8 }}>Rp</Text>
+            <TextInput
+              value={amount}
+              onChangeText={(t) => setAmount(t.replace(/\D/g, ""))}
+              keyboardType="numeric"
+              placeholder="0"
+              placeholderTextColor={Colors.gray500}
+              style={{
+                flex: 1,
+                color: TEXT_PRIMARY,
+                fontSize: 28,
+                fontWeight: "800",
+                padding: 0,
+              }}
+            />
+          </View>
+
+          {/* Name Input */}
+          <SectionHeader title={type === "borrowed" ? "Pemberi Hutang" : "Peminjam"} />
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder={type === "borrowed" ? "Bank, Teman, Keluarga..." : "Nama orang yang meminjam..."}
+            placeholderTextColor={Colors.gray500}
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: 16,
+              padding: 16,
+              color: TEXT_PRIMARY,
+              fontSize: 15,
+              fontWeight: "600",
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+            }}
+          />
+
+          {/* Category Selection */}
+          <SectionHeader title="Kategori" />
+          <View style={tw`flex-row flex-wrap gap-2 mb-6`}>
+            {CATEGORIES.map((cat) => {
+              const isActive = category === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    tw`px-4 py-2.5 rounded-xl`,
+                    isActive
+                      ? { backgroundColor: ACCENT_COLOR }
+                      : { backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: BORDER_COLOR },
+                  ]}
+                  onPress={() => setCategory(cat)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      color: isActive ? BACKGROUND_COLOR : TEXT_SECONDARY,
+                      fontSize: 12,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Due Date & Description Rows */}
+          <View style={tw`flex-row gap-4 mb-6`}>
+            <View style={tw`flex-1`}>
+              <SectionHeader title="Jatuh Tempo" />
+              <TouchableOpacity
+                activeOpacity={1}
+                style={[
+                  tw`flex-row items-center px-4 py-4 rounded-xl`,
+                  { backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: BORDER_COLOR }
+                ]}
+              >
+                <TextInput
+                  value={dueDate}
+                  onChangeText={setDueDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={Colors.gray500}
+                  style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", padding: 0 }}
+                />
+                <Ionicons name="calendar-outline" size={16} color={ACCENT_COLOR} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <SectionHeader title="Keterangan" />
+          <TextInput
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Tambahkan detail jika perlu..."
+            placeholderTextColor={Colors.gray500}
+            multiline
+            numberOfLines={2}
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: 16,
+              padding: 16,
+              color: TEXT_PRIMARY,
+              fontSize: 14,
+              fontWeight: "500",
+              marginBottom: 30,
+              borderWidth: 1,
+              borderColor: BORDER_COLOR,
+              minHeight: 80,
+              textAlignVertical: "top",
+            }}
+          />
+
+          {/* Action Buttons */}
+          <TouchableOpacity
+            style={[
+              tw`py-4 rounded-2xl items-center justify-center flex-row`,
+              { backgroundColor: isLoading ? Colors.gray600 : ACCENT_COLOR },
+            ]}
+            onPress={handleSave}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <Ionicons name="sync" size={20} color={BACKGROUND_COLOR} style={tw`mr-2`} />
+            ) : (
+              <Ionicons name="checkmark-circle" size={20} color={BACKGROUND_COLOR} style={tw`mr-2`} />
+            )}
+            <Text style={{ color: BACKGROUND_COLOR, fontWeight: "800", fontSize: 16 }}>
+              {isLoading ? "Menyimpan..." : editMode ? "Simpan Perubahan" : "Simpan Catatan"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

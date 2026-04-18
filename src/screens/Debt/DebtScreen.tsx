@@ -1,5 +1,5 @@
 // File: src/screens/Debt/DebtScreen.tsx
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -7,26 +7,97 @@ import {
   Alert,
   TextInput,
   Modal,
+  Animated,
 } from "react-native";
 import { Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { Debt } from "../../types";
 import { Colors } from "../../theme/theme";
+import { formatCurrency, safeNumber, safePositiveNumber } from "../../utils/calculations";
 
-const formatCurrency = (amount: number) => {
-  if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(1)}jt`;
-  if (amount >= 1_000) return `Rp ${(amount / 1_000).toFixed(0)}rb`;
-  return `Rp ${amount.toLocaleString("id-ID")}`;
-};
+type SafeIconName = keyof typeof Ionicons.glyphMap;
+
+// ─── Tema warna (Konsisten dengan HomeScreen) ──────────────────────────────────
+const PRIMARY_COLOR    = Colors.primary;
+const ACCENT_COLOR     = Colors.accent;
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const BORDER_COLOR     = Colors.border;
+const SUCCESS_COLOR    = Colors.success;
+const WARNING_COLOR    = Colors.warning;
+const ERROR_COLOR      = Colors.error;
+
+// ─── Komponen UI kecil (Konsisten dengan HomeScreen) ─────────────────────────
+const Sep = ({ marginV = 20 }: { marginV?: number }) => (
+  <View
+    style={{
+      height: 1,
+      backgroundColor: SURFACE_COLOR,
+      marginHorizontal: -16,
+      marginVertical: marginV,
+    }}
+  />
+);
+
+const SectionHeader = ({
+  title,
+  linkLabel,
+  onPress,
+}: {
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
+}) => (
+  <View style={tw`flex-row justify-between items-center mb-3`}>
+    <Text
+      style={{
+        color: Colors.gray400,
+        fontSize: 10,
+        fontWeight: "600",
+        letterSpacing: 1,
+        textTransform: "uppercase",
+      }}
+    >
+      {title}
+    </Text>
+    {linkLabel && onPress && (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 12 }}>{linkLabel}</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+const ThinBar = ({
+  progress,
+  color,
+}: {
+  progress: number;
+  color: string;
+}) => (
+  <View style={{ height: 3, backgroundColor: Colors.surfaceLight, borderRadius: 3 }}>
+    <View
+      style={{
+        height: 3,
+        borderRadius: 3,
+        width: `${Math.max(0, Math.min(progress * 100, 100))}%`,
+        backgroundColor: color,
+      }}
+    />
+  </View>
+);
 
 const STATUS_COLOR: Record<Debt["status"], string> = {
-  active: Colors.error,
-  partial: Colors.warning,
-  paid: Colors.success,
+  active: ERROR_COLOR,
+  partial: WARNING_COLOR,
+  paid: SUCCESS_COLOR,
 };
 const STATUS_LABEL: Record<Debt["status"], string> = {
   active: "Belum Dibayar",
@@ -44,21 +115,43 @@ const DebtScreen: React.FC = () => {
     debt: null,
   });
   const [payAmount, setPayAmount] = useState("");
+  const [scaleAnim] = useState(new Animated.Value(1));
 
-  const debts = (state.debts || []).filter((d) => d.type === activeTab);
+  const debts = useMemo(() => 
+    (state.debts || []).filter((d) => d.type === activeTab),
+  [state.debts, activeTab]);
 
   // Ringkasan
-  const totalBorrowed = (state.debts || [])
-    .filter((d) => d.type === "borrowed" && d.status !== "paid")
-    .reduce((s, d) => s + d.remaining, 0);
-  const totalLent = (state.debts || [])
-    .filter((d) => d.type === "lent" && d.status !== "paid")
-    .reduce((s, d) => s + d.remaining, 0);
+  const totalBorrowed = useMemo(() => 
+    (state.debts || [])
+      .filter((d) => d.type === "borrowed" && d.status !== "paid")
+      .reduce((s, d) => s + safeNumber(d.remaining), 0),
+  [state.debts]);
+
+  const totalLent = useMemo(() => 
+    (state.debts || [])
+      .filter((d) => d.type === "lent" && d.status !== "paid")
+      .reduce((s, d) => s + safeNumber(d.remaining), 0),
+  [state.debts]);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const handleDelete = (debt: Debt) => {
     Alert.alert(
-      "Hapus Hutang",
-      `Yakin ingin menghapus hutang "${debt.name}"?`,
+      "Hapus Data",
+      `Yakin ingin menghapus catatan "${debt.name}"?`,
       [
         { text: "Batal", style: "cancel" },
         {
@@ -78,7 +171,7 @@ const DebtScreen: React.FC = () => {
       return;
     }
     if (amount > payModal.debt.remaining) {
-      Alert.alert("Error", "Nominal melebihi sisa hutang");
+      Alert.alert("Error", "Nominal melebihi sisa sisa");
       return;
     }
     await payDebt(payModal.debt.id, amount);
@@ -96,146 +189,141 @@ const DebtScreen: React.FC = () => {
   };
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: Colors.background }]}>
-      {/* Header */}
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: Colors.surface,
-        }}
-      >
-        <View style={tw`flex-row justify-between items-center`}>
-          <Text style={{ color: Colors.textPrimary, fontSize: 22, fontWeight: "700" }}>
-            Hutang & Piutang
-          </Text>
-          <TouchableOpacity
-            style={[
-              tw`flex-row items-center px-3 py-2 rounded-xl`,
-              { backgroundColor: `${Colors.accent}18` },
-            ]}
-            onPress={() => navigation.navigate("AddDebt")}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="add" size={18} color={Colors.accent} />
-            <Text style={{ color: Colors.accent, fontSize: 13, fontWeight: "600", marginLeft: 4 }}>
-              Tambah
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Summary Cards */}
-      <View style={tw`flex-row gap-3 px-4 pt-4 pb-2`}>
-        {/* Hutang Saya */}
-        <View
-          style={[
-            tw`flex-1 rounded-2xl p-4`,
-            { backgroundColor: `${Colors.error}12`, borderWidth: 1, borderColor: `${Colors.error}25` },
-          ]}
-        >
-          <View style={tw`flex-row items-center mb-2`}>
-            <Ionicons name="arrow-down-circle-outline" size={16} color={Colors.error} />
-            <Text style={{ color: Colors.error, fontSize: 11, fontWeight: "600", marginLeft: 5 }}>
-              HUTANG SAYA
-            </Text>
-          </View>
-          <Text style={{ color: Colors.textPrimary, fontSize: 18, fontWeight: "800" }}>
-            {formatCurrency(totalBorrowed)}
-          </Text>
-          <Text style={{ color: Colors.textSecondary, fontSize: 10, marginTop: 2 }}>
-            Total belum lunas
-          </Text>
-        </View>
-
-        {/* Piutang */}
-        <View
-          style={[
-            tw`flex-1 rounded-2xl p-4`,
-            { backgroundColor: `${Colors.success}12`, borderWidth: 1, borderColor: `${Colors.success}25` },
-          ]}
-        >
-          <View style={tw`flex-row items-center mb-2`}>
-            <Ionicons name="arrow-up-circle-outline" size={16} color={Colors.success} />
-            <Text style={{ color: Colors.success, fontSize: 11, fontWeight: "600", marginLeft: 5 }}>
-              PIUTANG
-            </Text>
-          </View>
-          <Text style={{ color: Colors.textPrimary, fontSize: 18, fontWeight: "800" }}>
-            {formatCurrency(totalLent)}
-          </Text>
-          <Text style={{ color: Colors.textSecondary, fontSize: 10, marginTop: 2 }}>
-            Yang belum kembali
-          </Text>
-        </View>
-      </View>
-
-      {/* Tab */}
-      <View style={tw`flex-row px-4 py-2 gap-2`}>
-        {(["borrowed", "lent"] as const).map((tab) => {
-          const isActive = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                tw`flex-1 py-2 rounded-full items-center`,
-                isActive
-                  ? { backgroundColor: Colors.accent }
-                  : { backgroundColor: Colors.surface },
-              ]}
-              onPress={() => setActiveTab(tab)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={{
-                  color: isActive ? Colors.background : Colors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: "600",
-                }}
-              >
-                {tab === "borrowed" ? "🏦 Hutang Saya" : "💳 Piutang"}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* List */}
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80, paddingTop: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 12 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header Section */}
+        <View style={tw`flex-row justify-between items-center mb-6`}>
+          <View>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 24, fontWeight: "800" }}>
+              Hutang & Piutang
+            </Text>
+            <Text style={{ color: Colors.gray400, fontSize: 12, marginTop: 2 }}>
+              Kelola beban dan pinjaman uang Anda
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[tw`w-10 h-10 rounded-full items-center justify-center`, { backgroundColor: `${ACCENT_COLOR}15` }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="close" size={20} color={ACCENT_COLOR} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Summary Cards - Premium Look (Like Balance Card) */}
+        <View style={tw`flex-row gap-3 mb-6`}>
+          <View
+            style={[
+              tw`flex-1 rounded-3xl p-4`,
+              { 
+                backgroundColor: SURFACE_COLOR, 
+                borderWidth: 1, 
+                borderColor: `${ERROR_COLOR}30`,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4
+              },
+            ]}
+          >
+          <View
+            style={[
+              tw`w-8 h-8 rounded-xl items-center justify-center mb-3`,
+              { backgroundColor: `${ERROR_COLOR}15` }
+            ]}
+          >
+              <Ionicons name="arrow-down-outline" size={16} color={ERROR_COLOR} />
+            </View>
+            <Text style={{ color: Colors.gray400, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>
+              Hutang Saya
+            </Text>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", marginTop: 2 }}>
+              {formatCurrency(totalBorrowed)}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              tw`flex-1 rounded-3xl p-4`,
+              { 
+                backgroundColor: SURFACE_COLOR, 
+                borderWidth: 1, 
+                borderColor: `${SUCCESS_COLOR}30`,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4
+              },
+            ]}
+          >
+          <View
+            style={[
+              tw`w-8 h-8 rounded-xl items-center justify-center mb-3`,
+              { backgroundColor: `${SUCCESS_COLOR}15` }
+            ]}
+          >
+              <Ionicons name="arrow-up-outline" size={16} color={SUCCESS_COLOR} />
+            </View>
+            <Text style={{ color: Colors.gray400, fontSize: 10, fontWeight: "600", letterSpacing: 0.5, textTransform: "uppercase" }}>
+              Piutang
+            </Text>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", marginTop: 2 }}>
+              {formatCurrency(totalLent)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Tab Selection (Premium Style) */}
+        <View style={[tw`flex-row p-1 rounded-2xl mb-6`, { backgroundColor: SURFACE_COLOR }]}>
+          {(["borrowed", "lent"] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  tw`flex-1 py-2.5 rounded-xl items-center justify-center`,
+                  isActive ? { backgroundColor: ACCENT_COLOR } : null,
+                ]}
+                onPress={() => setActiveTab(tab)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    color: isActive ? BACKGROUND_COLOR : TEXT_SECONDARY,
+                    fontSize: 12,
+                    fontWeight: isActive ? "700" : "500",
+                  }}
+                >
+                  {tab === "borrowed" ? "🏦 Hutang Saya" : "💳 Piutang"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <SectionHeader title={activeTab === "borrowed" ? "Daftar Hutang" : "Daftar Piutang"} />
+
+        {/* List Content */}
         {debts.length === 0 ? (
           <View style={tw`items-center py-16`}>
-            <Ionicons
-              name={activeTab === "borrowed" ? "card-outline" : "people-outline"}
-              size={48}
-              color={Colors.gray400}
-            />
-            <Text
-              style={{
-                color: Colors.textSecondary,
-                fontSize: 15,
-                fontWeight: "600",
-                marginTop: 12,
-                textAlign: "center",
-              }}
-            >
-              {activeTab === "borrowed"
-                ? "Tidak ada hutang aktif 🎉"
-                : "Tidak ada piutang tercatat"}
+            <View style={[tw`w-16 h-16 rounded-full items-center justify-center mb-4`, { backgroundColor: `${SURFACE_COLOR}50` }]}>
+              <Ionicons
+                name={activeTab === "borrowed" ? "card-outline" : "people-outline"}
+                size={32}
+                color={Colors.gray500}
+              />
+            </View>
+            <Text style={{ color: TEXT_SECONDARY, fontSize: 15, fontWeight: "600" }}>
+              Kosong
             </Text>
-            <Text
-              style={{
-                color: Colors.gray400,
-                fontSize: 12,
-                marginTop: 6,
-                textAlign: "center",
-              }}
-            >
-              Tekan tombol Tambah untuk mencatat
+            <Text style={{ color: Colors.gray500, fontSize: 12, marginTop: 4, textAlign: "center" }}>
+              {activeTab === "borrowed"
+                ? "Bagus! Kamu tidak punya beban hutang."
+                : "Belum ada piutang yang tercatat."}
             </Text>
           </View>
         ) : (
@@ -246,272 +334,182 @@ const DebtScreen: React.FC = () => {
             const statusColor = STATUS_COLOR[debt.status];
 
             return (
-              <View
+              <TouchableOpacity
                 key={debt.id}
+                onPress={() => navigation.navigate("AddDebt", { editMode: true, debtData: debt })}
+                activeOpacity={0.7}
                 style={[
-                  tw`rounded-2xl mb-3 p-4`,
+                  tw`rounded-2xl mb-4 p-4`,
                   {
-                    backgroundColor: Colors.surface,
+                    backgroundColor: SURFACE_COLOR,
                     borderWidth: 1,
-                    borderColor: debt.status === "paid" ? `${Colors.success}25` : Colors.border,
+                    borderColor: debt.status === "paid" ? `${SUCCESS_COLOR}20` : BORDER_COLOR,
                   },
                 ]}
               >
-                {/* Top row */}
+                {/* Top Info */}
                 <View style={tw`flex-row justify-between items-start mb-3`}>
                   <View style={tw`flex-1`}>
-                    <Text
-                      style={{
-                        color: Colors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: "700",
-                      }}
-                    >
+                    <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>
                       {debt.name}
                     </Text>
-                    <Text style={{ color: Colors.textSecondary, fontSize: 11, marginTop: 2 }}>
-                      {debt.category}
-                      {debt.description ? ` • ${debt.description}` : ""}
-                    </Text>
+                    <View style={tw`flex-row items-center mt-1`}>
+                      <View style={[tw`px-1.5 py-0.5 rounded-md mr-2`, { backgroundColor: `${ACCENT_COLOR}10` }]}>
+                        <Text style={{ color: ACCENT_COLOR, fontSize: 9, fontWeight: "700", textTransform: "uppercase" }}>
+                          {debt.category}
+                        </Text>
+                      </View>
+                      {debt.dueDate && debt.status !== "paid" && (
+                        <Text style={{ color: isOverdue ? ERROR_COLOR : Colors.gray400, fontSize: 10 }}>
+                          {isOverdue ? "Terlambat" : `H-${days}`}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      tw`px-2 py-1 rounded-full`,
-                      { backgroundColor: `${statusColor}20` },
-                    ]}
-                  >
-                    <Text
-                      style={{ color: statusColor, fontSize: 10, fontWeight: "700" }}
-                    >
-                      {STATUS_LABEL[debt.status]}
+                  <View style={[tw`px-2 py-1 rounded-lg`, { backgroundColor: `${statusColor}15` }]}>
+                    <Text style={{ color: statusColor, fontSize: 9, fontWeight: "800" }}>
+                      {STATUS_LABEL[debt.status].toUpperCase()}
                     </Text>
                   </View>
                 </View>
 
-                {/* Amount */}
-                <View style={tw`flex-row justify-between items-center mb-2`}>
-                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>Total</Text>
-                  <Text
-                    style={{
-                      color: Colors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {formatCurrency(debt.amount)}
-                  </Text>
+                {/* Progress & Amount */}
+                <View style={tw`flex-row justify-between items-end mb-2`}>
+                   <View>
+                     <Text style={{ color: Colors.gray500, fontSize: 10 }}>Sisa</Text>
+                     <Text style={{ color: statusColor, fontSize: 18, fontWeight: "800" }}>
+                        {formatCurrency(debt.remaining)}
+                     </Text>
+                   </View>
+                   <Text style={{ color: Colors.gray500, fontSize: 11 }}>
+                     Total: {formatCurrency(debt.amount)}
+                   </Text>
                 </View>
+
+                <ThinBar progress={progress} color={debt.status === "paid" ? SUCCESS_COLOR : statusColor} />
+
+                {/* Quick Actions inside Card */}
                 {debt.status !== "paid" && (
-                  <View style={tw`flex-row justify-between items-center mb-2`}>
-                    <Text style={{ color: Colors.gray400, fontSize: 11 }}>Sisa</Text>
-                    <Text
-                      style={{
-                        color: statusColor,
-                        fontSize: 14,
-                        fontWeight: "800",
-                      }}
-                    >
-                      {formatCurrency(debt.remaining)}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Progress bar */}
-                {debt.amount > 0 && (
-                  <View style={{ height: 4, backgroundColor: Colors.surfaceLight, borderRadius: 4, marginBottom: 8 }}>
-                    <View
-                      style={{
-                        height: 4,
-                        borderRadius: 4,
-                        width: `${Math.min(progress * 100, 100)}%`,
-                        backgroundColor: debt.status === "paid" ? Colors.success : Colors.accent,
-                      }}
-                    />
-                  </View>
-                )}
-
-                {/* Due date */}
-                {debt.dueDate && debt.status !== "paid" && (
-                  <Text
-                    style={{
-                      color: isOverdue ? Colors.error : Colors.gray400,
-                      fontSize: 11,
-                      marginBottom: 8,
-                    }}
-                  >
-                    {isOverdue
-                      ? `⚠️ Jatuh tempo ${Math.abs(days!)} hari lalu`
-                      : days === 0
-                      ? "⏰ Jatuh tempo hari ini!"
-                      : `📅 Jatuh tempo dalam ${days} hari`}
-                  </Text>
-                )}
-
-                {/* Actions */}
-                {debt.status !== "paid" && (
-                  <View style={tw`flex-row gap-2 mt-1`}>
+                  <View style={tw`flex-row gap-2 mt-4`}>
                     <TouchableOpacity
                       style={[
-                        tw`flex-1 py-2 rounded-xl items-center`,
-                        { backgroundColor: `${Colors.accent}18` },
+                        tw`flex-1 py-2.5 rounded-xl items-center justify-center`,
+                        { backgroundColor: `${ACCENT_COLOR}15` },
                       ]}
-                      onPress={() => {
+                      onPress={(e) => {
+                        e.stopPropagation();
                         setPayModal({ visible: true, debt });
                         setPayAmount("");
                       }}
-                      activeOpacity={0.7}
                     >
-                      <Text
-                        style={{
-                          color: Colors.accent,
-                          fontSize: 12,
-                          fontWeight: "600",
-                        }}
-                      >
-                        💸 Bayar
-                      </Text>
+                      <Text style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}>Bayar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
-                        tw`flex-1 py-2 rounded-xl items-center`,
-                        { backgroundColor: Colors.surfaceLight },
+                        tw`flex-1 py-2.5 rounded-xl items-center justify-center`,
+                        { backgroundColor: `${Colors.gray600}20` },
                       ]}
-                      onPress={() =>
-                        navigation.navigate("AddDebt", {
-                          editMode: true,
-                          debtData: debt,
-                        })
-                      }
-                      activeOpacity={0.7}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleDelete(debt);
+                      }}
                     >
-                      <Text
-                        style={{
-                          color: Colors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: "600",
-                        }}
-                      >
-                        ✏️ Edit
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        tw`py-2 px-3 rounded-xl items-center`,
-                        { backgroundColor: `${Colors.error}15` },
-                      ]}
-                      onPress={() => handleDelete(debt)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={14} color={Colors.error} />
+                      <Text style={{ color: Colors.gray400, fontSize: 12, fontWeight: "600" }}>Hapus</Text>
                     </TouchableOpacity>
                   </View>
                 )}
-
-                {debt.status === "paid" && (
-                  <View style={tw`flex-row justify-between items-center`}>
-                    <Text style={{ color: Colors.success, fontSize: 12, fontWeight: "600" }}>
-                      ✅ Sudah Lunas
-                    </Text>
-                    <TouchableOpacity onPress={() => handleDelete(debt)} activeOpacity={0.7}>
-                      <Ionicons name="trash-outline" size={16} color={Colors.gray400} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
 
-      {/* Pay Modal */}
+      {/* Floating Add Button */}
+      <Animated.View
+        style={[
+          tw`absolute bottom-6 right-5`,
+          {
+            width: 52,
+            height: 52,
+            borderRadius: 16,
+            backgroundColor: ACCENT_COLOR,
+            shadowColor: ACCENT_COLOR,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.4,
+            shadowRadius: 10,
+            elevation: 10,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={tw`w-full h-full items-center justify-center`}
+          onPress={() => navigation.navigate("AddDebt")}
+          activeOpacity={0.8}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
+          <Ionicons name="add" size={26} color={BACKGROUND_COLOR} />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Pay Modal (Standardized Style) */}
       <Modal
         visible={payModal.visible}
         transparent
         animationType="fade"
         onRequestClose={() => setPayModal({ visible: false, debt: null })}
       >
-        <View
-          style={[
-            tw`flex-1 justify-center items-center`,
-            { backgroundColor: "rgba(0,0,0,0.6)" },
-          ]}
-        >
-          <View
-            style={[
-              tw`mx-6 rounded-2xl p-6`,
-              { backgroundColor: Colors.surface, width: "90%" },
-            ]}
-          >
-            <Text
-              style={{
-                color: Colors.textPrimary,
-                fontSize: 17,
-                fontWeight: "700",
-                marginBottom: 4,
-              }}
-            >
+        <View style={[tw`flex-1 justify-center items-center p-6`, { backgroundColor: "rgba(2, 6, 23, 0.85)" }]}>
+          <View style={[tw`w-full rounded-3xl p-6`, { backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: BORDER_COLOR }]}>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", marginBottom: 4 }}>
               Catat Pembayaran
             </Text>
             {payModal.debt && (
-              <Text style={{ color: Colors.textSecondary, fontSize: 13, marginBottom: 16 }}>
-                {payModal.debt.name} • Sisa {formatCurrency(payModal.debt.remaining)}
+              <Text style={{ color: Colors.gray400, fontSize: 12, marginBottom: 20 }}>
+                {payModal.debt.name} · Sisa {formatCurrency(payModal.debt.remaining)}
               </Text>
             )}
-            <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 6 }}>
-              Nominal Bayar
-            </Text>
+
+            <SectionHeader title="Nominal Bayar" />
             <TextInput
               value={payAmount}
               onChangeText={(t) => setPayAmount(t.replace(/\D/g, ""))}
               keyboardType="numeric"
               placeholder="0"
-              placeholderTextColor={Colors.gray400}
+              placeholderTextColor={Colors.gray500}
+              autoFocus
               style={{
-                backgroundColor: Colors.background,
-                borderRadius: 12,
-                padding: 12,
-                color: Colors.textPrimary,
-                fontSize: 16,
-                fontWeight: "700",
-                marginBottom: 16,
+                backgroundColor: BACKGROUND_COLOR,
+                borderRadius: 16,
+                padding: 16,
+                color: TEXT_PRIMARY,
+                fontSize: 22,
+                fontWeight: "800",
+                marginBottom: 24,
                 borderWidth: 1,
-                borderColor: Colors.border,
+                borderColor: BORDER_COLOR,
               }}
             />
+
             <View style={tw`flex-row gap-3`}>
               <TouchableOpacity
-                style={[
-                  tw`flex-1 py-3 rounded-xl items-center`,
-                  { backgroundColor: Colors.surfaceLight },
-                ]}
+                style={[tw`flex-1 py-4 rounded-xl items-center`, { backgroundColor: `${Colors.gray600}20` }]}
                 onPress={() => setPayModal({ visible: false, debt: null })}
-                activeOpacity={0.7}
               >
-                <Text style={{ color: Colors.textSecondary, fontWeight: "600" }}>Batal</Text>
+                <Text style={{ color: Colors.gray400, fontWeight: "600" }}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  tw`flex-1 py-3 rounded-xl items-center`,
-                  { backgroundColor: Colors.accent },
-                ]}
+                style={[tw`flex-1 py-4 rounded-xl items-center`, { backgroundColor: ACCENT_COLOR }]}
                 onPress={handlePay}
-                activeOpacity={0.7}
               >
-                <Text
-                  style={{
-                    color: Colors.background,
-                    fontWeight: "700",
-                    fontSize: 14,
-                  }}
-                >
-                  Simpan
-                </Text>
+                <Text style={{ color: BACKGROUND_COLOR, fontWeight: "800" }}>Simpan</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
