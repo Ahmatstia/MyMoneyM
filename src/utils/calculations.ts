@@ -176,6 +176,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
   let latestCycleStart: Date | null = null;
   let latestTime = 0;
   let activePeriod = 7;
+  let cycleIncomeId: string | undefined = undefined;
 
   for (let i = 0; i < transactions.length; i++) {
     if (transactions[i].cyclePeriod) {
@@ -185,6 +186,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
         latestTime = time;
         latestCycleStart = tDate;
         activePeriod = transactions[i].cyclePeriod!;
+        cycleIncomeId = transactions[i].id;
       }
     }
   }
@@ -213,7 +215,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
 
     let label = activePeriod === 7 ? "Siklus 7 Hari" : activePeriod === 30 ? "Siklus 30 Hari" : `Siklus ${activePeriod} Hari`;
 
-    return { hasCycle: true, period: activePeriod, startDate, endDate, label };
+    return { hasCycle: true, period: activePeriod, startDate, endDate, label, cycleIncomeId };
   }
   return null;
 };
@@ -228,17 +230,18 @@ export const filterTransactionsByTime = (
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  // Pre-calculate weekly bounds
+  // Pre-calculate weekly bounds / cycle info
   let startOfWeek: Date, endOfWeek: Date;
+  let cycleIncomeId: string | undefined;
+
   if (timeFilter === "weekly") {
     const cycle = getActiveCycleInfo(transactions);
     
     if (cycle) {
-      // Pintar: Berjalan sesuai durasi siklus semenjak pemasukan tersebut
       startOfWeek = cycle.startDate;
       endOfWeek = cycle.endDate;
+      cycleIncomeId = cycle.cycleIncomeId;
     } else {
-      // Fallback: Kalender Mingguan Klasik (Senin - Minggu)
       const currentDay = now.getDay() === 0 ? 7 : now.getDay();
       startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - currentDay + 1);
@@ -249,6 +252,10 @@ export const filterTransactionsByTime = (
       endOfWeek.setHours(23, 59, 59, 999);
     }
   }
+
+  const cycleIncome = cycleIncomeId 
+    ? transactions.find(t => t.id === cycleIncomeId) 
+    : null;
 
   return transactions.filter((t) => {
     try {
@@ -264,7 +271,17 @@ export const filterTransactionsByTime = (
       }
 
       if (timeFilter === "weekly") {
-        return d >= startOfWeek && d <= endOfWeek;
+        // Cek apakah tanggal di luar range siklus
+        if (d < startOfWeek || d > endOfWeek) return false;
+
+        // Smart Day Sorting: Jika hari sama dengan awal siklus
+        if (cycleIncome && d.setHours(0,0,0,0) === startOfWeek.getTime() && t.id !== cycleIncomeId) {
+          // Jika transaksi ini dicatat SEBELUM income pembuka siklus, jangan masukkan ke filter ini
+          // (Karena akan dianggap sebagai bagian dari Saldo Awal/Bawaan)
+          if (t.createdAt < cycleIncome.createdAt) return false;
+        }
+        
+        return true;
       }
       return true; // Fallback
     } catch {
@@ -339,5 +356,46 @@ export const calculateProjection = (
       projectedBalance: 0,
       status: "surplus" as const,
     };
+  }
+};
+
+/**
+ * Kalkulasi Saldo Awal (Bawaan) sebelum periode dimulai.
+ * Digunakan untuk sinkronisasi Saldo Total vs Sisa Periode.
+ */
+export const calculateOpeningBalance = (
+  transactions: Transaction[],
+  startDate: Date,
+  cycleIncomeId?: string
+) => {
+  try {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const cycleIncome = cycleIncomeId 
+      ? transactions.find(t => t.id === cycleIncomeId) 
+      : null;
+
+    return transactions.reduce((sum, t) => {
+      const tDate = new Date(t.date);
+      tDate.setHours(0, 0, 0, 0);
+
+      // 1. Jika tanggal transaksi mutlak sebelum startDate
+      if (tDate < start) {
+        return sum + (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount));
+      }
+
+      // 2. Jika tanggal SAMA, tapi dicatat SEBELUM income pembuka siklus
+      if (cycleIncome && tDate.getTime() === start.getTime() && t.id !== cycleIncomeId) {
+        if (t.createdAt < cycleIncome.createdAt) {
+          return sum + (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount));
+        }
+      }
+
+      return sum;
+    }, 0);
+  } catch (error) {
+    console.error("Error in calculateOpeningBalance:", error);
+    return 0;
   }
 };

@@ -25,6 +25,7 @@ import {
   calculateTotals,
   getActiveCycleInfo,
   calculateProjection,
+  calculateOpeningBalance,
 } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
@@ -105,9 +106,40 @@ const HomeScreen: React.FC = () => {
     [state.transactions, timeFilter]
   );
 
-  const { totalIncome: filteredIncome, totalExpense: filteredExpense, balance: filteredBalance } = useMemo(
+  const { totalIncome: filteredIncome, totalExpense: filteredExpense, balance: filteredPeriodNetto } = useMemo(
     () => calculateTotals(filteredTransactions),
     [filteredTransactions]
+  );
+
+  const openingBalance = useMemo(() => {
+    if (timeFilter === "all") return 0;
+    
+    const now = new Date();
+    let startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    startDate.setHours(0,0,0,0);
+    let cycleIncomeId: string | undefined;
+
+    if (timeFilter === "weekly") {
+      const cycle = getActiveCycleInfo(state.transactions);
+      if (cycle) {
+        startDate = cycle.startDate;
+        cycleIncomeId = cycle.cycleIncomeId;
+      } else {
+        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+        startDate.setDate(now.getDate() - currentDay + 1);
+      }
+    } else if (timeFilter === "monthly") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (timeFilter === "yearly") {
+      startDate = new Date(now.getFullYear(), 0, 1);
+    }
+
+    return calculateOpeningBalance(state.transactions, startDate, cycleIncomeId);
+  }, [state.transactions, timeFilter]);
+
+  const filteredBalance = useMemo(
+    () => openingBalance + filteredPeriodNetto,
+    [openingBalance, filteredPeriodNetto]
   );
 
   // ── Helper icon aman (sama dengan asli) ──────────────────────────────────
@@ -905,13 +937,22 @@ const HomeScreen: React.FC = () => {
 
             <View style={{ alignItems: "flex-end" }}>
               <Text style={{ color: Colors.gray400, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 3 }}>
-                Sisa
+                {timeFilter === "all" ? "Sisa" : "Saldo Akhir"}
               </Text>
               <Text style={{ color: filteredBalance >= 0 ? TEXT_SECONDARY : ERROR_COLOR, fontSize: 14, fontWeight: "600" }}>
                 {formatCurrency(safeNumber(filteredBalance))}
               </Text>
             </View>
           </View>
+
+          {/* Opening Balance Hint */}
+          {timeFilter !== "all" && openingBalance !== 0 && (
+            <View style={tw`mb-4 -mt-2`}>
+              <Text style={{ color: Colors.gray500, fontSize: 10, fontStyle: "italic" }}>
+                * Sudah termasuk saldo bawaan {formatCurrency(openingBalance)} dari periode sebelumnya
+              </Text>
+            </View>
+          )}
 
           {/* Progress bar tipis */}
           <View style={{ height: 2, backgroundColor: SURFACE_COLOR, borderRadius: 2, marginBottom: 12 }}>
