@@ -506,7 +506,7 @@ const HomeScreen: React.FC = () => {
       if (activeCycle) {
         startDate = activeCycle.startDate;
         endDate = activeCycle.endDate;
-        label = "akhir siklus";
+        label = "akhir periode";
       } else {
         const currentDay = now.getDay() === 0 ? 7 : now.getDay();
         startDate = new Date(now);
@@ -594,13 +594,13 @@ const HomeScreen: React.FC = () => {
       },
       {
         id: "daily_avg",
-        label: "Rata-rata / Hari",
+        label: "Rata-rata",
         value: avgDaily >= 1000000 
           ? `${(avgDaily / 1000000).toFixed(1)}jt` 
           : avgDaily >= 1000 
             ? `${(avgDaily / 1000).toFixed(0)}rb` 
             : avgDaily.toString(),
-        unit: "IDR",
+        unit: "/hari",
         trend: avgDaily < 100000 ? "↓" : "↑",
         trendLabel: avgDaily < 100000 ? "Hemat" : "Tinggi",
         color: avgDaily < 100000 ? SUCCESS_COLOR : ERROR_COLOR,
@@ -609,9 +609,9 @@ const HomeScreen: React.FC = () => {
         id: "transactions_count",
         label: "Transaksi",
         value: currentTransactionCount.toString(),
-        unit: timeFilter === "all" ? "total" : timeFilter === "weekly" ? "siklus" : "periode",
+        unit: timeFilter === "all" ? "total" : "periode",
         trend: currentTransactionCount > 10 ? "↑" : "↓",
-        trendLabel: timeFilter === "all" ? "Selama ini" : timeFilter === "weekly" ? "Siklus ini" : timeFilter === "monthly" ? "Bulan ini" : "Tahun ini",
+        trendLabel: timeFilter === "all" ? "Selama ini" : timeFilter === "weekly" ? "Periode ini" : timeFilter === "monthly" ? "Bulan ini" : "Tahun ini",
         color: ACCENT_COLOR,
       },
     ];

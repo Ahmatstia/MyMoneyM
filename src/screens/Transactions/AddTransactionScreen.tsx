@@ -617,7 +617,7 @@ const AddTransactionScreen: React.FC = () => {
                   <View style={tw`flex-row items-center mb-1`}>
                     <Ionicons name="sync-outline" size={16} color={ACCENT_COLOR} style={tw`mr-2`} />
                     <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
-                      Atur Sebagai Siklus Uang
+                      Mulai Periode Baru
                     </Text>
                   </View>
                   <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
@@ -635,7 +635,7 @@ const AddTransactionScreen: React.FC = () => {
               {/* Cycle Options */}
               {isCycleActive && (
                 <View style={tw`mt-4 pt-4 border-t border-gray-700`}>
-                  <Text style={[tw`text-xs font-medium mb-3`, { color: TEXT_SECONDARY }]}>DURASI SIKLUS:</Text>
+                  <Text style={[tw`text-xs font-medium mb-3`, { color: TEXT_SECONDARY }]}>DURASI PERIODE:</Text>
                   <View style={tw`flex-row gap-2`}>
                     <TouchableOpacity
                       style={[

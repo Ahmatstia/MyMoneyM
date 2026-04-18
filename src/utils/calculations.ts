@@ -213,7 +213,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
     endDate.setDate(startDate.getDate() + activePeriod - 1);
     endDate.setHours(23, 59, 59, 999);
 
-    let label = activePeriod === 7 ? "Siklus 7 Hari" : activePeriod === 30 ? "Siklus 30 Hari" : `Siklus ${activePeriod} Hari`;
+    let label = activePeriod === 7 ? "Periode 7 Hari" : activePeriod === 30 ? "Periode 30 Hari" : `Periode ${activePeriod} Hari`;
 
     return { hasCycle: true, period: activePeriod, startDate, endDate, label, cycleIncomeId };
   }
