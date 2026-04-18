@@ -48,12 +48,12 @@ const ERROR_COLOR      = Colors.error;
 
 // ─── Komponen UI kecil ────────────────────────────────────────────────────────
 
-/** Garis pemisah tipis antar section — menggantikan card wrapper */
+/** Garis pemisah transparan (bersih) antar section */
 const Sep = ({ marginV = 20 }: { marginV?: number }) => (
   <View
     style={{
       height: 1,
-      backgroundColor: SURFACE_COLOR,
+      backgroundColor: "transparent",
       marginHorizontal: -16,
       marginVertical: marginV,
     }}
@@ -465,6 +465,13 @@ const HomeScreen: React.FC = () => {
         onPress: () => navigation.navigate("Budget"),
       },
       {
+        id: "savings",
+        title: "Tabungan",
+        icon: "wallet-outline" as SafeIconName,
+        color: Colors.purpleLight,
+        onPress: () => navigation.navigate("Savings"),
+      },
+      {
         id: "analytics",
         title: "Analitik",
         icon: "stats-chart-outline" as SafeIconName,
@@ -560,16 +567,11 @@ const HomeScreen: React.FC = () => {
       ];
     }
 
-    const daysPassed = projectionData?.daysPassed || 7;
-    
-    // Hitung berapa hari unik yang ada pengeluaran dalam filter saat ini
-    const expenseDaysCount = new Set(
-      filteredTransactions
-        .filter((t) => t.type === "expense")
-        .map((t) => new Date(t.date).toDateString())
-    ).size;
-
-    const daysWithoutSpending = Math.max(0, daysPassed - expenseDaysCount);
+    // Rekomendasi Fitur: Batas Uang Jajan Harian (Aman untuk dihabiskan)
+    const daysRemaining = projectionData?.daysRemaining || 1;
+    const safeDailySpend = timeFilter === "all" 
+      ? filteredBalance 
+      : Math.max(0, filteredBalance / Math.max(1, daysRemaining));
 
     // DIPERBAIKI: Menggunakan rata-rata harian dari siklus aktif (bukan bagi 30 kaku)
     const avgDaily = projectionData?.dailyAvgExpense || 0;
@@ -579,13 +581,16 @@ const HomeScreen: React.FC = () => {
     
     return [
       {
-        id: "spending_streak",
-        label: timeFilter === "all" ? "Hari Tanpa Pengeluaran" : `Tanpa Pengeluaran (${timeFilter})`,
-        value: daysWithoutSpending.toString(),
-        unit: "hari",
-        trend: daysWithoutSpending >= (daysPassed * 0.5) ? "↓" : "↑",
-        trendLabel: daysWithoutSpending >= (daysPassed * 0.5) ? "Bagus" : "Boros",
-        color: daysWithoutSpending >= (daysPassed * 0.5) ? SUCCESS_COLOR : WARNING_COLOR,
+        id: "safe_spend",
+        label: timeFilter === "all" ? "Aset Bersih" : "Batas Uang Jajan",
+        value: safeDailySpend >= 1000000 
+          ? `${(safeDailySpend / 1000000).toFixed(1)}jt` 
+          : safeDailySpend >= 1000 
+            ? `${(safeDailySpend / 1000).toFixed(0)}rb` 
+            : safeDailySpend.toFixed(0),
+        unit: timeFilter === "all" ? "IDR" : "/hari",
+        trend: filteredBalance > 0 ? "↑" : "↓",
+        color: filteredBalance > 0 ? SUCCESS_COLOR : WARNING_COLOR,
       },
       {
         id: "daily_avg",
@@ -996,7 +1001,7 @@ const HomeScreen: React.FC = () => {
           {dynamicQuickActions.map((action) => (
             <TouchableOpacity
               key={action.id}
-              style={tw`items-center w-1/4`}
+              style={tw`items-center flex-1`}
               onPress={action.onPress}
               activeOpacity={0.7}
               accessible
@@ -1030,35 +1035,36 @@ const HomeScreen: React.FC = () => {
             QUICK STATS
         ════════════════════════════════════════ */}
         <SectionHeader title="Statistik" />
-        <View style={tw`flex-row mb-2`}>
+        <View style={tw`flex-row mb-2 items-center`}>
           {quickStats.map((stat, index) => (
-            <View
-              key={stat.id}
-              style={[
-                tw`flex-1 rounded-xl p-3`,
-                index < quickStats.length - 1 && { marginRight: 8 },
-                { backgroundColor: SURFACE_COLOR },
-              ]}
-            >
-              <Text
-                style={{
-                  color: Colors.gray400,
-                  fontSize: 9,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.8,
-                  marginBottom: 5,
-                }}
-                numberOfLines={1}
-              >
-                {stat.label}
-              </Text>
-              <Text style={{ color: stat.color, fontSize: 14, fontWeight: "700" }}>
-                {stat.value}
-              </Text>
-              {stat.unit && (
-                <Text style={{ color: Colors.gray400, fontSize: 9, marginTop: 1 }}>{stat.unit}</Text>
+            <React.Fragment key={stat.id}>
+              <View style={tw`flex-1 py-1 items-center`}>
+                <Text
+                  style={{
+                    color: Colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    marginBottom: 5,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
+                  {stat.label}
+                </Text>
+                <Text style={{ color: stat.color, fontSize: 14, fontWeight: "700", textAlign: "center" }}>
+                  {stat.value}
+                </Text>
+                {stat.unit && (
+                  <Text style={{ color: Colors.gray400, fontSize: 9, marginTop: 1, textAlign: "center" }}>
+                    {stat.unit}
+                  </Text>
+                )}
+              </View>
+              {index < quickStats.length - 1 && (
+                <View style={{ width: 1, height: 32, backgroundColor: SURFACE_COLOR, marginHorizontal: 12 }} />
               )}
-            </View>
+            </React.Fragment>
           ))}
         </View>
 
