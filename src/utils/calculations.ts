@@ -272,3 +272,72 @@ export const filterTransactionsByTime = (
     }
   });
 };
+
+/**
+ * Kalkulasi Proyeksi Keuangan Dinamis
+ * Menebak saldo akhir periode berdasarkan rata-rata pengeluaran harian saat ini.
+ */
+export const calculateProjection = (
+  totalIncome: number,
+  totalExpense: number,
+  startDate: Date,
+  endDate: Date,
+  currentDate: Date = new Date()
+) => {
+  try {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const now = new Date(currentDate);
+
+    // Total hari dalam periode ini
+    const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Hari yang sudah berjalan (minimal 1 agar tidak pembagian nol)
+    const daysPassed = Math.max(1, Math.min(totalDays, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))));
+
+    // Sisa hari
+    const daysRemaining = Math.max(0, totalDays - daysPassed);
+
+    // Progress waktu (persentase hari yang sudah lewat)
+    const progress = (daysPassed / totalDays) * 100;
+
+    // Rata-rata pengeluaran harian
+    const dailyAvgExpense = safePositiveNumber(totalExpense) / daysPassed;
+
+    // Estimasi total pengeluaran sampai akhir periode
+    const projectedExpense = safePositiveNumber(totalExpense) + (dailyAvgExpense * daysRemaining);
+
+    // Estimasi saldo akhir
+    const projectedBalance = safeNumber(totalIncome) - projectedExpense;
+
+    return {
+      daysPassed,
+      daysRemaining,
+      totalDays,
+      progress: isNaN(progress) ? 0 : progress,
+      dailyAvgExpense: safeNumber(dailyAvgExpense),
+      projectedBalance: isNaN(projectedBalance) ? 0 : projectedBalance,
+      status:
+        projectedBalance >= 0
+          ? ("surplus" as const)
+          : projectedBalance > -1000000
+          ? ("warning" as const)
+          : ("deficit" as const),
+    };
+  } catch (error) {
+    console.error("Error in calculateProjection:", error);
+    return {
+      daysPassed: 1,
+      daysRemaining: 0,
+      totalDays: 1,
+      progress: 0,
+      dailyAvgExpense: 0,
+      projectedBalance: 0,
+      status: "surplus" as const,
+    };
+  }
+};

@@ -21,6 +21,7 @@ import {
   getCurrentMonth,
   getSafePercentage,
   safeNumber,
+  calculateProjection,
 } from "../../utils/calculations";
 import { Colors } from "../../theme/theme";
 
@@ -287,25 +288,32 @@ const AnalyticsScreen: React.FC = () => {
 
   const comparativeData = getComparativeData();
 
-  // ── Cash flow forecast (sama dengan asli) ────────────────────────────────
-  const getCashFlowForecast = () => {
+  // ── Cash flow forecast (DIPERBAIKI: Mengikuti timeRange) ────────────────
+  const cashFlowForecast = useMemo(() => {
     try {
-      const dailyAvgSpending = safeNumber(transactionAnalytics.avgDailyExpense);
-      const daysRemaining    = Math.max(0, 30 - new Date().getDate());
-      const forecast         = safeNumber(transactionAnalytics.netSavings - dailyAvgSpending * daysRemaining);
+      const projection = calculateProjection(
+        transactionAnalytics.totalIncome,
+        transactionAnalytics.totalExpense,
+        transactionAnalytics.startDate,
+        transactionAnalytics.endDate
+      );
+
       return {
-        dailyAvg: dailyAvgSpending,
-        daysRemaining,
-        forecast,
-        status: forecast > 100000 ? "safe" : forecast > -100000 ? "warning" : "danger",
+        dailyAvg: projection.dailyAvgExpense,
+        daysRemaining: projection.daysRemaining,
+        forecast: projection.projectedBalance,
+        status:
+          projection.projectedBalance > 100000
+            ? "safe"
+            : projection.projectedBalance > -100000
+            ? "warning"
+            : "danger",
       };
     } catch (error) {
       console.error("Error in cash flow forecast:", error);
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
-  };
-
-  const cashFlowForecast = getCashFlowForecast();
+  }, [transactionAnalytics]);
 
   // ── Category benchmarks (sama dengan asli) ───────────────────────────────
   type BenchmarkItem = {

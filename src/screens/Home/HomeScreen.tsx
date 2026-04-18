@@ -24,6 +24,7 @@ import {
   filterTransactionsByTime,
   calculateTotals,
   getActiveCycleInfo,
+  calculateProjection,
 } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
@@ -453,38 +454,30 @@ const HomeScreen: React.FC = () => {
     [navigation]
   );
 
-  // ── Monthly progress (sama dengan asli) ───────────────────────────────────
-  const getMonthlyProgress = () => {
-    const today           = new Date();
-    const currentDay      = today.getDate();
-    const daysInMonth     = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const progress        = daysInMonth > 0 ? safeNumber((currentDay / daysInMonth) * 100) : 0;
-    const dailyAvgExpense =
-      currentDay > 0 ? safeNumber(state.totalExpense) / Math.max(1, currentDay) : 0;
-    const daysRemaining    = Math.max(0, daysInMonth - currentDay);
-    const projectedExpense = safeNumber(safeNumber(state.totalExpense) + dailyAvgExpense * daysRemaining);
-    const projectedBalance = safeNumber(safeNumber(state.totalIncome) - projectedExpense);
+  // ── Dynamic projection (DIPERBAIKI: Mengikuti filter waktu) ────────────────
+  const projectionData = useMemo(() => {
+    if (!hasFinancialData || timeFilter === "all") return null;
+
+    const now = new Date();
+    let startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    let endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    let label = "akhir bulan";
+
+    if (timeFilter === "weekly" && activeCycle) {
+      startDate = activeCycle.startDate;
+      endDate = activeCycle.endDate;
+      label = "akhir siklus";
+    } else if (timeFilter === "yearly") {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31);
+      label = "akhir tahun";
+    }
 
     return {
-      currentDay,
-      daysInMonth,
-      progress:         isNaN(progress)         ? 0 : progress,
-      dailyAvgExpense:  safeNumber(dailyAvgExpense),
-      daysRemaining,
-      projectedBalance: isNaN(projectedBalance) ? 0 : projectedBalance,
-      status:
-        projectedBalance > 0
-          ? "surplus"
-          : projectedBalance > -1000000
-          ? "warning"
-          : "deficit",
+      ...calculateProjection(filteredIncome, filteredExpense, startDate, endDate, now),
+      label,
     };
-  };
-
-  const monthlyProgress = useMemo(
-    () => getMonthlyProgress(),
-    [state.totalIncome, state.totalExpense]
-  );
+  }, [hasFinancialData, timeFilter, activeCycle, filteredIncome, filteredExpense]);
 
   // ── Goals preview (sama dengan asli) ─────────────────────────────────────
   const getGoalsPreview = () => {
@@ -926,11 +919,11 @@ const HomeScreen: React.FC = () => {
               style={{
                 height: 2,
                 borderRadius: 2,
-                width: `${Math.max(0, Math.min(safeNumber(monthlyProgress.progress), 100))}%`,
-                backgroundColor: hasFinancialData
-                  ? monthlyProgress.status === "surplus"
+                width: `${Math.max(0, Math.min(safeNumber(projectionData?.progress), 100))}%`,
+                backgroundColor: hasFinancialData && projectionData
+                  ? projectionData.status === "surplus"
                     ? SUCCESS_COLOR
-                    : monthlyProgress.status === "warning"
+                    : projectionData.status === "warning"
                     ? WARNING_COLOR
                     : ERROR_COLOR
                   : Colors.gray500,
@@ -939,20 +932,20 @@ const HomeScreen: React.FC = () => {
           </View>
 
           {/* Projected balance */}
-          {hasFinancialData && monthlyProgress.daysRemaining > 0 && (
+          {hasFinancialData && projectionData && projectionData.daysRemaining > 0 && (
             <View style={tw`flex-row justify-between items-center`}>
               <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-                Proyeksi akhir bulan ({monthlyProgress.daysRemaining} hari lagi)
+                Proyeksi {projectionData.label} ({projectionData.daysRemaining} hari lagi)
               </Text>
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: "600",
-                  color: monthlyProgress.projectedBalance >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                  color: projectionData.projectedBalance >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
                 }}
               >
-                {monthlyProgress.projectedBalance >= 0 ? "+" : ""}
-                {formatCurrency(safeNumber(monthlyProgress.projectedBalance))}
+                {projectionData.projectedBalance >= 0 ? "+" : ""}
+                {formatCurrency(safeNumber(projectionData.projectedBalance))}
               </Text>
             </View>
           )}
