@@ -1,16 +1,16 @@
-// File: src/screens/SavingsScreen.tsx — REDESIGNED with Design System
+// File: src/screens/Savings/SavingsScreen.tsx
 import React, { useState, useMemo } from "react";
 import {
   View,
+  Text,
   ScrollView,
   TouchableOpacity,
   Alert,
-  RefreshControl,
+  Animated,
 } from "react-native";
-import { Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import {
@@ -18,66 +18,130 @@ import {
   safeNumber,
   getSafePercentage,
 } from "../../utils/calculations";
-import { formatDateShort } from "../../utils/formatters";
 import { Savings } from "../../types";
 import { Colors } from "../../theme/theme";
-import {
-  DS,
-  pageContainer,
-  headerBar,
-  headerTitle,
-  headerSubtitle,
-  headerFAB,
-  cardPadded,
-  scrollContent,
-  filterPill,
-  filterPillActive,
-  filterPillText,
-  filterPillTextActive,
-  statColumn,
-  statLabel,
-  statValue,
-  statDivider,
-  iconButton,
-  badge,
-  badgeText,
-  progressTrack,
-  progressFill,
-  emptyState,
-  emptyTitle,
-  emptySubtitle,
-  primaryButton,
-  primaryButtonText,
-  cardSeparator,
-} from "../../theme/designSystem";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
+// ─── Theme colors (konsisten dengan seluruh app) ──────────────────────────────
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const ACCENT_COLOR     = Colors.accent;
+const SUCCESS_COLOR    = Colors.success;
+const WARNING_COLOR    = Colors.warning;
+const ERROR_COLOR      = Colors.error;
+
+// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const SECTION_GAP  = 24;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
+
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const SectionHeader = ({
+  title,
+  linkLabel,
+  onPress,
+}: {
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
+}) => (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          width: 3,
+          height: 13,
+          backgroundColor: ACCENT_COLOR,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          color: Colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+    {linkLabel && onPress && (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+          {linkLabel}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+const ThinBar = ({
+  progress,
+  color,
+}: {
+  progress: number;
+  color: string;
+}) => (
+  <View
+    style={{
+      height: 4,
+      backgroundColor: "rgba(255,255,255,0.07)",
+      borderRadius: 4,
+      overflow: "hidden",
+    }}
+  >
+    <View
+      style={{
+        height: 4,
+        borderRadius: 4,
+        width: `${Math.max(0, Math.min(progress, 100))}%`,
+        backgroundColor: color,
+      }}
+    />
+  </View>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const SavingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { state, deleteSavings, refreshData } = useAppContext();
-  const [refreshing, setRefreshing] = useState(false);
+  const { state, deleteSavings } = useAppContext();
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [fabScaleAnim] = useState(new Animated.Value(1));
+
+  const fabPressIn  = () =>
+    Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
+  const fabPressOut = () =>
+    Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
   const savings = state.savings || [];
 
   const totalStats = useMemo(() => {
-    const totalTarget = savings.reduce(
-      (sum, s) => sum + safeNumber(s.target),
-      0
-    );
-    const totalCurrent = savings.reduce(
-      (sum, s) => sum + safeNumber(s.current),
-      0
-    );
+    const totalTarget  = savings.reduce((sum, s) => sum + safeNumber(s.target), 0);
+    const totalCurrent = savings.reduce((sum, s) => sum + safeNumber(s.current), 0);
     const overallProgress = getSafePercentage(totalCurrent, totalTarget);
-    const activeCount = savings.filter(
+    const activeCount    = savings.filter(
       (s) => safeNumber(s.current) < safeNumber(s.target)
     ).length;
     const completedCount = savings.filter(
       (s) => safeNumber(s.current) >= safeNumber(s.target)
     ).length;
-
     return { totalTarget, totalCurrent, overallProgress, activeCount, completedCount };
   }, [savings]);
 
@@ -85,47 +149,42 @@ const SavingsScreen: React.FC = () => {
     return savings.filter((s) => {
       const isCompleted = safeNumber(s.current) >= safeNumber(s.target);
       switch (filter) {
-        case "active": return !isCompleted;
+        case "active":    return !isCompleted;
         case "completed": return isCompleted;
-        default: return true;
+        default:          return true;
       }
     });
   }, [savings, filter]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refreshData();
-    setRefreshing(false);
-  };
-
   const getIcon = (s: Savings): SafeIconName => {
     if (s.icon) return s.icon as SafeIconName;
     const map: Record<string, SafeIconName> = {
-      emergency: "shield", vacation: "airplane", gadget: "phone-portrait",
-      education: "school", house: "home", car: "car",
-      health: "medical", wedding: "heart",
+      emergency: "shield",     vacation: "airplane",
+      gadget:    "phone-portrait", education: "school",
+      house:     "home",       car: "car",
+      health:    "medical",    wedding: "heart",
     };
     return map[s.category || ""] || "wallet";
   };
 
   const getProgressColor = (p: number) => {
-    if (p >= 100) return DS.success;
-    if (p >= 75) return DS.info;
-    if (p >= 50) return DS.warning;
-    if (p >= 25) return DS.error;
-    return DS.textMuted;
+    if (p >= 100) return SUCCESS_COLOR;
+    if (p >= 75)  return Colors.info;
+    if (p >= 50)  return WARNING_COLOR;
+    if (p >= 25)  return ERROR_COLOR;
+    return Colors.gray400;
   };
 
   const formatDeadline = (deadline?: string) => {
     if (!deadline) return "Tanpa deadline";
     try {
-      const d = new Date(deadline);
+      const d    = new Date(deadline);
       const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      if (diff < 0) return "Terlambat";
+      if (diff < 0)   return "Terlambat";
       if (diff === 0) return "Hari ini";
       if (diff === 1) return "Besok";
-      if (diff < 7) return `${diff} hari lagi`;
-      if (diff < 30) return `${Math.floor(diff / 7)} minggu lagi`;
+      if (diff < 7)   return `${diff} hari lagi`;
+      if (diff < 30)  return `${Math.floor(diff / 7)} minggu lagi`;
       if (diff < 365) return `${Math.floor(diff / 30)} bulan lagi`;
       return `${Math.floor(diff / 365)} tahun lagi`;
     } catch {
@@ -155,335 +214,549 @@ const SavingsScreen: React.FC = () => {
   };
 
   const filterTabs = [
-    { key: "all", label: "Semua", count: savings.length },
-    { key: "active", label: "Aktif", count: totalStats.activeCount },
+    { key: "all",       label: "Semua",   count: savings.length },
+    { key: "active",    label: "Aktif",   count: totalStats.activeCount },
     { key: "completed", label: "Tercapai", count: totalStats.completedCount },
   ];
 
-  return (
-    <View style={pageContainer}>
-      {/* Static Header Removed */}
+  const utilizationColor =
+    totalStats.overallProgress >= 100
+      ? SUCCESS_COLOR
+      : totalStats.overallProgress >= 75
+      ? Colors.info
+      : totalStats.overallProgress >= 50
+      ? WARNING_COLOR
+      : ACCENT_COLOR;
 
-      {/* ====== SCROLLABLE CONTENT ====== */}
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView
-        style={tw`flex-1`}
-        contentContainerStyle={scrollContent}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
       >
-        {/* Large Title Header - now scrolls */}
-        <View style={tw`flex-row justify-between items-center mb-6`}>
-          <View>
-            <Text style={[headerTitle, { fontSize: 24 }]}>Tabungan</Text>
-            <Text style={headerSubtitle}>
-              {savings.length} target tabungan
-            </Text>
-          </View>
+        {/* ── Page header ─────────────────────────────────────────────── */}
+        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
+          <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
+            Tabungan
+          </Text>
+          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
+            {savings.length} target tabungan
+          </Text>
         </View>
 
-        {/* Summary Stats — inside scroll */}
+        {/* ── Summary hero card ─────────────────────────────────────────── */}
         {savings.length > 0 && (
-          <View style={[cardPadded, tw`mb-4`]}>
-            {/* Progress */}
-            <View style={tw`flex-row justify-between items-center mb-2`}>
-              <Text style={{ fontSize: 13, fontWeight: "600", color: DS.text }}>
-                {formatCurrency(totalStats.totalCurrent)} /{" "}
-                {formatCurrency(totalStats.totalTarget)}
-              </Text>
-              <Text
-                style={{ fontSize: 13, fontWeight: "700", color: DS.accent }}
-              >
-                {totalStats.overallProgress.toFixed(1)}%
-              </Text>
-            </View>
-            <View style={progressTrack}>
-              <View
-                style={progressFill(
-                  DS.accent,
-                  Math.min(totalStats.overallProgress, 100)
-                )}
-              />
+          <View
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: CARD_PAD,
+              marginBottom: 20,
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginBottom: 5,
+              }}
+            >
+              Total Tabungan
+            </Text>
+            <Text
+              style={{
+                color: TEXT_PRIMARY,
+                fontSize: 30,
+                fontWeight: "800",
+                letterSpacing: -0.5,
+                marginBottom: 16,
+              }}
+            >
+              {formatCurrency(totalStats.totalCurrent)}
+            </Text>
+
+            {/* Terkumpul / Target */}
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View
+                    style={{
+                      width: 6, height: 6, borderRadius: 3,
+                      backgroundColor: ACCENT_COLOR, marginRight: 5,
+                    }}
+                  />
+                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                    Terkumpul
+                  </Text>
+                </View>
+                <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
+                  {formatCurrency(totalStats.totalCurrent)}
+                </Text>
+              </View>
+
+              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
+
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View
+                    style={{
+                      width: 6, height: 6, borderRadius: 3,
+                      backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                    }}
+                  />
+                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                    Target
+                  </Text>
+                </View>
+                <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
+                  {formatCurrency(totalStats.totalTarget)}
+                </Text>
+              </View>
+
+              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
+
+              {/* Status chips */}
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+                  Status
+                </Text>
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  {totalStats.completedCount > 0 && (
+                    <View
+                      style={{
+                        paddingHorizontal: 7, paddingVertical: 2,
+                        borderRadius: 20, backgroundColor: `${SUCCESS_COLOR}18`,
+                        borderWidth: 1, borderColor: `${SUCCESS_COLOR}28`,
+                      }}
+                    >
+                      <Text style={{ color: SUCCESS_COLOR, fontSize: 10, fontWeight: "700" }}>
+                        {totalStats.completedCount} ✓
+                      </Text>
+                    </View>
+                  )}
+                  {totalStats.activeCount > 0 && (
+                    <View
+                      style={{
+                        paddingHorizontal: 7, paddingVertical: 2,
+                        borderRadius: 20, backgroundColor: `${ACCENT_COLOR}18`,
+                        borderWidth: 1, borderColor: `${ACCENT_COLOR}28`,
+                      }}
+                    >
+                      <Text style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}>
+                        {totalStats.activeCount} ●
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             </View>
 
-            {/* Stats Row */}
-            <View style={tw`flex-row justify-between mt-3`}>
-              <View style={statColumn}>
-                <Text style={statLabel}>Aktif</Text>
-                <Text style={[statValue, { color: DS.accent }]}>
-                  {totalStats.activeCount}
-                </Text>
-              </View>
-              <View style={statDivider} />
-              <View style={statColumn}>
-                <Text style={statLabel}>Tercapai</Text>
-                <Text style={[statValue, { color: DS.success }]}>
-                  {totalStats.completedCount}
-                </Text>
-              </View>
-              <View style={statDivider} />
-              <View style={statColumn}>
-                <Text style={statLabel}>Total</Text>
-                <Text style={statValue}>{savings.length}</Text>
-              </View>
+            {/* Overall progress bar */}
+            <ThinBar progress={totalStats.overallProgress} color={utilizationColor} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+              <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                {totalStats.overallProgress.toFixed(1)}% tercapai
+              </Text>
+              <Text style={{ fontSize: 10, fontWeight: "600", color: utilizationColor }}>
+                {totalStats.overallProgress >= 100
+                  ? "Semua tercapai! 🎉"
+                  : totalStats.overallProgress >= 75
+                  ? "Hampir sampai"
+                  : "Terus menabung"}
+              </Text>
             </View>
           </View>
         )}
 
-        {/* Filter Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={tw`mb-4`}
-          contentContainerStyle={tw`flex-row gap-2`}
+        {/* ── Filter — segmented control ────────────────────────────────── */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: 13,
+            padding: 3,
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+          }}
         >
-          {filterTabs.map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={filter === tab.key ? filterPillActive : filterPill}
-              onPress={() => setFilter(tab.key as any)}
-            >
-              <Text
-                style={
-                  filter === tab.key ? filterPillTextActive : filterPillText
-                }
+          {filterTabs.map((tab) => {
+            const isActive = filter === tab.key;
+            const tabColor =
+              tab.key === "completed" ? SUCCESS_COLOR :
+              tab.key === "active"    ? ACCENT_COLOR : Colors.gray400;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  backgroundColor: isActive ? `${tabColor}20` : "transparent",
+                }}
+                onPress={() => setFilter(tab.key as any)}
+                activeOpacity={0.7}
               >
-                {tab.label} ({tab.count})
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: isActive ? "700" : "500",
+                    color: isActive ? tabColor : Colors.gray400,
+                  }}
+                >
+                  {tab.label}
+                </Text>
+                {tab.count > 0 && (
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      color: isActive ? tabColor : Colors.gray400,
+                      marginTop: 1,
+                      fontWeight: isActive ? "700" : "400",
+                    }}
+                  >
+                    {tab.count}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        {/* Savings Cards */}
+        {/* ── Savings list / empty state ────────────────────────────────── */}
+        <SectionHeader
+          title={filter === "completed" ? "Tabungan Tercapai" : filter === "active" ? "Tabungan Aktif" : "Semua Tabungan"}
+        />
+
         {filteredSavings.length === 0 ? (
-          <View style={emptyState}>
-            <Ionicons name="wallet-outline" size={48} color={DS.textMuted} />
-            <Text style={emptyTitle}>
-              {filter === "all"
-                ? "Belum ada tabungan"
-                : "Tidak ada tabungan"}
+          <View
+            style={{
+              alignItems: "center",
+              paddingVertical: 48,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              paddingHorizontal: 24,
+            }}
+          >
+            <View
+              style={{
+                width: 64, height: 64, borderRadius: 20,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: `${Colors.gray400}14`,
+                marginBottom: 14,
+              }}
+            >
+              <Ionicons name="wallet-outline" size={26} color={Colors.gray400} />
+            </View>
+            <Text
+              style={{
+                color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700",
+                marginBottom: 6, textAlign: "center",
+              }}
+            >
+              {filter === "all" ? "Belum ada tabungan" : "Tidak ada tabungan"}
             </Text>
-            <Text style={emptySubtitle}>
+            <Text
+              style={{
+                color: Colors.gray400, fontSize: 12,
+                textAlign: "center", lineHeight: 18, marginBottom: 20,
+              }}
+            >
               {filter === "all"
                 ? "Mulai dengan membuat target tabungan pertama Anda"
-                : `Tidak ada tabungan dengan status "${filter}"`}
+                : `Tidak ada tabungan dengan status "${filterTabs.find(t => t.key === filter)?.label}"`}
             </Text>
             {filter === "all" && (
               <TouchableOpacity
-                style={primaryButton}
+                style={{
+                  flexDirection: "row", alignItems: "center",
+                  paddingHorizontal: 20, paddingVertical: 10,
+                  borderRadius: 13, backgroundColor: ACCENT_COLOR,
+                  shadowColor: ACCENT_COLOR,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+                }}
                 onPress={() => navigation.navigate("AddSavings")}
+                activeOpacity={0.8}
               >
-                <Ionicons name="add-circle" size={18} color="#FFFFFF" />
-                <Text style={primaryButtonText}>Buat Target Tabungan</Text>
+                <Ionicons name="add" size={16} color={BACKGROUND_COLOR} style={{ marginRight: 6 }} />
+                <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>
+                  Buat Target Pertama
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         ) : (
-          filteredSavings.map((saving) => {
-            const current = safeNumber(saving.current);
-            const target = safeNumber(saving.target);
-            const progress = getSafePercentage(current, target);
-            const remaining = target - current;
-            const progressColor = getProgressColor(progress);
-            const iconName = getIcon(saving);
-            const isCompleted = current >= target;
+          <View>
+            {filteredSavings.map((saving) => {
+              const current       = safeNumber(saving.current);
+              const target        = safeNumber(saving.target);
+              const progress      = getSafePercentage(current, target);
+              const remaining     = target - current;
+              const progressColor = getProgressColor(progress);
+              const iconName      = getIcon(saving);
+              const isCompleted   = current >= target;
 
-            return (
-              <View key={saving.id} style={[cardPadded, tw`mb-3`]}>
-                {/* Row 1: Icon + Name + Actions */}
+              return (
                 <View
-                  style={tw`flex-row justify-between items-center mb-3`}
+                  key={saving.id}
+                  style={{
+                    backgroundColor: SURFACE_COLOR,
+                    borderRadius: CARD_RADIUS,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    padding: CARD_PAD,
+                    marginBottom: 12,
+                    borderLeftWidth: 3,
+                    borderLeftColor: progressColor,
+                  }}
                 >
-                  <View style={tw`flex-row items-center gap-3 flex-1`}>
-                    <View
-                      style={[
-                        tw`w-10 h-10 rounded-full items-center justify-center`,
-                        { backgroundColor: progressColor + "20" },
-                      ]}
-                    >
-                      <Ionicons
-                        name={iconName}
-                        size={18}
-                        color={progressColor}
-                      />
-                    </View>
-                    <View style={tw`flex-1`}>
-                      <Text
+                  {/* Row 1: Icon + Name + Actions */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 8 }}>
+                      {/* Icon */}
+                      <View
                         style={{
-                          fontSize: 15,
-                          fontWeight: "600",
-                          color: DS.text,
+                          width: 38, height: 38, borderRadius: 12,
+                          alignItems: "center", justifyContent: "center",
+                          backgroundColor: `${progressColor}15`,
                         }}
                       >
-                        {saving.name}
-                      </Text>
-                      {saving.category && (
+                        <Ionicons name={iconName} size={17} color={progressColor} />
+                      </View>
+                      <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 11,
-                            color: DS.textMuted,
+                            color: TEXT_PRIMARY, fontSize: 14,
+                            fontWeight: "700", marginBottom: 2,
                           }}
                         >
-                          {saving.category.charAt(0).toUpperCase() +
-                            saving.category.slice(1)}
+                          {saving.name}
                         </Text>
-                      )}
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          {saving.category && (
+                            <View
+                              style={{
+                                paddingHorizontal: 7, paddingVertical: 2,
+                                borderRadius: 20, backgroundColor: `${ACCENT_COLOR}15`,
+                                borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
+                              }}
+                            >
+                              <Text style={{ color: ACCENT_COLOR, fontSize: 9, fontWeight: "600" }}>
+                                {saving.category.charAt(0).toUpperCase() + saving.category.slice(1)}
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                            {formatDeadline(saving.deadline)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Action buttons */}
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      <TouchableOpacity
+                        style={{
+                          width: 34, height: 34, borderRadius: 10,
+                          alignItems: "center", justifyContent: "center",
+                          backgroundColor: `${SUCCESS_COLOR}15`,
+                          borderWidth: 1, borderColor: `${SUCCESS_COLOR}20`,
+                        }}
+                        onPress={() =>
+                          navigation.navigate("AddSavingsTransaction", {
+                            savingsId: saving.id,
+                            type: "deposit",
+                          })
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="add" size={15} color={SUCCESS_COLOR} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          width: 34, height: 34, borderRadius: 10,
+                          alignItems: "center", justifyContent: "center",
+                          backgroundColor: `${ACCENT_COLOR}15`,
+                          borderWidth: 1, borderColor: `${ACCENT_COLOR}20`,
+                        }}
+                        onPress={() =>
+                          navigation.navigate("AddSavings", {
+                            editMode: true,
+                            savingsData: saving,
+                          })
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          width: 34, height: 34, borderRadius: 10,
+                          alignItems: "center", justifyContent: "center",
+                          backgroundColor: `${ERROR_COLOR}15`,
+                          borderWidth: 1, borderColor: `${ERROR_COLOR}20`,
+                        }}
+                        onPress={() => handleDelete(saving)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View style={tw`flex-row gap-2`}>
-                    <TouchableOpacity
-                      style={iconButton}
-                      onPress={() =>
-                        navigation.navigate("AddSavingsTransaction", {
-                          savingsId: saving.id,
-                          type: "deposit",
-                        })
-                      }
-                    >
-                      <Ionicons name="add" size={16} color={DS.accent} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={iconButton}
-                      onPress={() =>
-                        navigation.navigate("AddSavings", {
-                          editMode: true,
-                          savingsData: saving,
-                        })
-                      }
-                    >
-                      <Ionicons
-                        name="pencil-outline"
-                        size={16}
-                        color={DS.accent}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={iconButton}
-                      onPress={() => handleDelete(saving)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={16}
-                        color={DS.error}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
 
-                {/* Row 2: Progress */}
-                <View style={tw`mb-3`}>
-                  <View
-                    style={tw`flex-row justify-between items-center mb-1`}
-                  >
-                    <Text style={{ fontSize: 12, color: DS.textSub }}>
-                      {formatCurrency(current)} / {formatCurrency(target)}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: isCompleted ? DS.success : DS.accent,
-                      }}
-                    >
-                      {progress.toFixed(1)}%
-                    </Text>
-                  </View>
-                  <View style={progressTrack}>
+                  {/* Row 2: Progress bar */}
+                  <View style={{ marginBottom: 12 }}>
                     <View
-                      style={progressFill(
-                        progressColor,
-                        Math.min(progress, 100)
-                      )}
-                    />
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 7,
+                      }}
+                    >
+                      <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>
+                        {formatCurrency(current)}
+                        <Text style={{ color: Colors.gray400 }}>
+                          {" "}/ {formatCurrency(target)}
+                        </Text>
+                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <View
+                          style={{
+                            paddingHorizontal: 8, paddingVertical: 2,
+                            borderRadius: 20, backgroundColor: `${progressColor}15`,
+                            borderWidth: 1, borderColor: `${progressColor}25`,
+                          }}
+                        >
+                          <Text style={{ color: progressColor, fontSize: 9, fontWeight: "700" }}>
+                            {isCompleted ? "Tercapai" : progress >= 50 ? "Berjalan" : "Dimulai"}
+                          </Text>
+                        </View>
+                        <Text style={{ color: progressColor, fontSize: 13, fontWeight: "800" }}>
+                          {progress.toFixed(0)}%
+                        </Text>
+                      </View>
+                    </View>
+                    <ThinBar progress={progress} color={progressColor} />
                   </View>
-                </View>
 
-                {/* Row 3: Details */}
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View>
-                    <Text style={statLabel}>Sisa</Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: remaining > 0 ? DS.success : DS.error,
-                      }}
-                    >
-                      {formatCurrency(remaining)}
-                    </Text>
-                  </View>
-                  <View style={tw`items-end`}>
-                    <Text style={statLabel}>Deadline</Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: saving.deadline ? DS.text : DS.textMuted,
-                      }}
-                    >
-                      {formatDeadline(saving.deadline)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={badge(DS.accent)}
-                    onPress={() =>
-                      navigation.navigate("SavingsDetail", {
-                        savingsId: saving.id,
-                      })
-                    }
-                  >
-                    <Text style={badgeText(DS.accent)}>Detail</Text>
-                  </TouchableOpacity>
-                </View>
+                  {/* Row 3: Stats row */}
+                  <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: 12 }} />
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    {/* Terkumpul */}
+                    <View style={{ flex: 1, alignItems: "center" }}>
+                      <Text
+                        style={{
+                          color: Colors.gray400, fontSize: 9,
+                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                        }}
+                      >
+                        Terkumpul
+                      </Text>
+                      <Text style={{ color: ACCENT_COLOR, fontSize: 13, fontWeight: "700" }}>
+                        {formatCurrency(current)}
+                      </Text>
+                    </View>
 
-                {/* Row 4: Status */}
-                <View style={cardSeparator} />
-                <View style={tw`flex-row justify-between items-center`}>
-                  <View style={tw`flex-row items-center gap-1`}>
-                    <Ionicons
-                      name={
-                        isCompleted ? "checkmark-circle" : "time"
-                      }
-                      size={14}
-                      color={isCompleted ? DS.success : progressColor}
-                    />
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: "500",
-                        color: isCompleted ? DS.success : progressColor,
-                      }}
-                    >
-                      {isCompleted
-                        ? "Tercapai"
-                        : progress >= 50
-                        ? "Sedang berjalan"
-                        : "Baru dimulai"}
-                    </Text>
+                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
+
+                    {/* Sisa */}
+                    <View style={{ flex: 1, alignItems: "center" }}>
+                      <Text
+                        style={{
+                          color: Colors.gray400, fontSize: 9,
+                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                        }}
+                      >
+                        Sisa
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 13, fontWeight: "700",
+                          color: remaining <= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                        }}
+                      >
+                        {remaining <= 0 ? "Lunas 🎉" : formatCurrency(remaining)}
+                      </Text>
+                    </View>
+
+                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
+
+                    {/* Detail button */}
+                    <View style={{ flex: 1, alignItems: "center" }}>
+                      <TouchableOpacity
+                        style={{
+                          paddingHorizontal: 14, paddingVertical: 6,
+                          borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`,
+                          borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
+                        }}
+                        onPress={() =>
+                          navigation.navigate("SavingsDetail", { savingsId: saving.id })
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>
+                          Detail
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <Text style={{ fontSize: 11, color: DS.textMuted }}>
-                    Dibuat: {formatDateShort(saving.createdAt)}
-                  </Text>
                 </View>
-              </View>
-            );
-          })
+              );
+            })}
+          </View>
         )}
       </ScrollView>
 
-      {/* FAB Add Savings */}
-      <TouchableOpacity
-        style={[
-          tw`absolute bottom-5 right-4 w-14 h-14 rounded-2xl justify-center items-center shadow-lg`,
-          { backgroundColor: DS.accent },
-        ]}
-        onPress={() => navigation.navigate("AddSavings")}
-        activeOpacity={0.8}
+      {/* ── FAB ──────────────────────────────────────────────────────────── */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          bottom: 24,
+          right: 18,
+          width: 52,
+          height: 52,
+          borderRadius: 16,
+          backgroundColor: ACCENT_COLOR,
+          shadowColor: ACCENT_COLOR,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
+          elevation: 10,
+          transform: [{ scale: fabScaleAnim }],
+        }}
       >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
+          onPress={() => navigation.navigate("AddSavings")}
+          onPressIn={fabPressIn}
+          onPressOut={fabPressOut}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={26} color={BACKGROUND_COLOR} />
+        </TouchableOpacity>
+      </Animated.View>
+    </SafeAreaView>
   );
 };
 
