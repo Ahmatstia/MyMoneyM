@@ -1,12 +1,17 @@
-// File: src/screens/Calendar/CalendarScreen.tsx - FIXED VERSION WITH NAVY BLUE THEME
+// File: src/screens/Calendar/CalendarScreen.tsx
 import React, { useState, useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  Animated,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "twrnc";
 
-// FIXED IMPORTS
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency } from "../../utils/calculations";
 import {
@@ -16,22 +21,117 @@ import {
 } from "../../utils/calendarCalculations";
 import { Colors } from "../../theme/theme";
 
-// Type definition untuk IconName
 type IconName = keyof typeof Ionicons.glyphMap;
 
-// GUNAKAN WARNA DARI TEMA NAVY BLUE
-const PRIMARY_COLOR = Colors.primary; // "#0F172A" - Navy blue gelap
-const ACCENT_COLOR = Colors.accent; // "#22D3EE" - Cyan terang
-const BACKGROUND_COLOR = Colors.background; // "#0F172A" - Background navy blue gelap
-const SURFACE_COLOR = Colors.surface; // "#1E293B" - Permukaan navy blue medium
-const TEXT_PRIMARY = Colors.textPrimary; // "#F8FAFC" - Teks utama putih
-const TEXT_SECONDARY = Colors.textSecondary; // "#CBD5E1" - Teks sekunder abu-abu muda
-const BORDER_COLOR = Colors.border; // "#334155" - Border navy blue lebih terang
-const SUCCESS_COLOR = Colors.success; // "#10B981" - Hijau
-const WARNING_COLOR = Colors.warning; // "#F59E0B" - Kuning
-const ERROR_COLOR = Colors.error; // "#EF4444" - Merah
-const INFO_COLOR = Colors.info; // "#3B82F6" - Biru terang
-const PURPLE_COLOR = Colors.purple || "#8B5CF6"; // Ungu
+// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const ACCENT_COLOR     = Colors.accent;
+const SUCCESS_COLOR    = Colors.success;
+const WARNING_COLOR    = Colors.warning;
+const ERROR_COLOR      = Colors.error;
+const INFO_COLOR       = Colors.info;
+const PURPLE_COLOR     = Colors.purple || "#8B5CF6";
+
+// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const SECTION_GAP  = 24;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
+
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
+  <View style={{ height: size }} />
+);
+
+const SectionHeader = ({
+  title,
+  linkLabel,
+  onPress,
+}: {
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
+}) => (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          width: 3,
+          height: 13,
+          backgroundColor: ACCENT_COLOR,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          color: Colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+    {linkLabel && onPress && (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+          {linkLabel}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+const Card = ({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: object;
+}) => (
+  <View
+    style={[
+      {
+        backgroundColor: SURFACE_COLOR,
+        borderRadius: CARD_RADIUS,
+        borderWidth: 1,
+        borderColor: CARD_BORDER,
+        padding: CARD_PAD,
+      },
+      style,
+    ]}
+  >
+    {children}
+  </View>
+);
+
+const VDivider = ({ height = 32 }: { height?: number }) => (
+  <View
+    style={{
+      width: 1,
+      height,
+      backgroundColor: CARD_BORDER,
+      marginHorizontal: 14,
+    }}
+  />
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const CalendarScreen: React.FC = () => {
   const { state } = useAppContext();
@@ -40,89 +140,92 @@ const CalendarScreen: React.FC = () => {
   );
   const [showDayDetail, setShowDayDetail] = useState<boolean>(false);
 
-  // Format marked dates from transactions
+  // ── Semua logika kalkulasi di bawah ini TIDAK DIUBAH ─────────────────────
+
   const markedDates = useMemo(() => {
     const marks: any = {};
-
     state.transactions.forEach((transaction) => {
       const date = transaction.date;
-
       if (!marks[date]) {
         marks[date] = {
           marked: true,
-          dotColor: transaction.type === "income" ? SUCCESS_COLOR : ERROR_COLOR,
+          dotColor:
+            transaction.type === "income" ? SUCCESS_COLOR : ERROR_COLOR,
           selected: date === selectedDate,
           selectedColor: ACCENT_COLOR,
         };
       } else {
-        // Jika sudah ada transaksi di tanggal itu, kasih dot warna ungu
         marks[date].dotColor = PURPLE_COLOR;
       }
     });
-
-    // Highlight selected date
     if (marks[selectedDate]) {
-      marks[selectedDate].selected = true;
+      marks[selectedDate].selected      = true;
       marks[selectedDate].selectedColor = ACCENT_COLOR;
     }
-
     return marks;
   }, [state.transactions, selectedDate]);
 
-  // Get transactions for selected date
-  const selectedDayTransactions = useMemo(() => {
-    return state.transactions.filter((t) => t.date === selectedDate);
-  }, [state.transactions, selectedDate]);
+  const selectedDayTransactions = useMemo(
+    () => state.transactions.filter((t) => t.date === selectedDate),
+    [state.transactions, selectedDate]
+  );
 
-  // Calculate totals for selected day
   const selectedDayTotals = useMemo(() => {
     let income = 0;
     let expense = 0;
-
     selectedDayTransactions.forEach((t) => {
       if (t.type === "income") income += t.amount;
       else expense += t.amount;
     });
-
     return { income, expense, net: income - expense };
   }, [selectedDayTransactions]);
 
-  // Calculate monthly overview
   const monthlyOverview = useMemo(() => {
     const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
+    const currentYear  = new Date().getFullYear();
     const monthTransactions = state.transactions.filter((t) => {
       const date = new Date(t.date);
       return (
-        date.getMonth() === currentMonth && date.getFullYear() === currentYear
+        date.getMonth() === currentMonth &&
+        date.getFullYear() === currentYear
       );
     });
-
     let totalIncome = 0;
     let totalExpense = 0;
     const daysWithTransactions = new Set<string>();
-
     monthTransactions.forEach((t) => {
       daysWithTransactions.add(t.date);
       if (t.type === "income") totalIncome += t.amount;
       else totalExpense += t.amount;
     });
-
     return {
       totalIncome,
       totalExpense,
       net: totalIncome - totalExpense,
-      transactionDays: daysWithTransactions.size,
-      totalTransactions: monthTransactions.length,
+      transactionDays:    daysWithTransactions.size,
+      totalTransactions:  monthTransactions.length,
     };
   }, [state.transactions]);
 
+  const calendarInsights = useMemo(
+    () => generateCalendarInsights(state.transactions),
+    [state.transactions]
+  );
+
+  const busiestDays = useMemo(
+    () => getBusiestDays(state.transactions, 3),
+    [state.transactions]
+  );
+
+  const highestSpendingDays = useMemo(
+    () => getHighestSpendingDays(state.transactions, 3),
+    [state.transactions]
+  );
+
   const handleDayPress = (day: DateData) => {
     setSelectedDate(day.dateString);
-    if (selectedDayTransactions.length > 0) {
-      setShowDayDetail(true);
-    }
+    const txs = state.transactions.filter((t) => t.date === day.dateString);
+    if (txs.length > 0) setShowDayDetail(true);
   };
 
   const getDaySummaryColor = () => {
@@ -131,615 +234,843 @@ const CalendarScreen: React.FC = () => {
     return TEXT_SECONDARY;
   };
 
-  // Calendar insights
-  const calendarInsights = useMemo(() => {
-    return generateCalendarInsights(state.transactions);
-  }, [state.transactions]);
+  const insightTypeColor = (type: string) =>
+    type === "warning"
+      ? ERROR_COLOR
+      : type === "success"
+      ? SUCCESS_COLOR
+      : INFO_COLOR;
 
-  // Busiest days and highest spending days
-  const busiestDays = useMemo(() => {
-    return getBusiestDays(state.transactions, 3);
-  }, [state.transactions]);
-
-  const highestSpendingDays = useMemo(() => {
-    return getHighestSpendingDays(state.transactions, 3);
-  }, [state.transactions]);
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={tw`pb-24`}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 100 }}
       >
-        {/* Header */}
-
-        {/* Monthly Stats */}
-        <View style={tw`px-4 mb-6 pt-5`}>
-          <View
-            style={[
-              tw`rounded-2xl p-4`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
+        {/* ── Page header ─────────────────────────────────────────────── */}
+        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
+          <Text
+            style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
           >
-            <Text
-              style={[
-                tw`text-xs font-medium mb-3 uppercase tracking-wider`,
-                { color: TEXT_SECONDARY },
-              ]}
-            >
-              Overview Bulan Ini
-            </Text>
+            Kalender
+          </Text>
+          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
+            {new Date().toLocaleDateString("id-ID", {
+              month: "long",
+              year: "numeric",
+            })}
+          </Text>
+        </View>
 
-            <View style={tw`flex-row justify-between mb-3`}>
-              <View>
-                <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
+        {/* ── Monthly overview hero card ───────────────────────────────── */}
+        <Card style={{ marginBottom: 20 }}>
+          <Text
+            style={{
+              color: Colors.gray400,
+              fontSize: 10,
+              fontWeight: "700",
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              marginBottom: 5,
+            }}
+          >
+            Overview Bulan Ini
+          </Text>
+          <Text
+            style={{
+              color:
+                monthlyOverview.net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+              fontSize: 30,
+              fontWeight: "800",
+              letterSpacing: -0.5,
+              marginBottom: 16,
+            }}
+          >
+            {formatCurrency(monthlyOverview.net)}
+          </Text>
+
+          {/* Income / Expense row */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <View style={{ flex: 1 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
+              >
+                <View
+                  style={{
+                    width: 6, height: 6, borderRadius: 3,
+                    backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: Colors.gray400, fontSize: 9,
+                    textTransform: "uppercase", letterSpacing: 0.8,
+                  }}
+                >
                   Pemasukan
                 </Text>
-                <Text style={[tw`text-lg font-bold`, { color: SUCCESS_COLOR }]}>
-                  {formatCurrency(monthlyOverview.totalIncome)}
-                </Text>
               </View>
+              <Text
+                style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}
+              >
+                {formatCurrency(monthlyOverview.totalIncome)}
+              </Text>
+            </View>
 
-              <View>
-                <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
+            <VDivider />
+
+            <View style={{ flex: 1 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
+              >
+                <View
+                  style={{
+                    width: 6, height: 6, borderRadius: 3,
+                    backgroundColor: ERROR_COLOR, marginRight: 5,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: Colors.gray400, fontSize: 9,
+                    textTransform: "uppercase", letterSpacing: 0.8,
+                  }}
+                >
                   Pengeluaran
                 </Text>
-                <Text style={[tw`text-lg font-bold`, { color: ERROR_COLOR }]}>
-                  {formatCurrency(monthlyOverview.totalExpense)}
-                </Text>
               </View>
-
-              <View>
-                <Text style={[tw`text-xs mb-1`, { color: TEXT_SECONDARY }]}>
-                  Bersih
-                </Text>
-                <Text
-                  style={[
-                    tw`text-lg font-bold`,
-                    {
-                      color:
-                        monthlyOverview.net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-                    },
-                  ]}
-                >
-                  {formatCurrency(monthlyOverview.net)}
-                </Text>
-              </View>
-            </View>
-
-            <View
-              style={[
-                tw`flex-row justify-between pt-3`,
-                { borderTopWidth: 1, borderTopColor: BORDER_COLOR },
-              ]}
-            >
-              <View style={tw`items-center`}>
-                <Text
-                  style={[tw`text-sm font-medium`, { color: TEXT_PRIMARY }]}
-                >
-                  {monthlyOverview.transactionDays}
-                </Text>
-                <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                  Hari Aktif
-                </Text>
-              </View>
-
-              <View style={[tw`w-px h-8`, { backgroundColor: BORDER_COLOR }]} />
-
-              <View style={tw`items-center`}>
-                <Text
-                  style={[tw`text-sm font-medium`, { color: TEXT_PRIMARY }]}
-                >
-                  {monthlyOverview.totalTransactions}
-                </Text>
-                <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                  Transaksi
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Calendar */}
-        <View style={tw`px-4 mb-6`}>
-          <View
-            style={[
-              tw`rounded-2xl overflow-hidden`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
-          >
-            <Calendar
-              current={selectedDate}
-              onDayPress={handleDayPress}
-              markedDates={markedDates}
-              theme={{
-                backgroundColor: SURFACE_COLOR,
-                calendarBackground: SURFACE_COLOR,
-                textSectionTitleColor: ACCENT_COLOR,
-                selectedDayBackgroundColor: ACCENT_COLOR,
-                selectedDayTextColor: "#FFFFFF",
-                todayTextColor: ACCENT_COLOR,
-                dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.textTertiary,
-                dotColor: ACCENT_COLOR,
-                selectedDotColor: "#FFFFFF",
-                arrowColor: ACCENT_COLOR,
-                monthTextColor: TEXT_PRIMARY,
-                textDayFontSize: 14,
-                textMonthFontSize: 16,
-                textDayHeaderFontSize: 13,
-              }}
-              style={tw`rounded-2xl`}
-            />
-          </View>
-        </View>
-
-        {/* Insights Section */}
-        {calendarInsights.length > 0 && (
-          <View style={tw`px-4 mb-6`}>
-            <Text
-              style={[tw`text-lg font-semibold mb-3`, { color: TEXT_PRIMARY }]}
-            >
-              Insights Kalender
-            </Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={tw`pr-5`}
-            >
-              {calendarInsights.map((insight, index) => (
-                <View
-                  key={index}
-                  style={[
-                    tw`w-64 rounded-2xl p-4 mr-3`,
-                    {
-                      backgroundColor: SURFACE_COLOR,
-                      borderWidth: 1,
-                      borderColor: BORDER_COLOR,
-                    },
-                    insight.type === "warning" && {
-                      backgroundColor: Colors.error + "10",
-                      borderColor: Colors.error + "30",
-                    },
-                    insight.type === "info" && {
-                      backgroundColor: Colors.info + "10",
-                      borderColor: Colors.info + "30",
-                    },
-                    insight.type === "success" && {
-                      backgroundColor: Colors.success + "10",
-                      borderColor: Colors.success + "30",
-                    },
-                  ]}
-                >
-                  <View style={tw`flex-row items-center mb-2`}>
-                    <View
-                      style={[
-                        tw`w-8 h-8 rounded-lg items-center justify-center mr-2`,
-                        insight.type === "warning" && {
-                          backgroundColor: Colors.error + "20",
-                        },
-                        insight.type === "info" && {
-                          backgroundColor: Colors.info + "20",
-                        },
-                        insight.type === "success" && {
-                          backgroundColor: Colors.success + "20",
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={insight.icon as IconName}
-                        size={16}
-                        color={
-                          insight.type === "warning"
-                            ? ERROR_COLOR
-                            : insight.type === "info"
-                            ? INFO_COLOR
-                            : SUCCESS_COLOR
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        tw`text-sm font-semibold flex-1`,
-                        insight.type === "warning" && { color: ERROR_COLOR },
-                        insight.type === "info" && { color: INFO_COLOR },
-                        insight.type === "success" && { color: SUCCESS_COLOR },
-                      ]}
-                    >
-                      {insight.title}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[
-                      tw`text-xs`,
-                      insight.type === "warning" && { color: ERROR_COLOR },
-                      insight.type === "info" && { color: INFO_COLOR },
-                      insight.type === "success" && { color: SUCCESS_COLOR },
-                    ]}
-                  >
-                    {insight.message}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Stats Grid */}
-        <View style={tw`px-4 mb-6`}>
-          <View style={tw`flex-row flex-wrap -mx-1`}>
-            {/* Busiest Days */}
-            <View style={tw`w-1/2 px-1 mb-2`}>
-              <View
-                style={[
-                  tw`rounded-2xl p-3`,
-                  {
-                    backgroundColor: SURFACE_COLOR,
-                    borderWidth: 1,
-                    borderColor: BORDER_COLOR,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    tw`text-sm font-medium mb-2`,
-                    { color: TEXT_PRIMARY },
-                  ]}
-                >
-                  Hari Teraktif
-                </Text>
-                {busiestDays.map((day, index) => (
-                  <View
-                    key={index}
-                    style={tw`flex-row justify-between items-center py-1`}
-                  >
-                    <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                      {new Date(day.date).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </Text>
-                    <View style={tw`flex-row items-center`}>
-                      <Text
-                        style={[
-                          tw`text-xs font-medium mr-1`,
-                          { color: TEXT_PRIMARY },
-                        ]}
-                      >
-                        {day.count}x
-                      </Text>
-                      <Ionicons name="pulse" size={12} color={ACCENT_COLOR} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Highest Spending Days */}
-            <View style={tw`w-1/2 px-1 mb-2`}>
-              <View
-                style={[
-                  tw`rounded-2xl p-3`,
-                  {
-                    backgroundColor: SURFACE_COLOR,
-                    borderWidth: 1,
-                    borderColor: BORDER_COLOR,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    tw`text-sm font-medium mb-2`,
-                    { color: TEXT_PRIMARY },
-                  ]}
-                >
-                  Pengeluaran Tertinggi
-                </Text>
-                {highestSpendingDays.map((day, index) => (
-                  <View
-                    key={index}
-                    style={tw`flex-row justify-between items-center py-1`}
-                  >
-                    <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                      {new Date(day.date).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </Text>
-                    <Text
-                      style={[tw`text-xs font-medium`, { color: ERROR_COLOR }]}
-                    >
-                      {formatCurrency(day.expense).replace("Rp", "")}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Selected Day Summary */}
-        <View style={tw`px-4`}>
-          <TouchableOpacity
-            style={[
-              tw`rounded-2xl p-4`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
-            onPress={() => setShowDayDetail(true)}
-            disabled={selectedDayTransactions.length === 0}
-            activeOpacity={0.7}
-          >
-            <View style={tw`flex-row justify-between items-center mb-3`}>
               <Text
-                style={[tw`text-lg font-semibold`, { color: TEXT_PRIMARY }]}
+                style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}
+              >
+                {formatCurrency(monthlyOverview.totalExpense)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Divider + stats row */}
+          <View
+            style={{
+              height: 1, backgroundColor: CARD_BORDER, marginBottom: 14,
+            }}
+          />
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <Text
+                style={{
+                  color: Colors.gray400, fontSize: 9,
+                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                }}
+              >
+                Hari Aktif
+              </Text>
+              <Text
+                style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700" }}
+              >
+                {monthlyOverview.transactionDays}
+              </Text>
+            </View>
+            <View
+              style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
+            />
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <Text
+                style={{
+                  color: Colors.gray400, fontSize: 9,
+                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                }}
+              >
+                Transaksi
+              </Text>
+              <Text
+                style={{ color: ACCENT_COLOR, fontSize: 17, fontWeight: "700" }}
+              >
+                {monthlyOverview.totalTransactions}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* ── Calendar card ────────────────────────────────────────────── */}
+        <View
+          style={{
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: CARD_RADIUS,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+            overflow: "hidden",
+            marginBottom: 20,
+          }}
+        >
+          <Calendar
+            current={selectedDate}
+            onDayPress={handleDayPress}
+            markedDates={markedDates}
+            theme={{
+              backgroundColor:            SURFACE_COLOR,
+              calendarBackground:         SURFACE_COLOR,
+              textSectionTitleColor:      Colors.gray400,
+              selectedDayBackgroundColor: ACCENT_COLOR,
+              selectedDayTextColor:       BACKGROUND_COLOR,
+              todayTextColor:             ACCENT_COLOR,
+              dayTextColor:               TEXT_PRIMARY,
+              textDisabledColor:          Colors.textTertiary,
+              dotColor:                   ACCENT_COLOR,
+              selectedDotColor:           BACKGROUND_COLOR,
+              arrowColor:                 ACCENT_COLOR,
+              monthTextColor:             TEXT_PRIMARY,
+              textMonthFontWeight:        "700",
+              textDayFontSize:            14,
+              textMonthFontSize:          16,
+              textDayHeaderFontSize:      12,
+            }}
+          />
+
+          {/* Legend strip */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 16,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderTopWidth: 1,
+              borderTopColor: CARD_BORDER,
+            }}
+          >
+            {[
+              { color: SUCCESS_COLOR, label: "Pemasukan" },
+              { color: ERROR_COLOR,   label: "Pengeluaran" },
+              { color: PURPLE_COLOR,  label: "Keduanya" },
+              { color: ACCENT_COLOR,  label: "Dipilih" },
+            ].map((item) => (
+              <View
+                key={item.label}
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <View
+                  style={{
+                    width: 7, height: 7, borderRadius: 4,
+                    backgroundColor: item.color, marginRight: 5,
+                  }}
+                />
+                <Text
+                  style={{ color: Colors.gray400, fontSize: 10 }}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Selected day summary card ────────────────────────────────── */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: CARD_RADIUS,
+            borderWidth: 1,
+            borderColor:
+              selectedDayTransactions.length > 0
+                ? `${ACCENT_COLOR}30`
+                : CARD_BORDER,
+            padding: CARD_PAD,
+            marginBottom: 20,
+          }}
+          onPress={() => setShowDayDetail(true)}
+          disabled={selectedDayTransactions.length === 0}
+          activeOpacity={0.7}
+        >
+          {/* Date title row */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: selectedDayTransactions.length > 0 ? 14 : 0,
+            }}
+          >
+            <View>
+              <Text
+                style={{
+                  color: Colors.gray400, fontSize: 10, fontWeight: "700",
+                  letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 4,
+                }}
+              >
+                Tanggal Dipilih
+              </Text>
+              <Text
+                style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}
               >
                 {new Date(selectedDate).toLocaleDateString("id-ID", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
+                  weekday: "long", day: "numeric", month: "long", year: "numeric",
                 })}
               </Text>
-
-              {selectedDayTransactions.length > 0 ? (
-                <View style={tw`flex-row items-center`}>
-                  <Text
-                    style={[
-                      tw`text-sm font-medium mr-2`,
-                      { color: getDaySummaryColor() },
-                    ]}
-                  >
-                    {formatCurrency(selectedDayTotals.net)}
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={TEXT_SECONDARY}
-                  />
-                </View>
-              ) : (
-                <Text style={[tw`text-sm`, { color: Colors.textTertiary }]}>
-                  Tidak ada transaksi
-                </Text>
-              )}
             </View>
 
             {selectedDayTransactions.length > 0 ? (
-              <View style={tw`flex-row justify-between`}>
-                <View style={tw`items-center flex-1`}>
-                  <Text
-                    style={[tw`text-lg font-bold`, { color: SUCCESS_COLOR }]}
-                  >
-                    {formatCurrency(selectedDayTotals.income)}
-                  </Text>
-                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                    Pemasukan
-                  </Text>
-                </View>
-
-                <View
-                  style={[tw`w-px h-10`, { backgroundColor: BORDER_COLOR }]}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text
+                  style={{
+                    fontSize: 14, fontWeight: "700",
+                    color: getDaySummaryColor(),
+                  }}
+                >
+                  {selectedDayTotals.net >= 0 ? "+" : ""}
+                  {formatCurrency(selectedDayTotals.net)}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={14}
+                  color={Colors.gray400}
                 />
-
-                <View style={tw`items-center flex-1`}>
-                  <Text style={[tw`text-lg font-bold`, { color: ERROR_COLOR }]}>
-                    {formatCurrency(selectedDayTotals.expense)}
-                  </Text>
-                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                    Pengeluaran
-                  </Text>
-                </View>
               </View>
             ) : (
-              <View style={tw`items-center py-4`}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={32}
-                  color={Colors.textTertiary}
-                  style={tw`mb-2`}
-                />
-                <Text style={[tw`text-sm`, { color: TEXT_SECONDARY }]}>
-                  Tidak ada transaksi di tanggal ini
-                </Text>
-                <Text
-                  style={[tw`text-xs mt-1`, { color: Colors.textTertiary }]}
-                >
-                  Tap tanggal lain yang memiliki indikator
+              <View
+                style={{
+                  paddingHorizontal: 10, paddingVertical: 4,
+                  borderRadius: 20, backgroundColor: "rgba(255,255,255,0.05)",
+                }}
+              >
+                <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                  Kosong
                 </Text>
               </View>
             )}
-          </TouchableOpacity>
-        </View>
+          </View>
 
-        {/* Legend */}
-        <View style={tw`px-4 mt-6`}>
-          <View
-            style={[
-              tw`rounded-2xl p-3`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
-          >
-            <Text
-              style={[tw`text-xs font-medium mb-2`, { color: TEXT_SECONDARY }]}
-            >
-              Kode Warna Kalender
-            </Text>
-
-            <View style={tw`flex-row flex-wrap gap-3`}>
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={[
-                    tw`w-3 h-3 rounded-full mr-2`,
-                    { backgroundColor: SUCCESS_COLOR },
-                  ]}
-                />
-                <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
-                  Pemasukan
+          {selectedDayTransactions.length > 0 ? (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: Colors.gray400, fontSize: 9,
+                    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                  }}
+                >
+                  Masuk
+                </Text>
+                <Text
+                  style={{ color: SUCCESS_COLOR, fontSize: 15, fontWeight: "700" }}
+                >
+                  {formatCurrency(selectedDayTotals.income)}
                 </Text>
               </View>
-
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={[
-                    tw`w-3 h-3 rounded-full mr-2`,
-                    { backgroundColor: ERROR_COLOR },
-                  ]}
-                />
-                <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
-                  Pengeluaran
+              <View
+                style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
+              />
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: Colors.gray400, fontSize: 9,
+                    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                  }}
+                >
+                  Keluar
+                </Text>
+                <Text
+                  style={{ color: ERROR_COLOR, fontSize: 15, fontWeight: "700" }}
+                >
+                  {formatCurrency(selectedDayTotals.expense)}
                 </Text>
               </View>
-
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={[
-                    tw`w-3 h-3 rounded-full mr-2`,
-                    { backgroundColor: PURPLE_COLOR },
-                  ]}
-                />
-                <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
-                  Keduanya
+              <View
+                style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
+              />
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text
+                  style={{
+                    color: Colors.gray400, fontSize: 9,
+                    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                  }}
+                >
+                  Transaksi
                 </Text>
-              </View>
-
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={[
-                    tw`w-3 h-3 rounded-full mr-2`,
-                    { backgroundColor: ACCENT_COLOR },
-                  ]}
-                />
-                <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
-                  Dipilih
+                <Text
+                  style={{ color: ACCENT_COLOR, fontSize: 15, fontWeight: "700" }}
+                >
+                  {selectedDayTransactions.length}
                 </Text>
               </View>
             </View>
+          ) : (
+            <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 4 }}>
+              <Ionicons
+                name="calendar-outline"
+                size={28}
+                color={Colors.gray400}
+                style={{ marginBottom: 8 }}
+              />
+              <Text style={{ color: Colors.gray400, fontSize: 12 }}>
+                Tidak ada transaksi di tanggal ini
+              </Text>
+              <Text
+                style={{ color: Colors.gray400, fontSize: 10, marginTop: 3 }}
+              >
+                Tap tanggal lain yang memiliki indikator
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* ── Calendar insights — horizontal scroll ────────────────────── */}
+        {calendarInsights.length > 0 && (
+          <>
+            <SectionHeader title="Insights Kalender" />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 4, gap: 10, marginBottom: 20 }}
+              style={{ marginBottom: 6 }}
+            >
+              {calendarInsights.map((insight, index) => {
+                const color = insightTypeColor(insight.type);
+                return (
+                  <View
+                    key={index}
+                    style={{
+                      width: 220,
+                      backgroundColor: `${color}09`,
+                      borderRadius: INNER_RADIUS,
+                      borderWidth: 1,
+                      borderColor: `${color}20`,
+                      padding: 14,
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
+                    >
+                      <View
+                        style={{
+                          width: 32, height: 32, borderRadius: 10,
+                          alignItems: "center", justifyContent: "center",
+                          backgroundColor: `${color}18`, marginRight: 10,
+                        }}
+                      >
+                        <Ionicons
+                          name={insight.icon as IconName}
+                          size={15}
+                          color={color}
+                        />
+                      </View>
+                      <Text
+                        style={{
+                          color, fontSize: 12, fontWeight: "700", flex: 1,
+                        }}
+                      >
+                        {insight.title}
+                      </Text>
+                    </View>
+                    <Text
+                      style={{ color: TEXT_SECONDARY, fontSize: 11, lineHeight: 16 }}
+                    >
+                      {insight.message}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
+
+        {/* ── Stats grid: Busiest + Highest Spending ───────────────────── */}
+        <SectionHeader title="Statistik Kalender" />
+        <View
+          style={{ flexDirection: "row", gap: 12, marginBottom: 4 }}
+        >
+          {/* Hari Teraktif */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 16,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+            >
+              <View
+                style={{
+                  width: 30, height: 30, borderRadius: 9,
+                  alignItems: "center", justifyContent: "center",
+                  backgroundColor: `${ACCENT_COLOR}18`, marginRight: 8,
+                }}
+              >
+                <Ionicons name="pulse" size={14} color={ACCENT_COLOR} />
+              </View>
+              <Text
+                style={{
+                  color: Colors.gray400, fontSize: 9, fontWeight: "700",
+                  letterSpacing: 1.2, textTransform: "uppercase",
+                }}
+              >
+                Teraktif
+              </Text>
+            </View>
+            {busiestDays.length > 0 ? (
+              busiestDays.map((day, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 6,
+                    borderBottomWidth: index < busiestDays.length - 1 ? 1 : 0,
+                    borderBottomColor: CARD_BORDER,
+                  }}
+                >
+                  <Text style={{ color: TEXT_SECONDARY, fontSize: 11 }}>
+                    {new Date(day.date).toLocaleDateString("id-ID", {
+                      day: "numeric", month: "short",
+                    })}
+                  </Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 8, paddingVertical: 2,
+                      borderRadius: 20, backgroundColor: `${ACCENT_COLOR}15`,
+                    }}
+                  >
+                    <Text
+                      style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}
+                    >
+                      {day.count}x
+                    </Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+                Belum ada data
+              </Text>
+            )}
+          </View>
+
+          {/* Pengeluaran Tertinggi */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 16,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+            >
+              <View
+                style={{
+                  width: 30, height: 30, borderRadius: 9,
+                  alignItems: "center", justifyContent: "center",
+                  backgroundColor: `${ERROR_COLOR}18`, marginRight: 8,
+                }}
+              >
+                <Ionicons name="trending-up-outline" size={14} color={ERROR_COLOR} />
+              </View>
+              <Text
+                style={{
+                  color: Colors.gray400, fontSize: 9, fontWeight: "700",
+                  letterSpacing: 1.2, textTransform: "uppercase",
+                }}
+              >
+                Tertinggi
+              </Text>
+            </View>
+            {highestSpendingDays.length > 0 ? (
+              highestSpendingDays.map((day, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 6,
+                    borderBottomWidth: index < highestSpendingDays.length - 1 ? 1 : 0,
+                    borderBottomColor: CARD_BORDER,
+                  }}
+                >
+                  <Text style={{ color: TEXT_SECONDARY, fontSize: 11 }}>
+                    {new Date(day.date).toLocaleDateString("id-ID", {
+                      day: "numeric", month: "short",
+                    })}
+                  </Text>
+                  <Text
+                    style={{ color: ERROR_COLOR, fontSize: 11, fontWeight: "700" }}
+                  >
+                    {formatCurrency(day.expense).replace("Rp", "").trim()}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+                Belum ada data
+              </Text>
+            )}
           </View>
         </View>
       </ScrollView>
 
-      {/* Day Detail Modal */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          DAY DETAIL MODAL
+      ═══════════════════════════════════════════════════════════════════ */}
       <Modal
         visible={showDayDetail}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setShowDayDetail(false)}
       >
-        <View style={tw`flex-1 bg-black/50 justify-end`}>
+        <View
+          style={{ flex: 1, justifyContent: "flex-end" }}
+          pointerEvents="box-none"
+        >
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.55)",
+            }}
+            activeOpacity={1}
+            onPress={() => setShowDayDetail(false)}
+          />
+
           <View
-            style={[
-              tw`rounded-t-3xl max-h-3/4`,
-              { backgroundColor: SURFACE_COLOR },
-            ]}
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              maxHeight: "78%",
+              borderTopWidth: 1,
+              borderTopColor: CARD_BORDER,
+            }}
           >
+            {/* Drag handle */}
             <View
-              style={[
-                tw`p-5`,
-                { borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
-              ]}
+              style={{
+                width: 36, height: 4, borderRadius: 2,
+                backgroundColor: "rgba(255,255,255,0.15)",
+                alignSelf: "center", marginTop: 12, marginBottom: 4,
+              }}
+            />
+
+            {/* Modal header */}
+            <View
+              style={{
+                padding: CARD_PAD,
+                borderBottomWidth: 1,
+                borderBottomColor: CARD_BORDER,
+              }}
             >
-              <View style={tw`flex-row justify-between items-center mb-4`}>
-                <Text style={[tw`text-xl font-bold`, { color: TEXT_PRIMARY }]}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Text
+                  style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700" }}
+                >
                   Detail Transaksi
                 </Text>
-                <TouchableOpacity onPress={() => setShowDayDetail(false)}>
-                  <Ionicons name="close" size={24} color={TEXT_SECONDARY} />
+                <TouchableOpacity
+                  style={{
+                    width: 32, height: 32, borderRadius: 10,
+                    alignItems: "center", justifyContent: "center",
+                    backgroundColor: "rgba(255,255,255,0.07)",
+                  }}
+                  onPress={() => setShowDayDetail(false)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close" size={16} color={Colors.gray400} />
                 </TouchableOpacity>
               </View>
 
-              <Text style={[tw``, { color: TEXT_SECONDARY }]}>
+              <Text style={{ color: Colors.gray400, fontSize: 12, marginBottom: 14 }}>
                 {new Date(selectedDate).toLocaleDateString("id-ID", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
+                  weekday: "long", day: "numeric", month: "long", year: "numeric",
                 })}
               </Text>
 
-              <View style={tw`flex-row mt-3`}>
-                <View style={tw`flex-1`}>
-                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                    Total Pemasukan
+              {/* Summary row */}
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  borderRadius: INNER_RADIUS,
+                  padding: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: CARD_BORDER,
+                }}
+              >
+                <View style={{ flex: 1, alignItems: "center" }}>
+                  <Text
+                    style={{
+                      color: Colors.gray400, fontSize: 9,
+                      textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                    }}
+                  >
+                    Pemasukan
                   </Text>
                   <Text
-                    style={[tw`text-lg font-bold`, { color: SUCCESS_COLOR }]}
+                    style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}
                   >
                     {formatCurrency(selectedDayTotals.income)}
                   </Text>
                 </View>
-
-                <View style={tw`flex-1`}>
-                  <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                    Total Pengeluaran
+                <View
+                  style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
+                />
+                <View style={{ flex: 1, alignItems: "center" }}>
+                  <Text
+                    style={{
+                      color: Colors.gray400, fontSize: 9,
+                      textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                    }}
+                  >
+                    Pengeluaran
                   </Text>
-                  <Text style={[tw`text-lg font-bold`, { color: ERROR_COLOR }]}>
+                  <Text
+                    style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}
+                  >
                     {formatCurrency(selectedDayTotals.expense)}
+                  </Text>
+                </View>
+                <View
+                  style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
+                />
+                <View style={{ flex: 1, alignItems: "center" }}>
+                  <Text
+                    style={{
+                      color: Colors.gray400, fontSize: 9,
+                      textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
+                    }}
+                  >
+                    Bersih
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14, fontWeight: "700",
+                      color: getDaySummaryColor(),
+                    }}
+                  >
+                    {selectedDayTotals.net >= 0 ? "+" : ""}
+                    {formatCurrency(selectedDayTotals.net)}
                   </Text>
                 </View>
               </View>
             </View>
 
-            <ScrollView style={tw`p-5`}>
+            {/* Transaction list */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: CARD_PAD }}
+              showsVerticalScrollIndicator={false}
+            >
               {selectedDayTransactions.length > 0 ? (
-                selectedDayTransactions.map((transaction) => (
-                  <View
-                    key={transaction.id}
-                    style={[
-                      tw`flex-row justify-between items-center py-3`,
-                      { borderBottomWidth: 1, borderBottomColor: BORDER_COLOR },
-                    ]}
-                  >
-                    <View style={tw`flex-1`}>
-                      <Text style={[tw`font-medium`, { color: TEXT_PRIMARY }]}>
-                        {transaction.category}
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-0.5`, { color: TEXT_SECONDARY }]}
+                <View
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.03)",
+                    borderRadius: CARD_RADIUS,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    overflow: "hidden",
+                  }}
+                >
+                  {selectedDayTransactions.map((transaction, index) => (
+                    <View
+                      key={transaction.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 13,
+                        paddingHorizontal: 16,
+                        borderBottomWidth:
+                          index < selectedDayTransactions.length - 1 ? 1 : 0,
+                        borderBottomColor: CARD_BORDER,
+                      }}
+                    >
+                      {/* Icon */}
+                      <View
+                        style={{
+                          width: 38, height: 38, borderRadius: 12,
+                          alignItems: "center", justifyContent: "center",
+                          marginRight: 12, flexShrink: 0,
+                          backgroundColor:
+                            transaction.type === "income"
+                              ? `${SUCCESS_COLOR}15`
+                              : `${ERROR_COLOR}15`,
+                        }}
                       >
-                        {transaction.description || "Tidak ada deskripsi"}
+                        <Ionicons
+                          name="receipt-outline"
+                          size={16}
+                          color={
+                            transaction.type === "income"
+                              ? SUCCESS_COLOR
+                              : ERROR_COLOR
+                          }
+                        />
+                      </View>
+
+                      {/* Info */}
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: TEXT_PRIMARY, fontSize: 13,
+                            fontWeight: "500", marginBottom: 2,
+                          }}
+                        >
+                          {transaction.category}
+                        </Text>
+                        <Text
+                          style={{ color: Colors.gray400, fontSize: 11 }}
+                          numberOfLines={1}
+                        >
+                          {transaction.description || "Tidak ada deskripsi"}
+                        </Text>
+                      </View>
+
+                      {/* Amount */}
+                      <Text
+                        style={{
+                          fontSize: 13, fontWeight: "700", marginLeft: 8,
+                          color:
+                            transaction.type === "income"
+                              ? SUCCESS_COLOR
+                              : ERROR_COLOR,
+                        }}
+                      >
+                        {transaction.type === "income" ? "+" : "−"}
+                        {formatCurrency(transaction.amount)}
                       </Text>
                     </View>
-
-                    <Text
-                      style={[
-                        tw`font-semibold`,
-                        transaction.type === "income"
-                          ? { color: SUCCESS_COLOR }
-                          : { color: ERROR_COLOR },
-                      ]}
-                    >
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(transaction.amount)}
-                    </Text>
-                  </View>
-                ))
+                  ))}
+                </View>
               ) : (
-                <View style={tw`items-center py-10`}>
-                  <Ionicons
-                    name="receipt-outline"
-                    size={48}
-                    color={BORDER_COLOR}
-                    style={tw`mb-3`}
-                  />
-                  <Text style={[tw``, { color: TEXT_SECONDARY }]}>
-                    Tidak ada transaksi di tanggal ini
+                <View style={{ alignItems: "center", paddingVertical: 32 }}>
+                  <View
+                    style={{
+                      width: 56, height: 56, borderRadius: 18,
+                      alignItems: "center", justifyContent: "center",
+                      backgroundColor: `${Colors.gray400}14`, marginBottom: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name="receipt-outline"
+                      size={24}
+                      color={Colors.gray400}
+                    />
+                  </View>
+                  <Text style={{ color: TEXT_SECONDARY, fontSize: 13, fontWeight: "500" }}>
+                    Tidak ada transaksi
                   </Text>
                 </View>
               )}

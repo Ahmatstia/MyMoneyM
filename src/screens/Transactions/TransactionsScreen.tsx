@@ -27,7 +27,7 @@ const { width } = Dimensions.get("window");
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// ─── Warna konsisten dengan HomeScreen & AnalyticsScreen ─────────────────────
+// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
 const BACKGROUND_COLOR = Colors.background;
 const SURFACE_COLOR    = Colors.surface;
 const TEXT_PRIMARY     = Colors.textPrimary;
@@ -38,17 +38,17 @@ const SUCCESS_COLOR    = Colors.success;
 const WARNING_COLOR    = Colors.warning;
 const ERROR_COLOR      = Colors.error;
 
-// ─── Komponen UI kecil (konsisten dengan HomeScreen & AnalyticsScreen) ────────
+// ─── Design tokens (konsisten dengan HomeScreen & AnalyticsScreen) ────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const SECTION_GAP  = 24;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
-const Sep = ({ marginV = 16 }: { marginV?: number }) => (
-  <View
-    style={{
-      height: 1,
-      backgroundColor: SURFACE_COLOR,
-      marginHorizontal: -16,
-      marginVertical: marginV,
-    }}
-  />
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
+  <View style={{ height: size }} />
 );
 
 const SectionHeader = ({
@@ -60,21 +60,41 @@ const SectionHeader = ({
   linkLabel?: string;
   onPress?: () => void;
 }) => (
-  <View style={tw`flex-row justify-between items-center mb-3`}>
-    <Text
-      style={{
-        color: Colors.gray400,
-        fontSize: 10,
-        fontWeight: "600",
-        letterSpacing: 1,
-        textTransform: "uppercase",
-      }}
-    >
-      {title}
-    </Text>
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          width: 3,
+          height: 13,
+          backgroundColor: ACCENT_COLOR,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          color: Colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
     {linkLabel && onPress && (
       <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 12 }}>{linkLabel}</Text>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+          {linkLabel}
+        </Text>
       </TouchableOpacity>
     )}
   </View>
@@ -99,30 +119,28 @@ const TransactionsScreen: React.FC = () => {
   const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
   const [fabScaleAnim] = useState(new Animated.Value(1));
 
-  // ── Cleanup on unmount (sama dengan asli) ────────────────────────────────
+  // ── Semua logika di bawah ini TIDAK DIUBAH ────────────────────────────────
+
   useEffect(() => {
     return () => {
       Object.values(swipeableRefs.current).forEach((ref) => {
-        if (ref) {
-          try { ref.close(); } catch { }
-        }
+        if (ref) { try { ref.close(); } catch { } }
       });
       swipeableRefs.current = {};
     };
   }, []);
 
-  // ── FAB press animation ───────────────────────────────────────────────────
-  const fabPressIn  = () => Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
-  const fabPressOut = () => Animated.spring(fabScaleAnim, { toValue: 1,    useNativeDriver: true, speed: 50 }).start();
+  const fabPressIn  = () =>
+    Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
+  const fabPressOut = () =>
+    Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
-  // ── Safe icon helper (sama dengan asli) ──────────────────────────────────
   const getSafeIcon = (iconName: string): SafeIconName => {
     const defaultIcon: SafeIconName = "receipt-outline";
     if (iconName in Ionicons.glyphMap) return iconName as SafeIconName;
     return defaultIcon;
   };
 
-  // ── Category icons (sama dengan asli) ────────────────────────────────────
   const getCategoryIcon = (category: string): SafeIconName => {
     const icons: Record<string, SafeIconName> = {
       Makanan:      "restaurant-outline",
@@ -138,7 +156,6 @@ const TransactionsScreen: React.FC = () => {
     return icons[category] || "receipt-outline";
   };
 
-  // ── Filter transactions (sama dengan asli) ───────────────────────────────
   const filteredTransactions = useMemo(() => {
     let filtered = [...state.transactions];
 
@@ -205,13 +222,11 @@ const TransactionsScreen: React.FC = () => {
     }
 
     return filtered.sort((a, b) => {
-      try {
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      } catch { return 0; }
+      try { return new Date(b.date).getTime() - new Date(a.date).getTime(); }
+      catch { return 0; }
     });
   }, [state.transactions, filterType, dateFilter, searchQuery, customStartDate, customEndDate]);
 
-  // ── Group by day (sama dengan asli) ──────────────────────────────────────
   const groupedByDay = useMemo(() => {
     const groups: { [key: string]: Transaction[] } = {};
     filteredTransactions.forEach((transaction) => {
@@ -230,7 +245,6 @@ const TransactionsScreen: React.FC = () => {
     return groups;
   }, [filteredTransactions]);
 
-  // ── Totals (sama dengan asli) ─────────────────────────────────────────────
   const totals = useMemo(() => {
     const totalIncome  = filteredTransactions.filter((t) => t.type === "income") .reduce((sum, t) => sum + safeNumber(t.amount), 0);
     const totalExpense = filteredTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + safeNumber(t.amount), 0);
@@ -241,12 +255,9 @@ const TransactionsScreen: React.FC = () => {
     };
   }, [filteredTransactions]);
 
-  // ── Delete handler (sama dengan asli) ────────────────────────────────────
   const handleDelete = async (transactionId: string) => {
     const swipeable = swipeableRefs.current[transactionId];
-    if (swipeable) {
-      try { swipeable.close(); } catch { }
-    }
+    if (swipeable) { try { swipeable.close(); } catch { } }
     const transaction = state.transactions.find((t) => t.id === transactionId);
     if (!transaction) {
       Alert.alert("Error", "Transaksi tidak ditemukan");
@@ -274,40 +285,12 @@ const TransactionsScreen: React.FC = () => {
     );
   };
 
-  // ── Edit handler (sama dengan asli) ──────────────────────────────────────
   const handleEdit = (transaction: Transaction) => {
     const swipeable = swipeableRefs.current[transaction.id];
-    if (swipeable) {
-      try { swipeable.close(); } catch { }
-    }
+    if (swipeable) { try { swipeable.close(); } catch { } }
     navigation.navigate("AddTransaction", { editMode: true, transactionData: transaction });
   };
 
-  // ── Swipe actions (sama dengan asli, warna diselaraskan) ─────────────────
-  const renderRightActions = (transaction: Transaction) => (
-    <View style={tw`flex-row h-full`}>
-      <TouchableOpacity
-        style={[
-          tw`w-12 justify-center items-center`,
-          { backgroundColor: `${ACCENT_COLOR}25` },
-        ]}
-        onPress={() => handleEdit(transaction)}
-      >
-        <Ionicons name="pencil-outline" size={17} color={ACCENT_COLOR} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          tw`w-12 justify-center items-center`,
-          { backgroundColor: `${ERROR_COLOR}25` },
-        ]}
-        onPress={() => handleDelete(transaction.id)}
-      >
-        <Ionicons name="trash-outline" size={17} color={ERROR_COLOR} />
-      </TouchableOpacity>
-    </View>
-  );
-
-  // ── Date helpers (sama dengan asli) ──────────────────────────────────────
   const formatDisplayDate = (dateString: string) => {
     try {
       const date      = new Date(dateString);
@@ -323,12 +306,16 @@ const TransactionsScreen: React.FC = () => {
 
   const getDateFilterLabel = () => {
     switch (dateFilter) {
-      case "week":   return "7 Hari";
-      case "month":  return "Bulan Ini";
+      case "week":  return "7 Hari";
+      case "month": return "Bulan Ini";
       case "custom":
         if (customStartDate && customEndDate) {
           try {
-            return `${customStartDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} – ${customEndDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`;
+            return `${customStartDate.toLocaleDateString("id-ID", {
+              day: "numeric", month: "short",
+            })} – ${customEndDate.toLocaleDateString("id-ID", {
+              day: "numeric", month: "short",
+            })}`;
           } catch { return "Tanggal"; }
         }
         return "Tanggal";
@@ -387,117 +374,233 @@ const TransactionsScreen: React.FC = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  const hasActiveFilter = searchQuery || filterType !== "all" || dateFilter !== "all";
+  const hasActiveFilter =
+    searchQuery || filterType !== "all" || dateFilter !== "all";
+
+  // ── Swipe actions ─────────────────────────────────────────────────────────
+  const renderRightActions = (transaction: Transaction) => (
+    <View style={{ flexDirection: "row", height: "100%" }}>
+      <TouchableOpacity
+        style={{
+          width: 52,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: `${ACCENT_COLOR}20`,
+          borderTopLeftRadius: 0,
+          borderBottomLeftRadius: 0,
+        }}
+        onPress={() => handleEdit(transaction)}
+      >
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${ACCENT_COLOR}25`,
+          }}
+        >
+          <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={{
+          width: 52,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: `${ERROR_COLOR}20`,
+        }}
+        onPress={() => handleDelete(transaction.id)}
+      >
+        <View
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${ERROR_COLOR}25`,
+          }}
+        >
+          <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
 
-      {/* ── Sticky header: search + filter ──────────────────────────────── */}
+      {/* ── Sticky header ───────────────────────────────────────────────── */}
       <View
         style={{
           backgroundColor: BACKGROUND_COLOR,
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 10,
+          paddingHorizontal: 18,
+          paddingTop: 14,
+          paddingBottom: 12,
           borderBottomWidth: 1,
-          borderBottomColor: SURFACE_COLOR,
+          borderBottomColor: CARD_BORDER,
         }}
       >
-        {/* Search bar */}
-        <View style={tw`flex-row items-center mb-3`}>
-          <View
-            style={[
-              tw`flex-1 flex-row items-center rounded-xl px-3 py-2.5`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: searchFocused ? 1 : 0,
-                borderColor: searchFocused ? `${ACCENT_COLOR}50` : "transparent",
-              },
-            ]}
+        {/* Page title row */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 14,
+          }}
+        >
+          <Text
+            style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
           >
-            <Ionicons name="search-outline" size={15} color={Colors.gray400} />
-            <TextInput
-              style={[tw`flex-1 text-sm ml-2`, { color: TEXT_PRIMARY }]}
-              placeholder="Cari kategori, deskripsi..."
-              placeholderTextColor={Colors.gray400}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery("")} activeOpacity={0.7}>
-                <Ionicons name="close-circle" size={15} color={Colors.gray400} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {/* Filter button */}
+            Transaksi
+          </Text>
           <TouchableOpacity
-            style={[
-              tw`ml-2 w-9 h-9 rounded-xl justify-center items-center`,
-              {
-                backgroundColor: dateFilter !== "all"
-                  ? `${ACCENT_COLOR}20`
-                  : SURFACE_COLOR,
-              },
-            ]}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              borderRadius: 20,
+              backgroundColor: dateFilter !== "all"
+                ? `${ACCENT_COLOR}18`
+                : SURFACE_COLOR,
+              borderWidth: 1,
+              borderColor: dateFilter !== "all"
+                ? `${ACCENT_COLOR}30`
+                : "transparent",
+            }}
             onPress={() => setShowFilterModal(true)}
             activeOpacity={0.7}
           >
             <Ionicons
-              name="filter-outline"
-              size={16}
+              name="calendar-outline"
+              size={13}
               color={dateFilter !== "all" ? ACCENT_COLOR : Colors.gray400}
             />
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: dateFilter !== "all" ? "700" : "500",
+                color: dateFilter !== "all" ? ACCENT_COLOR : Colors.gray400,
+                marginLeft: 5,
+              }}
+            >
+              {getDateFilterLabel()}
+            </Text>
+            {dateFilter !== "all" && (
+              <TouchableOpacity
+                onPress={resetDateFilter}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={{ marginLeft: 5 }}
+              >
+                <Ionicons name="close" size={11} color={ACCENT_COLOR} />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Type filter pills */}
-        <View style={tw`flex-row gap-2`}>
+        {/* Search bar */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: INNER_RADIUS,
+            paddingHorizontal: 13,
+            paddingVertical: 10,
+            borderWidth: searchFocused ? 1 : 1,
+            borderColor: searchFocused
+              ? `${ACCENT_COLOR}45`
+              : CARD_BORDER,
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons
+            name="search-outline"
+            size={15}
+            color={searchFocused ? ACCENT_COLOR : Colors.gray400}
+          />
+          <TextInput
+            style={{
+              flex: 1,
+              color: TEXT_PRIMARY,
+              fontSize: 13,
+              marginLeft: 9,
+              paddingVertical: 0,
+            }}
+            placeholder="Cari kategori, deskripsi..."
+            placeholderTextColor={Colors.gray400}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {searchQuery ? (
+            <TouchableOpacity
+              onPress={() => setSearchQuery("")}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name="close-circle"
+                size={16}
+                color={Colors.gray400}
+              />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        {/* Type filter — segmented control */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: 13,
+            padding: 3,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+          }}
+        >
           {[
-            { key: "all",     label: "Semua",      icon: null },
-            { key: "income",  label: "Pemasukan",  icon: "arrow-down-outline" as SafeIconName, color: SUCCESS_COLOR },
-            { key: "expense", label: "Pengeluaran", icon: "arrow-up-outline"  as SafeIconName, color: ERROR_COLOR },
+            { key: "all",     label: "Semua" },
+            { key: "income",  label: "Pemasukan" },
+            { key: "expense", label: "Pengeluaran" },
           ].map((item) => {
             const isActive = filterType === item.key;
             const activeColor =
-              item.key === "income"  ? SUCCESS_COLOR :
-              item.key === "expense" ? ERROR_COLOR   : ACCENT_COLOR;
+              item.key === "income"
+                ? SUCCESS_COLOR
+                : item.key === "expense"
+                ? ERROR_COLOR
+                : ACCENT_COLOR;
             return (
               <TouchableOpacity
                 key={item.key}
-                style={[
-                  tw`flex-row items-center px-3 py-1.5 rounded-full`,
-                  isActive
-                    ? item.key === "all"
-                      ? { backgroundColor: ACCENT_COLOR }
-                      : { backgroundColor: `${activeColor}18`, borderWidth: 1, borderColor: `${activeColor}35` }
-                    : { backgroundColor: SURFACE_COLOR },
-                ]}
+                style={{
+                  flex: 1,
+                  paddingVertical: 7,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  backgroundColor: isActive
+                    ? `${activeColor}20`
+                    : "transparent",
+                }}
                 onPress={() => setFilterType(item.key as any)}
                 activeOpacity={0.7}
               >
-                {item.icon && (
-                  <Ionicons
-                    name={item.icon}
-                    size={11}
-                    color={isActive ? activeColor : Colors.gray400}
-                    style={{ marginRight: 4 }}
-                  />
-                )}
                 <Text
                   style={{
-                    fontSize: 12,
-                    fontWeight: "500",
-                    color: isActive
-                      ? item.key === "all" ? BACKGROUND_COLOR : activeColor
-                      : Colors.gray400,
+                    fontSize: 11,
+                    fontWeight: isActive ? "700" : "500",
+                    color: isActive ? activeColor : Colors.gray400,
                   }}
                 >
                   {item.label}
@@ -505,31 +608,14 @@ const TransactionsScreen: React.FC = () => {
               </TouchableOpacity>
             );
           })}
-
-          {/* Active date filter chip */}
-          {dateFilter !== "all" && (
-            <TouchableOpacity
-              style={[
-                tw`flex-row items-center px-3 py-1.5 rounded-full`,
-                { backgroundColor: `${ACCENT_COLOR}18`, borderWidth: 1, borderColor: `${ACCENT_COLOR}35` },
-              ]}
-              onPress={resetDateFilter}
-              activeOpacity={0.7}
-            >
-              <Text style={{ fontSize: 12, fontWeight: "500", color: ACCENT_COLOR, marginRight: 4 }}>
-                {getDateFilterLabel()}
-              </Text>
-              <Ionicons name="close" size={11} color={ACCENT_COLOR} />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
       {/* ── Main scroll ──────────────────────────────────────────────────── */}
       <ScrollView
-        style={tw`flex-1`}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 110 }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -539,276 +625,554 @@ const TransactionsScreen: React.FC = () => {
           />
         }
       >
-        {/* ── Summary row (flat, no card) ──────────────────────────────── */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}>
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`flex-1`}>
-              <Text style={{ color: Colors.gray400, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 3 }}>
-                Saldo
-              </Text>
-              <Text
-                style={{
-                  fontSize: 22,
-                  fontWeight: "700",
-                  letterSpacing: -0.5,
-                  color: totals.balance >= 0 ? TEXT_PRIMARY : ERROR_COLOR,
-                }}
-              >
-                {formatCurrency(totals.balance)}
-              </Text>
-            </View>
+        {/* ── Summary card ─────────────────────────────────────────────── */}
+        <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
+          <View
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: CARD_PAD,
+              marginBottom: 20,
+            }}
+          >
+            {/* Saldo */}
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginBottom: 5,
+              }}
+            >
+              {hasActiveFilter ? "Saldo Filter" : "Saldo"}
+            </Text>
+            <Text
+              style={{
+                fontSize: 30,
+                fontWeight: "800",
+                letterSpacing: -0.5,
+                color: totals.balance >= 0 ? TEXT_PRIMARY : ERROR_COLOR,
+                marginBottom: 16,
+              }}
+            >
+              {formatCurrency(totals.balance)}
+            </Text>
 
-            <View style={{ width: 1, height: 32, backgroundColor: SURFACE_COLOR, marginHorizontal: 16 }} />
-
-            <View style={tw`items-end`}>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginBottom: 2 }}>Masuk</Text>
-              <Text style={{ color: SUCCESS_COLOR, fontSize: 13, fontWeight: "600" }}>
-                {formatCurrency(totals.totalIncome)}
-              </Text>
-            </View>
-
-            <View style={{ width: 1, height: 32, backgroundColor: SURFACE_COLOR, marginHorizontal: 16 }} />
-
-            <View style={tw`items-end`}>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginBottom: 2 }}>Keluar</Text>
-              <Text style={{ color: ERROR_COLOR, fontSize: 13, fontWeight: "600" }}>
-                {formatCurrency(totals.totalExpense)}
-              </Text>
-            </View>
-          </View>
-
-          {/* 2px thin bar menunjukkan rasio income vs expense */}
-          {(totals.totalIncome > 0 || totals.totalExpense > 0) && (
-            <View style={{ marginTop: 12 }}>
-              <View style={{ height: 2, backgroundColor: SURFACE_COLOR, borderRadius: 2, overflow: "hidden" }}>
+            {/* Income / Expense row */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    position: "absolute",
-                    left: 0, top: 0, bottom: 0,
-                    width: `${Math.min((totals.totalIncome / Math.max(totals.totalIncome, totals.totalExpense)) * 100, 100)}%`,
-                    backgroundColor: SUCCESS_COLOR,
-                    borderRadius: 2,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
                   }}
-                />
-              </View>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 4 }}>
-                {filteredTransactions.length} transaksi ditampilkan
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── Transactions grouped by day ──────────────────────────────── */}
-        {Object.entries(groupedByDay).length > 0 ? (
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            {Object.entries(groupedByDay).map(([day, transactions], groupIndex) => {
-              // Hitung subtotal per hari
-              const dayIncome  = transactions.filter((t) => t.type === "income") .reduce((s, t) => s + safeNumber(t.amount), 0);
-              const dayExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
-
-              return (
-                <View key={day} style={{ marginBottom: 8 }}>
-                  {/* Day header */}
-                  <View style={tw`flex-row justify-between items-center mb-2`}>
-                    <Text style={{ color: Colors.gray400, fontSize: 11, fontWeight: "600" }}>
-                      {day}
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: dayIncome - dayExpense >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-                      }}
-                    >
-                      {dayIncome - dayExpense >= 0 ? "+" : ""}
-                      {formatCurrency(dayIncome - dayExpense)}
-                    </Text>
-                  </View>
-
-                  {/* Transaction items — plain list, border-bottom antar item */}
-                  {transactions.map((transaction, index) => (
-                    <Swipeable
-                      key={transaction.id}
-                      ref={(ref) => {
-                        if (ref) {
-                          swipeableRefs.current[transaction.id] = ref;
-                        } else {
-                          delete swipeableRefs.current[transaction.id];
-                        }
-                      }}
-                      renderRightActions={() => renderRightActions(transaction)}
-                      friction={2}
-                      containerStyle={{ backgroundColor: BACKGROUND_COLOR }}
-                      onSwipeableWillOpen={() => {
-                        Object.keys(swipeableRefs.current).forEach((id) => {
-                          if (id !== transaction.id && swipeableRefs.current[id]) {
-                            try { swipeableRefs.current[id]?.close(); } catch { }
-                          }
-                        });
-                      }}
-                    >
-                      <TouchableOpacity
-                        style={[
-                          tw`flex-row items-center py-3`,
-                          {
-                            backgroundColor: BACKGROUND_COLOR,
-                            borderBottomWidth: index < transactions.length - 1 ? 1 : 0,
-                            borderBottomColor: SURFACE_COLOR,
-                          },
-                        ]}
-                        activeOpacity={0.6}
-                        onPress={() => handleEdit(transaction)}
-                        onLongPress={() => handleDelete(transaction.id)}
-                        delayLongPress={500}
-                      >
-                        {/* Category icon */}
-                        <View
-                          style={[
-                            tw`w-9 h-9 rounded-xl items-center justify-center mr-3`,
-                            {
-                              backgroundColor:
-                                transaction.type === "income"
-                                  ? `${SUCCESS_COLOR}15`
-                                  : `${ERROR_COLOR}15`,
-                              flexShrink: 0,
-                            },
-                          ]}
-                        >
-                          <Ionicons
-                            name={getCategoryIcon(transaction.category)}
-                            size={16}
-                            color={transaction.type === "income" ? SUCCESS_COLOR : ERROR_COLOR}
-                          />
-                        </View>
-
-                        {/* Info */}
-                        <View style={tw`flex-1`}>
-                          <Text
-                            style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500", marginBottom: 1 }}
-                          >
-                            {transaction.category}
-                          </Text>
-                          <Text
-                            style={{ color: Colors.gray400, fontSize: 11 }}
-                            numberOfLines={1}
-                          >
-                            {transaction.description || "—"} · {formatDisplayDate(transaction.date)}
-                          </Text>
-                        </View>
-
-                        {/* Amount */}
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            fontWeight: "600",
-                            color: transaction.type === "income" ? SUCCESS_COLOR : ERROR_COLOR,
-                            marginLeft: 8,
-                          }}
-                        >
-                          {transaction.type === "income" ? "+" : "−"}
-                          {formatCurrency(safeNumber(transaction.amount))}
-                        </Text>
-                      </TouchableOpacity>
-                    </Swipeable>
-                  ))}
-
-                  {/* Garis tipis antar grup hari */}
+                >
                   <View
                     style={{
-                      height: 1,
-                      backgroundColor: SURFACE_COLOR,
-                      marginHorizontal: -16,
-                      marginTop: 8,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: SUCCESS_COLOR,
+                      marginRight: 5,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: Colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                    }}
+                  >
+                    Masuk
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    color: SUCCESS_COLOR,
+                    fontSize: 14,
+                    fontWeight: "700",
+                  }}
+                >
+                  {formatCurrency(totals.totalIncome)}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  width: 1,
+                  height: 32,
+                  backgroundColor: CARD_BORDER,
+                  marginHorizontal: 14,
+                }}
+              />
+
+              <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: ERROR_COLOR,
+                      marginRight: 5,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: Colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                    }}
+                  >
+                    Keluar
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    color: ERROR_COLOR,
+                    fontSize: 14,
+                    fontWeight: "700",
+                  }}
+                >
+                  {formatCurrency(totals.totalExpense)}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  width: 1,
+                  height: 32,
+                  backgroundColor: CARD_BORDER,
+                  marginHorizontal: 14,
+                }}
+              />
+
+              <View style={{ alignItems: "flex-end" }}>
+                <Text
+                  style={{
+                    color: Colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    marginBottom: 4,
+                  }}
+                >
+                  Jumlah
+                </Text>
+                <Text
+                  style={{
+                    color: ACCENT_COLOR,
+                    fontSize: 14,
+                    fontWeight: "700",
+                  }}
+                >
+                  {filteredTransactions.length}
+                </Text>
+              </View>
+            </View>
+
+            {/* Income ratio bar */}
+            {(totals.totalIncome > 0 || totals.totalExpense > 0) && (
+              <View style={{ marginTop: 14 }}>
+                <View
+                  style={{
+                    height: 4,
+                    backgroundColor: "rgba(255,255,255,0.07)",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                  }}
+                >
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: `${Math.min(
+                        (totals.totalIncome /
+                          Math.max(
+                            totals.totalIncome,
+                            totals.totalExpense
+                          )) *
+                          100,
+                        100
+                      )}%`,
+                      backgroundColor: SUCCESS_COLOR,
+                      borderRadius: 4,
                     }}
                   />
                 </View>
-              );
-            })}
-          </View>
-        ) : (
-          /* ── Empty state ───────────────────────────────────────────── */
-          <View style={tw`items-center justify-center py-16 px-8`}>
-            <View
-              style={[
-                tw`w-16 h-16 rounded-full items-center justify-center mb-4`,
-                { backgroundColor: SURFACE_COLOR },
-              ]}
-            >
-              <Ionicons
-                name={hasActiveFilter ? "search-outline" : "receipt-outline"}
-                size={26}
-                color={Colors.gray400}
-              />
-            </View>
-            <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "600", marginBottom: 6, textAlign: "center" }}
-            >
-              {hasActiveFilter ? "Transaksi tidak ditemukan" : "Belum ada transaksi"}
-            </Text>
-            <Text
-              style={{ color: Colors.gray400, fontSize: 12, textAlign: "center", lineHeight: 18, marginBottom: 20 }}
-            >
-              {hasActiveFilter
-                ? "Coba kata kunci lain atau hapus filter yang aktif"
-                : "Mulai catat transaksi pertama Anda"}
-            </Text>
-
-            {!hasActiveFilter ? (
-              <TouchableOpacity
-                style={[
-                  tw`flex-row items-center px-5 py-2.5 rounded-xl`,
-                  { backgroundColor: ACCENT_COLOR },
-                ]}
-                onPress={() => navigation.navigate("AddTransaction")}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="add" size={16} color={BACKGROUND_COLOR} style={{ marginRight: 6 }} />
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "600" }}>
-                  Tambah Transaksi
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[
-                  tw`flex-row items-center px-5 py-2.5 rounded-xl`,
-                  { backgroundColor: SURFACE_COLOR },
-                ]}
-                onPress={() => {
-                  setSearchQuery("");
-                  setFilterType("all");
-                  resetDateFilter();
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close-outline" size={15} color={Colors.gray400} style={{ marginRight: 5 }} />
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 13, fontWeight: "500" }}>
-                  Hapus Semua Filter
-                </Text>
-              </TouchableOpacity>
+              </View>
             )}
           </View>
-        )}
+
+          {/* ── Transactions grouped by day ─────────────────────────────── */}
+          {Object.entries(groupedByDay).length > 0 ? (
+            <View>
+              {Object.entries(groupedByDay).map(([day, transactions], groupIndex) => {
+                const dayIncome  = transactions.filter((t) => t.type === "income") .reduce((s, t) => s + safeNumber(t.amount), 0);
+                const dayExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
+                const dayNet     = dayIncome - dayExpense;
+
+                return (
+                  <View
+                    key={day}
+                    style={{ marginBottom: 14 }}
+                  >
+                    {/* Day header */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                        paddingHorizontal: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: Colors.gray400,
+                          fontSize: 11,
+                          fontWeight: "700",
+                          letterSpacing: 0.3,
+                        }}
+                      >
+                        {day}
+                      </Text>
+                      <View
+                        style={{
+                          paddingHorizontal: 9,
+                          paddingVertical: 3,
+                          borderRadius: 20,
+                          backgroundColor:
+                            dayNet >= 0
+                              ? `${SUCCESS_COLOR}15`
+                              : `${ERROR_COLOR}15`,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "700",
+                            color: dayNet >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                          }}
+                        >
+                          {dayNet >= 0 ? "+" : ""}
+                          {formatCurrency(dayNet)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Transaction card */}
+                    <View
+                      style={{
+                        backgroundColor: SURFACE_COLOR,
+                        borderRadius: CARD_RADIUS,
+                        borderWidth: 1,
+                        borderColor: CARD_BORDER,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {transactions.map((transaction, index) => (
+                        <Swipeable
+                          key={transaction.id}
+                          ref={(ref) => {
+                            if (ref) {
+                              swipeableRefs.current[transaction.id] = ref;
+                            } else {
+                              delete swipeableRefs.current[transaction.id];
+                            }
+                          }}
+                          renderRightActions={() =>
+                            renderRightActions(transaction)
+                          }
+                          friction={2}
+                          containerStyle={{
+                            backgroundColor: SURFACE_COLOR,
+                          }}
+                          onSwipeableWillOpen={() => {
+                            Object.keys(swipeableRefs.current).forEach(
+                              (id) => {
+                                if (
+                                  id !== transaction.id &&
+                                  swipeableRefs.current[id]
+                                ) {
+                                  try {
+                                    swipeableRefs.current[id]?.close();
+                                  } catch { }
+                                }
+                              }
+                            );
+                          }}
+                        >
+                          <TouchableOpacity
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingVertical: 13,
+                              paddingHorizontal: 16,
+                              backgroundColor: SURFACE_COLOR,
+                              borderBottomWidth:
+                                index < transactions.length - 1 ? 1 : 0,
+                              borderBottomColor: CARD_BORDER,
+                            }}
+                            activeOpacity={0.6}
+                            onPress={() => handleEdit(transaction)}
+                            onLongPress={() =>
+                              handleDelete(transaction.id)
+                            }
+                            delayLongPress={500}
+                          >
+                            {/* Category icon */}
+                            <View
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 13,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: 13,
+                                flexShrink: 0,
+                                backgroundColor:
+                                  transaction.type === "income"
+                                    ? `${SUCCESS_COLOR}15`
+                                    : `${ERROR_COLOR}15`,
+                              }}
+                            >
+                              <Ionicons
+                                name={getCategoryIcon(transaction.category)}
+                                size={17}
+                                color={
+                                  transaction.type === "income"
+                                    ? SUCCESS_COLOR
+                                    : ERROR_COLOR
+                                }
+                              />
+                            </View>
+
+                            {/* Info */}
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  color: TEXT_PRIMARY,
+                                  fontSize: 13,
+                                  fontWeight: "500",
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {transaction.category}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: Colors.gray400,
+                                  fontSize: 11,
+                                }}
+                                numberOfLines={1}
+                              >
+                                {transaction.description || "—"} ·{" "}
+                                {formatDisplayDate(transaction.date)}
+                              </Text>
+                            </View>
+
+                            {/* Amount + chevron */}
+                            <View
+                              style={{
+                                alignItems: "flex-end",
+                                marginLeft: 8,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  fontSize: 13,
+                                  fontWeight: "700",
+                                  color:
+                                    transaction.type === "income"
+                                      ? SUCCESS_COLOR
+                                      : ERROR_COLOR,
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {transaction.type === "income" ? "+" : "−"}
+                                {formatCurrency(
+                                  safeNumber(transaction.amount)
+                                )}
+                              </Text>
+                              <Ionicons
+                                name="chevron-forward"
+                                size={11}
+                                color={Colors.gray400}
+                              />
+                            </View>
+                          </TouchableOpacity>
+                        </Swipeable>
+                      ))}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            /* ── Empty state ───────────────────────────────────────────── */
+            <View
+              style={{
+                alignItems: "center",
+                paddingVertical: 48,
+                backgroundColor: SURFACE_COLOR,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                paddingHorizontal: 24,
+              }}
+            >
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 20,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: `${Colors.gray400}14`,
+                  marginBottom: 14,
+                }}
+              >
+                <Ionicons
+                  name={
+                    hasActiveFilter ? "search-outline" : "receipt-outline"
+                  }
+                  size={26}
+                  color={Colors.gray400}
+                />
+              </View>
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 15,
+                  fontWeight: "700",
+                  marginBottom: 6,
+                  textAlign: "center",
+                }}
+              >
+                {hasActiveFilter
+                  ? "Transaksi tidak ditemukan"
+                  : "Belum ada transaksi"}
+              </Text>
+              <Text
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 12,
+                  textAlign: "center",
+                  lineHeight: 18,
+                  marginBottom: 20,
+                }}
+              >
+                {hasActiveFilter
+                  ? "Coba kata kunci lain atau hapus filter yang aktif"
+                  : "Mulai catat transaksi pertama Anda"}
+              </Text>
+
+              {!hasActiveFilter ? (
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    borderRadius: 13,
+                    backgroundColor: ACCENT_COLOR,
+                  }}
+                  onPress={() => navigation.navigate("AddTransaction")}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="add"
+                    size={16}
+                    color={BACKGROUND_COLOR}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={{
+                      color: BACKGROUND_COLOR,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    Tambah Transaksi
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 13,
+                    backgroundColor: SURFACE_COLOR,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                  }}
+                  onPress={() => {
+                    setSearchQuery("");
+                    setFilterType("all");
+                    resetDateFilter();
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name="close-outline"
+                    size={15}
+                    color={Colors.gray400}
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text
+                    style={{
+                      color: TEXT_SECONDARY,
+                      fontSize: 13,
+                      fontWeight: "500",
+                    }}
+                  >
+                    Hapus Semua Filter
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* ── FAB ─────────────────────────────────────────────────────────── */}
       <Animated.View
-        style={[
-          tw`absolute bottom-6 right-5`,
-          {
-            width: 52,
-            height: 52,
-            borderRadius: 16,
-            backgroundColor: ACCENT_COLOR,
-            shadowColor: ACCENT_COLOR,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.4,
-            shadowRadius: 10,
-            elevation: 10,
-            transform: [{ scale: fabScaleAnim }],
-          },
-        ]}
+        style={{
+          position: "absolute",
+          bottom: 24,
+          right: 20,
+          width: 54,
+          height: 54,
+          borderRadius: 17,
+          backgroundColor: ACCENT_COLOR,
+          shadowColor: ACCENT_COLOR,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.45,
+          shadowRadius: 14,
+          elevation: 12,
+          transform: [{ scale: fabScaleAnim }],
+        }}
       >
         <TouchableOpacity
-          style={tw`w-full h-full items-center justify-center`}
+          style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
           onPress={() => navigation.navigate("AddTransaction")}
           activeOpacity={0.8}
           onPressIn={fabPressIn}
@@ -816,7 +1180,7 @@ const TransactionsScreen: React.FC = () => {
           accessibilityLabel="Tambah transaksi baru"
           accessibilityRole="button"
         >
-          <Ionicons name="add" size={26} color={BACKGROUND_COLOR} />
+          <Ionicons name="add" size={28} color={BACKGROUND_COLOR} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -829,33 +1193,93 @@ const TransactionsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setShowFilterModal(false)}
       >
-        <View style={tw`flex-1 justify-end`} pointerEvents="box-none">
+        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
           <TouchableOpacity
-            style={[tw`absolute inset-0`, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" }}
             activeOpacity={1}
             onPress={() => setShowFilterModal(false)}
           />
           <View
-            style={[
-              tw`rounded-t-3xl px-5 pt-5 pb-8`,
-              { backgroundColor: SURFACE_COLOR },
-            ]}
+            style={{
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              paddingHorizontal: 20,
+              paddingTop: 20,
+              paddingBottom: 36,
+              backgroundColor: SURFACE_COLOR,
+              borderTopWidth: 1,
+              borderTopColor: CARD_BORDER,
+            }}
           >
+            {/* Drag handle */}
+            <View
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "rgba(255,255,255,0.15)",
+                alignSelf: "center",
+                marginBottom: 18,
+              }}
+            />
+
             {/* Modal header */}
-            <View style={tw`flex-row justify-between items-center mb-5`}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 16,
+                  fontWeight: "700",
+                }}
+              >
                 Filter Tanggal
               </Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)} activeOpacity={0.7}>
-                <Ionicons name="close-outline" size={22} color={Colors.gray400} />
+              <TouchableOpacity
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                }}
+                onPress={() => setShowFilterModal(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={16} color={Colors.gray400} />
               </TouchableOpacity>
             </View>
 
-            {/* Time range options */}
-            <Text style={{ color: Colors.gray400, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+            {/* Time range label */}
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
               Rentang Waktu
             </Text>
-            <View style={tw`flex-row flex-wrap gap-2 mb-5`}>
+
+            {/* Segmented options */}
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: 20,
+              }}
+            >
               {[
                 { key: "all",    label: "Semua Waktu" },
                 { key: "week",   label: "7 Hari Terakhir" },
@@ -866,20 +1290,26 @@ const TransactionsScreen: React.FC = () => {
                 return (
                   <TouchableOpacity
                     key={option.key}
-                    style={[
-                      tw`px-4 py-2 rounded-full`,
-                      isActive
-                        ? { backgroundColor: ACCENT_COLOR }
-                        : { backgroundColor: Colors.surfaceLight },
-                    ]}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 9,
+                      borderRadius: 20,
+                      backgroundColor: isActive
+                        ? `${ACCENT_COLOR}20`
+                        : "rgba(255,255,255,0.07)",
+                      borderWidth: 1,
+                      borderColor: isActive
+                        ? `${ACCENT_COLOR}35`
+                        : "transparent",
+                    }}
                     onPress={() => setDateFilter(option.key as any)}
                     activeOpacity={0.7}
                   >
                     <Text
                       style={{
                         fontSize: 13,
-                        fontWeight: "500",
-                        color: isActive ? BACKGROUND_COLOR : TEXT_SECONDARY,
+                        fontWeight: isActive ? "700" : "500",
+                        color: isActive ? ACCENT_COLOR : TEXT_SECONDARY,
                       }}
                     >
                       {option.label}
@@ -892,37 +1322,80 @@ const TransactionsScreen: React.FC = () => {
             {/* Custom date pickers */}
             {dateFilter === "custom" && (
               <>
-                <View style={{ height: 1, backgroundColor: Colors.surfaceLight, marginBottom: 16 }} />
-                <Text style={{ color: Colors.gray400, fontSize: 10, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: CARD_BORDER,
+                    marginBottom: 18,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: Colors.gray400,
+                    fontSize: 10,
+                    fontWeight: "700",
+                    letterSpacing: 1.2,
+                    textTransform: "uppercase",
+                    marginBottom: 12,
+                  }}
+                >
                   Tanggal Kustom
                 </Text>
-                <View style={tw`flex-row gap-3 mb-5`}>
-                  <View style={tw`flex-1`}>
-                    <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 6 }}>Dari</Text>
+                <View
+                  style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: Colors.gray400,
+                        fontSize: 11,
+                        marginBottom: 7,
+                      }}
+                    >
+                      Dari
+                    </Text>
                     <TouchableOpacity
-                      style={[
-                        tw`rounded-xl p-3`,
-                        { backgroundColor: Colors.surfaceLight },
-                      ]}
+                      style={{
+                        borderRadius: INNER_RADIUS,
+                        padding: 13,
+                        backgroundColor: "rgba(255,255,255,0.07)",
+                        borderWidth: 1,
+                        borderColor: CARD_BORDER,
+                      }}
                       onPress={() => setShowCalendar("start")}
                       activeOpacity={0.7}
                     >
-                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>
+                      <Text
+                        style={{ color: TEXT_PRIMARY, fontSize: 13 }}
+                      >
                         {customStartDate.toLocaleDateString("id-ID")}
                       </Text>
                     </TouchableOpacity>
                   </View>
-                  <View style={tw`flex-1`}>
-                    <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 6 }}>Sampai</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: Colors.gray400,
+                        fontSize: 11,
+                        marginBottom: 7,
+                      }}
+                    >
+                      Sampai
+                    </Text>
                     <TouchableOpacity
-                      style={[
-                        tw`rounded-xl p-3`,
-                        { backgroundColor: Colors.surfaceLight },
-                      ]}
+                      style={{
+                        borderRadius: INNER_RADIUS,
+                        padding: 13,
+                        backgroundColor: "rgba(255,255,255,0.07)",
+                        borderWidth: 1,
+                        borderColor: CARD_BORDER,
+                      }}
                       onPress={() => setShowCalendar("end")}
                       activeOpacity={0.7}
                     >
-                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13 }}>
+                      <Text
+                        style={{ color: TEXT_PRIMARY, fontSize: 13 }}
+                      >
                         {customEndDate.toLocaleDateString("id-ID")}
                       </Text>
                     </TouchableOpacity>
@@ -932,26 +1405,58 @@ const TransactionsScreen: React.FC = () => {
             )}
 
             {/* Action buttons */}
-            <View style={tw`flex-row gap-3`}>
+            <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
-                style={[
-                  tw`flex-1 rounded-xl py-3 items-center`,
-                  { backgroundColor: Colors.surfaceLight },
-                ]}
-                onPress={() => { resetDateFilter(); setShowFilterModal(false); }}
+                style={{
+                  flex: 1,
+                  borderRadius: INNER_RADIUS,
+                  paddingVertical: 13,
+                  alignItems: "center",
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                  borderWidth: 1,
+                  borderColor: CARD_BORDER,
+                }}
+                onPress={() => {
+                  resetDateFilter();
+                  setShowFilterModal(false);
+                }}
                 activeOpacity={0.7}
               >
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 14, fontWeight: "500" }}>Reset</Text>
+                <Text
+                  style={{
+                    color: TEXT_SECONDARY,
+                    fontSize: 14,
+                    fontWeight: "500",
+                  }}
+                >
+                  Reset
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  tw`flex-1 rounded-xl py-3 items-center`,
-                  { backgroundColor: ACCENT_COLOR },
-                ]}
+                style={{
+                  flex: 1,
+                  borderRadius: INNER_RADIUS,
+                  paddingVertical: 13,
+                  alignItems: "center",
+                  backgroundColor: ACCENT_COLOR,
+                  shadowColor: ACCENT_COLOR,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 6,
+                }}
                 onPress={applyFilter}
                 activeOpacity={0.8}
               >
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "600" }}>Terapkan</Text>
+                <Text
+                  style={{
+                    color: BACKGROUND_COLOR,
+                    fontSize: 14,
+                    fontWeight: "700",
+                  }}
+                >
+                  Terapkan
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -967,19 +1472,68 @@ const TransactionsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setShowCalendar(null)}
       >
-        <View style={tw`flex-1 justify-end`} pointerEvents="box-none">
+        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
           <TouchableOpacity
-            style={[tw`absolute inset-0`, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" }}
             activeOpacity={1}
             onPress={() => setShowCalendar(null)}
           />
-          <View style={[tw`rounded-t-3xl px-4 pt-5 pb-8`, { backgroundColor: SURFACE_COLOR }]}>
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>
-                {showCalendar === "start" ? "Pilih Tanggal Mulai" : "Pilih Tanggal Akhir"}
+          <View
+            style={{
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              paddingHorizontal: 16,
+              paddingTop: 20,
+              paddingBottom: 36,
+              backgroundColor: SURFACE_COLOR,
+              borderTopWidth: 1,
+              borderTopColor: CARD_BORDER,
+            }}
+          >
+            {/* Drag handle */}
+            <View
+              style={{
+                width: 36,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "rgba(255,255,255,0.15)",
+                alignSelf: "center",
+                marginBottom: 18,
+              }}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+                paddingHorizontal: 4,
+              }}
+            >
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 16,
+                  fontWeight: "700",
+                }}
+              >
+                {showCalendar === "start"
+                  ? "Pilih Tanggal Mulai"
+                  : "Pilih Tanggal Akhir"}
               </Text>
-              <TouchableOpacity onPress={() => setShowCalendar(null)} activeOpacity={0.7}>
-                <Ionicons name="close-outline" size={22} color={Colors.gray400} />
+              <TouchableOpacity
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.07)",
+                }}
+                onPress={() => setShowCalendar(null)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={16} color={Colors.gray400} />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -993,28 +1547,38 @@ const TransactionsScreen: React.FC = () => {
                   selectedTextColor: BACKGROUND_COLOR,
                 },
               }}
-              minDate={showCalendar === "end"   ? formatDateForCalendar(customStartDate) : undefined}
-              maxDate={showCalendar === "start" ? formatDateForCalendar(customEndDate)   : undefined}
+              minDate={
+                showCalendar === "end"
+                  ? formatDateForCalendar(customStartDate)
+                  : undefined
+              }
+              maxDate={
+                showCalendar === "start"
+                  ? formatDateForCalendar(customEndDate)
+                  : undefined
+              }
               theme={{
-                backgroundColor:             SURFACE_COLOR,
-                calendarBackground:          SURFACE_COLOR,
-                textSectionTitleColor:       Colors.gray400,
-                selectedDayBackgroundColor:  ACCENT_COLOR,
-                selectedDayTextColor:        BACKGROUND_COLOR,
-                todayTextColor:              ACCENT_COLOR,
-                dayTextColor:                TEXT_PRIMARY,
-                textDisabledColor:           Colors.textTertiary,
-                dotColor:                    ACCENT_COLOR,
-                selectedDotColor:            BACKGROUND_COLOR,
-                arrowColor:                  ACCENT_COLOR,
-                monthTextColor:              TEXT_PRIMARY,
-                textMonthFontWeight:         "700",
-                textDayFontSize:             15,
-                textMonthFontSize:           16,
+                backgroundColor:            SURFACE_COLOR,
+                calendarBackground:         SURFACE_COLOR,
+                textSectionTitleColor:      Colors.gray400,
+                selectedDayBackgroundColor: ACCENT_COLOR,
+                selectedDayTextColor:       BACKGROUND_COLOR,
+                todayTextColor:             ACCENT_COLOR,
+                dayTextColor:               TEXT_PRIMARY,
+                textDisabledColor:          Colors.textTertiary,
+                dotColor:                   ACCENT_COLOR,
+                selectedDotColor:           BACKGROUND_COLOR,
+                arrowColor:                 ACCENT_COLOR,
+                monthTextColor:             TEXT_PRIMARY,
+                textMonthFontWeight:        "700",
+                textDayFontSize:            15,
+                textMonthFontSize:          16,
                 "stylesheet.calendar.main": {
                   week: {
-                    marginTop: 0, marginBottom: 0,
-                    flexDirection: "row", justifyContent: "space-around",
+                    marginTop: 0,
+                    marginBottom: 0,
+                    flexDirection: "row",
+                    justifyContent: "space-around",
                   },
                 },
               }}
@@ -1022,7 +1586,6 @@ const TransactionsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
