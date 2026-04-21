@@ -399,10 +399,13 @@ const SavingsScreen: React.FC = () => {
                 key={tab.key}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
+                  flexDirection: "row",
+                  paddingVertical: 10,
                   borderRadius: 10,
                   alignItems: "center",
+                  justifyContent: "center",
                   backgroundColor: isActive ? `${tabColor}20` : "transparent",
+                  gap: 6,
                 }}
                 onPress={() => setFilter(tab.key as any)}
                 activeOpacity={0.7}
@@ -417,16 +420,24 @@ const SavingsScreen: React.FC = () => {
                   {tab.label}
                 </Text>
                 {tab.count > 0 && (
-                  <Text
+                  <View
                     style={{
-                      fontSize: 9,
-                      color: isActive ? tabColor : Colors.gray400,
-                      marginTop: 1,
-                      fontWeight: isActive ? "700" : "400",
+                      backgroundColor: isActive ? tabColor : "rgba(255,255,255,0.08)",
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 10,
                     }}
                   >
-                    {tab.count}
-                  </Text>
+                    <Text
+                      style={{
+                        fontSize: 9,
+                        color: isActive ? BACKGROUND_COLOR : Colors.gray400,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {tab.count}
+                    </Text>
+                  </View>
                 )}
               </TouchableOpacity>
             );

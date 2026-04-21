@@ -1,3 +1,4 @@
+// File: src/screens/SavingsHistoryScreen.tsx
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -8,24 +9,92 @@ import {
 import { Text } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
 import { Colors } from "../../theme/theme";
 
+// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const ACCENT_COLOR     = Colors.accent;
+const SUCCESS_COLOR    = Colors.success;
+const ERROR_COLOR      = Colors.error;
+
+// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
+
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const SectionHeader = ({
+  title,
+  linkLabel,
+  onPress,
+}: {
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
+}) => (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          width: 3,
+          height: 13,
+          backgroundColor: ACCENT_COLOR,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          color: Colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+    {linkLabel && onPress && (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+          {linkLabel}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const SavingsHistoryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const route      = useRoute<any>();
   const { savingsId } = route.params;
 
   const { state, refreshData, getSavingsTransactions } = useAppContext();
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "deposit" | "withdrawal">("all");
+  const [filter, setFilter]         = useState<"all" | "deposit" | "withdrawal">("all");
 
-  // Temukan savings berdasarkan ID
-  const saving = state.savings.find((s) => s.id === savingsId);
+  // ── Semua logika di bawah ini TIDAK DIUBAH ────────────────────────────────
+
+  const saving          = state.savings.find((s) => s.id === savingsId);
   const allTransactions = getSavingsTransactions(savingsId);
 
   const onRefresh = async () => {
@@ -34,22 +103,56 @@ const SavingsHistoryScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  // Not found state
   if (!saving) {
     return (
       <View
-        style={tw`flex-1 justify-center items-center bg-[${Colors.background}] p-4`}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+          backgroundColor: BACKGROUND_COLOR,
+        }}
       >
-        <Ionicons name="warning-outline" size={48} color={Colors.error} />
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 24,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${ERROR_COLOR}15`,
+            marginBottom: 16,
+          }}
+        >
+          <Ionicons name="warning-outline" size={32} color={ERROR_COLOR} />
+        </View>
         <Text
-          style={tw`text-lg font-semibold text-[${Colors.textPrimary}] mt-4 mb-2`}
+          style={{
+            color: TEXT_PRIMARY,
+            fontSize: 16,
+            fontWeight: "700",
+            marginBottom: 8,
+            textAlign: "center",
+          }}
         >
           Tabungan tidak ditemukan
         </Text>
         <TouchableOpacity
-          style={tw`mt-4 px-4 py-2 bg-[${Colors.accent}] rounded-lg`}
+          style={{
+            marginTop: 12,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 13,
+            backgroundColor: ACCENT_COLOR,
+          }}
           onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
         >
-          <Text style={tw`text-[${Colors.textPrimary}] font-medium`}>
+          <Text
+            style={{ color: BACKGROUND_COLOR, fontWeight: "700", fontSize: 13 }}
+          >
             Kembali
           </Text>
         </TouchableOpacity>
@@ -57,24 +160,20 @@ const SavingsHistoryScreen: React.FC = () => {
     );
   }
 
-  // Filter transactions
   const filteredTransactions = useMemo(() => {
     return allTransactions.filter((t) => {
-      if (filter === "all") return true;
-      if (filter === "deposit")
-        return t.type === "deposit" || t.type === "initial";
+      if (filter === "all")        return true;
+      if (filter === "deposit")    return t.type === "deposit" || t.type === "initial";
       if (filter === "withdrawal") return t.type === "withdrawal";
       return true;
     });
   }, [allTransactions, filter]);
 
-  // Hitung statistik
   const stats = useMemo(() => {
-    let totalDeposits = 0;
+    let totalDeposits    = 0;
     let totalWithdrawals = 0;
-    let depositCount = 0;
-    let withdrawalCount = 0;
-
+    let depositCount     = 0;
+    let withdrawalCount  = 0;
     allTransactions.forEach((t) => {
       if (t.type === "deposit" || t.type === "initial") {
         totalDeposits += safeNumber(t.amount);
@@ -84,7 +183,6 @@ const SavingsHistoryScreen: React.FC = () => {
         withdrawalCount++;
       }
     });
-
     return {
       totalDeposits,
       totalWithdrawals,
@@ -95,83 +193,13 @@ const SavingsHistoryScreen: React.FC = () => {
     };
   }, [allTransactions]);
 
-  // Render transaction item
-  const renderTransactionItem = (transaction: any, index: number) => {
-    const isDeposit =
-      transaction.type === "deposit" || transaction.type === "initial";
-
-    return (
-      <View
-        key={transaction.id}
-        style={[
-          tw`flex-row justify-between items-center py-4 px-4`,
-          index !== filteredTransactions.length - 1 &&
-            tw`border-b border-[${Colors.border}]`,
-        ]}
-      >
-        <View style={tw`flex-row items-center gap-3`}>
-          <View
-            style={[
-              tw`w-10 h-10 rounded-full items-center justify-center`,
-              isDeposit
-                ? tw`bg-[${Colors.success}]/20`
-                : tw`bg-[${Colors.error}]/20`,
-            ]}
-          >
-            <Ionicons
-              name={isDeposit ? "arrow-down" : "arrow-up"}
-              size={18}
-              color={isDeposit ? Colors.success : Colors.error}
-            />
-          </View>
-          <View>
-            <Text
-              style={tw`text-sm font-semibold text-[${Colors.textPrimary}]`}
-            >
-              {isDeposit ? "Setoran" : "Penarikan"}
-            </Text>
-            <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-0.5`}>
-              {formatDate(transaction.date)}
-            </Text>
-            {transaction.note && (
-              <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-1`}>
-                {transaction.note}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <View style={tw`items-end`}>
-          <Text
-            style={[
-              tw`text-base font-bold`,
-              isDeposit
-                ? tw`text-[${Colors.success}]`
-                : tw`text-[${Colors.error}]`,
-            ]}
-          >
-            {isDeposit ? "+" : "-"} {formatCurrency(transaction.amount)}
-          </Text>
-          <Text style={tw`text-xs text-[${Colors.textTertiary}] mt-1`}>
-            Saldo: {formatCurrency(transaction.newBalance)}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  // Group transactions by date
   const groupedTransactions = useMemo(() => {
     const groups: Record<string, any[]> = {};
-
     filteredTransactions.forEach((transaction) => {
       const dateKey = transaction.date;
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
-      }
+      if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(transaction);
     });
-
     return Object.entries(groups)
       .sort(
         ([dateA], [dateB]) =>
@@ -186,165 +214,476 @@ const SavingsHistoryScreen: React.FC = () => {
       }));
   }, [filteredTransactions]);
 
-  return (
-    <View style={tw`flex-1 bg-[${Colors.background}]`}>
-      {/* Header */}
+  // ── Transaction item renderer ─────────────────────────────────────────────
+  const renderTransactionItem = (
+    transaction: any,
+    index: number,
+    groupLength: number
+  ) => {
+    const isDeposit =
+      transaction.type === "deposit" || transaction.type === "initial";
+    const txColor = isDeposit ? SUCCESS_COLOR : ERROR_COLOR;
+
+    return (
       <View
-        style={tw`px-4 pt-3 pb-4 bg-[${Colors.surface}] border-b border-[${Colors.border}]`}
+        key={transaction.id}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 13,
+          paddingHorizontal: 16,
+          borderBottomWidth: index < groupLength - 1 ? 1 : 0,
+          borderBottomColor: CARD_BORDER,
+        }}
       >
-        <View style={tw`flex-row items-center mb-4`}>
-          <TouchableOpacity
-            style={tw`w-10 h-10 rounded-full bg-[${Colors.surfaceLight}] justify-center items-center`}
-            onPress={() => navigation.goBack()}
+        {/* Icon */}
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 13,
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 13,
+            flexShrink: 0,
+            backgroundColor: `${txColor}15`,
+          }}
+        >
+          <Ionicons
+            name={isDeposit ? "arrow-down-outline" : "arrow-up-outline"}
+            size={17}
+            color={txColor}
+          />
+        </View>
+
+        {/* Info */}
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: TEXT_PRIMARY,
+              fontSize: 13,
+              fontWeight: "500",
+              marginBottom: 2,
+            }}
           >
-            <Ionicons name="chevron-back" size={24} color={Colors.accent} />
+            {isDeposit ? "Setoran" : "Penarikan"}
+          </Text>
+          <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+            {formatDate(transaction.date)}
+            {transaction.note ? ` · ${transaction.note}` : ""}
+          </Text>
+        </View>
+
+        {/* Amount + balance */}
+        <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              color: txColor,
+              marginBottom: 2,
+            }}
+          >
+            {isDeposit ? "+" : "−"}{formatCurrency(transaction.amount)}
+          </Text>
+          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+            {formatCurrency(transaction.newBalance)}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+
+      {/* ── Sticky header ───────────────────────────────────────────────── */}
+      <View
+        style={{
+          backgroundColor: BACKGROUND_COLOR,
+          paddingHorizontal: 18,
+          paddingTop: 14,
+          paddingBottom: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: CARD_BORDER,
+        }}
+      >
+        {/* Back + title row */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: `${ACCENT_COLOR}15`,
+              marginRight: 12,
+            }}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={18} color={ACCENT_COLOR} />
           </TouchableOpacity>
-          <View style={tw`ml-3 flex-1`}>
-            <Text style={tw`text-lg font-bold text-[${Colors.textPrimary}]`}>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700" }}
+            >
               Riwayat Transaksi
             </Text>
-            <Text style={tw`text-sm text-[${Colors.textSecondary}]`}>
+            <Text
+              style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}
+            >
               {saving.name}
             </Text>
           </View>
         </View>
 
-        {/* Stats */}
-        <View style={tw`flex-row justify-between mb-3`}>
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-              Total Setoran
-            </Text>
-            <Text style={tw`text-base font-bold text-[${Colors.success}]`}>
+        {/* Stats row */}
+        <View
+          style={{
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: INNER_RADIUS,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+            paddingVertical: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 14,
+          }}
+        >
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <View
+                style={{
+                  width: 6, height: 6, borderRadius: 3,
+                  backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                }}
+              />
+              <Text
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                }}
+              >
+                Setoran
+              </Text>
+            </View>
+            <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
               {formatCurrency(stats.totalDeposits)}
             </Text>
           </View>
 
-          <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
+          <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }} />
 
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-              Total Penarikan
-            </Text>
-            <Text style={tw`text-base font-bold text-[${Colors.error}]`}>
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <View
+                style={{
+                  width: 6, height: 6, borderRadius: 3,
+                  backgroundColor: ERROR_COLOR, marginRight: 5,
+                }}
+              />
+              <Text
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                }}
+              >
+                Penarikan
+              </Text>
+            </View>
+            <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}>
               {formatCurrency(stats.totalWithdrawals)}
             </Text>
           </View>
 
-          <View style={tw`w-px h-8 bg-[${Colors.border}]`} />
+          <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }} />
 
-          <View style={tw`items-center flex-1`}>
-            <Text style={tw`text-xs text-[${Colors.textSecondary}] mb-1`}>
-              Transaksi
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 4,
+              }}
+            >
+              Total
             </Text>
-            <Text style={tw`text-base font-bold text-[${Colors.textPrimary}]`}>
+            <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
               {stats.totalTransactions}
             </Text>
           </View>
         </View>
 
-        {/* Filter Tabs */}
-        <View style={tw`flex-row gap-2`}>
+        {/* Filter — segmented control */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: 13,
+            padding: 3,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+          }}
+        >
           {[
-            { key: "all", label: "Semua", count: allTransactions.length },
-            { key: "deposit", label: "Setoran", count: stats.depositCount },
-            {
-              key: "withdrawal",
-              label: "Penarikan",
-              count: stats.withdrawalCount,
-            },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={[
-                tw`px-3 py-1.5 rounded-full`,
-                filter === tab.key
-                  ? tw`bg-[${Colors.accent}]/20`
-                  : tw`bg-[${Colors.surfaceLight}]`,
-              ]}
-              onPress={() => setFilter(tab.key as any)}
-            >
-              <Text
-                style={[
-                  tw`text-xs font-medium`,
-                  filter === tab.key
-                    ? tw`text-[${Colors.accent}]`
-                    : tw`text-[${Colors.textSecondary}]`,
-                ]}
+            { key: "all",        label: "Semua",    count: allTransactions.length },
+            { key: "deposit",    label: "Setoran",  count: stats.depositCount },
+            { key: "withdrawal", label: "Penarikan", count: stats.withdrawalCount },
+          ].map((tab) => {
+            const isActive   = filter === tab.key;
+            const tabColor   =
+              tab.key === "deposit"    ? SUCCESS_COLOR :
+              tab.key === "withdrawal" ? ERROR_COLOR   : ACCENT_COLOR;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  backgroundColor: isActive ? `${tabColor}20` : "transparent",
+                }}
+                onPress={() => setFilter(tab.key as any)}
+                activeOpacity={0.7}
               >
-                {tab.label} ({tab.count})
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: isActive ? "700" : "500",
+                    color: isActive ? tabColor : Colors.gray400,
+                  }}
+                >
+                  {tab.label}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    color: isActive ? tabColor : Colors.gray400,
+                    marginTop: 1,
+                    fontWeight: isActive ? "700" : "400",
+                  }}
+                >
+                  {tab.count}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
-      {/* Transactions List */}
+      {/* ── Main scroll ──────────────────────────────────────────────────── */}
       <ScrollView
-        style={tw`flex-1`}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[ACCENT_COLOR]}
+            tintColor={ACCENT_COLOR}
+          />
         }
       >
         {groupedTransactions.length === 0 ? (
-          <View style={tw`items-center py-12`}>
-            <Ionicons
-              name="receipt-outline"
-              size={48}
-              color={Colors.textTertiary}
-            />
+          /* Empty state */
+          <View
+            style={{
+              alignItems: "center",
+              paddingVertical: 48,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              paddingHorizontal: 24,
+            }}
+          >
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${Colors.gray400}14`,
+                marginBottom: 14,
+              }}
+            >
+              <Ionicons name="receipt-outline" size={26} color={Colors.gray400} />
+            </View>
             <Text
-              style={tw`text-base font-semibold text-[${Colors.textPrimary}] mt-4 mb-2`}
+              style={{
+                color: TEXT_PRIMARY,
+                fontSize: 15,
+                fontWeight: "700",
+                marginBottom: 6,
+                textAlign: "center",
+              }}
             >
               {filter === "all" ? "Belum ada transaksi" : "Tidak ada transaksi"}
             </Text>
             <Text
-              style={tw`text-sm text-[${Colors.textSecondary}] text-center px-8`}
+              style={{
+                color: Colors.gray400,
+                fontSize: 12,
+                textAlign: "center",
+                lineHeight: 18,
+              }}
             >
               {filter === "all"
                 ? "Mulai dengan menambahkan setoran pertama"
-                : `Tidak ada transaksi dengan tipe "${filter}"`}
+                : `Tidak ada transaksi dengan tipe "${filter === "deposit" ? "Setoran" : "Penarikan"}"`}
             </Text>
           </View>
         ) : (
-          groupedTransactions.map((group) => (
-            <View key={group.date} style={tw`mb-4`}>
-              {/* Date Header */}
-              <View style={tw`px-4 py-2 bg-[${Colors.surfaceLight}]`}>
-                <Text
-                  style={tw`text-sm font-medium text-[${Colors.textSecondary}]`}
-                >
-                  {group.formattedDate}
-                </Text>
-              </View>
+          groupedTransactions.map((group) => {
+            // Hitung subtotal per grup hari
+            const dayDeposits = group.transactions
+              .filter((t: any) => t.type === "deposit" || t.type === "initial")
+              .reduce((s: number, t: any) => s + safeNumber(t.amount), 0);
+            const dayWithdrawals = group.transactions
+              .filter((t: any) => t.type === "withdrawal")
+              .reduce((s: number, t: any) => s + safeNumber(t.amount), 0);
+            const dayNet = dayDeposits - dayWithdrawals;
 
-              {/* Transactions for this date */}
-              <View style={tw`bg-[${Colors.surface}]`}>
-                {group.transactions.map((transaction, index) =>
-                  renderTransactionItem(transaction, index)
-                )}
+            return (
+              <View key={group.date} style={{ marginBottom: 14 }}>
+                {/* Day header */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    paddingHorizontal: 2,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: Colors.gray400,
+                      fontSize: 11,
+                      fontWeight: "700",
+                      letterSpacing: 0.3,
+                    }}
+                  >
+                    {group.formattedDate}
+                  </Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 9,
+                      paddingVertical: 3,
+                      borderRadius: 20,
+                      backgroundColor:
+                        dayNet >= 0
+                          ? `${SUCCESS_COLOR}15`
+                          : `${ERROR_COLOR}15`,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: "700",
+                        color: dayNet >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                      }}
+                    >
+                      {dayNet >= 0 ? "+" : ""}
+                      {formatCurrency(dayNet)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Transaction group card */}
+                <View
+                  style={{
+                    backgroundColor: SURFACE_COLOR,
+                    borderRadius: CARD_RADIUS,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    overflow: "hidden",
+                  }}
+                >
+                  {group.transactions.map((transaction: any, index: number) =>
+                    renderTransactionItem(
+                      transaction,
+                      index,
+                      group.transactions.length
+                    )
+                  )}
+                </View>
               </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
 
-      {/* Bottom Action */}
+      {/* ── Bottom CTA bar ───────────────────────────────────────────────── */}
       <View
-        style={tw`p-4 bg-[${Colors.surface}] border-t border-[${Colors.border}]`}
+        style={{
+          paddingHorizontal: 18,
+          paddingVertical: 14,
+          backgroundColor: BACKGROUND_COLOR,
+          borderTopWidth: 1,
+          borderTopColor: CARD_BORDER,
+        }}
       >
         <TouchableOpacity
-          style={tw`bg-[${Colors.accent}] rounded-lg py-3 items-center`}
-          onPress={() => {
+          style={{
+            borderRadius: INNER_RADIUS,
+            paddingVertical: 14,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 8,
+            backgroundColor: ACCENT_COLOR,
+            shadowColor: ACCENT_COLOR,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35,
+            shadowRadius: 10,
+            elevation: 8,
+          }}
+          onPress={() =>
             navigation.navigate("AddSavingsTransaction", {
               savingsId: saving.id,
               type: "deposit",
-            });
-          }}
+            })
+          }
+          activeOpacity={0.85}
         >
-          <Text style={tw`text-[${Colors.textPrimary}] font-semibold`}>
-            + Tambah Transaksi Baru
+          <Ionicons name="add-circle-outline" size={17} color={BACKGROUND_COLOR} />
+          <Text
+            style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "700" }}
+          >
+            Tambah Transaksi Baru
           </Text>
         </TouchableOpacity>
       </View>

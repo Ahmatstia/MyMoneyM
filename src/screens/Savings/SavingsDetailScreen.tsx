@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  Animated,
 } from "react-native";
-import { Text, ProgressBar } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import {
@@ -21,17 +21,117 @@ import {
 import { formatDate } from "../../utils/formatters";
 import { Colors } from "../../theme/theme";
 
+// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
+const BACKGROUND_COLOR = Colors.background;
+const SURFACE_COLOR    = Colors.surface;
+const TEXT_PRIMARY     = Colors.textPrimary;
+const TEXT_SECONDARY   = Colors.textSecondary;
+const ACCENT_COLOR     = Colors.accent;
+const SUCCESS_COLOR    = Colors.success;
+const WARNING_COLOR    = Colors.warning;
+const ERROR_COLOR      = Colors.error;
+
+// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
+
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const Spacer = ({ size = 20 }: { size?: number }) => (
+  <View style={{ height: size }} />
+);
+
+const SectionHeader = ({
+  title,
+  linkLabel,
+  onPress,
+}: {
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
+}) => (
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 14,
+    }}
+  >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View
+        style={{
+          width: 3,
+          height: 13,
+          backgroundColor: ACCENT_COLOR,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          color: Colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+        }}
+      >
+        {title}
+      </Text>
+    </View>
+    {linkLabel && onPress && (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+          {linkLabel}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+const ThinBar = ({
+  progress,
+  color,
+}: {
+  progress: number;
+  color: string;
+}) => (
+  <View
+    style={{
+      height: 6,
+      backgroundColor: "rgba(255,255,255,0.07)",
+      borderRadius: 6,
+      overflow: "hidden",
+    }}
+  >
+    <View
+      style={{
+        height: 6,
+        borderRadius: 6,
+        width: `${Math.max(0, Math.min(progress, 100))}%`,
+        backgroundColor: color,
+      }}
+    />
+  </View>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const SavingsDetailScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const route      = useRoute<any>();
   const { savingsId } = route.params;
 
   const { state, deleteSavings, refreshData, getSavingsTransactions } =
     useAppContext();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Temukan savings berdasarkan ID
-  const saving = state.savings?.find((s) => s.id === savingsId);
+  // ── Semua logika di bawah ini TIDAK DIUBAH ────────────────────────────────
+
+  const saving              = state.savings?.find((s) => s.id === savingsId);
   const savingsTransactions = getSavingsTransactions(savingsId);
 
   const onRefresh = async () => {
@@ -40,28 +140,54 @@ const SavingsDetailScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  // Not found state
   if (!saving) {
     return (
       <View
-        style={tw.style(`flex-1 justify-center items-center p-4`, {
-          backgroundColor: Colors.background,
-        })}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+          backgroundColor: BACKGROUND_COLOR,
+        }}
       >
-        <Ionicons name="warning-outline" size={48} color={Colors.error} />
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 24,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${ERROR_COLOR}15`,
+            marginBottom: 16,
+          }}
+        >
+          <Ionicons name="warning-outline" size={32} color={ERROR_COLOR} />
+        </View>
         <Text
-          style={tw.style(`text-lg font-semibold mt-4 mb-2`, {
-            color: Colors.textPrimary,
-          })}
+          style={{
+            color: TEXT_PRIMARY,
+            fontSize: 16,
+            fontWeight: "700",
+            marginBottom: 8,
+            textAlign: "center",
+          }}
         >
           Tabungan tidak ditemukan
         </Text>
         <TouchableOpacity
-          style={tw.style(`mt-4 px-4 py-2 rounded-lg`, {
-            backgroundColor: Colors.accent,
-          })}
+          style={{
+            marginTop: 12,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 13,
+            backgroundColor: ACCENT_COLOR,
+          }}
           onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
         >
-          <Text style={tw.style(`font-medium`, { color: Colors.textPrimary })}>
+          <Text style={{ color: BACKGROUND_COLOR, fontWeight: "700", fontSize: 13 }}>
             Kembali
           </Text>
         </TouchableOpacity>
@@ -69,27 +195,24 @@ const SavingsDetailScreen: React.FC = () => {
     );
   }
 
-  const current = safeNumber(saving.current);
-  const target = safeNumber(saving.target);
-  const progress = getSafePercentage(current, target);
-  const remaining = target - current;
+  const current     = safeNumber(saving.current);
+  const target      = safeNumber(saving.target);
+  const progress    = getSafePercentage(current, target);
+  const remaining   = target - current;
   const isCompleted = current >= target;
+  const activeColor = isCompleted ? SUCCESS_COLOR : ACCENT_COLOR;
 
-  // Hitung statistik transaksi
   const stats = useMemo(() => {
     const deposits = savingsTransactions
       .filter((t) => t.type === "deposit" || t.type === "initial")
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
-
     const withdrawals = savingsTransactions
       .filter((t) => t.type === "withdrawal")
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
-
     const lastTransaction =
       savingsTransactions.length > 0
         ? savingsTransactions[savingsTransactions.length - 1]
         : null;
-
     return {
       deposits,
       withdrawals,
@@ -98,30 +221,19 @@ const SavingsDetailScreen: React.FC = () => {
     };
   }, [savingsTransactions]);
 
-  // Format deadline
   const formatDeadlineInfo = () => {
     if (!saving.deadline)
       return { text: "Tanpa deadline", color: Colors.textTertiary };
-
     try {
       const deadlineDate = new Date(saving.deadline);
-      const today = new Date();
-      const diffTime = deadlineDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays < 0) return { text: "Terlambat", color: Colors.error };
-      if (diffDays === 0) return { text: "Hari ini", color: Colors.error };
-      if (diffDays <= 7)
-        return { text: `${diffDays} hari lagi`, color: Colors.warning };
-      if (diffDays <= 30)
-        return {
-          text: `${Math.floor(diffDays / 7)} minggu lagi`,
-          color: Colors.info,
-        };
-      return {
-        text: `${Math.floor(diffDays / 30)} bulan lagi`,
-        color: Colors.success,
-      };
+      const today        = new Date();
+      const diffTime     = deadlineDate.getTime() - today.getTime();
+      const diffDays     = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays < 0)   return { text: "Terlambat",                              color: ERROR_COLOR };
+      if (diffDays === 0) return { text: "Hari ini",                               color: ERROR_COLOR };
+      if (diffDays <= 7)  return { text: `${diffDays} hari lagi`,                  color: WARNING_COLOR };
+      if (diffDays <= 30) return { text: `${Math.floor(diffDays / 7)} minggu lagi`, color: Colors.info };
+      return              { text: `${Math.floor(diffDays / 30)} bulan lagi`,       color: SUCCESS_COLOR };
     } catch {
       return { text: saving.deadline, color: Colors.textTertiary };
     }
@@ -142,7 +254,7 @@ const SavingsDetailScreen: React.FC = () => {
             try {
               await deleteSavings(saving.id);
               navigation.goBack();
-            } catch (error) {
+            } catch {
               Alert.alert("Error", "Gagal menghapus tabungan");
             }
           },
@@ -151,536 +263,689 @@ const SavingsDetailScreen: React.FC = () => {
     );
   };
 
-  // Render transaction item yang lebih minimalis
+  // ── Transaction item renderer ─────────────────────────────────────────────
   const renderTransactionItem = (transaction: any, index: number) => {
     const isDeposit =
       transaction.type === "deposit" || transaction.type === "initial";
+    const txColor = isDeposit ? SUCCESS_COLOR : ERROR_COLOR;
 
     return (
       <View
         key={transaction.id}
-        style={[
-          tw`py-3 px-4`,
-          index < savingsTransactions.length - 1 && {
-            borderBottomWidth: 1,
-            borderBottomColor: Colors.border,
-          },
-        ]}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingVertical: 13,
+          paddingHorizontal: 16,
+          borderBottomWidth: index < savingsTransactions.slice(0, 10).length - 1 ? 1 : 0,
+          borderBottomColor: CARD_BORDER,
+        }}
       >
-        <View style={tw`flex-row justify-between items-center`}>
-          <View style={tw`flex-row items-center gap-3`}>
-            <View
-              style={[
-                tw`w-10 h-10 rounded-full items-center justify-center`,
-                isDeposit
-                  ? { backgroundColor: `${Colors.success}20` }
-                  : { backgroundColor: `${Colors.error}20` },
-              ]}
-            >
-              <Ionicons
-                name={isDeposit ? "arrow-down" : "arrow-up"}
-                size={18}
-                color={isDeposit ? Colors.success : Colors.error}
-              />
-            </View>
-            <View>
-              <Text
-                style={tw.style(`text-sm font-medium`, {
-                  color: Colors.textPrimary,
-                })}
-              >
-                {isDeposit ? "Setoran" : "Penarikan"}
-              </Text>
-              <Text
-                style={tw.style(`text-xs mt-0.5`, {
-                  color: Colors.textTertiary,
-                })}
-              >
-                {formatDate(transaction.date)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={tw`items-end`}>
-            <Text
-              style={[
-                tw`text-base font-semibold`,
-                isDeposit ? { color: Colors.success } : { color: Colors.error },
-              ]}
-            >
-              {isDeposit ? "+" : "-"} {formatCurrency(transaction.amount)}
-            </Text>
-            <Text
-              style={tw.style(`text-xs mt-0.5`, { color: Colors.textTertiary })}
-            >
-              Saldo: {formatCurrency(transaction.newBalance)}
-            </Text>
-          </View>
+        {/* Icon */}
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 13,
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 13,
+            flexShrink: 0,
+            backgroundColor: `${txColor}15`,
+          }}
+        >
+          <Ionicons
+            name={isDeposit ? "arrow-down-outline" : "arrow-up-outline"}
+            size={17}
+            color={txColor}
+          />
         </View>
-        {transaction.note && (
+
+        {/* Info */}
+        <View style={{ flex: 1 }}>
           <Text
-            style={tw.style(`text-xs mt-2 ml-13`, {
-              color: Colors.textTertiary,
-            })}
+            style={{
+              color: TEXT_PRIMARY,
+              fontSize: 13,
+              fontWeight: "500",
+              marginBottom: 2,
+            }}
           >
-            {transaction.note}
+            {isDeposit ? "Setoran" : "Penarikan"}
           </Text>
-        )}
+          <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+            {formatDate(transaction.date)}
+            {transaction.note ? ` · ${transaction.note}` : ""}
+          </Text>
+        </View>
+
+        {/* Amount + balance */}
+        <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              color: txColor,
+              marginBottom: 2,
+            }}
+          >
+            {isDeposit ? "+" : "−"}{formatCurrency(transaction.amount)}
+          </Text>
+          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+            {formatCurrency(transaction.newBalance)}
+          </Text>
+        </View>
       </View>
     );
   };
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={tw.style(`flex-1`, { backgroundColor: Colors.background })}>
-      {/* Header - Super Minimalis */}
+    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+
+      {/* ── Compact top bar ─────────────────────────────────────────────── */}
       <View
-        style={tw.style(`px-4 pt-2 pb-3`, { backgroundColor: Colors.surface })}
+        style={{
+          backgroundColor: BACKGROUND_COLOR,
+          paddingHorizontal: 18,
+          paddingTop: 12,
+          paddingBottom: 8,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottomWidth: 1,
+          borderBottomColor: CARD_BORDER,
+        }}
       >
-        {/* Navigation Bar */}
-        <View style={tw`flex-row justify-between items-center mb-2`}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={tw`p-2`}>
-            <Ionicons name="chevron-back" size={22} color={Colors.accent} />
+        <TouchableOpacity
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${ACCENT_COLOR}15`,
+          }}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={18} color={ACCENT_COLOR} />
+        </TouchableOpacity>
+
+        <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>
+          Detail Tabungan
+        </Text>
+
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: `${ACCENT_COLOR}15`,
+              borderWidth: 1,
+              borderColor: `${ACCENT_COLOR}20`,
+            }}
+            onPress={() =>
+              navigation.navigate("AddSavings", {
+                editMode: true,
+                savingsData: saving,
+              })
+            }
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
           </TouchableOpacity>
-
-          <View style={tw`flex-row gap-1`}>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate("AddSavings", {
-                  editMode: true,
-                  savingsData: saving,
-                });
-              }}
-              style={tw`p-2`}
-            >
-              <Ionicons name="create-outline" size={20} color={Colors.accent} />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleDelete} style={tw`p-2`}>
-              <Ionicons name="trash-outline" size={20} color={Colors.error} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Savings Info - Ultra Minimalis */}
-        <View style={tw`items-center`}>
-          <View
-            style={[
-              tw`w-14 h-14 rounded-full items-center justify-center mb-2`,
-              {
-                backgroundColor: `${
-                  isCompleted ? Colors.success : Colors.accent
-                }20`,
-              },
-            ]}
+          <TouchableOpacity
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: `${ERROR_COLOR}15`,
+              borderWidth: 1,
+              borderColor: `${ERROR_COLOR}20`,
+            }}
+            onPress={handleDelete}
+            activeOpacity={0.7}
           >
-            <Ionicons
-              name={(saving.icon as any) || "wallet-outline"}
-              size={24}
-              color={isCompleted ? Colors.success : Colors.accent}
-            />
-          </View>
-
-          <Text
-            style={tw.style(`text-lg font-semibold text-center`, {
-              color: Colors.textPrimary,
-            })}
-          >
-            {saving.name}
-          </Text>
-
-          {saving.description && (
-            <Text
-              style={tw.style(`text-xs text-center mt-0.5 leading-4`, {
-                color: Colors.textSecondary,
-              })}
-            >
-              {saving.description}
-            </Text>
-          )}
+            <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Scrollable Content */}
       <ScrollView
-        style={tw`flex-1`}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[ACCENT_COLOR]}
+            tintColor={ACCENT_COLOR}
+          />
         }
-        contentContainerStyle={tw`pb-24`}
       >
-        {/* Progress Card - Minimalis */}
-        <View style={tw`mx-4 mt-4`}>
-          {/* Header Progress */}
-          <View style={tw`flex-row justify-between items-center mb-3`}>
+        <Spacer size={18} />
+
+        {/* ── Hero identity card ───────────────────────────────────────── */}
+        <View
+          style={{
+            backgroundColor: SURFACE_COLOR,
+            borderRadius: CARD_RADIUS,
+            borderWidth: 1,
+            borderColor: CARD_BORDER,
+            // Left accent stripe per completion status
+            borderLeftWidth: 3,
+            borderLeftColor: activeColor,
+            padding: CARD_PAD,
+            marginBottom: 16,
+          }}
+        >
+          {/* Icon + name row */}
+          <View
+            style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}
+          >
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${activeColor}18`,
+                borderWidth: 1.5,
+                borderColor: `${activeColor}30`,
+                marginRight: 14,
+              }}
+            >
+              <Ionicons
+                name={(saving.icon as any) || "wallet-outline"}
+                size={24}
+                color={activeColor}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 17,
+                  fontWeight: "700",
+                  marginBottom: 3,
+                }}
+              >
+                {saving.name}
+              </Text>
+              {saving.description ? (
+                <Text
+                  style={{ color: Colors.gray400, fontSize: 12, lineHeight: 17 }}
+                  numberOfLines={2}
+                >
+                  {saving.description}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Status badge */}
+            <View
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 20,
+                backgroundColor: `${activeColor}18`,
+                borderWidth: 1,
+                borderColor: `${activeColor}28`,
+              }}
+            >
+              <Text style={{ color: activeColor, fontSize: 10, fontWeight: "700" }}>
+                {isCompleted ? "Selesai ✓" : "Berlangsung"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Progress percentage */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 8,
+            }}
+          >
             <Text
-              style={tw.style(`text-sm font-medium`, {
-                color: Colors.textPrimary,
-              })}
+              style={{
+                color: Colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+              }}
             >
               Progress Tabungan
             </Text>
-            <View style={tw`flex-row items-center gap-1`}>
-              <Ionicons
-                name={isCompleted ? "checkmark-circle" : "time-outline"}
-                size={14}
-                color={isCompleted ? Colors.success : Colors.accent}
-              />
-              <Text
-                style={tw.style(
-                  `text-xs font-medium`,
-                  isCompleted
-                    ? { color: Colors.success }
-                    : { color: Colors.accent }
-                )}
-              >
-                {progress.toFixed(1)}%
-              </Text>
-            </View>
+            <Text style={{ color: activeColor, fontSize: 15, fontWeight: "800" }}>
+              {progress.toFixed(1)}%
+            </Text>
           </View>
 
-          {/* Progress Bar dengan Label */}
-          <View style={tw`mb-4`}>
-            <ProgressBar
-              progress={Math.min(progress / 100, 1)}
-              color={isCompleted ? Colors.success : Colors.accent}
-              style={tw.style(`h-1.5 rounded-full`, {
-                backgroundColor: Colors.surfaceLight,
-              })}
-            />
-            <View style={tw`flex-row justify-between mt-1`}>
-              <Text style={tw.style(`text-xs`, { color: Colors.textTertiary })}>
-                Rp0
-              </Text>
-              <Text style={tw.style(`text-xs`, { color: Colors.textTertiary })}>
-                {formatCurrency(target)}
-              </Text>
-            </View>
+          {/* Progress bar 6px */}
+          <ThinBar progress={progress} color={activeColor} />
+
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 5,
+              marginBottom: 16,
+            }}
+          >
+            <Text style={{ color: Colors.gray400, fontSize: 9 }}>Rp 0</Text>
+            <Text style={{ color: Colors.gray400, fontSize: 9 }}>
+              {formatCurrency(target)}
+            </Text>
           </View>
 
-          {/* Angka-angka Penting - Compact Layout */}
-          <View style={tw`flex-row justify-between items-center mb-4`}>
-            <View style={tw`items-center`}>
+          {/* Terkumpul / Target / Sisa */}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flex: 1, alignItems: "center" }}>
               <Text
-                style={tw.style(`text-xs mb-0.5`, {
-                  color: Colors.textSecondary,
-                })}
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                  marginBottom: 4,
+                }}
               >
                 Terkumpul
               </Text>
-              <Text
-                style={tw.style(`text-base font-bold`, {
-                  color: Colors.success,
-                })}
-              >
+              <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
                 {formatCurrency(current)}
               </Text>
             </View>
 
             <Ionicons
               name="arrow-forward"
-              size={16}
-              color={Colors.textTertiary}
+              size={13}
+              color={Colors.gray400}
             />
 
-            <View style={tw`items-center`}>
+            <View style={{ flex: 1, alignItems: "center" }}>
               <Text
-                style={tw.style(`text-xs mb-0.5`, {
-                  color: Colors.textSecondary,
-                })}
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                  marginBottom: 4,
+                }}
               >
                 Target
               </Text>
-              <Text
-                style={tw.style(`text-base font-bold`, {
-                  color: Colors.textPrimary,
-                })}
-              >
+              <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700" }}>
                 {formatCurrency(target)}
               </Text>
             </View>
 
             <Ionicons
               name="arrow-forward"
-              size={16}
-              color={Colors.textTertiary}
+              size={13}
+              color={Colors.gray400}
             />
 
-            <View style={tw`items-center`}>
+            <View style={{ flex: 1, alignItems: "center" }}>
               <Text
-                style={tw.style(`text-xs mb-0.5`, {
-                  color: Colors.textSecondary,
-                })}
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.8,
+                  marginBottom: 4,
+                }}
               >
                 Sisa
               </Text>
               <Text
-                style={tw.style(
-                  `text-base font-bold`,
-                  remaining >= 0
-                    ? { color: Colors.accent }
-                    : { color: Colors.error }
-                )}
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: remaining >= 0 ? ACCENT_COLOR : ERROR_COLOR,
+                }}
               >
                 {formatCurrency(remaining)}
               </Text>
             </View>
           </View>
 
-          {/* Info Status & Deadline - Single Line */}
+          {/* Deadline row */}
           <View
-            style={tw.style(
-              `flex-row justify-between items-center py-2 border-t`,
-              { borderColor: Colors.border }
-            )}
+            style={{
+              height: 1,
+              backgroundColor: CARD_BORDER,
+              marginVertical: 14,
+            }}
+          />
+          <View
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
           >
-            <View style={tw`flex-row items-center gap-2`}>
-              <View
-                style={[
-                  tw`w-2 h-2 rounded-full`,
-                  { backgroundColor: deadlineInfo.color },
-                ]}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="time-outline"
+                size={13}
+                color={deadlineInfo.color}
+                style={{ marginRight: 6 }}
               />
-              <Text
-                style={tw.style(`text-xs`, { color: Colors.textSecondary })}
-              >
+              <Text style={{ color: deadlineInfo.color, fontSize: 12, fontWeight: "600" }}>
                 {deadlineInfo.text}
               </Text>
             </View>
-
-            <View style={tw`flex-row items-center gap-1`}>
-              <View
-                style={[
-                  tw`w-2 h-2 rounded-full`,
-                  {
-                    backgroundColor: isCompleted
-                      ? Colors.success
-                      : Colors.accent,
-                  },
-                ]}
-              />
-              <Text
-                style={tw.style(`text-xs`, { color: Colors.textSecondary })}
-              >
-                {isCompleted ? "Selesai" : "Berlangsung"}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Stats Cards - Super Minimalis */}
-        <View style={tw`flex-row mx-4 mt-3 gap-2`}>
-          <View style={tw`flex-1`}>
-            <View
-              style={tw.style(`rounded-lg p-3`, {
-                backgroundColor: `${Colors.success}20`,
-              })}
-            >
-              <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text
-                  style={tw.style(`text-xs font-medium`, {
-                    color: Colors.success,
-                  })}
-                >
-                  Setoran
-                </Text>
-                <Ionicons name="arrow-down" size={12} color={Colors.success} />
-              </View>
-              <Text
-                style={tw.style(`text-sm font-bold`, { color: Colors.success })}
-              >
-                {formatCurrency(stats.deposits)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={tw`flex-1`}>
-            <View
-              style={tw.style(`rounded-lg p-3`, {
-                backgroundColor: `${Colors.error}20`,
-              })}
-            >
-              <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text
-                  style={tw.style(`text-xs font-medium`, {
-                    color: Colors.error,
-                  })}
-                >
-                  Penarikan
-                </Text>
-                <Ionicons name="arrow-up" size={12} color={Colors.error} />
-              </View>
-              <Text
-                style={tw.style(`text-sm font-bold`, { color: Colors.error })}
-              >
-                {formatCurrency(stats.withdrawals)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={tw`flex-1`}>
-            <View
-              style={tw.style(`rounded-lg p-3`, {
-                backgroundColor: Colors.surfaceLight,
-              })}
-            >
-              <View style={tw`flex-row items-center justify-between mb-1`}>
-                <Text
-                  style={tw.style(`text-xs font-medium`, {
-                    color: Colors.textPrimary,
-                  })}
-                >
-                  Transaksi
-                </Text>
-                <Ionicons
-                  name="receipt-outline"
-                  size={12}
-                  color={Colors.textTertiary}
-                />
-              </View>
-              <Text
-                style={tw.style(`text-sm font-bold`, {
-                  color: Colors.textPrimary,
+            {saving.deadline && (
+              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+                {new Date(saving.deadline).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
                 })}
-              >
-                {stats.transactionCount}
               </Text>
-            </View>
+            )}
           </View>
         </View>
 
-        {/* Transactions Section */}
-        <View
-          style={tw.style(`mx-4 mt-4 rounded-2xl border`, {
-            backgroundColor: Colors.surface,
-            borderColor: Colors.border,
-          })}
-        >
+        {/* ── Stats row ────────────────────────────────────────────────── */}
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
+          {/* Setoran */}
           <View
-            style={tw.style(`px-4 py-3 border-b`, {
-              borderColor: Colors.border,
-            })}
+            style={{
+              flex: 1,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: INNER_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 14,
+            }}
           >
-            <View style={tw`flex-row justify-between items-center`}>
-              <Text
-                style={tw.style(`text-base font-semibold`, {
-                  color: Colors.textPrimary,
-                })}
-              >
-                Riwayat Transaksi
-              </Text>
-              {savingsTransactions.length > 0 && (
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("SavingsHistory", { savingsId })
-                  }
-                >
-                  <Text
-                    style={tw.style(`text-sm font-medium`, {
-                      color: Colors.accent,
-                    })}
-                  >
-                    Lihat Semua
-                  </Text>
-                </TouchableOpacity>
-              )}
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${SUCCESS_COLOR}15`,
+                marginBottom: 8,
+              }}
+            >
+              <Ionicons name="arrow-down-outline" size={15} color={SUCCESS_COLOR} />
             </View>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 4,
+              }}
+            >
+              Setoran
+            </Text>
+            <Text style={{ color: SUCCESS_COLOR, fontSize: 13, fontWeight: "700" }}>
+              {formatCurrency(stats.deposits)}
+            </Text>
           </View>
 
-          {savingsTransactions.length === 0 ? (
-            <View style={tw`py-8 px-4 items-center`}>
-              <View
-                style={tw.style(
-                  `w-16 h-16 rounded-full items-center justify-center mb-3`,
-                  { backgroundColor: Colors.surfaceLight }
-                )}
-              >
-                <Ionicons
-                  name="receipt-outline"
-                  size={24}
-                  color={Colors.textTertiary}
-                />
-              </View>
-              <Text
-                style={tw.style(`text-base font-semibold mb-2`, {
-                  color: Colors.textPrimary,
-                })}
-              >
-                Belum ada transaksi
-              </Text>
-              <Text
-                style={tw.style(`text-sm text-center mb-4`, {
-                  color: Colors.textSecondary,
-                })}
-              >
-                Mulai dengan menambahkan setoran pertama
-              </Text>
-              <TouchableOpacity
-                style={tw.style(`px-4 py-2 rounded-lg`, {
-                  backgroundColor: Colors.accent,
-                })}
-                onPress={() => {
-                  navigation.navigate("AddSavingsTransaction", {
-                    savingsId: saving.id,
-                    type: "deposit",
-                  });
-                }}
-              >
-                <Text
-                  style={tw.style(`font-medium`, { color: Colors.textPrimary })}
-                >
-                  Tambah Setoran
-                </Text>
-              </TouchableOpacity>
+          {/* Penarikan */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: INNER_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 14,
+            }}
+          >
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ERROR_COLOR}15`,
+                marginBottom: 8,
+              }}
+            >
+              <Ionicons name="arrow-up-outline" size={15} color={ERROR_COLOR} />
             </View>
-          ) : (
-            savingsTransactions
-              .slice(0, 10)
-              .map((transaction, index) =>
-                renderTransactionItem(transaction, index)
-              )
-          )}
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 4,
+              }}
+            >
+              Penarikan
+            </Text>
+            <Text style={{ color: ERROR_COLOR, fontSize: 13, fontWeight: "700" }}>
+              {formatCurrency(stats.withdrawals)}
+            </Text>
+          </View>
+
+          {/* Transaksi */}
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: INNER_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 14,
+            }}
+          >
+            <View
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ACCENT_COLOR}15`,
+                marginBottom: 8,
+              }}
+            >
+              <Ionicons name="receipt-outline" size={15} color={ACCENT_COLOR} />
+            </View>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 4,
+              }}
+            >
+              Transaksi
+            </Text>
+            <Text style={{ color: ACCENT_COLOR, fontSize: 13, fontWeight: "700" }}>
+              {stats.transactionCount}
+            </Text>
+          </View>
         </View>
 
-        {/* Action Buttons - Sticky di bottom scroll */}
-        <View style={tw`mx-4 mt-4 mb-8`}>
-          {!isCompleted && (
+        {/* ── Transaction history ──────────────────────────────────────── */}
+        <SectionHeader
+          title="Riwayat Transaksi"
+          linkLabel={savingsTransactions.length > 0 ? "Lihat Semua" : undefined}
+          onPress={() => navigation.navigate("SavingsHistory", { savingsId })}
+        />
+
+        {savingsTransactions.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              paddingVertical: 40,
+              paddingHorizontal: 24,
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${Colors.gray400}14`,
+                marginBottom: 14,
+              }}
+            >
+              <Ionicons name="receipt-outline" size={26} color={Colors.gray400} />
+            </View>
+            <Text
+              style={{
+                color: TEXT_PRIMARY,
+                fontSize: 15,
+                fontWeight: "700",
+                marginBottom: 6,
+                textAlign: "center",
+              }}
+            >
+              Belum ada transaksi
+            </Text>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 12,
+                textAlign: "center",
+                lineHeight: 18,
+                marginBottom: 20,
+              }}
+            >
+              Mulai dengan menambahkan setoran pertama
+            </Text>
             <TouchableOpacity
-              style={tw.style(`rounded-2xl py-3 items-center shadow-sm`, {
-                backgroundColor: Colors.accent,
-              })}
-              onPress={() => {
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 13,
+                backgroundColor: ACCENT_COLOR,
+                shadowColor: ACCENT_COLOR,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 6,
+              }}
+              onPress={() =>
                 navigation.navigate("AddSavingsTransaction", {
                   savingsId: saving.id,
                   type: "deposit",
-                });
-              }}
+                })
+              }
+              activeOpacity={0.8}
             >
+              <Ionicons
+                name="add"
+                size={15}
+                color={BACKGROUND_COLOR}
+                style={{ marginRight: 6 }}
+              />
               <Text
-                style={tw.style(`font-semibold`, { color: Colors.textPrimary })}
+                style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}
               >
-                + Tambah Setoran
+                Tambah Setoran
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              overflow: "hidden",
+              marginBottom: 20,
+            }}
+          >
+            {savingsTransactions
+              .slice(0, 10)
+              .map((transaction, index) =>
+                renderTransactionItem(transaction, index)
+              )}
+          </View>
+        )}
+
+        {/* ── Action buttons ───────────────────────────────────────────── */}
+        <View style={{ gap: 10 }}>
+          {!isCompleted && (
+            <TouchableOpacity
+              style={{
+                borderRadius: INNER_RADIUS,
+                paddingVertical: 14,
+                alignItems: "center",
+                backgroundColor: ACCENT_COLOR,
+                flexDirection: "row",
+                justifyContent: "center",
+                gap: 8,
+                shadowColor: ACCENT_COLOR,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.35,
+                shadowRadius: 10,
+                elevation: 8,
+              }}
+              onPress={() =>
+                navigation.navigate("AddSavingsTransaction", {
+                  savingsId: saving.id,
+                  type: "deposit",
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <Ionicons name="add-circle-outline" size={17} color={BACKGROUND_COLOR} />
+              <Text
+                style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "700" }}
+              >
+                Tambah Setoran
               </Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity
-            style={[
-              tw.style(`border rounded-2xl py-3 items-center`, {
-                borderColor: Colors.border,
-              }),
-              !isCompleted && tw`mt-3`,
-            ]}
-            onPress={() => {
+            style={{
+              borderRadius: INNER_RADIUS,
+              paddingVertical: 14,
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 8,
+              backgroundColor: "rgba(255,255,255,0.06)",
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+            }}
+            onPress={() =>
               navigation.navigate("AddSavingsTransaction", {
                 savingsId: saving.id,
                 type: "withdrawal",
-              });
-            }}
+              })
+            }
+            activeOpacity={0.7}
           >
-            <Text
-              style={tw.style(`font-medium`, { color: Colors.textPrimary })}
-            >
+            <Ionicons name="arrow-up-outline" size={15} color={TEXT_SECONDARY} />
+            <Text style={{ color: TEXT_SECONDARY, fontSize: 14, fontWeight: "600" }}>
               Penarikan Dana
             </Text>
           </TouchableOpacity>

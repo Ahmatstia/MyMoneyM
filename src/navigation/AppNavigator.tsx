@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import FloatingDrawerHandle from "../components/FloatingDrawerHandle";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -493,7 +494,15 @@ const MainStackNavigator = () => {
   );
 };
 
-// Drawer Navigator
+// Wrapper that overlays the FloatingDrawerHandle on top of the stack
+const StackWithHandle: React.FC = () => (
+  <View style={{ flex: 1 }}>
+    <MainStackNavigator />
+    <FloatingDrawerHandle />
+  </View>
+);
+
+// Drawer Navigator — swipe disabled, handled by FloatingDrawerHandle
 const DrawerNavigator = () => (
   <Drawer.Navigator
     drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -504,11 +513,11 @@ const DrawerNavigator = () => (
       },
       drawerType: "front",
       overlayColor: "rgba(0,0,0,0.7)",
-      swipeEnabled: true,
+      swipeEnabled: false,
       headerShown: false,
     }}
   >
-    <Drawer.Screen name="MainStack" component={MainStackNavigator} />
+    <Drawer.Screen name="MainStack" component={StackWithHandle} />
   </Drawer.Navigator>
 );
 

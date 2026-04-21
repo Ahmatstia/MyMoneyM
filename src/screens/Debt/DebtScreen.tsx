@@ -374,10 +374,13 @@ const DebtScreen: React.FC = () => {
                 key={tab}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
+                  flexDirection: "row",
+                  paddingVertical: 10,
                   borderRadius: 10,
                   alignItems: "center",
+                  justifyContent: "center",
                   backgroundColor: isActive ? `${tabColor}20` : "transparent",
+                  gap: 6,
                 }}
                 onPress={() => setActiveTab(tab)}
                 activeOpacity={0.7}
@@ -392,16 +395,24 @@ const DebtScreen: React.FC = () => {
                   {tab === "borrowed" ? "Hutang Saya" : "Piutang"}
                 </Text>
                 {count > 0 && (
-                  <Text
+                  <View
                     style={{
-                      fontSize: 9,
-                      color: isActive ? tabColor : Colors.gray400,
-                      marginTop: 1,
-                      fontWeight: isActive ? "700" : "400",
+                      backgroundColor: isActive ? tabColor : "rgba(255,255,255,0.08)",
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 10,
                     }}
                   >
-                    {count}
-                  </Text>
+                    <Text
+                      style={{
+                        fontSize: 9,
+                        color: isActive ? BACKGROUND_COLOR : Colors.gray400,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {count}
+                    </Text>
+                  </View>
                 )}
               </TouchableOpacity>
             );
