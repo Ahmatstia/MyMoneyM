@@ -5,6 +5,7 @@ import {
   Dimensions,
   StyleSheet,
   TouchableOpacity,
+  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
@@ -38,12 +39,19 @@ const FloatingDrawerHandle: React.FC = () => {
   const mode = useRef<Mode>("idle");
 
   // ── helpers ─────────────────────────────────────────────────────────────────
-  const springBack = (cb?: () => void) =>
+  const springBack = () =>
     Animated.spring(stretch, {
       toValue: 0,
       useNativeDriver: false,
       speed: 24,
       bounciness: 14,
+    }).start();
+
+  const fastSnapBack = (cb: () => void) =>
+    Animated.timing(stretch, {
+      toValue: 0,
+      duration: 120, // Sangat cepat, tanpa bounce delay
+      useNativeDriver: false,
     }).start(cb);
 
   const snapToSide = (newSide: Side) => {
@@ -99,9 +107,9 @@ const FloatingDrawerHandle: React.FC = () => {
             sideRef.current === "left" ? g.dx : -g.dx;
 
           if (pulled > SNAP_THRESHOLD) {
-            // Switch side: first let stretch reach near-max, then snap
+            // Switch side: use fast snap to avoid 2s spring delay!
             const newSide: Side = sideRef.current === "left" ? "right" : "left";
-            springBack(() => snapToSide(newSide));
+            fastSnapBack(() => snapToSide(newSide));
           } else {
             // Not far enough — elastic snap back
             springBack();
@@ -150,35 +158,44 @@ const FloatingDrawerHandle: React.FC = () => {
       ]}
       {...pan.panHandlers}
     >
-      <Animated.View
-        style={[
-          styles.button,
-          isRight ? styles.btnRight : styles.btnLeft,
-          { width: animatedWidth },
-        ]}
+      <View
+        style={{
+          // Transparent padding expands the invisible hit area
+          paddingVertical: 30, // 30px tap area above & below
+          paddingRight: isRight ? 0 : 30, // 30px tap area to the right
+          paddingLeft: isRight ? 30 : 0,  // 30px tap area to the left
+        }}
       >
-        {/* Stretch trail */}
-        <Animated.Text
+        <Animated.View
           style={[
-            styles.trail,
-            isRight ? { left: 6 } : { right: 6 },
-            { opacity: trailOpacity },
+            styles.button,
+            isRight ? styles.btnRight : styles.btnLeft,
+            { width: animatedWidth },
           ]}
         >
-          {isRight ? "‹" : "›"}
-        </Animated.Text>
+          {/* Stretch trail */}
+          <Animated.Text
+            style={[
+              styles.trail,
+              isRight ? { left: 6 } : { right: 6 },
+              { opacity: trailOpacity },
+            ]}
+          >
+            {isRight ? "‹" : "›"}
+          </Animated.Text>
 
-        {/* Main icon — slides inward while pulling */}
-        <Animated.View
-          style={{ transform: [{ translateX: chevronTranslate }] }}
-        >
-          <Ionicons
-            name={isRight ? "chevron-back" : "chevron-forward"}
-            size={16}
-            color="#22D3EE"
-          />
+          {/* Main icon — slides inward while pulling */}
+          <Animated.View
+            style={{ transform: [{ translateX: chevronTranslate }] }}
+          >
+            <Ionicons
+              name={isRight ? "chevron-back" : "chevron-forward"}
+              size={16}
+              color="#22D3EE"
+            />
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 };
