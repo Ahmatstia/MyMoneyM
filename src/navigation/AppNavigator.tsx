@@ -284,8 +284,16 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 const MainStackNavigator = () => {
   return (
     <MainStack.Navigator
-      screenOptions={({ navigation, route }) => ({
-        headerStyle: {
+      screenOptions={({ navigation, route }) => {
+        const mainScreens = [
+          "Home", "Transactions", "Analytics", "Calendar", "Budget", 
+          "Savings", "Profile", "Settings", "Notes", "Debt"
+        ];
+        const isMainScreen = mainScreens.includes(route.name);
+
+        return {
+          headerShown: !isMainScreen,
+          headerStyle: {
           backgroundColor: "#0F172A",
           elevation: 0,
           shadowOpacity: 0,
@@ -320,7 +328,8 @@ const MainStackNavigator = () => {
             </TouchableOpacity>
           );
         },
-      })}
+        };
+      }}
     >
       {/* Main Screens */}
       <MainStack.Screen
