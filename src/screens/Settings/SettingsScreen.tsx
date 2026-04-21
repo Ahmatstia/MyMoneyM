@@ -1,4 +1,4 @@
-// File: src/screens/SettingsScreen.tsx
+// File: src/screens/Settings/SettingsScreen.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -10,18 +10,18 @@ import {
   Linking,
   Modal,
   Platform,
-  Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "twrnc";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "../../theme/theme";
 
-// ─── Konstanta (sama dengan asli) ─────────────────────────────────────────────
+// ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
 
 interface AdvancedNotificationSettings {
@@ -84,7 +84,7 @@ const DEFAULT_APP_SETTINGS = {
   hapticFeedback: true,
 };
 
-// ─── Warna konsisten dengan semua screen ─────────────────────────────────────
+// ─── Theme colors (konsisten) ────────────────────────────────────────────────
 const BACKGROUND_COLOR = Colors.background;
 const SURFACE_COLOR    = Colors.surface;
 const TEXT_PRIMARY     = Colors.textPrimary;
@@ -93,40 +93,36 @@ const ACCENT_COLOR     = Colors.accent;
 const SUCCESS_COLOR    = Colors.success;
 const WARNING_COLOR    = Colors.warning;
 const ERROR_COLOR      = Colors.error;
+const INFO_COLOR       = Colors.info;
+const PURPLE_COLOR     = Colors.purple || "#8B5CF6";
+const PINK_COLOR       = Colors.pink || "#EC4899";
 
-// ─── Komponen UI kecil (konsisten dengan semua screen) ───────────────────────
+const CARD_RADIUS  = 20;
+const INNER_RADIUS = 14;
+const CARD_PAD     = 20;
+const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
-const Sep = ({ marginV = 20 }: { marginV?: number }) => (
-  <View
-    style={{
-      height: 1,
-      backgroundColor: SURFACE_COLOR,
-      marginHorizontal: -16,
-      marginVertical: marginV,
-    }}
-  />
+// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+
+const SectionHeader = ({ title }: { title: string }) => (
+  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+    <View
+      style={{
+        width: 3, height: 13, backgroundColor: ACCENT_COLOR,
+        borderRadius: 2, marginRight: 8,
+      }}
+    />
+    <Text
+      style={{
+        color: Colors.gray400, fontSize: 10, fontWeight: "700",
+        letterSpacing: 1.2, textTransform: "uppercase",
+      }}
+    >
+      {title}
+    </Text>
+  </View>
 );
 
-const SectionHeader = ({
-  title,
-}: {
-  title: string;
-}) => (
-  <Text
-    style={{
-      color: Colors.gray400,
-      fontSize: 10,
-      fontWeight: "600",
-      letterSpacing: 1,
-      textTransform: "uppercase",
-      marginBottom: 12,
-    }}
-  >
-    {title}
-  </Text>
-);
-
-/** Row item dengan switch — flat tanpa card per-item */
 const SettingRow = ({
   label,
   description,
@@ -134,7 +130,8 @@ const SettingRow = ({
   onValueChange,
   disabled = false,
   icon,
-  iconColor,
+  iconColor = ACCENT_COLOR,
+  isLast = false,
 }: {
   label: string;
   description?: string;
@@ -143,41 +140,50 @@ const SettingRow = ({
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
+  isLast?: boolean;
 }) => (
-  <View
-    style={[
-      tw`flex-row items-center py-3`,
-      { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR, opacity: disabled ? 0.45 : 1 },
-    ]}
-  >
-    {icon && (
-      <View
-        style={[
-          tw`w-8 h-8 rounded-lg items-center justify-center mr-3`,
-          { backgroundColor: `${iconColor || ACCENT_COLOR}18`, flexShrink: 0 },
-        ]}
-      >
-        <Ionicons name={icon} size={16} color={iconColor || ACCENT_COLOR} />
-      </View>
-    )}
-    <View style={tw`flex-1`}>
-      <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>{label}</Text>
-      {description && (
-        <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 1 }}>{description}</Text>
+  <View>
+    <View
+      style={{
+        flexDirection: "row", alignItems: "center", paddingVertical: 12,
+        opacity: disabled ? 0.45 : 1,
+      }}
+    >
+      {icon && (
+        <View
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            alignItems: "center", justifyContent: "center",
+            backgroundColor: `${iconColor}15`, marginRight: 14, flexShrink: 0,
+          }}
+        >
+          <Ionicons name={icon} size={18} color={iconColor} />
+        </View>
       )}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: description ? 2 : 0 }}>
+          {label}
+        </Text>
+        {description && (
+          <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8, lineHeight: 16 }}>
+            {description}
+          </Text>
+        )}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+        thumbColor="#FFFFFF"
+        disabled={disabled}
+        style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+      />
     </View>
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-      thumbColor="#FFFFFF"
-      disabled={disabled}
-      style={{ marginLeft: 12 }}
-    />
+    {!isLast && <View style={{ height: 1, backgroundColor: CARD_BORDER, marginLeft: icon ? 50 : 0 }} />}
   </View>
 );
 
-// ─── TimePickerModal (sama dengan asli, hanya warna diselaraskan) ─────────────
+// ─── TimePickerModal ──────────────────────────────────────────────────────────
 
 const TimePickerModal = ({
   visible,
@@ -222,54 +228,50 @@ const TimePickerModal = ({
     onClose();
   };
 
-  // iOS
   if (Platform.OS === "ios") {
     return (
       <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-        <View style={tw`flex-1 justify-end`} pointerEvents="box-none">
+        <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
           <TouchableOpacity
-            style={[tw`absolute inset-0`, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+            style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.6)" }}
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={[tw`rounded-t-3xl`, { backgroundColor: SURFACE_COLOR }]}>
-            <View style={[tw`flex-row items-center justify-between px-5 py-4`, { borderBottomWidth: 1, borderBottomColor: Colors.surfaceLight }]}>
+          <View style={{ backgroundColor: SURFACE_COLOR, borderTopLeftRadius: CARD_RADIUS, borderTopRightRadius: CARD_RADIUS }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }}>
               <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>{title}</Text>
               <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
                 <Ionicons name="close" size={22} color={Colors.gray400} />
               </TouchableOpacity>
             </View>
-            <View style={tw`px-5 py-4`}>
+            <View style={{ padding: 20 }}>
               <DateTimePicker
                 value={selectedTime}
                 mode="time"
                 display="spinner"
                 onChange={handleTimeChange}
-                style={tw`w-full`}
+                style={{ width: "100%" }}
                 textColor={TEXT_PRIMARY}
                 themeVariant="dark"
               />
-              <View style={tw`items-center mt-4`}>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 36, fontWeight: "700" }}>
-                  {selectedTime.getHours().toString().padStart(2, "0")}:
-                  {selectedTime.getMinutes().toString().padStart(2, "0")}
+              <View style={{ alignItems: "center", marginTop: 16 }}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 36, fontWeight: "800" }}>
+                  {selectedTime.getHours().toString().padStart(2, "0")}:{selectedTime.getMinutes().toString().padStart(2, "0")}
                 </Text>
               </View>
             </View>
-            <View style={[tw`flex-row px-5 py-4 gap-3`, { borderTopWidth: 1, borderTopColor: Colors.surfaceLight }]}>
+            <View style={{ flexDirection: "row", padding: 20, paddingTop: 0, gap: 12 }}>
               <TouchableOpacity
-                style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: Colors.surfaceLight }]}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: CARD_BORDER }}
                 onPress={onClose}
-                activeOpacity={0.7}
               >
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 14, fontWeight: "500" }}>Batal</Text>
+                <Text style={{ color: Colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: ACCENT_COLOR }]}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: ACCENT_COLOR, shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
                 onPress={handleConfirm}
-                activeOpacity={0.8}
               >
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "600" }}>Simpan</Text>
+                <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "800" }}>Simpan</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -278,83 +280,51 @@ const TimePickerModal = ({
     );
   }
 
-  // Android — native picker
   if (Platform.OS === "android" && showPicker) {
-    return (
-      <DateTimePicker
-        value={selectedTime}
-        mode="time"
-        display="default"
-        onChange={handleTimeChange}
-        themeVariant="dark"
-      />
-    );
+    return <DateTimePicker value={selectedTime} mode="time" display="default" onChange={handleTimeChange} themeVariant="dark" />;
   }
 
-  // Android — modal dengan preset
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={tw`flex-1 justify-center items-center`} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[tw`absolute inset-0`, { backgroundColor: "rgba(0,0,0,0.5)" }]}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <View style={[tw`rounded-2xl w-11/12 max-w-sm overflow-hidden`, { backgroundColor: SURFACE_COLOR }]}>
-          <View style={tw`px-5 pt-5 pb-4`}>
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700", textAlign: "center", marginBottom: 4 }}>
-              {title}
-            </Text>
-            <Text style={{ color: Colors.gray400, fontSize: 12, textAlign: "center", marginBottom: 16 }}>
-              Pilih waktu notifikasi
-            </Text>
-            <View style={tw`items-center mb-5`}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 44, fontWeight: "700" }}>
-                {selectedTime.getHours().toString().padStart(2, "0")}:
-                {selectedTime.getMinutes().toString().padStart(2, "0")}
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }} pointerEvents="box-none">
+        <TouchableOpacity style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.6)" }} activeOpacity={1} onPress={onClose} />
+        <View style={{ width: "100%", backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, overflow: "hidden" }}>
+          <View style={{ padding: 24, paddingBottom: 16 }}>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", textAlign: "center", marginBottom: 6 }}>{title}</Text>
+            <Text style={{ color: Colors.gray400, fontSize: 12, textAlign: "center", marginBottom: 24 }}>Pilih waktu notifikasi</Text>
+            <View style={{ alignItems: "center", marginBottom: 24 }}>
+              <Text style={{ color: TEXT_PRIMARY, fontSize: 48, fontWeight: "800", letterSpacing: -1 }}>
+                {selectedTime.getHours().toString().padStart(2, "0")}:{selectedTime.getMinutes().toString().padStart(2, "0")}
               </Text>
             </View>
-            {/* Quick presets */}
-            <View style={tw`flex-row flex-wrap justify-center gap-2 mb-5`}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 10 }}>
               {["07:30", "12:00", "15:00", "20:00", "22:00"].map((time) => {
                 const [h, m] = time.split(":").map(Number);
                 const isSelected = selectedTime.getHours() === h && selectedTime.getMinutes() === m;
                 return (
                   <TouchableOpacity
                     key={time}
-                    style={[
-                      tw`px-4 py-2 rounded-full`,
-                      isSelected ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight },
-                    ]}
-                    onPress={() => {
-                      const d = new Date();
-                      d.setHours(h, m, 0, 0);
-                      setSelectedTime(d);
+                    style={{
+                      paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+                      backgroundColor: isSelected ? ACCENT_COLOR : `${Colors.gray400}15`,
+                      borderWidth: 1, borderColor: isSelected ? ACCENT_COLOR : `${Colors.gray400}25`,
                     }}
-                    activeOpacity={0.7}
+                    onPress={() => {
+                      const d = new Date(); d.setHours(h, m, 0, 0); setSelectedTime(d);
+                    }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "500", color: isSelected ? BACKGROUND_COLOR : TEXT_SECONDARY }}>
-                      {time}
-                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: isSelected ? BACKGROUND_COLOR : TEXT_SECONDARY }}>{time}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </View>
-          <View style={[tw`flex-row px-5 pb-5 gap-3`]}>
-            <TouchableOpacity
-              style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: Colors.surfaceLight }]}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: TEXT_SECONDARY, fontSize: 14, fontWeight: "500" }}>Batal</Text>
+          <View style={{ flexDirection: "row", padding: 24, paddingTop: 16, gap: 12 }}>
+            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: CARD_BORDER }} onPress={onClose}>
+              <Text style={{ color: Colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[tw`flex-1 py-3 rounded-xl items-center`, { backgroundColor: ACCENT_COLOR }]}
-              onPress={() => setShowPicker(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "600" }}>Pilih Waktu</Text>
+            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: ACCENT_COLOR, shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }} onPress={() => setShowPicker(true)}>
+              <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "800" }}>Pilih Waktu</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -363,7 +333,7 @@ const TimePickerModal = ({
   );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const SettingsScreen = () => {
   const { clearAllData, debugStorage, state } = useAppContext();
@@ -373,12 +343,9 @@ const SettingsScreen = () => {
   const [hasPermission, setHasPermission]               = useState(false);
   const [scheduledNotifications, setScheduledNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading]                       = useState(true);
-  const [activeSection, setActiveSection]               = useState<"notifications" | "data">("notifications");
+  const [activeTab, setActiveTab]                       = useState<"notifications" | "data">("notifications");
   const [showAdvanced, setShowAdvanced]                 = useState(false);
-  const [timePickerConfig, setTimePickerConfig]         = useState<{
-    visible: boolean;
-    type: "morning" | "evening" | "quietStart" | "quietEnd" | null;
-  }>({ visible: false, type: null });
+  const [timePickerConfig, setTimePickerConfig]         = useState<{ visible: boolean; type: "morning" | "evening" | "quietStart" | "quietEnd" | null; }>({ visible: false, type: null });
 
   useEffect(() => {
     loadAllSettings();
@@ -386,36 +353,28 @@ const SettingsScreen = () => {
     loadScheduledNotifications();
   }, []);
 
-  // ── Load / save (sama dengan asli) ───────────────────────────────────────
   const loadAllSettings = async () => {
     try {
       const savedNotifSettings = await notificationService.getNotificationSettings();
       setNotificationSettings(savedNotifSettings);
       const savedAppSettings = await AsyncStorage.getItem(APP_SETTINGS_KEY);
       if (savedAppSettings) setAppSettings(JSON.parse(savedAppSettings));
-    } catch (error) {
-      console.error("❌ Error loading settings:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error) { console.error("Error loading settings:", error); }
+    finally { setIsLoading(false); }
   };
 
   const saveNotificationSettings = async (newSettings: typeof DEFAULT_NOTIFICATION_SETTINGS) => {
     try {
       await notificationService.updateNotificationSettings(newSettings, state);
       setNotificationSettings(newSettings);
-    } catch (error) {
-      console.error("❌ Error saving notification settings:", error);
-    }
+    } catch (error) { console.error("Error saving notif settings:", error); }
   };
 
   const saveAppSettings = async (newSettings: typeof DEFAULT_APP_SETTINGS) => {
     try {
       await AsyncStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(newSettings));
       setAppSettings(newSettings);
-    } catch (error) {
-      console.error("❌ Error saving app settings:", error);
-    }
+    } catch (error) { console.error("Error saving app settings:", error); }
   };
 
   const checkPermission = async () => {
@@ -427,12 +386,10 @@ const SettingsScreen = () => {
     try {
       const notifications = await notificationService.getScheduledNotifications();
       setScheduledNotifications(notifications);
-    } catch (error) {
-      console.error("❌ Error loading scheduled notifications:", error);
-    }
+    } catch (error) { console.error("Error loading scheduled notifications:", error); }
   };
 
-  // ── Notification actions (sama dengan asli) ───────────────────────────────
+  // ── Actions ────────────────────────────────────────────────────────────────
   const requestPermission = async () => {
     try {
       const granted = await notificationService.registerForPushNotificationsAsync();
@@ -441,11 +398,9 @@ const SettingsScreen = () => {
         await notificationService.reinitializeNotifications(state);
         Alert.alert("Berhasil", "Izin notifikasi diberikan!");
       } else {
-        Alert.alert(
-          "Izin Dibutuhkan",
-          "Untuk mengirim notifikasi, aplikasi membutuhkan izin. Silakan aktifkan di pengaturan perangkat.",
-          [{ text: "OK" }, { text: "Buka Pengaturan", onPress: () => Linking.openSettings() }]
-        );
+        Alert.alert("Izin Dibutuhkan", "Untuk mengirim notifikasi, aplikasi membutuhkan izin. Silakan aktifkan di pengaturan perangkat.", [
+          { text: "OK" }, { text: "Buka Pengaturan", onPress: () => Linking.openSettings() }
+        ]);
       }
     } catch (error) {
       console.error("Error requesting permission:", error);
@@ -454,76 +409,43 @@ const SettingsScreen = () => {
   };
 
   const toggleNotificationMaster = async (value: boolean) => {
-    const newSettings = { ...notificationSettings, enabled: value };
-    await saveNotificationSettings(newSettings);
+    await saveNotificationSettings({ ...notificationSettings, enabled: value });
     if (!value) Alert.alert("Notifikasi Dimatikan", "Semua notifikasi telah dimatikan.");
   };
 
-  const toggleNotificationSetting = async (
-    key: keyof Omit<typeof DEFAULT_NOTIFICATION_SETTINGS, "advanced">
-  ) => {
-    if (!notificationSettings.enabled) {
-      Alert.alert("Notifikasi Dimatikan", "Aktifkan notifikasi terlebih dahulu.");
-      return;
-    }
-    const newSettings = { ...notificationSettings, [key]: !notificationSettings[key] };
-    await saveNotificationSettings(newSettings);
+  const toggleNotificationSetting = async (key: keyof Omit<typeof DEFAULT_NOTIFICATION_SETTINGS, "advanced">) => {
+    if (!notificationSettings.enabled) { Alert.alert("Notifikasi Dimatikan", "Aktifkan notifikasi terlebih dahulu."); return; }
+    await saveNotificationSettings({ ...notificationSettings, [key]: !notificationSettings[key] });
   };
 
   const updateCustomSchedule = async (key: string, value: any) => {
-    const newSettings = {
+    await saveNotificationSettings({
       ...notificationSettings,
-      advanced: {
-        ...notificationSettings.advanced,
-        customSchedule: { ...notificationSettings.advanced?.customSchedule, [key]: value },
-      },
-    };
-    await saveNotificationSettings(newSettings);
+      advanced: { ...notificationSettings.advanced, customSchedule: { ...notificationSettings.advanced?.customSchedule, [key]: value } },
+    });
   };
 
   const updateQuietHours = async (key: string, value: any) => {
-    const newSettings = {
+    await saveNotificationSettings({
       ...notificationSettings,
-      advanced: {
-        ...notificationSettings.advanced,
-        quietHours: {
-          ...notificationSettings.advanced?.quietHours,
-          [key]: value,
-        } as AdvancedNotificationSettings["quietHours"],
-      },
-    };
-    await saveNotificationSettings(newSettings);
+      advanced: { ...notificationSettings.advanced, quietHours: { ...notificationSettings.advanced?.quietHours, [key]: value } as AdvancedNotificationSettings["quietHours"] },
+    });
   };
 
-  const updateAdvancedSetting = async (
-    key: keyof AdvancedNotificationSettings,
-    value: any
-  ) => {
-    const newSettings = {
-      ...notificationSettings,
-      advanced: { ...notificationSettings.advanced, [key]: value },
-    };
-    await saveNotificationSettings(newSettings);
+  const updateAdvancedSetting = async (key: keyof AdvancedNotificationSettings, value: any) => {
+    await saveNotificationSettings({ ...notificationSettings, advanced: { ...notificationSettings.advanced, [key]: value } });
   };
 
   const toggleActiveDay = async (dayIndex: number) => {
     const currentDays = notificationSettings.advanced?.activeDays || [];
-    const newDays = currentDays.includes(dayIndex)
-      ? currentDays.filter((d) => d !== dayIndex)
-      : [...currentDays, dayIndex];
+    const newDays = currentDays.includes(dayIndex) ? currentDays.filter((d) => d !== dayIndex) : [...currentDays, dayIndex];
     await updateAdvancedSetting("activeDays", newDays.sort());
   };
 
   const testNotification = async () => {
-    if (!notificationSettings.enabled) {
-      Alert.alert("Notifikasi Dimatikan", "Aktifkan notifikasi terlebih dahulu.");
-      return;
-    }
+    if (!notificationSettings.enabled) { Alert.alert("Notifikasi Dimatikan", "Aktifkan notifikasi terlebih dahulu."); return; }
     await notificationService.sendNotification({
-      title: "🔔 Test Notification",
-      body: "Ini adalah notifikasi test dari MyMoney!",
-      data: { type: "TEST" },
-      urgent: true,
+      title: "🔔 Test Notification", body: "Ini adalah notifikasi test dari MyMoney!", data: { type: "TEST" }, urgent: true,
     });
     Alert.alert("Berhasil", "Notifikasi test terkirim!");
   };
@@ -534,92 +456,54 @@ const SettingsScreen = () => {
     Alert.alert("Berhasil", "Semua notifikasi dibersihkan");
   };
 
-  // ── App settings actions (sama dengan asli) ───────────────────────────────
-  const toggleAppSetting = async (key: keyof typeof DEFAULT_APP_SETTINGS) => {
-    const newSettings = { ...appSettings, [key]: !appSettings[key] };
-    await saveAppSettings(newSettings);
-  };
-
   const handleClearData = () => {
-    Alert.alert(
-      "Hapus Semua Data",
-      "Apakah Anda yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Hapus",
-          style: "destructive",
-          onPress: async () => {
-            await clearAllData();
-            Alert.alert("Berhasil", "Semua data telah dihapus");
-          },
-        },
-      ]
-    );
+    Alert.alert("Hapus Semua Data", "Apakah Anda yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.", [
+      { text: "Batal", style: "cancel" },
+      { text: "Hapus", style: "destructive", onPress: async () => { await clearAllData(); Alert.alert("Berhasil", "Semua data telah dihapus"); } }
+    ]);
   };
 
-  const handleExportData = async () => {
-    Alert.alert("Ekspor Data", "Fitur ekspor data akan segera tersedia dalam update berikutnya.", [{ text: "OK" }]);
-  };
-
-  const handleDebug = async () => {
-    await debugStorage();
-    Alert.alert("Debug", "Check console untuk detail storage");
-  };
-
-  // ── Helper formatters (sama dengan asli) ─────────────────────────────────
   const formatTime = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes);
+    const date = new Date(); date.setHours(hours, minutes);
     return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
   };
 
-  const getDayName = (index: number) => {
-    return ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"][index];
-  };
+  const getDayName = (index: number) => ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"][index];
 
-  // ── Skeleton loading ──────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: BACKGROUND_COLOR }]}>
-        <View style={[tw`w-12 h-12 rounded-xl items-center justify-center mb-3`, { backgroundColor: `${ACCENT_COLOR}20` }]}>
-          <Ionicons name="settings-outline" size={24} color={ACCENT_COLOR} />
+      <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+          <Ionicons name="settings-outline" size={20} color={ACCENT_COLOR} />
         </View>
-        <Text style={{ color: Colors.gray400, fontSize: 13 }}>Memuat pengaturan...</Text>
       </View>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      {/* ── Page Header ─────────────────────────────────────────────── */}
+      <View style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20 }}>
+        <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>Pengaturan</Text>
+        <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>Kelola prevensi dan data aplikasi</Text>
+      </View>
 
-      {/* ── Tab navigation ──────────────────────────────────────────────── */}
-      <View style={{ borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR, backgroundColor: BACKGROUND_COLOR }}>
-        <View style={tw`flex-row`}>
-          {(["notifications", "data"] as const).map((section) => {
-            const isActive = activeSection === section;
+      {/* ── Tab Control ─────────────────────────────────────────────── */}
+      <View style={{ paddingHorizontal: 18, marginBottom: 20 }}>
+        <View style={{ flexDirection: "row", backgroundColor: SURFACE_COLOR, borderRadius: 13, padding: 3, borderWidth: 1, borderColor: CARD_BORDER }}>
+          {(["notifications", "data"] as const).map((tab) => {
+            const isActive = activeTab === tab;
             return (
               <TouchableOpacity
-                key={section}
-                style={[
-                  tw`flex-1 py-3 items-center`,
-                  isActive && { borderBottomWidth: 2, borderBottomColor: ACCENT_COLOR },
-                ]}
-                onPress={() => setActiveSection(section)}
+                key={tab}
+                style={{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", backgroundColor: isActive ? `${ACCENT_COLOR}20` : "transparent" }}
+                onPress={() => setActiveTab(tab)}
                 activeOpacity={0.7}
               >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: isActive ? "600" : "400",
-                    color: isActive ? ACCENT_COLOR : Colors.gray400,
-                  }}
-                >
-                  {section === "notifications" ? "Notifikasi" : "Data"}
+                <Text style={{ fontSize: 11, fontWeight: isActive ? "700" : "500", color: isActive ? ACCENT_COLOR : Colors.gray400 }}>
+                  {tab === "notifications" ? "Notifikasi" : "Manajemen Data"}
                 </Text>
               </TouchableOpacity>
             );
@@ -627,440 +511,209 @@ const SettingsScreen = () => {
         </View>
       </View>
 
-      {/* ── Main scroll ──────────────────────────────────────────────────── */}
-      <ScrollView
-        style={tw`flex-1`}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}
-      >
-        {/* Page header */}
-        <View style={tw`pt-4 pb-2`}>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>Pengaturan</Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}>Kelola aplikasi sesuai kebutuhan</Text>
-        </View>
-
-        <Sep marginV={16} />
-
-        {/* ══════════════════════════════════════
-            NOTIFICATION TAB
-        ══════════════════════════════════════ */}
-        {activeSection === "notifications" && (
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        
+        {/* ══════════════════════════════════════════════════════════════════════
+            NOTIFIKASI
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "notifications" && (
           <>
-            {/* Master toggle */}
-            <View style={tw`flex-row items-center pb-3`} >
-              <View
-                style={[
-                  tw`w-9 h-9 rounded-xl items-center justify-center mr-3`,
-                  {
-                    backgroundColor: notificationSettings.enabled
-                      ? `${ACCENT_COLOR}20`
-                      : `${Colors.gray500}20`,
-                    flexShrink: 0,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={notificationSettings.enabled ? "notifications-outline" : "notifications-off-outline"}
-                  size={18}
-                  color={notificationSettings.enabled ? ACCENT_COLOR : Colors.gray500}
+            {/* Master Toggle */}
+            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: !hasPermission ? 16 : 0 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: notificationSettings.enabled ? `${ACCENT_COLOR}15` : `${Colors.gray500}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name={notificationSettings.enabled ? "notifications" : "notifications-off"} size={22} color={notificationSettings.enabled ? ACCENT_COLOR : Colors.gray500} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700", marginBottom: 2 }}>{notificationSettings.enabled ? "Notifikasi Aktif" : "Notifikasi Mati"}</Text>
+                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>{hasPermission ? "Aplikasi memiliki izin mengirim push." : "Izin OS dibutuhkan."}</Text>
+                </View>
+                <Switch
+                  value={notificationSettings.enabled}
+                  onValueChange={toggleNotificationMaster}
+                  trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
-              <View style={tw`flex-1`}>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600" }}>Notifikasi</Text>
-                <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 1 }}>
-                  {notificationSettings.enabled ? "Aktif" : "Nonaktif"} ·{" "}
-                  {hasPermission ? "Izin diberikan" : "Izin dibutuhkan"}
-                </Text>
-              </View>
-              <Switch
-                value={notificationSettings.enabled}
-                onValueChange={toggleNotificationMaster}
-                trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                thumbColor="#FFFFFF"
-              />
+
+              {!hasPermission ? (
+                <TouchableOpacity
+                  style={{ backgroundColor: ACCENT_COLOR, paddingVertical: 12, borderRadius: INNER_RADIUS, alignItems: "center" }}
+                  onPress={requestPermission}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>Berikan Izin OS</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 16, opacity: notificationSettings.enabled ? 1 : 0.5 }}>
+                  <TouchableOpacity style={{ flex: 1, backgroundColor: `${INFO_COLOR}15`, paddingVertical: 10, borderRadius: INNER_RADIUS, alignItems: "center", borderWidth: 1, borderColor: `${INFO_COLOR}25` }} onPress={testNotification} disabled={!notificationSettings.enabled}>
+                    <Text style={{ color: INFO_COLOR, fontSize: 11, fontWeight: "700" }}>Test Notif</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={{ flex: 1, backgroundColor: `${ERROR_COLOR}15`, paddingVertical: 10, borderRadius: INNER_RADIUS, alignItems: "center", borderWidth: 1, borderColor: `${ERROR_COLOR}25` }} onPress={clearAllNotifications} disabled={!notificationSettings.enabled}>
+                    <Text style={{ color: ERROR_COLOR, fontSize: 11, fontWeight: "700" }}>Hapus Queue</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
-            {/* Permission / action row */}
-            {!hasPermission ? (
-              <TouchableOpacity
-                style={[
-                  tw`py-3 rounded-xl items-center mb-2`,
-                  {
-                    backgroundColor: ACCENT_COLOR,
-                    opacity: notificationSettings.enabled ? 1 : 0.5,
-                  },
-                ]}
-                onPress={requestPermission}
-                disabled={!notificationSettings.enabled}
-                activeOpacity={0.8}
-              >
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "600" }}>
-                  Berikan Izin Notifikasi
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={tw`flex-row gap-3 mb-2`}>
-                <TouchableOpacity
-                  style={[
-                    tw`flex-1 py-2.5 rounded-xl items-center`,
-                    {
-                      backgroundColor: SURFACE_COLOR,
-                      opacity: notificationSettings.enabled ? 1 : 0.5,
-                    },
-                  ]}
-                  onPress={testNotification}
+            {/* Notification Types */}
+            <SectionHeader title="Jenis Peringatan" />
+            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+              {[
+                { key: "dailyReminders",       label: "Pengingat Harian",    desc: "Alert rutin di pagi & malam",          icon: "alarm-outline"         as const, color: ACCENT_COLOR },
+                { key: "budgetAlerts",          label: "Peringatan Anggaran", desc: "Beritahu bila hampir capai limit", icon: "pie-chart-outline"     as const, color: WARNING_COLOR },
+                { key: "savingsProgress",       label: "Target Tabungan",     desc: "Info capaian nominal tabungan",        icon: "wallet-outline"        as const, color: SUCCESS_COLOR },
+                { key: "transactionReminders",  label: "Pencatatan",          desc: "Ingatkan catat uang masuk & keluar",   icon: "receipt-outline"       as const, color: INFO_COLOR },
+                { key: "notesReminders",        label: "Buku Catatan",        desc: "Jadwal tenggat catatan tersimpan",     icon: "document-text-outline" as const, color: PURPLE_COLOR },
+                { key: "weeklyReports",         label: "Laporan Mingguan",    desc: "Rekap data tiap hari minggu",          icon: "bar-chart-outline"     as const, color: PINK_COLOR },
+              ].map(({ key, label, desc, icon, color }, idx, arr) => (
+                <SettingRow
+                  key={key} label={label} description={desc} icon={icon} iconColor={color}
+                  value={notificationSettings[key as keyof typeof DEFAULT_NOTIFICATION_SETTINGS] as boolean}
+                  onValueChange={() => toggleNotificationSetting(key as any)}
                   disabled={!notificationSettings.enabled}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>
-                    Test Notifikasi
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[tw`flex-1 py-2.5 rounded-xl items-center`, { backgroundColor: `${ERROR_COLOR}18` }]}
-                  onPress={clearAllNotifications}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ color: ERROR_COLOR, fontSize: 12, fontWeight: "500" }}>
-                    Hapus Semua
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                  isLast={idx === arr.length - 1}
+                />
+              ))}
+            </View>
 
-            <Sep marginV={16} />
-
-            {/* Notification types */}
-            <SectionHeader title="Jenis Notifikasi" />
-            {[
-              { key: "dailyReminders",       label: "Pengingat Harian",    desc: "Pengingat pagi, siang, dan malam",      icon: "alarm-outline"          as const, color: ACCENT_COLOR },
-              { key: "budgetAlerts",          label: "Alert Budget",        desc: "Alert ketika budget hampir habis",       icon: "wallet-outline"         as const, color: WARNING_COLOR },
-              { key: "savingsProgress",       label: "Progress Tabungan",   desc: "Update progress tabungan",               icon: "trending-up-outline"    as const, color: SUCCESS_COLOR },
-              { key: "transactionReminders",  label: "Pengingat Transaksi", desc: "Pengingat catat transaksi",              icon: "receipt-outline"        as const, color: Colors.info },
-              { key: "notesReminders",        label: "Pengingat Catatan",   desc: "Pengingat buat catatan finansial",       icon: "document-text-outline"  as const, color: Colors.purple },
-              { key: "weeklyReports",         label: "Laporan Mingguan",    desc: "Laporan mingguan setiap Minggu",         icon: "bar-chart-outline"      as const, color: Colors.pink },
-              { key: "financialTips",         label: "Tips Finansial",      desc: "Tips finansial acak setiap hari",        icon: "bulb-outline"           as const, color: WARNING_COLOR },
-            ].map(({ key, label, desc, icon, color }) => (
-              <SettingRow
-                key={key}
-                label={label}
-                description={desc}
-                icon={icon}
-                iconColor={color}
-                value={notificationSettings[key as keyof typeof DEFAULT_NOTIFICATION_SETTINGS] as boolean}
-                onValueChange={() => toggleNotificationSetting(key as any)}
-                disabled={!notificationSettings.enabled}
-              />
-            ))}
-
-            <Sep marginV={20} />
-
-            {/* Advanced settings toggle */}
+            {/* Advanced Trigger */}
             <TouchableOpacity
-              style={tw`flex-row items-center justify-between py-2`}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: SURFACE_COLOR, borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, padding: 16, marginBottom: 20 }}
               onPress={() => setShowAdvanced(!showAdvanced)}
               activeOpacity={0.7}
             >
-              <View style={tw`flex-row items-center`}>
-                <View
-                  style={[
-                    tw`w-8 h-8 rounded-lg items-center justify-center mr-3`,
-                    { backgroundColor: `${ACCENT_COLOR}18` },
-                  ]}
-                >
-                  <Ionicons name="settings-outline" size={16} color={ACCENT_COLOR} />
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${Colors.gray400}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="options-outline" size={18} color={Colors.gray400} />
                 </View>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>
-                  Pengaturan Lanjutan
-                </Text>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600" }}>Pengaturan Jadwal Tepat</Text>
               </View>
-              <Ionicons
-                name={showAdvanced ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={Colors.gray400}
-              />
+              <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={18} color={Colors.gray400} />
             </TouchableOpacity>
 
+            {/* Advanced Section */}
             {showAdvanced && (
               <>
-                <Sep marginV={16} />
-
-                {/* Custom schedule */}
-                <SectionHeader title="Jadwal Kustom" />
-
-                {/* Morning */}
-                <View style={[tw`flex-row items-center py-3`, { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR }]}>
-                  <View style={[tw`w-8 h-8 rounded-lg items-center justify-center mr-3`, { backgroundColor: `${WARNING_COLOR}18` }]}>
-                    <Ionicons name="sunny-outline" size={16} color={WARNING_COLOR} />
-                  </View>
-                  <View style={tw`flex-1`}>
-                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>Pengingat Pagi</Text>
-                    <TouchableOpacity
-                      onPress={() => setTimePickerConfig({ visible: true, type: "morning" })}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={{ color: ACCENT_COLOR, fontSize: 11, marginTop: 1 }}>
-                        {formatTime(notificationSettings.advanced?.customSchedule?.morning || "07:30")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Switch
-                    value={notificationSettings.advanced?.customSchedule?.morningEnabled !== false}
-                    onValueChange={(v) => updateCustomSchedule("morningEnabled", v)}
-                    trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                    thumbColor="#FFFFFF"
-                  />
-                </View>
-
-                {/* Evening */}
-                <View style={[tw`flex-row items-center py-3`, { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR }]}>
-                  <View style={[tw`w-8 h-8 rounded-lg items-center justify-center mr-3`, { backgroundColor: `${Colors.purple}18` }]}>
-                    <Ionicons name="moon-outline" size={16} color={Colors.purple} />
-                  </View>
-                  <View style={tw`flex-1`}>
-                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>Ringkasan Malam</Text>
-                    <TouchableOpacity
-                      onPress={() => setTimePickerConfig({ visible: true, type: "evening" })}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={{ color: ACCENT_COLOR, fontSize: 11, marginTop: 1 }}>
-                        {formatTime(notificationSettings.advanced?.customSchedule?.evening || "20:00")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Switch
-                    value={notificationSettings.advanced?.customSchedule?.eveningEnabled !== false}
-                    onValueChange={(v) => updateCustomSchedule("eveningEnabled", v)}
-                    trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                    thumbColor="#FFFFFF"
-                  />
-                </View>
-
-                <Sep marginV={16} />
-
-                {/* Quiet hours */}
-                <SectionHeader title="Quiet Hours" />
-                <View style={[tw`flex-row items-center py-3`, { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR }]}>
-                  <View style={[tw`w-8 h-8 rounded-lg items-center justify-center mr-3`, { backgroundColor: `${Colors.info}18` }]}>
-                    <Ionicons name="volume-mute-outline" size={16} color={Colors.info} />
-                  </View>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500", flex: 1 }}>
-                    Aktifkan Quiet Hours
-                  </Text>
-                  <Switch
-                    value={notificationSettings.advanced?.quietHours?.enabled || false}
-                    onValueChange={(v) => updateQuietHours("enabled", v)}
-                    trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                    thumbColor="#FFFFFF"
-                  />
-                </View>
-
-                {notificationSettings.advanced?.quietHours?.enabled && (
-                  <>
-                    {/* Time range row */}
-                    <View style={[tw`flex-row items-center py-3`, { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR }]}>
-                      <TouchableOpacity
-                        style={tw`flex-1 flex-row items-center`}
-                        onPress={() => setTimePickerConfig({ visible: true, type: "quietStart" })}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="moon-outline" size={16} color={Colors.purple} style={{ marginRight: 6 }} />
-                        <Text style={{ color: ACCENT_COLOR, fontSize: 13 }}>
-                          {formatTime(notificationSettings.advanced?.quietHours?.start || "22:00")}
-                        </Text>
-                      </TouchableOpacity>
-                      <Text style={{ color: Colors.gray400, fontSize: 12, marginHorizontal: 8 }}>sampai</Text>
-                      <TouchableOpacity
-                        style={tw`flex-1 flex-row items-center justify-end`}
-                        onPress={() => setTimePickerConfig({ visible: true, type: "quietEnd" })}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="sunny-outline" size={16} color={WARNING_COLOR} style={{ marginRight: 6 }} />
-                        <Text style={{ color: ACCENT_COLOR, fontSize: 13 }}>
-                          {formatTime(notificationSettings.advanced?.quietHours?.end || "07:00")}
-                        </Text>
+                <SectionHeader title="Jadwal & Waktu" />
+                <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+                  
+                  {/* Morning Routine */}
+                  <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${WARNING_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                      <Ionicons name="sunny-outline" size={18} color={WARNING_COLOR} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Notifikasi Pagi</Text>
+                      <TouchableOpacity onPress={() => setTimePickerConfig({ visible: true, type: "morning" })}>
+                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${ACCENT_COLOR}15` }}>
+                          <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.morning || "07:30")}</Text>
+                        </View>
                       </TouchableOpacity>
                     </View>
+                    <Switch
+                      value={notificationSettings.advanced?.customSchedule?.morningEnabled !== false}
+                      onValueChange={(v) => updateCustomSchedule("morningEnabled", v)}
+                      trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                      thumbColor="#FFFFFF"
+                      style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                    />
+                  </View>
 
-                    {/* Ignore urgent */}
-                    <View style={[tw`flex-row items-center py-3`, { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR }]}>
-                      <Text style={{ color: TEXT_SECONDARY, fontSize: 13, flex: 1 }}>
-                        Abaikan Notifikasi Penting
-                      </Text>
-                      <Switch
-                        value={notificationSettings.advanced?.quietHours?.ignoreUrgent || false}
-                        onValueChange={(v) => updateQuietHours("ignoreUrgent", v)}
-                        trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                        thumbColor="#FFFFFF"
-                      />
+                  {/* Evening Routine */}
+                  <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${PURPLE_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                      <Ionicons name="moon-outline" size={18} color={PURPLE_COLOR} />
                     </View>
-                  </>
-                )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Rekapitulasi Malam</Text>
+                      <TouchableOpacity onPress={() => setTimePickerConfig({ visible: true, type: "evening" })}>
+                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${ACCENT_COLOR}15` }}>
+                          <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.evening || "20:00")}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                    <Switch
+                      value={notificationSettings.advanced?.customSchedule?.eveningEnabled !== false}
+                      onValueChange={(v) => updateCustomSchedule("eveningEnabled", v)}
+                      trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                      thumbColor="#FFFFFF"
+                      style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                    />
+                  </View>
+                </View>
 
-                <Sep marginV={16} />
-
-                {/* Active days */}
+                {/* Days Active */}
                 <SectionHeader title="Hari Aktif" />
-                <View style={tw`flex-row flex-wrap gap-2 mb-2`}>
-                  {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
-                    const isActive = notificationSettings.advanced?.activeDays?.includes(dayIndex);
-                    return (
-                      <TouchableOpacity
-                        key={dayIndex}
-                        style={[
-                          tw`w-10 h-10 rounded-full items-center justify-center`,
-                          isActive
-                            ? { backgroundColor: ACCENT_COLOR }
-                            : { backgroundColor: SURFACE_COLOR },
-                        ]}
-                        onPress={() => toggleActiveDay(dayIndex)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
+                <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
+                  <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 12 }}>Filter notifikasi diabaikan pasca tidak diceklis</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
+                      const isActive = notificationSettings.advanced?.activeDays?.includes(dayIndex);
+                      return (
+                        <TouchableOpacity
+                          key={dayIndex}
                           style={{
-                            fontSize: 11,
-                            fontWeight: "600",
-                            color: isActive ? BACKGROUND_COLOR : Colors.gray400,
+                            width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center",
+                            backgroundColor: isActive ? ACCENT_COLOR : "transparent",
+                            borderWidth: 1, borderColor: isActive ? ACCENT_COLOR : CARD_BORDER,
                           }}
+                          onPress={() => toggleActiveDay(dayIndex)}
+                          activeOpacity={0.7}
                         >
-                          {getDayName(dayIndex)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 4 }}>
-                  Notifikasi hanya dikirim di hari yang dipilih
-                </Text>
-
-                <Sep marginV={16} />
-
-                {/* Vibration pattern */}
-                <SectionHeader title="Pola Getar" />
-                <View style={tw`flex-row gap-3 mb-2`}>
-                  {[
-                    { value: "light"  as const, label: "Ringan" },
-                    { value: "medium" as const, label: "Sedang" },
-                    { value: "heavy"  as const, label: "Kuat" },
-                  ].map((pattern) => {
-                    const isActive = notificationSettings.advanced?.vibrationPattern === pattern.value;
-                    return (
-                      <TouchableOpacity
-                        key={pattern.value}
-                        style={[
-                          tw`flex-1 py-2.5 rounded-xl items-center`,
-                          isActive
-                            ? { backgroundColor: ACCENT_COLOR }
-                            : { backgroundColor: SURFACE_COLOR },
-                        ]}
-                        onPress={() => updateAdvancedSetting("vibrationPattern", pattern.value)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 12,
-                            fontWeight: "500",
-                            color: isActive ? BACKGROUND_COLOR : Colors.gray400,
-                          }}
-                        >
-                          {pattern.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <Sep marginV={16} />
-
-                {/* Sound */}
-                <View style={tw`flex-row items-center py-2`}>
-                  <View style={[tw`w-8 h-8 rounded-lg items-center justify-center mr-3`, { backgroundColor: `${SUCCESS_COLOR}18` }]}>
-                    <Ionicons name="musical-notes-outline" size={16} color={SUCCESS_COLOR} />
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? BACKGROUND_COLOR : Colors.gray400 }}>{getDayName(dayIndex)}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500", flex: 1 }}>
-                    Suara Notifikasi
-                  </Text>
-                  <Switch
-                    value={notificationSettings.advanced?.soundEnabled !== false}
-                    onValueChange={(v) => updateAdvancedSetting("soundEnabled", v)}
-                    trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-                    thumbColor="#FFFFFF"
-                  />
                 </View>
               </>
             )}
           </>
         )}
 
-        {/* ══════════════════════════════════════
-            DATA TAB
-        ══════════════════════════════════════ */}
-        {activeSection === "data" && (
+        {/* ══════════════════════════════════════════════════════════════════════
+            DATA DAN SISTEM
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "data" && (
           <>
-            <SectionHeader title="Manajemen Data" />
+            <SectionHeader title="Opsi Database" />
+            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }} onPress={() => Alert.alert("Export", "Akan datang.")} activeOpacity={0.7}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="download-outline" size={18} color={ACCENT_COLOR} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Export ke CSV</Text>
+                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>Cetak mutasi & neraca</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+              </TouchableOpacity>
 
-            {/* Export */}
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={debugStorage} activeOpacity={0.7}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${INFO_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="terminal-outline" size={18} color={INFO_COLOR} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Storage Diagnostic</Text>
+                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>Cek struktur tabel core</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+              </TouchableOpacity>
+            </View>
+
+            <SectionHeader title="Zona Kritis" />
             <TouchableOpacity
-              style={[
-                tw`flex-row items-center py-3`,
-                { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR },
-              ]}
-              onPress={handleExportData}
-              activeOpacity={0.7}
-            >
-              <View style={[tw`w-9 h-9 rounded-xl items-center justify-center mr-3`, { backgroundColor: `${ACCENT_COLOR}18` }]}>
-                <Ionicons name="download-outline" size={18} color={ACCENT_COLOR} />
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>Ekspor Data</Text>
-                <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 1 }}>
-                  Ekspor semua data ke file CSV
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={15} color={Colors.gray400} />
-            </TouchableOpacity>
-
-            {/* Debug */}
-            <TouchableOpacity
-              style={[
-                tw`flex-row items-center py-3`,
-                { borderBottomWidth: 1, borderBottomColor: SURFACE_COLOR },
-              ]}
-              onPress={handleDebug}
-              activeOpacity={0.7}
-            >
-              <View style={[tw`w-9 h-9 rounded-xl items-center justify-center mr-3`, { backgroundColor: `${WARNING_COLOR}18` }]}>
-                <Ionicons name="bug-outline" size={18} color={WARNING_COLOR} />
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "500" }}>Debug Storage</Text>
-                <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 1 }}>
-                  Cek status storage di console
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={15} color={Colors.gray400} />
-            </TouchableOpacity>
-
-            <Sep marginV={20} />
-
-            {/* Danger zone */}
-            <SectionHeader title="Zona Berbahaya" />
-            <TouchableOpacity
-              style={[
-                tw`flex-row items-center py-3 px-4 rounded-xl`,
-                { backgroundColor: `${ERROR_COLOR}12`, borderWidth: 1, borderColor: `${ERROR_COLOR}25` },
-              ]}
+              style={{ flexDirection: "row", alignItems: "center", backgroundColor: `${ERROR_COLOR}10`, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: `${ERROR_COLOR}25`, padding: 16 }}
               onPress={handleClearData}
               activeOpacity={0.7}
             >
-              <View style={[tw`w-9 h-9 rounded-xl items-center justify-center mr-3`, { backgroundColor: `${ERROR_COLOR}20` }]}>
-                <Ionicons name="trash-outline" size={18} color={ERROR_COLOR} />
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${ERROR_COLOR}20`, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
+                <Ionicons name="trash" size={20} color={ERROR_COLOR} />
               </View>
-              <View style={tw`flex-1`}>
-                <Text style={{ color: ERROR_COLOR, fontSize: 13, fontWeight: "600" }}>Hapus Semua Data</Text>
-                <Text style={{ color: `${ERROR_COLOR}99`, fontSize: 11, marginTop: 1 }}>
-                  Reset aplikasi ke keadaan awal · Tidak dapat dibatalkan
-                </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}>Wipe All Data</Text>
+                <Text style={{ color: `${ERROR_COLOR}90`, fontSize: 11, marginTop: 4, lineHeight: 16 }}>Seluruh catatan keuangan, hutang, catatan akan dihapus permanen.</Text>
               </View>
             </TouchableOpacity>
           </>
@@ -1068,20 +721,15 @@ const SettingsScreen = () => {
 
       </ScrollView>
 
-      {/* ── Time Picker Modal ────────────────────────────────────────────── */}
+      {/* ── Modals ────────────────────────────────────────────────────────── */}
       <TimePickerModal
         visible={timePickerConfig.visible}
         onClose={() => setTimePickerConfig({ visible: false, type: null })}
         onTimeSelected={(time) => {
-          if (timePickerConfig.type) {
-            if (timePickerConfig.type === "morning" || timePickerConfig.type === "evening") {
-              updateCustomSchedule(timePickerConfig.type, time);
-            } else if (timePickerConfig.type === "quietStart") {
-              updateQuietHours("start", time);
-            } else if (timePickerConfig.type === "quietEnd") {
-              updateQuietHours("end", time);
-            }
-          }
+          if (timePickerConfig.type === "morning") updateCustomSchedule("morning", time);
+          if (timePickerConfig.type === "evening") updateCustomSchedule("evening", time);
+          if (timePickerConfig.type === "quietStart") updateQuietHours("start", time);
+          if (timePickerConfig.type === "quietEnd") updateQuietHours("end", time);
           setTimePickerConfig({ visible: false, type: null });
         }}
         initialTime={
@@ -1091,12 +739,12 @@ const SettingsScreen = () => {
                                                     notificationSettings.advanced?.quietHours?.end         || "07:00"
         }
         title={
-          timePickerConfig.type === "morning"     ? "Pengingat Pagi"    :
-          timePickerConfig.type === "evening"     ? "Ringkasan Malam"   :
+          timePickerConfig.type === "morning"     ? "Notifikasi Pagi"    :
+          timePickerConfig.type === "evening"     ? "Rekapitulasi Malam"   :
           timePickerConfig.type === "quietStart"  ? "Mulai Quiet Hours" : "Akhir Quiet Hours"
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
