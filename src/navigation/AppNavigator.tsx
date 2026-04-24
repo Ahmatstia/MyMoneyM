@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import FloatingDrawerHandle from "../components/FloatingDrawerHandle";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme as NavigationDarkTheme } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
   createDrawerNavigator,
@@ -160,6 +160,7 @@ const MainStackNavigator = () => {
 
         return {
           headerShown: !isMainScreen,
+          cardStyle: { backgroundColor: "#0F172A" }, // Mencegah flash putih saat transisi antar layar utama
           headerStyle: {
             backgroundColor: "#0F172A",
             height: Platform.OS === "ios" ? 100 : 80,
@@ -225,6 +226,19 @@ const DrawerNavigator = () => (
   </Drawer.Navigator>
 );
 
+// Theme Navigation untuk mencegah "White Flash" saat ganti halaman
+const MyNavigationTheme = {
+  ...NavigationDarkTheme,
+  colors: {
+    ...NavigationDarkTheme.colors,
+    background: "#0F172A",
+    card: "#0F172A",
+    text: "#F8FAFC",
+    border: "#334155",
+    primary: "#22D3EE",
+  },
+};
+
 const AppNavigator: React.FC = () => {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
@@ -255,8 +269,14 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
-      <RootStack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isFirstLaunch ? "Onboarding" : "MainDrawer"}>
+    <NavigationContainer theme={MyNavigationTheme}>
+      <RootStack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          cardStyle: { backgroundColor: "#0F172A" } // Mencegah flash putih di Root Stack
+        }} 
+        initialRouteName={isFirstLaunch ? "Onboarding" : "MainDrawer"}
+      >
         {isFirstLaunch && <RootStack.Screen name="Onboarding" component={OnboardingScreen} />}
         <RootStack.Screen name="MainDrawer" component={DrawerNavigator} />
       </RootStack.Navigator>

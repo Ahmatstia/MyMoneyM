@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import LottieView from "lottie-react-native";
 
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
@@ -498,9 +499,15 @@ const SettingsScreen = () => {
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR, alignItems: "center", justifyContent: "center" }}>
-        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-          <Ionicons name="settings-outline" size={20} color={ACCENT_COLOR} />
-        </View>
+        <LottieView
+          source={require("../../../assets/lottie/Loading 50 _ Among Us.json")}
+          autoPlay
+          loop
+          style={{ width: 180, height: 180 }}
+        />
+        <Text style={{ color: TEXT_SECONDARY, fontSize: 13, marginTop: 10, fontWeight: "500" }}>
+          Menyiapkan Pengaturan...
+        </Text>
       </View>
     );
   }
