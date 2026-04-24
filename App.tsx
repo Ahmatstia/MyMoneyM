@@ -13,6 +13,7 @@ import { Colors } from "./src/theme/theme";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Notifications from "expo-notifications";
 import { adaptNavigationTheme } from "react-native-paper";
+import { CustomAlertProvider } from "./src/components/Alert/CustomAlertProvider";
 
 // Adaptasi tema navigasi dengan React Native Paper
 const { DarkTheme } = adaptNavigationTheme({
@@ -70,28 +71,15 @@ export default function App() {
     // Listen for notifications when app is foreground
     const subscription = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log(
-          "📱 Notification received:",
-          notification.request.content.title
-        );
+        // Handle notification foreground receipt
       }
     );
 
     // Handle notification response (user taps)
     const responseSubscription =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(
-          "👆 Notification tapped:",
-          response.notification.request.content.data
-        );
-
         // Here you can handle navigation based on notification type
         const data = response.notification.request.content.data;
-
-        // Example: Navigate based on notification type
-        // if (data.type === 'BUDGET_WARNING') {
-        //   // Use navigation ref or context to navigate
-        // }
       });
 
     // BUG-16 FIX: Removed duplicate setNotificationHandler — already configured in notifications/index.ts
@@ -112,7 +100,9 @@ export default function App() {
             translucent={false}
           />
           <AppProvider>
-            <AppNavigator />
+            <CustomAlertProvider>
+              <AppNavigator />
+            </CustomAlertProvider>
           </AppProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
