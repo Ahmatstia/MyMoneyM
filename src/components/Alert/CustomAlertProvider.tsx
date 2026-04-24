@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import LottieView from "lottie-react-native";
 import { Colors } from "../../theme/theme";
 
 // Konsisten dengan theme
@@ -86,11 +86,12 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
   const { visible, title, message, buttons } = alertState;
 
   // Tentukan tipe alert berdasarkan judul (heuristik sederhana)
-  const isError = title.toLowerCase().includes("error") || title.toLowerCase().includes("gagal") || title.toLowerCase().includes("hapus");
+  const isDelete = title.toLowerCase().includes("hapus") || title.toLowerCase().includes("wipe");
+  const isError = title.toLowerCase().includes("error") || title.toLowerCase().includes("gagal") || (isDelete && title.toLowerCase().includes("data"));
   const isSuccess = title.toLowerCase().includes("sukses") || title.toLowerCase().includes("berhasil");
   const isWarning = title.toLowerCase().includes("peringatan") || title.toLowerCase().includes("izin");
 
-  const themeColor = isError
+  const themeColor = isError || isDelete
     ? ERROR_COLOR
     : isSuccess
     ? SUCCESS_COLOR
@@ -98,13 +99,13 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
     ? WARNING_COLOR
     : ACCENT_COLOR;
 
-  const iconName = isError
-    ? "alert-circle-outline"
-    : isSuccess
-    ? "checkmark-circle-outline"
-    : isWarning
-    ? "warning-outline"
-    : "information-circle-outline";
+  const getLottieSource = () => {
+    if (isDelete) return require("../../../assets/lottie/Delete.json");
+    if (isError) return require("../../../assets/lottie/Error animation.json");
+    if (isSuccess) return require("../../../assets/lottie/success.json");
+    if (isWarning) return require("../../../assets/lottie/Warning Status.json");
+    return require("../../../assets/lottie/info.json");
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -133,9 +134,14 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
           />
 
           <View style={styles.alertBox}>
-            {/* Header Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: `${themeColor}15` }]}>
-              <Ionicons name={iconName} size={28} color={themeColor} />
+            {/* Lottie Animation instead of Icon */}
+            <View style={styles.lottieWrapper}>
+              <LottieView
+                source={getLottieSource()}
+                autoPlay
+                loop={isWarning || !isSuccess}
+                style={styles.lottie}
+              />
             </View>
 
             {/* Content */}
@@ -212,13 +218,16 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  lottieWrapper: {
+    width: 100,
+    height: 100,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  lottie: {
+    width: "100%",
+    height: "100%",
   },
   title: {
     color: TEXT_PRIMARY,

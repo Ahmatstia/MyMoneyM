@@ -4,270 +4,280 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
-  Image,
   StatusBar,
   Animated,
+  StyleSheet,
 } from "react-native";
-import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LottieView from "lottie-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Colors } from "../../theme/theme";
 
 const { width, height } = Dimensions.get("window");
 
 const OnboardingScreen = ({ navigation }: any) => {
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const lottieRef = useRef<LottieView>(null);
 
   const onboardingData = [
     {
       id: "1",
-      title: "Uang Bocor\nTanpa Disadari?",
+      title: "Kelola Keuangan\nLebih Santai",
       description:
-        "Pengeluaran kecil yang tak tercatat bisa bikin keuangan berantakan. Saatnya ambil kendali.",
-      image: require("../../../assets/ob1.png"),
+        "Pantau arus kas dengan mudah dan menyenangkan tanpa pusing hitung manual.",
+      lottie: require("../../../assets/lottie/Businessman flies up with rocket.json"),
     },
     {
       id: "2",
-      title: "Semua Keuangan\nDalam Genggaman",
+      title: "Analisis Pintar\n& Akurat",
       description:
-        "Pantau pemasukan, pengeluaran, dan asetmu secara real-time lewat satu aplikasi.",
-      image: require("../../../assets/ob2.png"),
+        "Dapatkan wawasan mendalam tentang pola pengeluaranmu secara otomatis.",
+      lottie: require("../../../assets/lottie/Credit Assessment Animated.json"),
     },
     {
       id: "3",
-      title: "Keuangan Terkontrol,\nMasa Depan Terarah",
+      title: "Masa Depan\nTerjamin",
       description:
-        "Lihat perkembangan uangmu, capai target finansial, dan bangun kebiasaan keuangan sehat.",
-      image: require("../../../assets/ob3.png"),
+        "Rencanakan tabungan dan capai target finansialmu demi masa depan yang lebih mapan.",
+      lottie: require("../../../assets/lottie/Job Success.json"),
     },
   ];
 
-  /* Floating animation */
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: 1,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 3000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
+    startAnimation();
+  }, [currentPage]);
 
-  const animateTransition = (callback: () => void) => {
+  const startAnimation = () => {
+    fadeAnim.setValue(0);
+    slideAnim.setValue(30);
+    
     Animated.parallel([
       Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
         toValue: 0,
-        duration: 150,
+        tension: 40,
+        friction: 8,
         useNativeDriver: true,
       }),
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      callback();
-
-      Animated.parallel([
-        Animated.spring(fadeAnim, {
-          toValue: 1,
-          damping: 12,
-          mass: 0.8,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          damping: 12,
-          mass: 0.8,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    });
+    ]).start();
   };
 
   const handleNext = () => {
     if (currentPage < onboardingData.length - 1) {
-      animateTransition(() => setCurrentPage((p) => p + 1));
+      setCurrentPage((p) => p + 1);
     } else {
       handleFinish();
     }
   };
 
-  const handlePrevious = () => {
-    if (currentPage > 0) {
-      animateTransition(() => setCurrentPage((p) => p - 1));
-    }
+  const handleSkip = () => {
+    handleFinish();
   };
 
   const handleFinish = async () => {
     try {
       await AsyncStorage.setItem("@onboarding_completed", "true");
     } catch (e) {
-
+      // Error saving
     }
     navigation.replace("MainDrawer");
   };
 
-  const handleSkip = () => {
-    navigation.replace("MainDrawer");
-  };
-
-  const floatInterpolate = floatAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -14],
-  });
-
   const currentSlide = onboardingData[currentPage];
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      <StatusBar backgroundColor="#0F172A" barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      
+      <LinearGradient
+        colors={[Colors.primaryDark, Colors.primary, Colors.primaryLight]}
+        style={StyleSheet.absoluteFill}
+      />
 
-      {/* Skip */}
+      {/* Skip Button */}
       {currentPage < onboardingData.length - 1 && (
         <TouchableOpacity
-          style={tw`absolute top-12 right-6 z-10`}
+          style={styles.skipButton}
           onPress={handleSkip}
         >
-          <Text style={tw`text-gray-500 text-sm font-medium`}>Lewati</Text>
+          <Text style={styles.skipText}>Lewati</Text>
         </TouchableOpacity>
       )}
 
-      {/* Bottom Curved Section */}
-      <View
-        style={[
-          tw`absolute bottom-0 left-0 right-0 bg-[#0F172A]`,
-          {
-            height: height * 0.48,
-            borderTopLeftRadius: 120,
-            borderTopRightRadius: 40,
-          },
-        ]}
-      />
-
       {/* Main Content */}
-      <View style={tw`flex-1 justify-center items-center px-8`}>
-        {/* Image */}
+      <View style={styles.contentContainer}>
+        {/* Lottie Animation */}
         <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }, { translateY: floatInterpolate }],
-            marginBottom: 24,
-          }}
+          style={[
+            styles.lottieContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
-          <Image
-            source={currentSlide.image}
-            style={{
-              width: width * 0.7,
-              height: width * 0.7,
-              resizeMode: "contain",
-            }}
+          <LottieView
+            ref={lottieRef}
+            source={currentSlide.lottie}
+            autoPlay
+            loop
+            style={styles.lottie}
           />
         </Animated.View>
 
-        {/* Indicator */}
-        <Animated.View style={[tw`flex-row gap-2 mb-8`, { opacity: fadeAnim }]}>
+        {/* Indicators */}
+        <View style={styles.indicatorContainer}>
           {onboardingData.map((_, index) => (
-            <Animated.View
+            <View
               key={index}
-              style={{
-                height: 6,
-                width: index === currentPage ? 28 : 8,
-                borderRadius: 99,
-                backgroundColor: index === currentPage ? "#4F46E5" : "#CBD5E1",
-              }}
+              style={[
+                styles.indicator,
+                {
+                  width: index === currentPage ? 24 : 8,
+                  backgroundColor: index === currentPage ? Colors.accent : "rgba(255,255,255,0.2)",
+                },
+              ]}
             />
           ))}
-        </Animated.View>
+        </View>
 
-        {/* Text */}
+        {/* Text Section */}
         <Animated.View
-          style={{
-            alignItems: "center",
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          }}
+          style={[
+            styles.textSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
-          <View style={tw`mb-4`}>
-            {currentSlide.title.split("\n").map((line, index) => (
-              <Text
-                key={index}
-                style={{
-                  fontSize: 36,
-                  lineHeight: 44,
-                  fontWeight: "800",
-                  textAlign: "center",
-                  letterSpacing: -0.5,
-                  color: index === 0 ? "#E0E7FF" : "#4F46E5",
-                }}
-              >
-                {line}
-              </Text>
-            ))}
-          </View>
-
-          <Text
-            style={{
-              fontSize: 15,
-              lineHeight: 24,
-              textAlign: "center",
-              color: "#7688A0",
-              paddingHorizontal: 16,
-            }}
-          >
-            {currentSlide.description}
-          </Text>
+          <Text style={styles.title}>{currentSlide.title}</Text>
+          <Text style={styles.description}>{currentSlide.description}</Text>
         </Animated.View>
       </View>
 
-      {/* Navigation */}
-      <Animated.View
-        style={[
-          tw`absolute bottom-0 left-0 right-0 px-8 pb-10`,
-          { opacity: fadeAnim },
-        ]}
-      >
-        <View style={tw`flex-row items-center gap-3`}>
-          {currentPage > 0 && (
-            <TouchableOpacity
-              onPress={handlePrevious}
-              style={tw`w-12 h-12 rounded-full bg-white/20 items-center justify-center`}
-            >
-              <Text style={tw`text-white text-lg font-bold`}>←</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            onPress={handleNext}
-            style={[
-              tw`flex-1 h-12 rounded-full bg-white items-center justify-center`,
-              {
-                shadowColor: "#000",
-                shadowOpacity: 0.15,
-                shadowRadius: 10,
-                elevation: 4,
-              },
-            ]}
+      {/* Bottom Navigation */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={Colors.gradient.accent}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientButton}
           >
-            <Text style={tw`text-[#4F46E5] font-bold text-[15px]`}>
+            <Text style={styles.nextButtonText}>
               {currentPage === onboardingData.length - 1
                 ? "Mulai Sekarang"
                 : "Lanjutkan"}
             </Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+            <Text style={styles.arrow}>→</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+  },
+  skipButton: {
+    position: "absolute",
+    top: 50,
+    right: 24,
+    zIndex: 10,
+    padding: 10,
+  },
+  skipText: {
+    color: Colors.textTertiary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  lottieContainer: {
+    width: width * 0.8,
+    height: width * 0.8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  lottie: {
+    width: "100%",
+    height: "100%",
+  },
+  indicatorContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 32,
+  },
+  indicator: {
+    height: 8,
+    borderRadius: 4,
+  },
+  textSection: {
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 32,
+    lineHeight: 40,
+    fontWeight: "800",
+    textAlign: "center",
+    color: Colors.textPrimary,
+    marginBottom: 16,
+    letterSpacing: -0.5,
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: "center",
+    color: Colors.textSecondary,
+    paddingHorizontal: 8,
+  },
+  footer: {
+    paddingHorizontal: 32,
+    paddingBottom: 50,
+  },
+  nextButton: {
+    width: "100%",
+    height: 56,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  gradientButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  nextButtonText: {
+    color: Colors.primaryDark,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  arrow: {
+    color: Colors.primaryDark,
+    fontSize: 18,
+    fontWeight: "800",
+  },
+});
 
 export default OnboardingScreen;
