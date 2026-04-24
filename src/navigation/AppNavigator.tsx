@@ -530,10 +530,10 @@ const AppNavigator: React.FC = () => {
     const checkOnboarding = async () => {
       try {
         const value = await AsyncStorage.getItem("@onboarding_completed");
-        console.log("DEBUG: Onboarding status =", value);
+
         setIsFirstLaunch(value !== "true");
       } catch (error) {
-        console.error(error);
+
         setIsFirstLaunch(true);
       }
     };

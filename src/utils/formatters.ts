@@ -49,7 +49,7 @@ export const formatDate = (dateString: string): string => {
     };
     return date.toLocaleDateString("id-ID", options);
   } catch (error) {
-    console.warn("Format date error:", error);
+
     return dateString;
   }
 };

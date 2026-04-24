@@ -359,22 +359,25 @@ const SettingsScreen = () => {
       setNotificationSettings(savedNotifSettings);
       const savedAppSettings = await AsyncStorage.getItem(APP_SETTINGS_KEY);
       if (savedAppSettings) setAppSettings(JSON.parse(savedAppSettings));
-    } catch (error) { console.error("Error loading settings:", error); }
+    } catch (error) {  }
     finally { setIsLoading(false); }
   };
 
   const saveNotificationSettings = async (newSettings: typeof DEFAULT_NOTIFICATION_SETTINGS) => {
     try {
-      await notificationService.updateNotificationSettings(newSettings, state);
+      // Optimistic UI update
       setNotificationSettings(newSettings);
-    } catch (error) { console.error("Error saving notif settings:", error); }
+      
+      // Update asynchronously to prevent UI lag (especially when re-scheduling 35+ notifications)
+      notificationService.updateNotificationSettings(newSettings, state).catch(() => {});
+    } catch (error) {  }
   };
 
   const saveAppSettings = async (newSettings: typeof DEFAULT_APP_SETTINGS) => {
     try {
       await AsyncStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(newSettings));
       setAppSettings(newSettings);
-    } catch (error) { console.error("Error saving app settings:", error); }
+    } catch (error) {  }
   };
 
   const checkPermission = async () => {
@@ -386,7 +389,7 @@ const SettingsScreen = () => {
     try {
       const notifications = await notificationService.getScheduledNotifications();
       setScheduledNotifications(notifications);
-    } catch (error) { console.error("Error loading scheduled notifications:", error); }
+    } catch (error) {  }
   };
 
   // ── Actions ────────────────────────────────────────────────────────────────
@@ -403,7 +406,7 @@ const SettingsScreen = () => {
         ]);
       }
     } catch (error) {
-      console.error("Error requesting permission:", error);
+
       Alert.alert("Error", "Gagal meminta izin notifikasi");
     }
   };
@@ -544,16 +547,7 @@ const SettingsScreen = () => {
                 >
                   <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>Berikan Izin OS</Text>
                 </TouchableOpacity>
-              ) : (
-                <View style={{ flexDirection: "row", gap: 10, marginTop: 16, opacity: notificationSettings.enabled ? 1 : 0.5 }}>
-                  <TouchableOpacity style={{ flex: 1, backgroundColor: `${INFO_COLOR}15`, paddingVertical: 10, borderRadius: INNER_RADIUS, alignItems: "center", borderWidth: 1, borderColor: `${INFO_COLOR}25` }} onPress={testNotification} disabled={!notificationSettings.enabled}>
-                    <Text style={{ color: INFO_COLOR, fontSize: 11, fontWeight: "700" }}>Test Notif</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={{ flex: 1, backgroundColor: `${ERROR_COLOR}15`, paddingVertical: 10, borderRadius: INNER_RADIUS, alignItems: "center", borderWidth: 1, borderColor: `${ERROR_COLOR}25` }} onPress={clearAllNotifications} disabled={!notificationSettings.enabled}>
-                    <Text style={{ color: ERROR_COLOR, fontSize: 11, fontWeight: "700" }}>Hapus Queue</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              ) : null}
             </View>
 
             {/* Notification Types */}
@@ -679,24 +673,13 @@ const SettingsScreen = () => {
           <>
             <SectionHeader title="Opsi Database" />
             <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
-              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }} onPress={() => Alert.alert("Export", "Akan datang.")} activeOpacity={0.7}>
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={() => Alert.alert("Export", "Akan datang.")} activeOpacity={0.7}>
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
                   <Ionicons name="download-outline" size={18} color={ACCENT_COLOR} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Export ke CSV</Text>
                   <Text style={{ color: Colors.gray400, fontSize: 11 }}>Cetak mutasi & neraca</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={debugStorage} activeOpacity={0.7}>
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${INFO_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name="terminal-outline" size={18} color={INFO_COLOR} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Storage Diagnostic</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>Cek struktur tabel core</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
               </TouchableOpacity>

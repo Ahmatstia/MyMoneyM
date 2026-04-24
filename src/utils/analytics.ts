@@ -127,7 +127,7 @@ export const calculateTransactionAnalytics = (
       ).length,
     };
   } catch (error) {
-    console.error("Error in calculateTransactionAnalytics:", error);
+
     // Return safe defaults
     const now = new Date();
     return {
@@ -151,11 +151,10 @@ export const calculateTransactionAnalytics = (
 // PERBAIKAN: Calculate budget utilization analytics - FIXED
 export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
   try {
-    console.log("📊 DEBUG - Budgets received for analytics:", budgets.length);
 
     // Jika budgets adalah array kosong atau null/undefined
     if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
-      console.log("📊 DEBUG - No budgets available");
+
       return {
         totalBudget: 0,
         totalSpent: 0,
@@ -178,7 +177,6 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
         !isNaN(b.spent)
     );
 
-    console.log("📊 DEBUG - Valid budgets count:", validBudgets.length);
 
     const totalBudget = validBudgets.reduce(
       (sum, b) => sum + safeNumber(b.limit),
@@ -190,12 +188,7 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
       0
     );
 
-    console.log(
-      "📊 DEBUG - Total Budget:",
-      totalBudget,
-      "Total Spent:",
-      totalSpent
-    );
+    
 
     const utilizationRate =
       totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -236,7 +229,7 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
       hasBudgets: validBudgets.length > 0,
     };
   } catch (error) {
-    console.error("Error in calculateBudgetAnalytics:", error);
+
     return {
       totalBudget: 0,
       totalSpent: 0,
@@ -252,11 +245,10 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
 // PERBAIKAN BESAR: Calculate savings progress analytics - FIXED
 export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
   try {
-    console.log("💰 DEBUG - Savings received for analytics:", savings?.length);
 
     // Jika savings adalah array kosong atau null/undefined
     if (!savings || !Array.isArray(savings) || savings.length === 0) {
-      console.log("💰 DEBUG - No savings available");
+
       return {
         totalTarget: 0,
         totalCurrent: 0,
@@ -279,7 +271,6 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
         !isNaN(s.current)
     );
 
-    console.log("💰 DEBUG - Valid savings count:", validSavings.length);
 
     const totalTarget = validSavings.reduce(
       (sum, s) => sum + safeNumber(s.target),
@@ -291,12 +282,7 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
       0
     );
 
-    console.log(
-      "💰 DEBUG - Total Target:",
-      totalTarget,
-      "Total Current:",
-      totalCurrent
-    );
+    
 
     const overallProgress =
       totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
@@ -337,7 +323,7 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
       hasSavings: validSavings.length > 0, // PERBAIKAN: Tambah flag
     };
   } catch (error) {
-    console.error("Error in calculateSavingsAnalytics:", error);
+
     return {
       totalTarget: 0,
       totalCurrent: 0,
@@ -506,7 +492,7 @@ export const calculateFinancialHealthScore = (
       recommendations,
     };
   } catch (error) {
-    console.error("Error calculating health score:", error);
+
     return {
       overallScore: 0,
       category: "Belum Ada Data",
@@ -622,16 +608,11 @@ const calculateExpenseControlScore = (
 const calculateGoalProgressScore = (
   savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
 ) => {
-  console.log("🎯 DEBUG - Calculating goal progress score:", {
-    hasSavings: savingsAnalytics.hasSavings,
-    overallProgress: savingsAnalytics.overallProgress,
-    completedCount: savingsAnalytics.completedSavings,
-    activeCount: savingsAnalytics.activeSavings,
-  });
+  
 
   // Jika tidak ada tabungan sama sekali
   if (!savingsAnalytics.hasSavings) {
-    console.log("🎯 DEBUG - No savings, score = 0");
+
     return { score: 0, weight: 0.15, status: "poor" as FactorStatus };
   }
 
@@ -673,7 +654,7 @@ const calculateGoalProgressScore = (
     status = "poor";
   }
 
-  console.log("🎯 DEBUG - Goal progress score calculated:", { score, status });
+
   return { score, weight: 0.15, status };
 };
 
@@ -807,11 +788,7 @@ export const generateFinancialInsights = (
   try {
     const insights = [];
 
-    console.log("💡 DEBUG - Generating insights:", {
-      hasTransactions: transactionAnalytics.transactionCount > 0,
-      hasBudgets: budgetAnalytics.hasBudgets,
-      hasSavings: savingsAnalytics.hasSavings,
-    });
+    
 
     // Check if no data
     if (
@@ -961,7 +938,7 @@ export const generateFinancialInsights = (
 
     return insights.slice(0, 3);
   } catch (error) {
-    console.error("Error generating insights:", error);
+
     return [
       {
         type: "info",

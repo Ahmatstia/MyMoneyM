@@ -214,7 +214,7 @@ const AnalyticsScreen: React.FC = () => {
         dailyTrends:             analytics.dailyTrends || [],
       };
     } catch (error) {
-      console.error("Error calculating transaction analytics:", error);
+
       return {
         totalIncome: 0, totalExpense: 0, netSavings: 0, savingsRate: 0,
         avgDailyExpense: 0, transactionCount: 0, incomeTransactionCount: 0,
@@ -228,7 +228,7 @@ const AnalyticsScreen: React.FC = () => {
     try {
       return calculateBudgetAnalytics(state.budgets || []);
     } catch (error) {
-      console.error("Error calculating budget analytics:", error);
+
       return {
         totalBudget: 0, totalSpent: 0, utilizationRate: 0,
         overBudgetCount: 0, underBudgetCount: 0, budgetsAtRisk: [], hasBudgets: false,
@@ -240,7 +240,7 @@ const AnalyticsScreen: React.FC = () => {
     try {
       return calculateSavingsAnalytics(state.savings || []);
     } catch (error) {
-      console.error("Error calculating savings analytics:", error);
+
       return {
         totalTarget: 0, totalCurrent: 0, overallProgress: 0,
         completedSavings: 0, activeSavings: 0, nearingCompletion: [], hasSavings: false,
@@ -260,7 +260,7 @@ const AnalyticsScreen: React.FC = () => {
         totalActiveDebt
       );
     } catch (error) {
-      console.error("Error calculating health score:", error);
+
       return {
         overallScore: 0,
         category: "Belum Ada Data",
@@ -288,7 +288,7 @@ const AnalyticsScreen: React.FC = () => {
         savingsAnalytics
       );
     } catch (error) {
-      console.error("Error generating insights:", error);
+
       return [
         {
           type: "info",
@@ -352,7 +352,7 @@ const AnalyticsScreen: React.FC = () => {
         savingsRateChange: safeCurrentSavingsRate - safeLastSavingsRate,
       };
     } catch (error) {
-      console.error("Error in getComparativeData:", error);
+
       return {
         current:  { totalIncome: 0, totalExpense: 0, savingsRate: 0 },
         previous: { totalIncome: 0, totalExpense: 0, savingsRate: 0 },
@@ -411,7 +411,7 @@ const AnalyticsScreen: React.FC = () => {
             : "danger",
       };
     } catch (error) {
-      console.error("Error in cash flow forecast:", error);
+
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
   }, [transactionAnalytics, state.transactions, timeRange]);
@@ -444,7 +444,7 @@ const AnalyticsScreen: React.FC = () => {
         }
       );
     } catch (error) {
-      console.error("Error in category benchmarks:", error);
+
       return [];
     }
   };
@@ -482,7 +482,7 @@ Kategori: ${financialHealthScore.category}
         dialogTitle: "Bagikan Laporan Keuangan",
       });
     } catch (error) {
-      console.error("Export error:", error);
+
       Alert.alert("Error", "Gagal mengekspor laporan");
     }
   };

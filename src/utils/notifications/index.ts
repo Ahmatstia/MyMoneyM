@@ -138,7 +138,7 @@ export class NotificationService {
       }
       return DEFAULT_SETTINGS;
     } catch (error) {
-      console.error("❌ Error loading notification settings:", error);
+
       return DEFAULT_SETTINGS;
     }
   }
@@ -168,7 +168,7 @@ export class NotificationService {
         JSON.stringify(safeSettings)
       );
     } catch (error) {
-      console.error("❌ Error saving notification settings:", error);
+
     }
   }
 
@@ -204,7 +204,7 @@ export class NotificationService {
       const settingKey = typeMapping[type];
       return settingKey ? settings[settingKey] !== false : true;
     } catch (error) {
-      console.error("❌ Error checking notification settings:", error);
+
       return true; // Default enabled jika error
     }
   }
@@ -278,7 +278,7 @@ export class NotificationService {
       }
 
       if (finalStatus !== "granted") {
-        console.log("❌ Izin notifikasi ditolak");
+
         return false;
       }
 
@@ -297,7 +297,7 @@ export class NotificationService {
 
       return true;
     } else {
-      console.log("⚠️ Harus menggunakan perangkat fisik untuk notifikasi");
+
       return false;
     }
   }
@@ -307,7 +307,6 @@ export class NotificationService {
   // Initialize all notifications
   async initialize(appState: AppState): Promise<void> {
     try {
-      console.log("🔔 Menginisialisasi notifikasi...");
 
       // Load settings
       const settings = await this.loadSettings();
@@ -324,9 +323,9 @@ export class NotificationService {
         await this.checkImmediateAlerts(appState);
       }
 
-      console.log("✅ Notifikasi siap");
+
     } catch (error) {
-      console.error("❌ Error menginisialisasi notifikasi:", error);
+
     }
   }
 
@@ -335,7 +334,6 @@ export class NotificationService {
   // Schedule daily reminders dengan custom schedule
   private async scheduleDailyReminders(appState: AppState): Promise<void> {
     try {
-      console.log("⏰ Menjadwalkan pengingat harian (Per Hari Aktif)...");
 
       const settings = await this.loadSettings();
       const activeDays = settings.advanced?.activeDays || [0, 1, 2, 3, 4, 5, 6];
@@ -438,11 +436,9 @@ export class NotificationService {
         }
       }
 
-      console.log(
-        `✅ ${activeDays.length * 5} pengingat terjadwal untuk hari aktif`
-      );
+      
     } catch (error) {
-      console.error("❌ Error menjadwalkan pengingat harian:", error);
+
     }
   }
 
@@ -467,17 +463,13 @@ export class NotificationService {
 
       // Cek apakah notification type ini enabled
       if (data.type && !(await this.isNotificationTypeEnabled(data.type))) {
-        console.log(
-          `🔕 Notification skipped (type: ${data.type}) - disabled in settings`
-        );
+        
         return;
       }
 
       // DEDUP: Skip if same alert type was sent recently (30 min cooldown)
       if (data.type && this.isOnCooldown(data.type)) {
-        console.log(
-          `🔕 Notification skipped (type: ${data.type}) - on cooldown`
-        );
+        
         return;
       }
 
@@ -488,16 +480,16 @@ export class NotificationService {
       ) {
         // Jika urgent dan ignoreUrgent false, tetap kirim
         if (urgent && !settings.advanced.quietHours.ignoreUrgent) {
-          console.log("🔔 Urgent notification sent during quiet hours");
+
         } else {
-          console.log("🔕 Notification skipped (quiet hours)");
+
           return;
         }
       }
 
       // Cek active days
       if (!this.isActiveDay(settings.advanced?.activeDays)) {
-        console.log("🔕 Notification skipped (inactive day)");
+
         return;
       }
 
@@ -520,9 +512,9 @@ export class NotificationService {
         this.markAsSent(data.type);
       }
 
-      console.log(`📨 Notifikasi terkirim: ${title}`);
+
     } catch (error) {
-      console.error("❌ Error mengirim notifikasi:", error);
+
     }
   }
 
@@ -558,9 +550,7 @@ export class NotificationService {
       // 3. PENTING: Cek Quiet Hours untuk waktu terjadwal ini
       // Jika waktu yang dijadwalkan masuk jam tenang, jangan schedule
       if (this.isWithinQuietHours(settings.advanced?.quietHours, hour, minute)) {
-        console.log(
-          `🔕 Scheduled notification (type: ${data.type}) skipped - falls into quiet hours (${hour}:${minute})`
-        );
+        
         return;
       }
 
@@ -579,7 +569,7 @@ export class NotificationService {
         trigger,
       });
     } catch (error) {
-      console.error("❌ Error menjadwalkan notifikasi:", error);
+
     }
   }
 
@@ -614,14 +604,13 @@ export class NotificationService {
         });
       }
     } catch (error) {
-      console.error("❌ Error checking monthly reminders:", error);
+
     }
   }
 
   // Check for immediate alerts (budget exceeded, etc)
   async checkImmediateAlerts(appState: AppState): Promise<void> {
     try {
-      console.log("🔍 Mengecek alert segera...");
 
       const settings = await this.loadSettings();
 
@@ -663,10 +652,10 @@ export class NotificationService {
       await this.checkMonthlyReminders(appState);
 
       if (allAlerts.length > 0) {
-        console.log(`📤 Mengirim ${allAlerts.length} alert`);
+
       }
     } catch (error) {
-      console.error("❌ Error checking immediate alerts:", error);
+
     }
   }
 
@@ -675,7 +664,7 @@ export class NotificationService {
   // Cancel all notifications
   async cancelAllNotifications(): Promise<void> {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log("🗑️ Semua notifikasi dibatalkan");
+
   }
 
   // Get scheduled notifications
@@ -688,7 +677,6 @@ export class NotificationService {
   // Reinitialize notifications dengan settings baru
   async reinitializeNotifications(appState: AppState): Promise<void> {
     try {
-      console.log("🔄 Reinitializing notifications with current settings...");
 
       // Cancel semua notifikasi lama
       await this.cancelAllNotifications();
@@ -705,9 +693,9 @@ export class NotificationService {
         await this.checkImmediateAlerts(appState);
       }
 
-      console.log("✅ Notifications reinitialized");
+
     } catch (error) {
-      console.error("❌ Error reinitializing notifications:", error);
+
     }
   }
 
@@ -757,7 +745,7 @@ export class NotificationService {
         }
       }
     } catch (error) {
-      console.error("❌ Error updating notifications:", error);
+
     }
   }
 
@@ -809,9 +797,9 @@ export class NotificationService {
         }
       }
 
-      console.log("✅ Notification settings updated");
+
     } catch (error) {
-      console.error("❌ Error updating notification settings:", error);
+
     }
   }
 }

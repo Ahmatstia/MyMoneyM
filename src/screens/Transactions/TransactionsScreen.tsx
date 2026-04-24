@@ -239,7 +239,7 @@ const TransactionsScreen: React.FC = () => {
         if (!groups[dayKey]) groups[dayKey] = [];
         groups[dayKey].push(transaction);
       } catch (error) {
-        console.warn("Error grouping transaction:", error);
+
       }
     });
     return groups;
@@ -276,7 +276,7 @@ const TransactionsScreen: React.FC = () => {
               await deleteTransaction(transactionId);
               delete swipeableRefs.current[transactionId];
             } catch (error) {
-              console.error("Delete transaction error:", error);
+
               Alert.alert("Error", "Gagal menghapus transaksi");
             }
           },
@@ -338,7 +338,7 @@ const TransactionsScreen: React.FC = () => {
         if (selectedDate < customStartDate) setCustomStartDate(selectedDate);
       }
     } catch (error) {
-      console.error("Date select error:", error);
+
       Alert.alert("Error", "Gagal memilih tanggal");
     } finally {
       setShowCalendar(null);

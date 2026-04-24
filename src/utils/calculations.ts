@@ -17,7 +17,7 @@ export const safeNumber = (num: any): number => {
     const parsed = Number(num);
     return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
   } catch (error) {
-    console.warn("Error in safeNumber:", error, "value:", num);
+
     return 0;
   }
 };
@@ -42,7 +42,7 @@ export const calculateTotals = (transactions: Transaction[] = []) => {
 
     return { totalIncome, totalExpense, balance };
   } catch (error) {
-    console.error("Error in calculateTotals:", error);
+
     return { totalIncome: 0, totalExpense: 0, balance: 0 };
   }
 };
@@ -57,7 +57,7 @@ export const calculateBudgetProgress = (budget: Budget) => {
     const percentage = (safeSpent / safeLimit) * 100;
     return Math.min(Math.max(0, percentage), 100);
   } catch (error) {
-    console.error("Error in calculateBudgetProgress:", error);
+
     return 0;
   }
 };
@@ -72,7 +72,7 @@ export const calculateSavingsProgress = (savings: Savings) => {
     const percentage = (safeCurrent / safeTarget) * 100;
     return Math.min(Math.max(0, percentage), 100);
   } catch (error) {
-    console.error("Error in calculateSavingsProgress:", error);
+
     return 0;
   }
 };
@@ -86,7 +86,7 @@ export const formatCurrency = (amount: number): string => {
       maximumFractionDigits: 0,
     }).format(safeNumber(amount));
   } catch (error) {
-    console.error("Error in formatCurrency:", error);
+
     return "Rp 0";
   }
 };
@@ -136,7 +136,7 @@ export const formatResetDate = (dateString?: string): string => {
       month: "short",
     });
   } catch (error) {
-    console.error("Error in formatResetDate:", error);
+
     return dateString || "Tanggal tidak valid";
   }
 };
@@ -153,7 +153,7 @@ export const getSafePercentage = (part: number, total: number): number => {
     const result = isNaN(percentage) ? 0 : percentage;
     return Math.max(0, Math.min(result, 100));
   } catch (error) {
-    console.error("Error in getSafePercentage:", error);
+
     return 0;
   }
 };
@@ -163,7 +163,7 @@ export const formatNumber = (num: number): string => {
   try {
     return safeNumber(num).toLocaleString("id-ID");
   } catch (error) {
-    console.error("Error in formatNumber:", error);
+
     return "0";
   }
 };
@@ -346,7 +346,7 @@ export const calculateProjection = (
           : ("deficit" as const),
     };
   } catch (error) {
-    console.error("Error in calculateProjection:", error);
+
     return {
       daysPassed: 1,
       daysRemaining: 0,
@@ -395,7 +395,7 @@ export const calculateOpeningBalance = (
       return sum;
     }, 0);
   } catch (error) {
-    console.error("Error in calculateOpeningBalance:", error);
+
     return 0;
   }
 };

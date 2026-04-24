@@ -50,7 +50,7 @@ export const validateNote = (note: any): Note => {
       updatedAt: note.updatedAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.error("Error validating note:", error);
+
     const now = new Date().toISOString();
     return {
       id: generateId(),
@@ -115,7 +115,7 @@ export const validateAndSetupBudget = (budget: any): Budget => {
       createdAt: budget.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.error("Error validating budget:", error);
+
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     return {
@@ -146,7 +146,7 @@ export const validateSavings = (savings: any): Savings => {
       createdAt: savings.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.error("Error validating savings:", error);
+
     return {
       id: generateSavingsId(),
       name: "Tabungan Baru",
@@ -177,7 +177,7 @@ export const validateTransaction = (transaction: any): Transaction => {
       cyclePeriod: typeof transaction.cyclePeriod === 'number' ? transaction.cyclePeriod : undefined,
     };
   } catch (error) {
-    console.error("Error validating transaction:", error);
+
     return {
       id: generateTransactionId(),
       amount: 0,
@@ -206,7 +206,7 @@ export const validateSavingsTransaction = (transaction: any): SavingsTransaction
       createdAt: transaction.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.error("Error validating savings transaction:", error);
+
     return {
       id: generateId(),
       savingsId: "",
@@ -246,7 +246,7 @@ export const updateBudgetsFromTransactions = (
         spent: Math.max(0, spent),
       };
     } catch (error) {
-      console.error(`Error updating budget ${budget.category}:`, error);
+
       return budget;
     }
   });

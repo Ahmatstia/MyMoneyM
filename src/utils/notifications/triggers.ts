@@ -30,7 +30,7 @@ export const checkBudgetAlerts = (appState: AppState): any[] => {
       }
     }
   } catch (error) {
-    console.error("❌ Error checking budget alerts:", error);
+
   }
 
   return alerts;
@@ -82,12 +82,12 @@ export const checkSavingsProgress = (appState: AppState): any[] => {
             });
           }
         } catch (dateError) {
-          console.error("❌ Error parsing deadline:", dateError);
+
         }
       }
     }
   } catch (error) {
-    console.error("❌ Error checking savings progress:", error);
+
   }
 
   return alerts;
@@ -133,7 +133,7 @@ export const checkTransactionReminders = (appState: AppState): any[] => {
       });
     }
   } catch (error) {
-    console.error("❌ Error checking transaction reminders:", error);
+
   }
 
   return alerts;
@@ -169,7 +169,7 @@ export const checkNotesReminders = (appState: AppState): any[] => {
       });
     }
   } catch (error) {
-    console.error("❌ Error checking notes reminders:", error);
+
   }
 
   return alerts;
@@ -217,7 +217,7 @@ export const generateDailySummary = (appState: AppState): string => {
 
     return summary;
   } catch (error) {
-    console.error("❌ Error generating daily summary:", error);
+
     return "📊 Ringkasan harian tidak tersedia saat ini.";
   }
 };
@@ -249,7 +249,7 @@ export const generateWeeklySummary = (appState: AppState): string => {
       `📈 Balance: ${formatCurrency(weekIncome - weekExpense)}`
     );
   } catch (error) {
-    console.error("❌ Error generating weekly summary:", error);
+
     return "📈 Ringkasan mingguan tidak tersedia.";
   }
 };

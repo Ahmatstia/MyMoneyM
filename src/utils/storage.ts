@@ -46,7 +46,7 @@ const validateTransaction = (obj: any): Transaction | null => {
       cyclePeriod: typeof obj.cyclePeriod === 'number' ? obj.cyclePeriod : undefined,
     };
   } catch (error) {
-    console.warn("Transaction validation error:", error);
+
     return null;
   }
 };
@@ -106,7 +106,7 @@ const validateBudget = (obj: any): Budget | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.warn("Budget validation error:", error);
+
     return null;
   }
 };
@@ -134,7 +134,7 @@ const validateSavings = (obj: any): Savings | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.warn("Savings validation error:", error);
+
     return null;
   }
 };
@@ -164,7 +164,7 @@ const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.warn("Savings transaction validation error:", error);
+
     return null;
   }
 };
@@ -222,7 +222,7 @@ const validateNote = (obj: any): Note | null => {
       updatedAt: obj.updatedAt || new Date().toISOString(),
     };
   } catch (error) {
-    console.warn("Note validation error:", error);
+
     return null;
   }
 };
@@ -252,7 +252,7 @@ const validateDebt = (obj: any): Debt | null => {
       updatedAt: obj.updatedAt,
     };
   } catch (error) {
-    console.warn("Debt validation error:", error);
+
     return null;
   }
 };
@@ -277,7 +277,6 @@ const isValidDateString = (dateStr: string): boolean => {
 // ======================================================
 const migrateOldData = async (): Promise<AppState | null> => {
   try {
-    console.log("🔄 Migrasi data dari versi lama...");
 
     // Cek semua versi key lama
     const OLD_KEYS = [
@@ -299,7 +298,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
 
         const jsonValue = await AsyncStorage.getItem(key);
         if (jsonValue) {
-          console.log(`✅ Data lama ditemukan di: ${key}`);
+
           const oldData = JSON.parse(jsonValue);
 
           // Extract hanya data financial, buang user data
@@ -362,21 +361,21 @@ const migrateOldData = async (): Promise<AppState | null> => {
           // Hapus data lama
           await AsyncStorage.removeItem(key);
 
-          console.log(`✅ Migrasi dari ${key} selesai`);
+
           break;
         }
       } catch (e) {
-        console.warn(`⚠️ Gagal migrasi dari ${key}:`, e);
+
       }
     }
 
     if (!migratedData) {
-      console.log("📭 Tidak ada data lama untuk dimigrasi");
+
     }
 
     return migratedData;
   } catch (error) {
-    console.error("❌ Error migrasi data:", error);
+
     return null;
   }
 };
@@ -387,7 +386,6 @@ const migrateOldData = async (): Promise<AppState | null> => {
 export const storageService = {
   async saveData(data: AppState): Promise<void> {
     try {
-      console.log("💾 Menyimpan data...");
 
       // Validasi dan cleanup data
       const validatedTransactions: Transaction[] = data.transactions
@@ -447,18 +445,15 @@ export const storageService = {
         STORAGE_KEYS.APP_DATA,
         JSON.stringify(appData)
       );
-      console.log(
-        `✅ Data tersimpan: ${validatedTransactions.length} transaksi, ${validatedNotes.length} catatan`
-      );
+      
     } catch (error) {
-      console.error("❌ Error menyimpan data:", error);
+
       throw error;
     }
   },
 
   async loadData(): Promise<AppState> {
     try {
-      console.log("📥 Memuat data...");
 
       // Cek migration flag
       const isMigrated = await AsyncStorage.getItem(
@@ -466,13 +461,11 @@ export const storageService = {
       );
 
       if (isMigrated !== "true") {
-        console.log("🔄 Cek data lama...");
+
         const migratedData = await migrateOldData();
         if (migratedData) {
           await AsyncStorage.setItem(STORAGE_KEYS.MIGRATION_FLAG, "true");
-          console.log(
-            `✅ Data dimigrasi: ${migratedData.transactions.length} transaksi, ${migratedData.notes.length} catatan`
-          );
+          
           return migratedData;
         }
         // Set flag meski tidak ada data lama
@@ -483,7 +476,7 @@ export const storageService = {
       const appDataJson = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA);
 
       if (!appDataJson) {
-        console.log("📭 Tidak ada data, return default");
+
         return {
           transactions: [],
           budgets: [],
@@ -554,12 +547,10 @@ export const storageService = {
         ...totals,
       };
 
-      console.log(
-        `✅ Data dimuat: ${transactions.length} transaksi, ${notes.length} catatan`
-      );
+      
       return appData;
     } catch (error) {
-      console.error("❌ Error memuat data:", error);
+
       return {
         transactions: [],
         budgets: [],
@@ -576,7 +567,7 @@ export const storageService = {
 
   async clearData(): Promise<void> {
     try {
-      console.log("🗑️  Menghapus semua data...");
+
       await Promise.all([
         AsyncStorage.removeItem(STORAGE_KEYS.APP_DATA),
         AsyncStorage.removeItem(STORAGE_KEYS.MIGRATION_FLAG),
@@ -590,53 +581,40 @@ export const storageService = {
 
       await Promise.all(myMoneyKeys.map((key) => AsyncStorage.removeItem(key)));
 
-      console.log("✅ Semua data dihapus");
+
     } catch (error) {
-      console.error("❌ Error menghapus data:", error);
+
       throw error;
     }
   },
 
   async debugStorage(): Promise<void> {
     try {
-      console.log("\n🔍 [DEBUG STORAGE] =======================");
 
       const allKeys = await AsyncStorage.getAllKeys();
-      console.log("All AsyncStorage keys:", allKeys);
 
       const appDataJson = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA);
-      console.log("App data exists:", !!appDataJson);
 
       if (appDataJson) {
         const appData = JSON.parse(appDataJson);
-        console.log("Transactions:", appData.transactions?.length || 0);
-        console.log("Budgets:", appData.budgets?.length || 0);
-        console.log("Savings:", appData.savings?.length || 0);
-        console.log("Notes:", appData.notes?.length || 0);
-        console.log("Debts:", appData.debts?.length || 0); // NEW
+
+
+
+
+         // NEW
 
         if (appData.transactions?.length > 0) {
-          console.log("Sample transaction:", {
-            id: appData.transactions[0].id,
-            type: appData.transactions[0].type,
-            amount: appData.transactions[0].amount,
-            category: appData.transactions[0].category,
-          });
+          
         }
 
         if (appData.notes?.length > 0) {
-          console.log("Sample note:", {
-            id: appData.notes[0].id,
-            title: appData.notes[0].title,
-            type: appData.notes[0].type,
-            tags: appData.notes[0].tags,
-          });
+          
         }
       }
 
-      console.log("========================================\n");
+
     } catch (error) {
-      console.error("❌ Debug error:", error);
+
     }
   },
 };

@@ -221,7 +221,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         totalActiveDebt
       );
     } catch (error) {
-      console.error("Error calculating health score:", error);
+
       return {
         overallScore: 50,
         category: "Cukup",

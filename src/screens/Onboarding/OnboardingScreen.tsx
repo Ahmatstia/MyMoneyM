@@ -112,7 +112,7 @@ const OnboardingScreen = ({ navigation }: any) => {
     try {
       await AsyncStorage.setItem("@onboarding_completed", "true");
     } catch (e) {
-      console.log(e);
+
     }
     navigation.replace("MainDrawer");
   };

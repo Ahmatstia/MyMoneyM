@@ -112,12 +112,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ========== LOAD INITIAL DATA ==========
   useEffect(() => {
-    console.log("🔄 AppProvider: Initial load started");
+
     loadInitialData();
 
     return () => {
       isMounted.current = false;
-      console.log("🧹 AppProvider unmounted");
+
     };
   }, []);
 
@@ -125,7 +125,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!isMounted.current) return;
 
     try {
-      console.log("📥 Loading initial data...");
+
       const appData = await storageService.loadData();
 
       // Pastikan semua properti ada termasuk notes
@@ -140,14 +140,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setState(completeAppData);
       }
     } catch (error) {
-      console.error("❌ Error loading initial data:", error);
+
       if (isMounted.current) {
         setState(defaultAppState);
       }
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
-        console.log("🏁 AppProvider ready");
+
       }
     }
   };
@@ -170,7 +170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           await notificationService.initialize(state);
         }
       } catch (error) {
-        console.error("❌ Error setting up notifications:", error);
+
       }
     };
 
@@ -209,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setState(completeAppData);
       }
     } catch (error) {
-      console.error("❌ Error refreshing data:", error);
+
     }
   };
 
@@ -220,7 +220,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setState(defaultAppState);
       }
     } catch (error) {
-      console.error("❌ Error clearing data:", error);
+
     }
   };
 
@@ -242,7 +242,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: new Date().toISOString(),
     };
 
-    console.log(`➕ Adding transaction`);
 
     const updatedTransactions = [newTransaction, ...state.transactions];
     const totals = calculateTotals(updatedTransactions);
@@ -275,7 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
 
-    console.log(`✅ Transaction added. Total: ${updatedTransactions.length}`);
+
   };
 
   const editTransaction = async (id: string, updates: Partial<Transaction>) => {
@@ -302,11 +301,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteTransaction = async (id: string) => {
-    console.log(`🗑️ Deleting transaction: ${id}`);
 
     const transactionToDelete = state.transactions.find((t) => t.id === id);
     if (!transactionToDelete) {
-      console.warn("⚠️ Transaksi tidak ditemukan untuk dihapus");
+
       return;
     }
 
@@ -328,9 +326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
 
-    console.log(
-      `✅ Transaction deleted. Remaining: ${updatedTransactions.length}`
-    );
+    
   };
 
   // ========== BUDGETS FUNCTIONS ==========
@@ -535,7 +531,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const addNote = async (
     note: Omit<Note, "id" | "createdAt" | "updatedAt">
   ) => {
-    console.log(`📝 Adding note: ${note.title}`);
 
     const newNote: Note = validateNote({
       ...note,
@@ -562,15 +557,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       data: { type: "NEW_NOTE", noteId: newNote.id },
     });
 
-    console.log(`✅ Note added. Total: ${updatedNotes.length}`);
+
   };
 
   const editNote = async (id: string, updates: Partial<Note>) => {
-    console.log(`✏️ Editing note: ${id}`);
 
     const noteToUpdate = state.notes.find((n) => n.id === id);
     if (!noteToUpdate) {
-      console.warn("⚠️ Catatan tidak ditemukan untuk diedit");
+
       return;
     }
 
@@ -593,11 +587,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
 
-    console.log(`✅ Note updated: ${updatedNote.title}`);
+
   };
 
   const deleteNote = async (id: string) => {
-    console.log(`🗑️ Deleting note: ${id}`);
 
     const updatedNotes = state.notes.filter((n) => n.id !== id);
     const newState: AppState = {
@@ -609,7 +602,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
 
-    console.log(`✅ Note deleted. Remaining: ${updatedNotes.length}`);
+
   };
 
   const getNote = (id: string): Note | undefined => {
