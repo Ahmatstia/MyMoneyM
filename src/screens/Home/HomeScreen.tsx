@@ -587,6 +587,7 @@ const HomeScreen: React.FC = () => {
             style={{
               flexDirection: "row",
               alignItems: "center",
+              justifyContent: "space-between",
               marginBottom: 16,
             }}
           >
@@ -622,9 +623,11 @@ const HomeScreen: React.FC = () => {
               <Text
                 style={{
                   color: SUCCESS_COLOR,
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: "700",
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {formatCurrency(safeNumber(filteredIncome))}
               </Text>
@@ -633,7 +636,7 @@ const HomeScreen: React.FC = () => {
             <VDivider />
 
             {/* Pengeluaran */}
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, alignItems: "flex-end" }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -664,40 +667,65 @@ const HomeScreen: React.FC = () => {
               <Text
                 style={{
                   color: ERROR_COLOR,
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: "700",
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
                 {formatCurrency(safeNumber(filteredExpense))}
               </Text>
             </View>
+          </View>
 
-            <VDivider />
+          <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.06)", marginBottom: 12, marginTop: 4 }} />
 
-            {/* Saldo Akhir */}
-            <View style={{ flex: 1, alignItems: "flex-end" }}>
+          {/* Arus Kas Summary */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 16,
+              paddingHorizontal: 4,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons 
+                name="swap-vertical" 
+                size={12} 
+                color={Colors.gray400} 
+                style={{ marginRight: 6 }} 
+              />
               <Text
                 style={{
                   color: Colors.gray400,
-                  fontSize: 9,
+                  fontSize: 10,
                   textTransform: "uppercase",
-                  letterSpacing: 0.8,
-                  marginBottom: 4,
-                }}
-              >
-                {timeFilter === "all" ? "Sisa" : "Arus Kas"}
-              </Text>
-              <Text
-                style={{
-                  color:
-                    filteredPeriodNetto > 0 ? SUCCESS_COLOR : filteredPeriodNetto < 0 ? ERROR_COLOR : TEXT_SECONDARY,
-                  fontSize: 14,
+                  letterSpacing: 1,
                   fontWeight: "700",
                 }}
               >
-                {filteredPeriodNetto > 0 ? "+" : ""}{formatCurrency(safeNumber(filteredPeriodNetto))}
+                {timeFilter === "all" ? "Sisa Saldo" : "Arus Kas Bersih"}
               </Text>
             </View>
+            <Text
+              style={{
+                color:
+                  filteredPeriodNetto > 0
+                    ? SUCCESS_COLOR
+                    : filteredPeriodNetto < 0
+                    ? ERROR_COLOR
+                    : TEXT_SECONDARY,
+                fontSize: 15,
+                fontWeight: "700",
+              }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {filteredPeriodNetto > 0 ? "+" : ""}
+              {formatCurrency(safeNumber(filteredPeriodNetto))}
+            </Text>
           </View>
 
           {/* Progress bar */}
