@@ -140,13 +140,6 @@ const FloatingDrawerHandle: React.FC = () => {
     extrapolate: "clamp",
   });
 
-  // Trail becomes visible when pulled
-  const trailOpacity = stretch.interpolate({
-    inputRange: [0, 16, MAX_STRETCH],
-    outputRange: [0, 0, 0.55],
-    extrapolate: "clamp",
-  });
-
   const isRight = side === "right";
 
   return (
@@ -173,17 +166,6 @@ const FloatingDrawerHandle: React.FC = () => {
             { width: animatedWidth },
           ]}
         >
-          {/* Stretch trail */}
-          <Animated.Text
-            style={[
-              styles.trail,
-              isRight ? { left: 6 } : { right: 6 },
-              { opacity: trailOpacity },
-            ]}
-          >
-            {isRight ? "‹" : "›"}
-          </Animated.Text>
-
           {/* Main icon — slides inward while pulling */}
           <Animated.View
             style={{ transform: [{ translateX: chevronTranslate }] }}
@@ -214,11 +196,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    shadowColor: "#22D3EE",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    elevation: 10,
   },
   btnLeft: {
     width: BUTTON_W,
@@ -233,13 +210,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderBottomLeftRadius: 16,
     borderColor: "#334155",
-  },
-  trail: {
-    position: "absolute",
-    color: "#22D3EE",
-    fontSize: 20,
-    fontWeight: "200",
-    top: 14,
   },
 });
 

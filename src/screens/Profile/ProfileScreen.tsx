@@ -750,7 +750,7 @@ const ProfileScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
             <Text style={[tw`text-xs`, { color: C.text3 }]}>
-              Anggota sejak 2026 · {uiData.allTimeTx} transaksi total
+              Anggota sejak 2026
             </Text>
           </View>
         </View>
@@ -927,11 +927,11 @@ const ProfileScreen: React.FC = () => {
             </View>
 
             {/* Day labels */}
-            <View style={tw`flex-row justify-center mb-2.5`}>
+            <View style={tw`flex-row justify-center gap-2 mb-4`}>
               {["S", "S", "R", "K", "J", "S", "M"].map((d, i) => (
                 <View key={i} style={tw`w-8 items-center`}>
                   <Text
-                    style={[tw`text-[8px] font-extrabold`, { color: C.text3 }]}
+                    style={[tw`text-[9px] font-extrabold uppercase`, { color: C.text3 }]}
                   >
                     {d}
                   </Text>
@@ -949,7 +949,7 @@ const ProfileScreen: React.FC = () => {
                   rows.push(week);
                 }
                 return rows.map((week, wIdx) => (
-                  <View key={wIdx} style={tw`flex-row justify-center mb-1.5`}>
+                  <View key={wIdx} style={tw`flex-row justify-center gap-2 mb-2`}>
                     {week.map((day, dIdx) => {
                       const isT = day && isToday(day.date);
                       return (
