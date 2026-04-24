@@ -9,6 +9,7 @@ import {
 import { Text } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
@@ -298,32 +299,37 @@ const SavingsHistoryScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-
-      {/* ── Sticky header ───────────────────────────────────────────────── */}
-      <View
-        style={{
-          backgroundColor: BACKGROUND_COLOR,
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
           paddingHorizontal: 18,
-          paddingTop: 14,
-          paddingBottom: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: CARD_BORDER,
+          paddingTop: 16,
+          paddingBottom: 100,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[ACCENT_COLOR]}
+            tintColor={ACCENT_COLOR}
+          />
+        }
       >
-        {/* Back + title row */}
+        {/* ── Page Header ─────────────────────────────────────────────── */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           <TouchableOpacity
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 36,
+              height: 36,
+              borderRadius: 12,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: `${ACCENT_COLOR}15`,
@@ -332,17 +338,15 @@ const SavingsHistoryScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={18} color={ACCENT_COLOR} />
+            <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700" }}
+              style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
             >
               Riwayat Transaksi
             </Text>
-            <Text
-              style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}
-            >
+            <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
               {saving.name}
             </Text>
           </View>
@@ -352,13 +356,13 @@ const SavingsHistoryScreen: React.FC = () => {
         <View
           style={{
             backgroundColor: SURFACE_COLOR,
-            borderRadius: INNER_RADIUS,
+            borderRadius: CARD_RADIUS,
             borderWidth: 1,
             borderColor: CARD_BORDER,
             paddingVertical: 14,
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 14,
+            marginBottom: 16,
           }}
         >
           <View style={{ flex: 1, alignItems: "center" }}>
@@ -371,8 +375,11 @@ const SavingsHistoryScreen: React.FC = () => {
             >
               <View
                 style={{
-                  width: 6, height: 6, borderRadius: 3,
-                  backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: SUCCESS_COLOR,
+                  marginRight: 5,
                 }}
               />
               <Text
@@ -386,12 +393,16 @@ const SavingsHistoryScreen: React.FC = () => {
                 Setoran
               </Text>
             </View>
-            <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
+            <Text
+              style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}
+            >
               {formatCurrency(stats.totalDeposits)}
             </Text>
           </View>
 
-          <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }} />
+          <View
+            style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }}
+          />
 
           <View style={{ flex: 1, alignItems: "center" }}>
             <View
@@ -403,8 +414,11 @@ const SavingsHistoryScreen: React.FC = () => {
             >
               <View
                 style={{
-                  width: 6, height: 6, borderRadius: 3,
-                  backgroundColor: ERROR_COLOR, marginRight: 5,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: ERROR_COLOR,
+                  marginRight: 5,
                 }}
               />
               <Text
@@ -418,12 +432,16 @@ const SavingsHistoryScreen: React.FC = () => {
                 Penarikan
               </Text>
             </View>
-            <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}>
+            <Text
+              style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}
+            >
               {formatCurrency(stats.totalWithdrawals)}
             </Text>
           </View>
 
-          <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }} />
+          <View
+            style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }}
+          />
 
           <View style={{ flex: 1, alignItems: "center" }}>
             <Text
@@ -437,7 +455,9 @@ const SavingsHistoryScreen: React.FC = () => {
             >
               Total
             </Text>
-            <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
+            <Text
+              style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}
+            >
               {stats.totalTransactions}
             </Text>
           </View>
@@ -452,17 +472,29 @@ const SavingsHistoryScreen: React.FC = () => {
             padding: 3,
             borderWidth: 1,
             borderColor: CARD_BORDER,
+            marginBottom: 24,
           }}
         >
           {[
-            { key: "all",        label: "Semua",    count: allTransactions.length },
-            { key: "deposit",    label: "Setoran",  count: stats.depositCount },
-            { key: "withdrawal", label: "Penarikan", count: stats.withdrawalCount },
+            {
+              key: "all",
+              label: "Semua",
+              count: allTransactions.length,
+            },
+            { key: "deposit", label: "Setoran", count: stats.depositCount },
+            {
+              key: "withdrawal",
+              label: "Penarikan",
+              count: stats.withdrawalCount,
+            },
           ].map((tab) => {
-            const isActive   = filter === tab.key;
-            const tabColor   =
-              tab.key === "deposit"    ? SUCCESS_COLOR :
-              tab.key === "withdrawal" ? ERROR_COLOR   : ACCENT_COLOR;
+            const isActive = filter === tab.key;
+            const tabColor =
+              tab.key === "deposit"
+                ? SUCCESS_COLOR
+                : tab.key === "withdrawal"
+                ? ERROR_COLOR
+                : ACCENT_COLOR;
             return (
               <TouchableOpacity
                 key={tab.key}
@@ -499,22 +531,6 @@ const SavingsHistoryScreen: React.FC = () => {
             );
           })}
         </View>
-      </View>
-
-      {/* ── Main scroll ──────────────────────────────────────────────────── */}
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 18, paddingBottom: 100 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[ACCENT_COLOR]}
-            tintColor={ACCENT_COLOR}
-          />
-        }
-      >
         {groupedTransactions.length === 0 ? (
           /* Empty state */
           <View
@@ -679,7 +695,11 @@ const SavingsHistoryScreen: React.FC = () => {
           }
           activeOpacity={0.85}
         >
-          <Ionicons name="add-circle-outline" size={17} color={BACKGROUND_COLOR} />
+          <Ionicons
+            name="add-circle-outline"
+            size={17}
+            color={BACKGROUND_COLOR}
+          />
           <Text
             style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "700" }}
           >
@@ -687,7 +707,7 @@ const SavingsHistoryScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

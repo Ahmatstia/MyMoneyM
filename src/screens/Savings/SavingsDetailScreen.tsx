@@ -9,6 +9,7 @@ import {
   Animated,
 } from "react-native";
 import { Text } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -343,82 +344,7 @@ const SavingsDetailScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-
-      {/* ── Compact top bar ─────────────────────────────────────────────── */}
-      <View
-        style={{
-          backgroundColor: BACKGROUND_COLOR,
-          paddingHorizontal: 18,
-          paddingTop: 12,
-          paddingBottom: 8,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottomWidth: 1,
-          borderBottomColor: CARD_BORDER,
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: `${ACCENT_COLOR}15`,
-          }}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={18} color={ACCENT_COLOR} />
-        </TouchableOpacity>
-
-        <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>
-          Detail Tabungan
-        </Text>
-
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${ACCENT_COLOR}15`,
-              borderWidth: 1,
-              borderColor: `${ACCENT_COLOR}20`,
-            }}
-            onPress={() =>
-              navigation.navigate("AddSavings", {
-                editMode: true,
-                savingsData: saving,
-              })
-            }
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${ERROR_COLOR}15`,
-              borderWidth: 1,
-              borderColor: `${ERROR_COLOR}20`,
-            }}
-            onPress={handleDelete}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -432,6 +358,83 @@ const SavingsDetailScreen: React.FC = () => {
           />
         }
       >
+        {/* ── Page Header ─────────────────────────────────────────────── */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 12,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <TouchableOpacity
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ACCENT_COLOR}15`,
+              }}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+            </TouchableOpacity>
+            <View>
+              <Text
+                style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
+              >
+                Detail Tabungan
+              </Text>
+              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
+                Informasi & riwayat tabungan
+              </Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ACCENT_COLOR}12`,
+                borderWidth: 1,
+                borderColor: `${ACCENT_COLOR}20`,
+              }}
+              onPress={() =>
+                navigation.navigate("AddSavings", {
+                  editMode: true,
+                  savingsData: saving,
+                })
+              }
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil-outline" size={16} color={ACCENT_COLOR} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ERROR_COLOR}12`,
+                borderWidth: 1,
+                borderColor: `${ERROR_COLOR}20`,
+              }}
+              onPress={handleDelete}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={16} color={ERROR_COLOR} />
+            </TouchableOpacity>
+          </View>
+        </View>
         <Spacer size={18} />
 
         {/* ── Hero identity card ───────────────────────────────────────── */}
@@ -537,22 +540,11 @@ const SavingsDetailScreen: React.FC = () => {
           {/* Progress bar 6px */}
           <ThinBar progress={progress} color={activeColor} />
 
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 5,
-              marginBottom: 16,
-            }}
-          >
-            <Text style={{ color: Colors.gray400, fontSize: 9 }}>Rp 0</Text>
-            <Text style={{ color: Colors.gray400, fontSize: 9 }}>
-              {formatCurrency(target)}
-            </Text>
-          </View>
-
-          {/* Terkumpul / Target / Sisa */}
+          {/* Terkumpul / Target */}
+          <View style={{ height: 1, backgroundColor: CARD_BORDER, marginTop: 14, marginBottom: 12 }} />
+          
           <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Terkumpul */}
             <View style={{ flex: 1, alignItems: "center" }}>
               <Text
                 style={{
@@ -570,12 +562,10 @@ const SavingsDetailScreen: React.FC = () => {
               </Text>
             </View>
 
-            <Ionicons
-              name="arrow-forward"
-              size={13}
-              color={Colors.gray400}
-            />
+            {/* Garis Pembatas Vertikal */}
+            <View style={{ width: 1, height: 26, backgroundColor: CARD_BORDER }} />
 
+            {/* Target */}
             <View style={{ flex: 1, alignItems: "center" }}>
               <Text
                 style={{
@@ -592,35 +582,33 @@ const SavingsDetailScreen: React.FC = () => {
                 {formatCurrency(target)}
               </Text>
             </View>
+          </View>
 
-            <Ionicons
-              name="arrow-forward"
-              size={13}
-              color={Colors.gray400}
-            />
+          {/* Garis Pembatas Horizontal */}
+          <View style={{ height: 1, backgroundColor: CARD_BORDER, marginVertical: 12 }} />
 
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400,
-                  fontSize: 9,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.8,
-                  marginBottom: 4,
-                }}
-              >
-                Sisa
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: remaining >= 0 ? ACCENT_COLOR : ERROR_COLOR,
-                }}
-              >
-                {formatCurrency(remaining)}
-              </Text>
-            </View>
+          {/* Sisa */}
+          <View style={{ alignItems: "center" }}>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 2,
+              }}
+            >
+              Sisa Target
+            </Text>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "700",
+                color: remaining <= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+              }}
+            >
+              {remaining <= 0 ? "Tercapai 🎉" : formatCurrency(remaining)}
+            </Text>
           </View>
 
           {/* Deadline row */}
@@ -628,7 +616,7 @@ const SavingsDetailScreen: React.FC = () => {
             style={{
               height: 1,
               backgroundColor: CARD_BORDER,
-              marginVertical: 14,
+              marginVertical: 12,
             }}
           />
           <View
@@ -656,6 +644,72 @@ const SavingsDetailScreen: React.FC = () => {
             )}
           </View>
         </View>
+ 
+         {/* ── Primary Actions ─────────────────────────────────────────── */}
+         <View
+           style={{
+             flexDirection: "row",
+             gap: 10,
+             marginBottom: 20,
+           }}
+         >
+           <TouchableOpacity
+             style={{
+               flex: 1,
+               flexDirection: "row",
+               alignItems: "center",
+               justifyContent: "center",
+               paddingVertical: 14,
+               borderRadius: INNER_RADIUS,
+               backgroundColor: SUCCESS_COLOR,
+               shadowColor: SUCCESS_COLOR,
+               shadowOffset: { width: 0, height: 4 },
+               shadowOpacity: 0.2,
+               shadowRadius: 8,
+               elevation: 4,
+             }}
+             onPress={() =>
+               navigation.navigate("AddSavingsTransaction", {
+                 savingsId: saving.id,
+                 type: "deposit",
+               })
+             }
+             activeOpacity={0.8}
+           >
+             <Ionicons
+               name="add-circle"
+               size={20}
+               color={BACKGROUND_COLOR}
+               style={{ marginRight: 8 }}
+             />
+             <Text
+               style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "700" }}
+             >
+               Tambah Setoran
+             </Text>
+           </TouchableOpacity>
+ 
+           <TouchableOpacity
+             style={{
+               width: 52,
+               alignItems: "center",
+               justifyContent: "center",
+               borderRadius: INNER_RADIUS,
+               backgroundColor: `${ERROR_COLOR}15`,
+               borderWidth: 1,
+               borderColor: `${ERROR_COLOR}25`,
+             }}
+             onPress={() =>
+               navigation.navigate("AddSavingsTransaction", {
+                 savingsId: saving.id,
+                 type: "withdrawal",
+               })
+             }
+             activeOpacity={0.7}
+           >
+             <Ionicons name="arrow-up" size={20} color={ERROR_COLOR} />
+           </TouchableOpacity>
+         </View>
 
         {/* ── Stats row ────────────────────────────────────────────────── */}
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
@@ -670,22 +724,9 @@ const SavingsDetailScreen: React.FC = () => {
               padding: 14,
             }}
           >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${SUCCESS_COLOR}15`,
-                marginBottom: 8,
-              }}
-            >
-              <Ionicons name="arrow-down-outline" size={15} color={SUCCESS_COLOR} />
-            </View>
             <Text
               style={{
-                color: Colors.gray400,
+                color: Colors.gray600,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -710,19 +751,6 @@ const SavingsDetailScreen: React.FC = () => {
               padding: 14,
             }}
           >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ERROR_COLOR}15`,
-                marginBottom: 8,
-              }}
-            >
-              <Ionicons name="arrow-up-outline" size={15} color={ERROR_COLOR} />
-            </View>
             <Text
               style={{
                 color: Colors.gray400,
@@ -750,19 +778,6 @@ const SavingsDetailScreen: React.FC = () => {
               padding: 14,
             }}
           >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ACCENT_COLOR}15`,
-                marginBottom: 8,
-              }}
-            >
-              <Ionicons name="receipt-outline" size={15} color={ACCENT_COLOR} />
-            </View>
             <Text
               style={{
                 color: Colors.gray400,
@@ -828,47 +843,10 @@ const SavingsDetailScreen: React.FC = () => {
               style={{
                 color: Colors.gray400,
                 fontSize: 12,
-                textAlign: "center",
-                lineHeight: 18,
-                marginBottom: 20,
               }}
             >
               Mulai dengan menambahkan setoran pertama
             </Text>
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 13,
-                backgroundColor: ACCENT_COLOR,
-                shadowColor: ACCENT_COLOR,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 6,
-              }}
-              onPress={() =>
-                navigation.navigate("AddSavingsTransaction", {
-                  savingsId: saving.id,
-                  type: "deposit",
-                })
-              }
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="add"
-                size={15}
-                color={BACKGROUND_COLOR}
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}
-              >
-                Tambah Setoran
-              </Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <View
@@ -889,69 +867,8 @@ const SavingsDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {/* ── Action buttons ───────────────────────────────────────────── */}
-        <View style={{ gap: 10 }}>
-          {!isCompleted && (
-            <TouchableOpacity
-              style={{
-                borderRadius: INNER_RADIUS,
-                paddingVertical: 14,
-                alignItems: "center",
-                backgroundColor: ACCENT_COLOR,
-                flexDirection: "row",
-                justifyContent: "center",
-                gap: 8,
-                shadowColor: ACCENT_COLOR,
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.35,
-                shadowRadius: 10,
-                elevation: 8,
-              }}
-              onPress={() =>
-                navigation.navigate("AddSavingsTransaction", {
-                  savingsId: saving.id,
-                  type: "deposit",
-                })
-              }
-              activeOpacity={0.85}
-            >
-              <Ionicons name="add-circle-outline" size={17} color={BACKGROUND_COLOR} />
-              <Text
-                style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "700" }}
-              >
-                Tambah Setoran
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={{
-              borderRadius: INNER_RADIUS,
-              paddingVertical: 14,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              gap: 8,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              borderWidth: 1,
-              borderColor: CARD_BORDER,
-            }}
-            onPress={() =>
-              navigation.navigate("AddSavingsTransaction", {
-                savingsId: saving.id,
-                type: "withdrawal",
-              })
-            }
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-up-outline" size={15} color={TEXT_SECONDARY} />
-            <Text style={{ color: TEXT_SECONDARY, fontSize: 14, fontWeight: "600" }}>
-              Penarikan Dana
-            </Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

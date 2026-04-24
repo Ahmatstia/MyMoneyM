@@ -521,8 +521,12 @@ const SavingsScreen: React.FC = () => {
               const isCompleted   = current >= target;
 
               return (
-                <View
+                <TouchableOpacity
                   key={saving.id}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    navigation.navigate("SavingsDetail", { savingsId: saving.id })
+                  }
                   style={{
                     backgroundColor: SURFACE_COLOR,
                     borderRadius: CARD_RADIUS,
@@ -582,56 +586,6 @@ const SavingsScreen: React.FC = () => {
                           </Text>
                         </View>
                       </View>
-                    </View>
-
-                    {/* Action buttons */}
-                    <View style={{ flexDirection: "row", gap: 6 }}>
-                      <TouchableOpacity
-                        style={{
-                          width: 34, height: 34, borderRadius: 10,
-                          alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${SUCCESS_COLOR}15`,
-                          borderWidth: 1, borderColor: `${SUCCESS_COLOR}20`,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("AddSavingsTransaction", {
-                            savingsId: saving.id,
-                            type: "deposit",
-                          })
-                        }
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="add" size={15} color={SUCCESS_COLOR} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{
-                          width: 34, height: 34, borderRadius: 10,
-                          alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${ACCENT_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ACCENT_COLOR}20`,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("AddSavings", {
-                            editMode: true,
-                            savingsData: saving,
-                          })
-                        }
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={{
-                          width: 34, height: 34, borderRadius: 10,
-                          alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${ERROR_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ERROR_COLOR}20`,
-                        }}
-                        onPress={() => handleDelete(saving)}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
-                      </TouchableOpacity>
                     </View>
                   </View>
 
@@ -710,29 +664,8 @@ const SavingsScreen: React.FC = () => {
                         {remaining <= 0 ? "Lunas 🎉" : formatCurrency(remaining)}
                       </Text>
                     </View>
-
-                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-
-                    {/* Detail button */}
-                    <View style={{ flex: 1, alignItems: "center" }}>
-                      <TouchableOpacity
-                        style={{
-                          paddingHorizontal: 14, paddingVertical: 6,
-                          borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
-                        }}
-                        onPress={() =>
-                          navigation.navigate("SavingsDetail", { savingsId: saving.id })
-                        }
-                        activeOpacity={0.7}
-                      >
-                        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>
-                          Detail
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>

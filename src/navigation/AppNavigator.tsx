@@ -288,7 +288,8 @@ const MainStackNavigator = () => {
       screenOptions={({ navigation, route }) => {
         const mainScreens = [
           "Home", "Transactions", "Analytics", "Calendar", "Budget", 
-          "Savings", "Profile", "Settings", "Notes", "Debt"
+          "Savings", "Profile", "Settings", "Notes", "Debt",
+          "SavingsDetail", "SavingsHistory", "AddSavings", "AddSavingsTransaction"
         ];
         const isMainScreen = mainScreens.includes(route.name);
 

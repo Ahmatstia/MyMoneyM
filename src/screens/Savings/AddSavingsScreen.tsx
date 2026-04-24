@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -98,29 +99,6 @@ const AddSavingsScreen: React.FC = () => {
 
   // State untuk calendar modal
   const [showCalendar, setShowCalendar] = useState(false);
-
-  // Update title dan header
-  useEffect(() => {
-    navigation.setOptions({
-      title: isEditMode ? "Edit Tabungan" : "Tambah Tabungan",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={showDeleteConfirmation}
-          style={tw`mr-4 ${isEditMode ? "opacity-100" : "opacity-0"}`}
-          disabled={!isEditMode || loading}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={22}
-            color={isEditMode && !loading ? TEXT_PRIMARY : "transparent"}
-          />
-        </TouchableOpacity>
-      ),
-    });
-  }, [isEditMode, navigation, loading]);
 
   // Validasi nama
   const validateName = (value: string): boolean => {
@@ -399,12 +377,61 @@ const AddSavingsScreen: React.FC = () => {
   const priorityColor = getPriorityColor(priority);
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`px-4 pt-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Page Header ─────────────────────────────────────────────── */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 24,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ACCENT_COLOR}15`,
+                marginRight: 12,
+              }}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+            </TouchableOpacity>
+            <Text
+              style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
+            >
+              {isEditMode ? "Edit Tabungan" : "Tabungan Baru"}
+            </Text>
+          </View>
+
+          {isEditMode && (
+            <TouchableOpacity
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ERROR_COLOR}15`,
+              }}
+              onPress={showDeleteConfirmation}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={18} color={ERROR_COLOR} />
+            </TouchableOpacity>
+          )}
+        </View>
         {/* Info jika edit mode */}
         {isEditMode && savingsData && (
           <View
@@ -1061,7 +1088,7 @@ const AddSavingsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

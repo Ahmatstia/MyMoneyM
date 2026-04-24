@@ -9,6 +9,7 @@ import {
   TextInput,
   Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
@@ -99,15 +100,15 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Update title
-  useEffect(() => {
-    navigation.setOptions({
-      title:
-        transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-    });
-  }, [transactionType, navigation]);
+  // useEffect(() => {
+  //   navigation.setOptions({
+  //     title:
+  //       transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana",
+  //     headerStyle: { backgroundColor: PRIMARY_COLOR },
+  //     headerTintColor: TEXT_PRIMARY,
+  //     headerTitleStyle: { fontWeight: "600" },
+  //   });
+  // }, [transactionType, navigation]);
 
   // Validasi amount
   const validateAmount = (value: string): boolean => {
@@ -271,12 +272,39 @@ const AddSavingsTransactionScreen: React.FC = () => {
     : currentBalance;
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`px-4 pt-4 pb-8`}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Page Header ─────────────────────────────────────────────── */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 24,
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: `${ACCENT_COLOR}15`,
+              marginRight: 12,
+            }}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+          </TouchableOpacity>
+          <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}>
+            {transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana"}
+          </Text>
+        </View>
         {/* Savings Info */}
         <View
           style={[
@@ -804,7 +832,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
