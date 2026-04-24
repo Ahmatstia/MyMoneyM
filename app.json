@@ -35,7 +35,8 @@
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "SCHEDULE_EXACT_ALARM",
-        "USE_EXACT_ALARM"
+        "USE_EXACT_ALARM",
+        "android.permission.DETECT_SCREEN_CAPTURE"
       ],
       "enableProguardInReleaseBuilds": false,
       "enableShrinkResourcesInReleaseBuilds": false
