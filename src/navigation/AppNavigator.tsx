@@ -15,10 +15,13 @@ import {
   Dimensions,
   Platform,
   Alert,
+  Image,
+  ImageBackground,
 } from "react-native";
 import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LottieView from "lottie-react-native";
+import { useAppContext } from "../context/AppContext";
 
 // Screens
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -75,6 +78,11 @@ const { width } = Dimensions.get("window");
 
 // Custom Drawer Content
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
+  const { state } = useAppContext();
+  const { userProfile } = state;
+
+  if (!userProfile) return null;
+
   const menuItems = [
     { name: "Home", label: "Beranda", icon: "home-outline" as const, color: "#22D3EE" },
     { name: "Transactions", label: "Transaksi", icon: "swap-horizontal-outline" as const, color: "#10B981" },
@@ -93,22 +101,41 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
   return (
     <View style={tw`flex-1 bg-[#0F172A]`}>
-      <View style={tw`pt-10 pb-6 px-6 bg-[#0F172A] border-b border-[#334155]`}>
-        <TouchableOpacity onPress={() => props.navigation.navigate("Profile")} activeOpacity={0.8}>
+      {/* Header dengan Gambar Latar */}
+      <TouchableOpacity 
+        onPress={() => {
+          props.navigation.navigate("Profile");
+          props.navigation.closeDrawer();
+        }} 
+        activeOpacity={0.9}
+      >
+        <ImageBackground
+          source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../assets/ob1.png")}
+          style={tw`pt-14 pb-8 px-6`}
+          imageStyle={{ opacity: 0.4 }}
+        >
           <View style={tw`flex-row items-center`}>
-            <View style={tw`w-14 h-14 bg-[#1E293B] border border-[#334155] rounded-full items-center justify-center`}>
-              <Ionicons name="person" size={24} color="#22D3EE" />
+            <View style={tw`w-16 h-16 bg-[#1E293B] border-2 border-[#22D3EE] rounded-full items-center justify-center overflow-hidden`}>
+              {userProfile.avatar ? (
+                <Image source={{ uri: userProfile.avatar }} style={tw`w-full h-full`} />
+              ) : (
+                <Ionicons name="person" size={32} color="#22D3EE" />
+              )}
             </View>
             <View style={tw`ml-4 flex-1`}>
-              <Text style={tw`text-[#F8FAFC] text-lg font-bold`}>MyMoney</Text>
-              <Text style={tw`text-[#CBD5E1] text-xs mt-0.5`}>Keuangan Pribadi</Text>
+              <Text style={tw`text-[#F8FAFC] text-xl font-bold`} numberOfLines={1}>
+                {userProfile.name}
+              </Text>
+              <View style={tw`flex-row items-center mt-1`}>
+                <View style={tw`w-2 h-2 rounded-full bg-[#10B981] mr-2`} />
+                <Text style={tw`text-[#CBD5E1] text-xs font-medium`}>Online</Text>
+              </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
           </View>
-        </TouchableOpacity>
-      </View>
+        </ImageBackground>
+      </TouchableOpacity>
 
-      <DrawerContentScrollView {...props} contentContainerStyle={tw`pt-4`} showsVerticalScrollIndicator={false}>
+      <DrawerContentScrollView {...props} contentContainerStyle={tw`pt-2`} showsVerticalScrollIndicator={false}>
         <View style={tw`px-6 mb-3`}>
           <Text style={tw`text-[#CBD5E1] text-xs font-medium uppercase tracking-wider`}>Menu Utama</Text>
         </View>

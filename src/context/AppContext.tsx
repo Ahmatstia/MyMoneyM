@@ -13,6 +13,7 @@ import {
   SavingsTransaction,
   Note,
   Debt,
+  UserProfile,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -92,6 +93,7 @@ interface AppContextType {
   refreshData: () => Promise<void>;
   clearAllData: () => Promise<void>;
   debugStorage: () => Promise<void>;
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -103,6 +105,9 @@ const defaultAppState: AppState = {
   savingsTransactions: [],
   notes: [],
   debts: [],
+  userProfile: {
+    name: "Pengguna MyMoney",
+  },
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
@@ -144,6 +149,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        userProfile: appData.userProfile || defaultAppState.userProfile,
       };
 
       if (isMounted.current) {
@@ -212,8 +218,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const completeAppData: AppState = {
         ...defaultAppState,
         ...appData,
+        ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        userProfile: appData.userProfile || defaultAppState.userProfile,
       };
       if (isMounted.current) {
         setState(completeAppData);
@@ -665,6 +673,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ========== PROVIDER VALUE ==========
+  const updateUserProfile = async (updates: Partial<UserProfile>) => {
+    setState((prevState) => {
+      const newState = {
+        ...prevState,
+        userProfile: { ...prevState.userProfile, ...updates },
+      };
+      storageService.saveData(newState).catch(console.error);
+      return newState;
+    });
+  };
+
   const contextValue: AppContextType = {
     state,
     isLoading,
@@ -690,6 +709,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     editDebt,
     deleteDebt,
     payDebt,
+
+    updateUserProfile,
 
     triggerNotificationCheck,
 

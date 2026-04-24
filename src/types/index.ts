@@ -90,6 +90,12 @@ export interface Note {
   updatedAt?: string;
 }
 
+export interface UserProfile {
+  name: string;
+  avatar?: string;      // URI gambar profil
+  coverImage?: string;  // URI gambar latar belakang (sidebar)
+}
+
 export interface AppState {
   // Financial data
   transactions: Transaction[];
@@ -98,6 +104,7 @@ export interface AppState {
   savingsTransactions: SavingsTransaction[];
   notes: Note[];
   debts: Debt[]; // NEW: Fitur Hutang
+  userProfile: UserProfile; // NEW: Profil Pengguna
 
   // Calculated totals
   totalIncome: number;
