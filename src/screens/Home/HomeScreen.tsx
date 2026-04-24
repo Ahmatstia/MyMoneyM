@@ -1675,11 +1675,6 @@ const HomeScreen: React.FC = () => {
           height: 54,
           borderRadius: 17,
           backgroundColor: ACCENT_COLOR,
-          shadowColor: ACCENT_COLOR,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.45,
-          shadowRadius: 14,
-          elevation: 12,
           transform: [{ scale: scaleAnim }],
         }}
       >
