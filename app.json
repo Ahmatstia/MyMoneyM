@@ -7,23 +7,22 @@
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
-
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#0F172A"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.princcesrachel.mymoney",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "MyMoney membutuhkan izin notifikasi untuk mengirim pengingat budget, tabungan, dan transaksi.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
-
     "android": {
       "package": "com.princcesrachel.mymoney",
       "versionCode": 4,
@@ -41,11 +40,9 @@
       "enableProguardInReleaseBuilds": false,
       "enableShrinkResourcesInReleaseBuilds": false
     },
-
     "web": {
       "favicon": "./assets/logo.png"
     },
-
     "plugins": [
       [
         "expo-build-properties",
@@ -69,20 +66,16 @@
         }
       ]
     ],
-
     "extra": {
       "eas": {
-        "projectId": "73455952-1350-4200-9817-3cbff3fc4ca9"
+        "projectId": "b25fc01e-9dc3-4a73-9e52-8a77fcf70a49"
       }
     },
-
-    "owner": "princcesrachel",
-
+    "owner": "lexanova",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/73455952-1350-4200-9817-3cbff3fc4ca9",
       "fallbackToCacheTimeout": 0
     }
   }

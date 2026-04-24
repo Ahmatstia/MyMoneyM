@@ -29,15 +29,15 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
       },
       "env": {
         "EXPO_NO_NEW_ARCH": "true",
         "EXPO_PUBLIC_ENABLE_NOTIFICATIONS": "true"
       },
       "channel": "production",
-      "distribution": "store",
+      "distribution": "internal",
       "autoIncrement": true
     }
   },
