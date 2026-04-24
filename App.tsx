@@ -8,12 +8,13 @@ import {
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
 } from "@react-navigation/native";
-import { AppProvider } from "./src/context/AppContext";
+import { AppProvider, useAppContext } from "./src/context/AppContext";
 import { Colors } from "./src/theme/theme";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Notifications from "expo-notifications";
 import { adaptNavigationTheme } from "react-native-paper";
 import { CustomAlertProvider } from "./src/components/Alert/CustomAlertProvider";
+import GlobalLoading from "./src/components/Loading/GlobalLoading";
 
 // Adaptasi tema navigasi dengan React Native Paper
 const { DarkTheme } = adaptNavigationTheme({
@@ -65,6 +66,20 @@ const CustomDarkTheme = {
   roundness: 14,
 };
 
+// Wrapper untuk menyediakan akses context ke Loading
+const AppContent = () => {
+  const { globalLoading } = useAppContext();
+  return (
+    <>
+      <AppNavigator />
+      <GlobalLoading 
+        visible={globalLoading.visible} 
+        message={globalLoading.message} 
+      />
+    </>
+  );
+};
+
 export default function App() {
   // Configure notification behavior
   useEffect(() => {
@@ -101,7 +116,7 @@ export default function App() {
           />
           <AppProvider>
             <CustomAlertProvider>
-              <AppNavigator />
+              <AppContent />
             </CustomAlertProvider>
           </AppProvider>
         </SafeAreaProvider>

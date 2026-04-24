@@ -36,6 +36,11 @@ import {
 interface AppContextType {
   state: AppState;
   isLoading: boolean;
+  globalLoading: {
+    visible: boolean;
+    message?: string;
+  };
+  setLoading: (visible: boolean, message?: string) => void;
 
   // 🔹 TRANSACTIONS
   addTransaction: (
@@ -108,7 +113,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [isLoading, setIsLoading] = useState(true);
+  const [globalLoading, setGlobalLoadingState] = useState<{visible: boolean, message?: string}>({ visible: false });
   const isMounted = useRef(true);
+
+  const setLoading = (visible: boolean, message?: string) => {
+    setGlobalLoadingState({ visible, message });
+  };
 
   // ========== LOAD INITIAL DATA ==========
   useEffect(() => {
@@ -686,6 +696,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     refreshData,
     clearAllData,
     debugStorage,
+    globalLoading,
+    setLoading,
   };
 
   return (

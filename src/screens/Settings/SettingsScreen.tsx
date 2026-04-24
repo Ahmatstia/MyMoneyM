@@ -336,7 +336,7 @@ const TimePickerModal = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const SettingsScreen = () => {
-  const { clearAllData, debugStorage, state } = useAppContext();
+  const { clearAllData, debugStorage, state, setLoading } = useAppContext();
 
   const [notificationSettings, setNotificationSettings] = useState(DEFAULT_NOTIFICATION_SETTINGS);
   const [appSettings, setAppSettings]                   = useState(DEFAULT_APP_SETTINGS);
@@ -462,7 +462,27 @@ const SettingsScreen = () => {
   const handleClearData = () => {
     Alert.alert("Hapus Semua Data", "Apakah Anda yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.", [
       { text: "Batal", style: "cancel" },
-      { text: "Hapus", style: "destructive", onPress: async () => { await clearAllData(); Alert.alert("Berhasil", "Semua data telah dihapus"); } }
+      { 
+        text: "Hapus", 
+        style: "destructive", 
+        onPress: async () => { 
+          setLoading(true, "Menghapus data...");
+          
+          // Beri jeda sedikit agar animasi Among Us terlihat
+          setTimeout(async () => {
+            try {
+              await clearAllData();
+              setLoading(false);
+              // Gunakan setTimeout agar alert tidak tertutup modal loading
+              setTimeout(() => {
+                Alert.alert("Berhasil", "Semua data telah dibersihkan.");
+              }, 100);
+            } catch (err) {
+              setLoading(false);
+            }
+          }, 1500);
+        } 
+      }
     ]);
   };
 
