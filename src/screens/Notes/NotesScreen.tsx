@@ -116,12 +116,12 @@ const NotesScreen = ({ navigation }: any) => {
           <Text
             style={{
               color: TEXT_PRIMARY,
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: "700",
-              lineHeight: 18,
+              lineHeight: 20,
               flex: 1,
             }}
-            numberOfLines={2}
+            numberOfLines={3}
           >
             {item.title}
           </Text>
@@ -132,11 +132,11 @@ const NotesScreen = ({ navigation }: any) => {
           <Text
             style={{
               color: Colors.gray400,
-              fontSize: 11,
-              lineHeight: 16,
-              marginBottom: 10,
+              fontSize: 12,
+              lineHeight: 18,
+              marginBottom: 12,
             }}
-            numberOfLines={4}
+            numberOfLines={10}
           >
             {item.content}
           </Text>
@@ -231,72 +231,7 @@ const NotesScreen = ({ navigation }: any) => {
           )}
         </View>
 
-        {/* ── Stats strip ──────────────────────────────────────────────── */}
-        {notes.length > 0 && (
-          <View
-            style={{
-              backgroundColor: SURFACE_COLOR,
-              borderRadius: CARD_RADIUS,
-              borderWidth: 1,
-              borderColor: CARD_BORDER,
-              padding: CARD_PAD,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400, fontSize: 9,
-                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                }}
-              >
-                Total
-              </Text>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "800" }}>
-                {notes.length}
-              </Text>
-            </View>
-            <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400, fontSize: 9,
-                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                }}
-              >
-                Hasil Cari
-              </Text>
-              <Text style={{ color: ACCENT_COLOR, fontSize: 20, fontWeight: "800" }}>
-                {filteredNotes.length}
-              </Text>
-            </View>
-            <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400, fontSize: 9,
-                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                }}
-              >
-                Terakhir
-              </Text>
-              <Text style={{ color: Colors.success, fontSize: 11, fontWeight: "700" }}>
-                {notes.length > 0
-                  ? formatDate(
-                      notes
-                        .slice()
-                        .sort((a, b) =>
-                          new Date(b.createdAt || b.date || 0).getTime() -
-                          new Date(a.createdAt || a.date || 0).getTime()
-                        )[0]?.createdAt || ""
-                    )
-                  : "-"}
-              </Text>
-            </View>
-          </View>
-        )}
+
 
         {/* ── Notes grid (2 kolom) ──────────────────────────────────────── */}
         {filteredNotes.length === 0 ? (

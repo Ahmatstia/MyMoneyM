@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "react-native-paper";
 import { useAppContext } from "../../context/AppContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -80,296 +81,241 @@ const NoteDetailScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 60 }}
-        style={{ flex: 1 }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      {/* ── Custom Header / Action Bar ── */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          paddingTop: 10,
+          paddingBottom: 15,
+        }}
       >
-        {/* ── Action bar ──────────────────────────────────────────────── */}
-        <View
+        <TouchableOpacity
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingVertical: 10,
-            marginBottom: 16,
+            padding: 8,
+            backgroundColor: `${ACCENT_COLOR}15`,
+            borderRadius: 12,
           }}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
         >
+          <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+        </TouchableOpacity>
+
+        {/* Right actions */}
+        <View style={{ flexDirection: "row", gap: 10 }}>
           <TouchableOpacity
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${ACCENT_COLOR}15`,
+              padding: 8,
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
             }}
-            onPress={() => navigation.goBack()}
+            onPress={handleShare}
             activeOpacity={0.7}
           >
-            <Ionicons name="chevron-back" size={18} color={ACCENT_COLOR} />
+            <Ionicons name="share-outline" size={18} color={Colors.gray400} />
           </TouchableOpacity>
 
-          {/* Right actions */}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: CARD_BORDER,
-              }}
-              onPress={handleShare}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="share-outline" size={15} color={Colors.gray400} />
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              padding: 8,
+              backgroundColor: `${ACCENT_COLOR}15`,
+              borderRadius: 12,
+            }}
+            onPress={() => navigation.navigate("NoteForm", { noteId: note.id })}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pencil-outline" size={18} color={ACCENT_COLOR} />
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ACCENT_COLOR}15`,
-                borderWidth: 1,
-                borderColor: `${ACCENT_COLOR}20`,
-              }}
-              onPress={() => navigation.navigate("NoteForm", { noteId: note.id })}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ERROR_COLOR}15`,
-                borderWidth: 1,
-                borderColor: `${ERROR_COLOR}20`,
-              }}
-              onPress={() => setShowDelete(true)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={{
+              padding: 8,
+              backgroundColor: `${ERROR_COLOR}15`,
+              borderRadius: 12,
+            }}
+            onPress={() => setShowDelete(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={18} color={ERROR_COLOR} />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        {/* ── Main note card ───────────────────────────────────────────── */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60, paddingTop: 10 }}
+        style={{ flex: 1 }}
+      >
+        {/* Category Badge */}
         <View
           style={{
-            backgroundColor: SURFACE_COLOR,
-            borderRadius: CARD_RADIUS,
+            alignSelf: "flex-start",
+            backgroundColor: `${typeConfig.color}15`,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            marginBottom: 16,
+            flexDirection: "row",
+            alignItems: "center",
             borderWidth: 1,
-            borderColor: CARD_BORDER,
-            // Left accent stripe per type
-            borderLeftWidth: 3,
-            borderLeftColor: typeConfig.color,
-            padding: CARD_PAD,
+            borderColor: `${typeConfig.color}30`,
+          }}
+        >
+          <Ionicons
+            name={typeConfig.icon}
+            size={14}
+            color={typeConfig.color}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={{
+              color: typeConfig.color,
+              fontSize: 11,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            {typeConfig.label}
+          </Text>
+        </View>
+
+        {/* Title */}
+        <Text
+          style={{
+            color: TEXT_PRIMARY,
+            fontSize: 26,
+            fontWeight: "800",
+            lineHeight: 34,
             marginBottom: 12,
           }}
         >
-          {/* Type badge */}
+          {note.title}
+        </Text>
+
+        {/* Meta Data */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 24,
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="time-outline" size={14} color={Colors.gray400} style={{ marginRight: 6 }} />
+            <Text style={{ color: Colors.gray400, fontSize: 12 }}>
+              {format(new Date(note.createdAt), "dd MMM yyyy • HH:mm", { locale: id })}
+            </Text>
+          </View>
+
+          {note.updatedAt && (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="refresh-outline" size={14} color={Colors.gray400} style={{ marginRight: 6 }} />
+              <Text style={{ color: Colors.gray400, fontSize: 12 }}>
+                Diedit: {format(new Date(note.updatedAt), "dd MMM yyyy", { locale: id })}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Amount Banner (if present) */}
+        {note.amount && (
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: 14,
+              backgroundColor: `${ACCENT_COLOR}10`,
+              padding: 16,
+              borderRadius: 16,
+              marginBottom: 24,
+              borderWidth: 1,
+              borderColor: `${ACCENT_COLOR}30`,
             }}
           >
             <View
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                backgroundColor: `${ACCENT_COLOR}20`,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: `${typeConfig.color}18`,
-                marginRight: 10,
+                marginRight: 16,
               }}
             >
-              <Ionicons
-                name={typeConfig.icon}
-                size={15}
-                color={typeConfig.color}
-              />
+              <Ionicons name="cash-outline" size={22} color={ACCENT_COLOR} />
             </View>
-            <View
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 20,
-                backgroundColor: `${typeConfig.color}15`,
-                borderWidth: 1,
-                borderColor: `${typeConfig.color}25`,
-              }}
-            >
-              <Text
-                style={{
-                  color: typeConfig.color,
-                  fontSize: 10,
-                  fontWeight: "700",
-                  letterSpacing: 0.4,
-                }}
-              >
-                {typeConfig.label}
+            <View>
+              <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 4, fontWeight: "600" }}>
+                NOMINAL TERKAIT
               </Text>
-            </View>
-          </View>
-
-          {/* Title */}
-          <Text
-            style={{
-              color: TEXT_PRIMARY,
-              fontSize: 20,
-              fontWeight: "800",
-              letterSpacing: -0.3,
-              marginBottom: note.amount ? 8 : 14,
-              lineHeight: 26,
-            }}
-          >
-            {note.title}
-          </Text>
-
-          {/* Amount (optional) */}
-          {note.amount && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 14,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: INNER_RADIUS,
-                backgroundColor: `${ACCENT_COLOR}10`,
-                borderWidth: 1,
-                borderColor: `${ACCENT_COLOR}20`,
-                alignSelf: "flex-start",
-              }}
-            >
-              <Ionicons
-                name="cash-outline"
-                size={14}
-                color={ACCENT_COLOR}
-                style={{ marginRight: 7 }}
-              />
-              <Text
-                style={{
-                  color: ACCENT_COLOR,
-                  fontSize: 15,
-                  fontWeight: "700",
-                }}
-              >
+              <Text style={{ color: ACCENT_COLOR, fontSize: 20, fontWeight: "800" }}>
                 Rp {note.amount.toLocaleString("id-ID")}
               </Text>
             </View>
-          )}
+          </View>
+        )}
 
-          {/* Divider */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: CARD_BORDER,
-              marginBottom: 16,
-            }}
-          />
+        {/* Divider */}
+        <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: 24 }} />
 
-          {/* Content */}
-          <Text
-            style={{
-              color: TEXT_SECONDARY,
-              fontSize: 14,
-              lineHeight: 22,
-              marginBottom: 16,
-            }}
-          >
-            {note.content}
-          </Text>
+        {/* Main Content */}
+        <Text
+          style={{
+            color: TEXT_PRIMARY,
+            fontSize: 16,
+            lineHeight: 28,
+            letterSpacing: 0.3,
+            marginBottom: 32,
+          }}
+        >
+          {note.content}
+        </Text>
 
-          {/* Tags */}
-          {note.tags && note.tags.length > 0 && (
-            <View
+        {/* Tags Section */}
+        {note.tags && note.tags.length > 0 && (
+          <View style={{ marginTop: 10 }}>
+            <Text
               style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 16,
+                color: Colors.gray400,
+                fontSize: 11,
+                fontWeight: "700",
+                marginBottom: 12,
+                textTransform: "uppercase",
+                letterSpacing: 1.2,
               }}
             >
+              Tags
+            </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               {note.tags.map((tag: string) => (
                 <View
                   key={tag}
                   style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 20,
-                    backgroundColor: "rgba(255,255,255,0.07)",
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 10,
+                    backgroundColor: SURFACE_COLOR,
                     borderWidth: 1,
                     borderColor: CARD_BORDER,
                   }}
                 >
-                  <Text
-                    style={{ color: Colors.gray400, fontSize: 11, fontWeight: "500" }}
-                  >
+                  <Text style={{ color: TEXT_SECONDARY, fontSize: 13, fontWeight: "600" }}>
                     #{tag}
                   </Text>
                 </View>
               ))}
             </View>
-          )}
-
-          {/* Meta */}
-          <View
-            style={{
-              height: 1,
-              backgroundColor: CARD_BORDER,
-              marginBottom: 12,
-            }}
-          />
-          <View style={{ gap: 5 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="time-outline"
-                size={12}
-                color={Colors.gray400}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-                Dibuat:{" "}
-                {format(new Date(note.createdAt), "dd MMM yyyy • HH:mm", {
-                  locale: id,
-                })}
-              </Text>
-            </View>
-            {note.updatedAt && (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons
-                  name="refresh-outline"
-                  size={12}
-                  color={Colors.gray400}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-                  Diperbarui:{" "}
-                  {format(new Date(note.updatedAt), "dd MMM yyyy • HH:mm", {
-                    locale: id,
-                  })}
-                </Text>
-              </View>
-            )}
           </View>
-        </View>
+        )}
       </ScrollView>
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -486,7 +432,7 @@ const NoteDetailScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

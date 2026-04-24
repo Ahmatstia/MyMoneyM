@@ -430,7 +430,7 @@ const MainStackNavigator = () => {
         name="NoteDetail"
         component={NoteDetailScreen}
         options={{
-          title: "Detail Catatan",
+          headerShown: false,
         }}
       />
 

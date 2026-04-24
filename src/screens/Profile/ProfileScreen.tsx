@@ -314,35 +314,6 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* ── Quick stats grid ──────────────────────────────────────────── */}
-        <SectionHeader title="Statistik Data" />
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
-          <StatCard
-            label="Transaksi"
-            value={state.transactions?.length || 0}
-            color={ACCENT_COLOR}
-            icon="receipt-outline"
-          />
-          <StatCard
-            label="Anggaran"
-            value={state.budgets?.length || 0}
-            color={SUCCESS_COLOR}
-            icon="pie-chart-outline"
-          />
-          <StatCard
-            label="Tabungan"
-            value={state.savings?.length || 0}
-            color={INFO_COLOR}
-            icon="wallet-outline"
-          />
-          <StatCard
-            label="Catatan"
-            value={state.notes?.length || 0}
-            color={WARNING_COLOR}
-            icon="document-text-outline"
-          />
-        </View>
-
         {/* ── Ringkasan keuangan ────────────────────────────────────────── */}
         <SectionHeader title="Ringkasan Keuangan" />
         <View
