@@ -66,14 +66,25 @@ const C = {
   text3:       "#475569",
 };
 
-// ─── ACHIEVEMENT DEFINITIONS (UI only — no logic) ────────────────────────────
-const ACHIEVEMENTS = [
-  { id: "first_steps",   icon: "footsteps",      color: C.cyan,    label: "First Steps",      desc: "Transaksi pertama",      unlocked: true  },
-  { id: "week_warrior",  icon: "flame",           color: C.gold,    label: "Week Warrior",     desc: "7 hari berturut-turut",  unlocked: true  },
-  { id: "century",       icon: "trophy",          color: C.violet,  label: "The Century",      desc: "100 transaksi",          unlocked: false },
-  { id: "savings_king",  icon: "diamond",         color: C.emerald, label: "Savings King",     desc: "Hemat 50% sebulan",      unlocked: false },
-  { id: "night_owl",     icon: "moon",            color: C.rose,    label: "Night Owl",        desc: "Catat jam 12 malam",     unlocked: false },
-  { id: "analyst",       icon: "bar-chart",       color: C.cyan,    label: "Analyst",          desc: "Lihat laporan 30x",      unlocked: false },
+// ─── ACHIEVEMENT TYPE ─────────────────────────────────────────────────────────
+type Achievement = {
+  id: string;
+  icon: string;
+  color: string;
+  label: string;
+  desc: string;
+  unlocked: boolean;
+  progress?: number; // 0-100, optional progress ring
+};
+
+// Template definitions (unlocked computed dynamically in component)
+const ACHIEVEMENT_DEFS = [
+  { id: "first_steps",  icon: "footsteps",   color: C.cyan,    label: "First Steps",    desc: "Transaksi pertama" },
+  { id: "week_warrior", icon: "flame",        color: C.gold,    label: "Week Warrior",   desc: "7 hari berturut-turut" },
+  { id: "century",      icon: "trophy",       color: C.violet,  label: "The Century",    desc: "100 transaksi" },
+  { id: "savings_king", icon: "diamond",      color: C.emerald, label: "Savings King",   desc: "Punya tabungan aktif" },
+  { id: "night_owl",    icon: "moon",         color: C.rose,    label: "Night Owl",      desc: "Catat lewat jam 11 PM" },
+  { id: "diversified",  icon: "grid",         color: C.violet,  label: "Diversified",   desc: "5+ kategori berbeda" },
 ];
 
 // ─── REUSABLE ATOMS ──────────────────────────────────────────────────────────
@@ -191,11 +202,11 @@ const StreakBadge = ({ streak }: { streak: number }) => (
 const AchievementCard = ({
   achievement,
 }: {
-  achievement: (typeof ACHIEVEMENTS)[0];
+  achievement: Achievement;
 }) => (
   <View
     style={[
-      tw`w-28 mr-3 rounded-2xl p-3.5 items-center`,
+      tw`w-30 mr-3 rounded-2xl p-3.5 items-center`,
       {
         backgroundColor: achievement.unlocked
           ? `${achievement.color}18`
@@ -243,11 +254,26 @@ const AchievementCard = ({
       {achievement.label}
     </Text>
     <Text
-      style={[tw`text-[8px] text-center mt-0.5`, { color: C.text3 }]}
+      style={[tw`text-[8px] text-center mt-1`, { color: C.text3 }]}
       numberOfLines={2}
     >
       {achievement.desc}
     </Text>
+    {/* Progress bar untuk achievement yang punya progress */}
+    {!achievement.unlocked && achievement.progress !== undefined && (
+      <View
+        style={[
+          tw`w-full mt-2 rounded-full overflow-hidden`,
+          { height: 3, backgroundColor: "rgba(255,255,255,0.06)" },
+        ]}
+      >
+        <View
+          style={[
+            { height: 3, borderRadius: 99, backgroundColor: achievement.color, width: `${achievement.progress}%` },
+          ]}
+        />
+      </View>
+    )}
   </View>
 );
 
@@ -480,7 +506,7 @@ const ProfileScreen: React.FC = () => {
     setIsEditModalVisible(false);
   };
 
-  // ─── DERIVED UI DATA (UI-only computations) ──────────────────────────────
+  // ─── DERIVED UI DATA ──────────────────────────────────────────────────────
   const uiData = useMemo(() => {
     const now = new Date();
     const thisMonthTx = state.transactions.filter((t) =>
@@ -492,24 +518,32 @@ const ProfileScreen: React.FC = () => {
       thisMonthTx.map((t) => format(new Date(t.date), "yyyy-MM-dd"))
     );
 
-    // Streak (consecutive days from today backward)
+    // ── Streak: hitung dari SEMUA transaksi sepanjang waktu, mundur dari hari ini
+    const allDaysWithTx = new Set(
+      state.transactions.map((t) => format(new Date(t.date), "yyyy-MM-dd"))
+    );
     let streak = 0;
     let cursor = new Date();
+    // Kalau hari ini belum ada tx, mulai cek dari kemarin
+    const todayKey = format(cursor, "yyyy-MM-dd");
+    if (!allDaysWithTx.has(todayKey)) {
+      cursor = new Date(cursor.getTime() - 86400000);
+    }
     while (true) {
       const key = format(cursor, "yyyy-MM-dd");
-      if (activeDaysSet.has(key)) {
+      if (allDaysWithTx.has(key)) {
         streak++;
         cursor = new Date(cursor.getTime() - 86400000);
       } else break;
     }
 
-    // Health score (purely decorative formula for UI)
+    // ── Health score
     const consistency = Math.min((activeDaysSet.size / 20) * 40, 40);
     const volume = Math.min((thisMonthTx.length / 30) * 30, 30);
     const streakBonus = Math.min(streak * 3, 30);
     const healthScore = Math.round(consistency + volume + streakBonus);
 
-    // Top category for pulse card
+    // ── Top category (semua transaksi) untuk Monthly Pulse
     const catCounts: Record<string, number> = {};
     thisMonthTx.forEach((t: any) => {
       if (t.category) catCounts[t.category] = (catCounts[t.category] || 0) + 1;
@@ -517,15 +551,84 @@ const ProfileScreen: React.FC = () => {
     const topCategory =
       Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
+    // ── Savings Ratio bulan ini (tabungan / pemasukan * 100)
+    const monthIncome = thisMonthTx
+      .filter((t) => t.type === "income")
+      .reduce((s, t) => s + t.amount, 0);
+    const monthExpense = thisMonthTx
+      .filter((t) => t.type === "expense")
+      .reduce((s, t) => s + t.amount, 0);
+    const savingsRatio =
+      monthIncome > 0
+        ? Math.max(0, Math.round(((monthIncome - monthExpense) / monthIncome) * 100))
+        : 0;
+
+    // ── Top expense category bulan ini
+    const expCatCounts: Record<string, number> = {};
+    thisMonthTx
+      .filter((t) => t.type === "expense")
+      .forEach((t: any) => {
+        if (t.category)
+          expCatCounts[t.category] = (expCatCounts[t.category] || 0) + 1;
+      });
+    const topExpenseCategory =
+      Object.entries(expCatCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+
+    // ── Night Owl: pernah catat transaksi jam >= 23:00
+    const hasNightOwl = state.transactions.some((t) => {
+      const h = new Date(t.createdAt).getHours();
+      return h >= 23;
+    });
+
+    // ── Diversified: >= 5 kategori berbeda bulan ini
+    const uniqueCategories = new Set(
+      thisMonthTx.map((t: any) => t.category).filter(Boolean)
+    );
+
+    // ── Achievements logic
+    const achievements: Achievement[] = ACHIEVEMENT_DEFS.map((def) => {
+      let unlocked = false;
+      let progress: number | undefined = undefined;
+
+      switch (def.id) {
+        case "first_steps":
+          unlocked = state.transactions.length >= 1;
+          break;
+        case "week_warrior":
+          unlocked = streak >= 7;
+          progress = Math.min(100, Math.round((streak / 7) * 100));
+          break;
+        case "century":
+          unlocked = state.transactions.length >= 100;
+          progress = Math.min(100, Math.round((state.transactions.length / 100) * 100));
+          break;
+        case "savings_king":
+          unlocked = state.savings.length > 0;
+          break;
+        case "night_owl":
+          unlocked = hasNightOwl;
+          break;
+        case "diversified":
+          unlocked = uniqueCategories.size >= 5;
+          progress = Math.min(100, Math.round((uniqueCategories.size / 5) * 100));
+          break;
+      }
+
+      return { ...def, unlocked, progress };
+    });
+
     return {
       totalTx: thisMonthTx.length,
       activeDays: activeDaysSet.size,
       streak,
       healthScore,
       topCategory,
+      savingsRatio,
+      topExpenseCategory,
       allTimeTx: state.transactions.length,
+      achievements,
     };
-  }, [state.transactions]);
+  }, [state.transactions, state.savings]);
 
   // ─── CALENDAR LOGIC (unchanged from original) ─────────────────────────────
   const { calendarDays, monthTotalActivity } = useMemo(() => {
@@ -790,24 +893,24 @@ const ProfileScreen: React.FC = () => {
                 ]}
               />
 
-              {/* All-time counter */}
+              {/* Savings Ratio */}
               <View style={tw`items-center flex-1`}>
                 <LinearGradient
-                  colors={[C.violetDim, "rgba(139,92,246,0.03)"]}
+                  colors={[C.emeraldDim, "rgba(16,185,129,0.03)"]}
                   style={[
                     tw`w-16 h-16 rounded-2xl items-center justify-center mb-1.5`,
-                    { borderWidth: 1, borderColor: "rgba(139,92,246,0.25)" },
+                    { borderWidth: 1, borderColor: "rgba(16,185,129,0.25)" },
                   ]}
                 >
-                  <Text style={tw`text-xl`}>📊</Text>
+                  <Text style={tw`text-xl`}>💰</Text>
                 </LinearGradient>
-                <Text style={[tw`text-xl font-black`, { color: C.violet }]}>
-                  {uiData.allTimeTx}
+                <Text style={[tw`text-xl font-black`, { color: C.emerald }]}>
+                  {uiData.savingsRatio}%
                 </Text>
                 <Text
                   style={[tw`text-[9px] font-bold uppercase tracking-wider`, { color: C.text3 }]}
                 >
-                  Total Tx
+                  Rasio %
                 </Text>
               </View>
             </View>
@@ -821,7 +924,7 @@ const ProfileScreen: React.FC = () => {
             >
               <Ionicons name="information-circle" size={14} color={C.text3} />
               <Text style={[tw`text-[10px] flex-1 leading-4`, { color: C.text3 }]}>
-                Skor kesehatan finansial dihitung dari konsistensi pencatatan dan frekuensi transaksi.
+                Skor konsistensi dari pencatatan harian · Rasio tabungan = (Pemasukan − Pengeluaran) ÷ Pemasukan
               </Text>
             </View>
           </View>
@@ -845,11 +948,11 @@ const ProfileScreen: React.FC = () => {
               sub="bulan ini"
             />
             <QuickStat
-              label="Hari Aktif"
-              value={uiData.activeDays}
-              icon="checkmark-circle"
-              color={C.emerald}
-              sub="hari"
+              label="Kategori Terbanyak"
+              value={uiData.topExpenseCategory}
+              icon="receipt-outline"
+              color={C.rose}
+              sub="pengeluaran"
             />
             <QuickStat
               label="Streak"
@@ -864,14 +967,14 @@ const ProfileScreen: React.FC = () => {
           <SectionLabel
             title="Achievements"
             icon="trophy"
-            subtitle={`${ACHIEVEMENTS.filter((a) => a.unlocked).length}/${ACHIEVEMENTS.length} unlocked`}
+            subtitle={`${uiData.achievements.filter((a) => a.unlocked).length}/${uiData.achievements.length} unlocked`}
           />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={tw`px-0.5 pb-1`}
           >
-            {ACHIEVEMENTS.map((a) => (
+            {uiData.achievements.map((a) => (
               <AchievementCard key={a.id} achievement={a} />
             ))}
           </ScrollView>

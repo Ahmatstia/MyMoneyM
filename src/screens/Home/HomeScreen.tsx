@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useAppContext } from "../../context/AppContext";
 import { useHomeData } from "./hooks/useHomeData";
@@ -554,13 +555,49 @@ const HomeScreen: React.FC = () => {
         {/* ══════════════════════════════════════════
             BALANCE HERO CARD
         ══════════════════════════════════════════ */}
-        <Card style={{ marginBottom: 20 }}>
+        <LinearGradient
+          colors={["#0F2444", "#0D1F3C", "#091428"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            borderRadius: CARD_RADIUS,
+            marginBottom: 20,
+            padding: CARD_PAD,
+            borderWidth: 1,
+            borderColor: "rgba(34,211,238,0.15)",
+            overflow: "hidden",
+          }}
+        >
+          {/* Accent glow top-right */}
+          <View
+            style={{
+              position: "absolute",
+              top: -40,
+              right: -40,
+              width: 140,
+              height: 140,
+              borderRadius: 70,
+              backgroundColor: "rgba(34,211,238,0.06)",
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: -30,
+              left: -20,
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+              backgroundColor: "rgba(99,102,241,0.08)",
+            }}
+          />
+
           <Text
             style={{
-              color: Colors.gray400,
+              color: "rgba(148,163,184,0.8)",
               fontSize: 10,
               fontWeight: "700",
-              letterSpacing: 1.2,
+              letterSpacing: 1.5,
               textTransform: "uppercase",
               marginBottom: 6,
             }}
@@ -570,11 +607,11 @@ const HomeScreen: React.FC = () => {
 
           <Text
             style={{
-              color: TEXT_PRIMARY,
+              color: "#F8FAFC",
               fontSize: 34,
               fontWeight: "800",
               letterSpacing: -0.5,
-              marginBottom: 18,
+              marginBottom: 20,
             }}
           >
             {hasFinancialData
@@ -582,39 +619,47 @@ const HomeScreen: React.FC = () => {
               : "Rp 0"}
           </Text>
 
-          {/* Income / Expense / Net row */}
+          {/* Income / Expense row */}
           <View
             style={{
               flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
+              alignItems: "stretch",
+              gap: 10,
               marginBottom: 16,
             }}
           >
             {/* Pemasukan */}
-            <View style={{ flex: 1 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 4,
-                }}
-              >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(16,185,129,0.12)",
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "rgba(16,185,129,0.25)",
+                padding: 12,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                 <View
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: SUCCESS_COLOR,
-                    marginRight: 5,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 7,
+                    backgroundColor: "rgba(16,185,129,0.25)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 6,
                   }}
-                />
+                >
+                  <Ionicons name="arrow-down" size={11} color="#10B981" />
+                </View>
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: "rgba(148,163,184,0.8)",
                     fontSize: 9,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
+                    fontWeight: "700",
                   }}
                 >
                   Pemasukan
@@ -622,8 +667,8 @@ const HomeScreen: React.FC = () => {
               </View>
               <Text
                 style={{
-                  color: SUCCESS_COLOR,
-                  fontSize: 16,
+                  color: "#10B981",
+                  fontSize: 15,
                   fontWeight: "700",
                 }}
                 numberOfLines={1}
@@ -633,32 +678,38 @@ const HomeScreen: React.FC = () => {
               </Text>
             </View>
 
-            <VDivider />
-
             {/* Pengeluaran */}
-            <View style={{ flex: 1, alignItems: "flex-end" }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 4,
-                }}
-              >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(244,63,94,0.10)",
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "rgba(244,63,94,0.22)",
+                padding: 12,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
                 <View
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: ERROR_COLOR,
-                    marginRight: 5,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 7,
+                    backgroundColor: "rgba(244,63,94,0.20)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 6,
                   }}
-                />
+                >
+                  <Ionicons name="arrow-up" size={11} color="#F43F5E" />
+                </View>
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: "rgba(148,163,184,0.8)",
                     fontSize: 9,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
+                    fontWeight: "700",
                   }}
                 >
                   Pengeluaran
@@ -666,8 +717,8 @@ const HomeScreen: React.FC = () => {
               </View>
               <Text
                 style={{
-                  color: ERROR_COLOR,
-                  fontSize: 16,
+                  color: "#F43F5E",
+                  fontSize: 15,
                   fontWeight: "700",
                 }}
                 numberOfLines={1}
@@ -678,7 +729,7 @@ const HomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.06)", marginBottom: 12, marginTop: 4 }} />
+          <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.07)", marginBottom: 12 }} />
 
           {/* Arus Kas Summary */}
           <View
@@ -686,20 +737,20 @@ const HomeScreen: React.FC = () => {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 16,
+              marginBottom: 14,
               paddingHorizontal: 4,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons 
-                name="swap-vertical" 
-                size={12} 
-                color={Colors.gray400} 
-                style={{ marginRight: 6 }} 
+              <Ionicons
+                name="swap-vertical"
+                size={12}
+                color="rgba(148,163,184,0.8)"
+                style={{ marginRight: 6 }}
               />
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: "rgba(148,163,184,0.8)",
                   fontSize: 10,
                   textTransform: "uppercase",
                   letterSpacing: 1,
@@ -716,7 +767,7 @@ const HomeScreen: React.FC = () => {
                     ? SUCCESS_COLOR
                     : filteredPeriodNetto < 0
                     ? ERROR_COLOR
-                    : TEXT_SECONDARY,
+                    : "rgba(148,163,184,0.8)",
                 fontSize: 15,
                 fontWeight: "700",
               }}
@@ -732,13 +783,24 @@ const HomeScreen: React.FC = () => {
           <View
             style={{
               height: 4,
-              backgroundColor: "rgba(255,255,255,0.07)",
+              backgroundColor: "rgba(255,255,255,0.08)",
               borderRadius: 4,
               overflow: "hidden",
               marginBottom: 10,
             }}
           >
-            <View
+            <LinearGradient
+              colors={
+                hasFinancialData && projectionData
+                  ? projectionData.status === "surplus"
+                    ? ["#10B981", "#34D399"]
+                    : projectionData.status === "warning"
+                    ? ["#F59E0B", "#FCD34D"]
+                    : ["#F43F5E", "#FB7185"]
+                  : ["#475569", "#64748B"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={{
                 height: 4,
                 borderRadius: 4,
@@ -746,10 +808,6 @@ const HomeScreen: React.FC = () => {
                   0,
                   Math.min(safeNumber(projectionData?.progress), 100)
                 )}%`,
-                backgroundColor:
-                  hasFinancialData && projectionData
-                    ? getProgressColor(projectionData.status)
-                    : Colors.gray400,
               }}
             />
           </View>
@@ -765,7 +823,7 @@ const HomeScreen: React.FC = () => {
                   alignItems: "center",
                 }}
               >
-                <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                <Text style={{ color: "rgba(148,163,184,0.7)", fontSize: 10 }}>
                   Proyeksi {projectionData.label} (
                   {projectionData.daysRemaining} hari lagi)
                 </Text>
@@ -789,7 +847,7 @@ const HomeScreen: React.FC = () => {
           {timeFilter !== "all" && openingBalance !== 0 && (
             <Text
               style={{
-                color: Colors.gray500,
+                color: "rgba(148,163,184,0.5)",
                 fontSize: 10,
                 fontStyle: "italic",
                 marginTop: 8,
@@ -799,7 +857,7 @@ const HomeScreen: React.FC = () => {
               {formatCurrency(openingBalance)} dari periode sebelumnya
             </Text>
           )}
-        </Card>
+        </LinearGradient>
 
         {/* ══════════════════════════════════════════
             QUICK ACTIONS
