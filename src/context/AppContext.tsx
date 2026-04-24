@@ -106,7 +106,7 @@ const defaultAppState: AppState = {
   notes: [],
   debts: [],
   userProfile: {
-    name: "Pengguna MyMoney",
+    name: "MyMoney",
   },
   totalIncome: 0,
   totalExpense: 0,
@@ -144,13 +144,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const appData = await storageService.loadData();
 
       // Pastikan semua properti ada termasuk notes
-      const completeAppData: AppState = {
+      let completeAppData: AppState = {
         ...defaultAppState,
         ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
+
+      // Migrasi Nama Default Otomatis (Hapus paksa nama lama yang tersimpan)
+      const currentName = completeAppData.userProfile.name?.trim().toLowerCase();
+      const oldDefaults = ["pengguna mymoney", "sobat cuan", "pengguna", "my money"];
+      
+      if (!currentName || oldDefaults.includes(currentName)) {
+        completeAppData.userProfile.name = "MyMoney";
+      }
 
       if (isMounted.current) {
         setState(completeAppData);

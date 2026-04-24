@@ -348,7 +348,8 @@ const migrateOldData = async (): Promise<AppState | null> => {
             savings,
             savingsTransactions,
             notes,
-            debts: [], // TAMBAHKAN
+            debts: [],
+            userProfile: { name: "MyMoney" },
             ...totals,
           };
 
@@ -437,7 +438,8 @@ export const storageService = {
         savings: validatedSavings,
         savingsTransactions: validatedSavingsTransactions,
         notes: validatedNotes,
-        debts: validatedDebts, // NEW
+        debts: validatedDebts,
+        userProfile: data.userProfile,
         ...totals,
       };
 
@@ -483,7 +485,8 @@ export const storageService = {
           savings: [],
           savingsTransactions: [],
           notes: [],
-          debts: [], // TAMBAHKAN
+          debts: [],
+          userProfile: { name: "MyMoney" },
           totalIncome: 0,
           totalExpense: 0,
           balance: 0,
@@ -543,7 +546,8 @@ export const storageService = {
         savings,
         savingsTransactions,
         notes,
-        debts, // NEW
+        debts,
+        userProfile: parsedData.userProfile || { name: "MyMoney" },
         ...totals,
       };
 
@@ -557,7 +561,8 @@ export const storageService = {
         savings: [],
         savingsTransactions: [],
         notes: [],
-        debts: [], // TAMBAHKAN
+        debts: [],
+        userProfile: { name: "MyMoney" },
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,

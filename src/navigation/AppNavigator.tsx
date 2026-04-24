@@ -92,6 +92,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     { name: "Savings", label: "Tabungan", icon: "wallet-outline" as const, color: "#22D3EE" },
     { name: "Notes", label: "Catatan", icon: "document-text-outline" as const, color: "#EC4899" },
     { name: "Debt", label: "Hutang", icon: "card-outline" as const, color: "#EF4444" },
+    { name: "Profile", label: "Profil Saya", icon: "person-outline" as const, color: "#22D3EE" },
   ];
 
   const navigateToScreen = (screenName: keyof StackParamList) => {
@@ -101,43 +102,43 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
   return (
     <View style={tw`flex-1 bg-[#0F172A]`}>
-      {/* Header dengan Gambar Latar */}
-      <TouchableOpacity 
-        onPress={() => {
-          props.navigation.navigate("Profile");
-          props.navigation.closeDrawer();
-        }} 
-        activeOpacity={0.9}
-      >
-        <ImageBackground
-          source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../assets/ob1.png")}
-          style={tw`pt-14 pb-8 px-6`}
-          imageStyle={{ opacity: 0.4 }}
+      <DrawerContentScrollView {...props} contentContainerStyle={tw`pt-0`} showsVerticalScrollIndicator={false}>
+        {/* Header dengan Gambar Latar (Sekarang bisa di-scroll) */}
+        <TouchableOpacity 
+          onPress={() => {
+            props.navigation.navigate("Profile");
+            props.navigation.closeDrawer();
+          }} 
+          activeOpacity={0.9}
         >
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`w-16 h-16 bg-[#1E293B] border-2 border-[#22D3EE] rounded-full items-center justify-center overflow-hidden`}>
-              {userProfile.avatar ? (
-                <Image source={{ uri: userProfile.avatar }} style={tw`w-full h-full`} />
-              ) : (
-                <Ionicons name="person" size={32} color="#22D3EE" />
-              )}
-            </View>
-            <View style={tw`ml-4 flex-1`}>
-              <Text style={tw`text-[#F8FAFC] text-xl font-bold`} numberOfLines={1}>
-                {userProfile.name}
-              </Text>
-              <View style={tw`flex-row items-center mt-1`}>
-                <View style={tw`w-2 h-2 rounded-full bg-[#10B981] mr-2`} />
-                <Text style={tw`text-[#CBD5E1] text-xs font-medium`}>Online</Text>
+          <ImageBackground
+            source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../assets/bg.png")}
+            style={tw`pt-14 pb-8 px-6 mb-4`}
+            imageStyle={{ opacity: 0.4 }}
+          >
+            <View style={tw`flex-row items-center`}>
+              <View style={tw`w-16 h-16 bg-[#1E293B] border-2 border-[#22D3EE] rounded-full items-center justify-center overflow-hidden`}>
+                {userProfile.avatar ? (
+                  <Image source={{ uri: userProfile.avatar }} style={tw`w-full h-full`} />
+                ) : (
+                  <Ionicons name="person" size={32} color="#22D3EE" />
+                )}
+              </View>
+              <View style={tw`ml-4 flex-1`}>
+                <Text style={tw`text-[#F8FAFC] text-xl font-bold`} numberOfLines={1}>
+                  {userProfile.name}
+                </Text>
+                <View style={tw`flex-row items-center mt-1`}>
+                  <View style={tw`w-2 h-2 rounded-full bg-[#10B981] mr-2`} />
+                  <Text style={tw`text-[#CBD5E1] text-xs font-medium`}>Online</Text>
+                </View>
               </View>
             </View>
-          </View>
-        </ImageBackground>
-      </TouchableOpacity>
+          </ImageBackground>
+        </TouchableOpacity>
 
-      <DrawerContentScrollView {...props} contentContainerStyle={tw`pt-2`} showsVerticalScrollIndicator={false}>
         <View style={tw`px-6 mb-3`}>
-          <Text style={tw`text-[#CBD5E1] text-xs font-medium uppercase tracking-wider`}>Menu Utama</Text>
+          <Text style={tw`text-[#94A3B8] text-[10px] font-bold uppercase tracking-wider`}>Menu Utama</Text>
         </View>
 
         {menuItems.map((item) => (

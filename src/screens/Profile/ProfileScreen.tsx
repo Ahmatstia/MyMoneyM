@@ -110,7 +110,7 @@ const ProfileScreen: React.FC = () => {
       >
         {/* Header dengan Cover Image */}
         <ImageBackground
-          source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../../assets/Revenue-bro.png")}
+          source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../../assets/bg.png")}
           style={tw`h-56 justify-end pb-0`}
           imageStyle={{ opacity: 0.5 }}
         >
