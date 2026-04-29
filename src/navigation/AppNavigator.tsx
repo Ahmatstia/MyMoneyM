@@ -45,6 +45,7 @@ import NoteFormScreen from "../screens/Notes/NoteFormScreen";
 import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
 import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
+import ToolsScreen from "../screens/Tools/ToolsScreen";
 
 // Types
 type StackParamList = {
@@ -60,6 +61,7 @@ type StackParamList = {
   Notes: undefined;
   Settings: undefined;
   Debt: undefined;
+  Tools: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -92,6 +94,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     { name: "Savings", label: "Tabungan", icon: "wallet-outline" as const, color: "#22D3EE" },
     { name: "Notes", label: "Catatan", icon: "document-text-outline" as const, color: "#EC4899" },
     { name: "Debt", label: "Hutang", icon: "card-outline" as const, color: "#EF4444" },
+    { name: "Tools", label: "Alat Cerdas", icon: "calculator-outline" as const, color: "#8B5CF6" },
     { name: "Profile", label: "Profil Saya", icon: "person-outline" as const, color: "#22D3EE" },
   ];
 
@@ -181,7 +184,7 @@ const MainStackNavigator = () => {
       screenOptions={({ navigation, route }) => {
         const mainScreens = [
           "Home", "Transactions", "Analytics", "Calendar", "Budget", 
-          "Savings", "Profile", "Settings", "Notes", "Debt",
+          "Savings", "Profile", "Settings", "Notes", "Debt", "Tools",
           "SavingsDetail", "SavingsHistory", "AddSavings", "AddSavingsTransaction"
         ];
         const isMainScreen = mainScreens.includes(route.name);
@@ -228,6 +231,7 @@ const MainStackNavigator = () => {
       <MainStack.Screen name="NoteForm" component={NoteFormScreen} options={({ route }: any) => ({ title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru" })} />
       <MainStack.Screen name="Debt" component={DebtScreen} options={{ title: "Hutang & Piutang" }} />
       <MainStack.Screen name="AddDebt" component={AddDebtScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Hutang" : "Tambah Hutang" })} />
+      <MainStack.Screen name="Tools" component={ToolsScreen} options={{ title: "Alat Cerdas" }} />
     </MainStack.Navigator>
   );
 };

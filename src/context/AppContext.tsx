@@ -674,10 +674,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const payDebt = async (id: string, amount: number) => {
     const debt = state.debts.find((d) => d.id === id);
     if (!debt) return;
+
     const newRemaining = Math.max(0, debt.remaining - amount);
     const newStatus: Debt["status"] =
       newRemaining === 0 ? "paid" : newRemaining < debt.amount ? "partial" : "active";
-    await editDebt(id, { remaining: newRemaining, status: newStatus });
+
+    // 1. Perbarui daftar hutang
+    const updatedDebts = state.debts.map((d) =>
+      d.id === id
+        ? {
+            ...d,
+            remaining: newRemaining,
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+          }
+        : d
+    );
+
+    // 2. Buat transaksi otomatis
+    // Jika 'borrowed' (hutang kita), maka itu pengeluaran (expense)
+    // Jika 'lent' (piutang), maka itu pemasukan (income)
+    const newTransaction: Transaction = {
+      id: generateTransactionId(),
+      amount: amount,
+      type: debt.type === "borrowed" ? "expense" : "income",
+      category: "Hutang",
+      description: `Pembayaran ${
+        debt.type === "borrowed" ? "Hutang" : "Piutang"
+      }: ${debt.name}`,
+      date: new Date().toISOString().split("T")[0],
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedTransactions = [newTransaction, ...state.transactions];
+
+    // 3. Hitung ulang total saldo dan budget
+    const totals = calculateTotals(updatedTransactions);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      state.budgets
+    );
+
+    const newState: AppState = {
+      ...state,
+      debts: updatedDebts,
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
+    };
+
+    // 4. Simpan ke state dan storage
+    setState(newState);
+    await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
+
+    // Notifikasi jika transaksi besar
+    if (amount >= 1000000) {
+      await notificationService.sendNotification({
+        title: "💰 Pembayaran Hutang",
+        body: `Berhasil mencatat pembayaran Rp ${amount.toLocaleString("id-ID")}`,
+        data: { type: "NEW_TRANSACTION", transactionId: newTransaction.id },
+      });
+    }
   };
 
   // ========== PROVIDER VALUE ==========
