@@ -691,68 +691,51 @@ const ToolsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Quick stats strip */}
-        <View style={{ backgroundColor: SURF, borderRadius: R, borderWidth: 1,
-          borderColor: BORDER, padding: 16, marginBottom: 24,
-          flexDirection: "row", justifyContent: "space-between" }}>
-          {[
-            { label: "Saldo", value: fmt(balance), color: ACCENT },
-            { label: "Hutang", value: fmt(totalDebt), color: Colors.error },
-            { label: "Avg/Bln", value: fmt(avgMonthlyExpense), color: Colors.warning },
-          ].map(s => (
-            <View key={s.label} style={{ alignItems: "center", flex: 1 }}>
-              <Text style={{ color: Colors.gray400, fontSize: 9, fontWeight: "700",
-                textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>
-                {s.label}
-              </Text>
-              <Text style={{ color: s.color, fontSize: 13, fontWeight: "800" }} numberOfLines={1}>
-                {s.value}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Tool cards */}
-        <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
+        {/* Tool cards list */}
+        <View style={{ gap: 14 }}>
           {tools.map(tool => (
             <TouchableOpacity
               key={tool.id}
               onPress={() => setModal(tool.id as any)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
               style={{
-                width: "47.5%",
-                backgroundColor: SURF, borderRadius: R,
+                width: "100%",
+                backgroundColor: SURF, borderRadius: 24,
                 borderWidth: 1, borderColor: BORDER,
-                padding: PAD, minHeight: 170,
+                padding: 16,
+                flexDirection: "row", alignItems: "center"
               }}
             >
-              <View style={{ width: 44, height: 44, borderRadius: 13,
-                backgroundColor: `${tool.color}18`, alignItems: "center",
-                justifyContent: "center", marginBottom: 14,
+              {/* Icon */}
+              <View style={{ width: 56, height: 56, borderRadius: 18,
+                backgroundColor: `${tool.color}15`, alignItems: "center",
+                justifyContent: "center", marginRight: 16,
                 borderWidth: 1, borderColor: `${tool.color}25` }}>
-                <Ionicons name={tool.icon} size={22} color={tool.color} />
+                <Ionicons name={tool.icon} size={28} color={tool.color} />
               </View>
 
-              <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20,
-                backgroundColor: `${tool.color}15`, alignSelf: "flex-start", marginBottom: 8 }}>
-                <Text style={{ color: tool.color, fontSize: 9, fontWeight: "700",
-                  textTransform: "uppercase", letterSpacing: 0.8 }}>
-                  {tool.tag}
+              {/* Text Info */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+                  <Text style={{ color: TP, fontSize: 16, fontWeight: "800", flex: 1 }} numberOfLines={1}>
+                    {tool.title}
+                  </Text>
+                  <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
+                    backgroundColor: `${tool.color}12`, marginLeft: 8 }}>
+                    <Text style={{ color: tool.color, fontSize: 9, fontWeight: "800",
+                      textTransform: "uppercase", letterSpacing: 1 }}>
+                      {tool.tag}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{ color: Colors.gray400, fontSize: 12, lineHeight: 18, paddingRight: 8 }} numberOfLines={2}>
+                  {tool.desc}
                 </Text>
               </View>
 
-              <Text style={{ color: TP, fontSize: 13, fontWeight: "800", marginBottom: 6 }}>
-                {tool.title}
-              </Text>
-              <Text style={{ color: Colors.gray400, fontSize: 11, lineHeight: 16 }}>
-                {tool.desc}
-              </Text>
-
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 14 }}>
-                <Text style={{ color: tool.color, fontSize: 11, fontWeight: "700", marginRight: 4 }}>
-                  Buka
-                </Text>
-                <Ionicons name="arrow-forward" size={13} color={tool.color} />
+              {/* Chevron */}
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: BG, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: BORDER }}>
+                <Ionicons name="chevron-forward" size={16} color={Colors.gray400} style={{ marginLeft: 2 }} />
               </View>
             </TouchableOpacity>
           ))}
