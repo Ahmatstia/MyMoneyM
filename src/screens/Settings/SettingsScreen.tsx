@@ -17,9 +17,13 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import LottieView from "lottie-react-native";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import * as DocumentPicker from "expo-document-picker";
 
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
+import { storageService } from "../../utils/storage";
 import { Colors } from "../../theme/theme";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
@@ -337,7 +341,7 @@ const TimePickerModal = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const SettingsScreen = () => {
-  const { clearAllData, debugStorage, state, setLoading } = useAppContext();
+  const { clearAllData, refreshData, debugStorage, state, setLoading } = useAppContext();
 
   const [notificationSettings, setNotificationSettings] = useState(DEFAULT_NOTIFICATION_SETTINGS);
   const [appSettings, setAppSettings]                   = useState(DEFAULT_APP_SETTINGS);
@@ -485,6 +489,95 @@ const SettingsScreen = () => {
         } 
       }
     ]);
+  };
+
+  const handleExportData = async () => {
+    try {
+      setLoading(true, "Menyiapkan data backup...");
+      // Ambil data langsung dari state AppContext
+      const dataToExport = JSON.stringify(state, null, 2);
+      
+      const fileName = `MyMoney_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, dataToExport, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      setLoading(false);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "application/json",
+          dialogTitle: "Simpan Backup MyMoney",
+          UTI: "public.json" // iOS specific
+        });
+      } else {
+        Alert.alert("Gagal", "Fitur berbagi tidak tersedia di perangkat ini.");
+      }
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", "Gagal melakukan ekspor data.");
+    }
+  };
+
+  const handleImportData = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/json", "*/*"],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const fileUri = result.assets[0].uri;
+        
+        Alert.alert(
+          "Konfirmasi Pulihkan Data",
+          "Data saat ini akan DITIMPA dengan data dari file backup. Pastikan ini adalah file backup MyMoney yang valid. Lanjutkan?",
+          [
+            { text: "Batal", style: "cancel" },
+            { 
+              text: "Pulihkan", 
+              style: "destructive", 
+              onPress: async () => {
+                setLoading(true, "Memulihkan data...");
+                try {
+                  const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+                    encoding: FileSystem.EncodingType.UTF8,
+                  });
+                  
+                  const importedData = JSON.parse(fileContent);
+                  
+                  // Validasi sederhana
+                  if (typeof importedData !== 'object' || !Array.isArray(importedData.transactions)) {
+                    throw new Error("Format file tidak valid.");
+                  }
+
+                  // Timpa data menggunakan storageService
+                  await storageService.saveData(importedData);
+                  
+                  // Refresh context
+                  await refreshData();
+                  
+                  setLoading(false);
+                  setTimeout(() => {
+                    Alert.alert("Berhasil", "Data berhasil dipulihkan!");
+                  }, 500);
+                  
+                } catch (error) {
+                  setLoading(false);
+                  setTimeout(() => {
+                    Alert.alert("Error", "File backup tidak valid atau rusak.");
+                  }, 500);
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert("Error", "Gagal membaca file.");
+    }
   };
 
   const formatTime = (timeStr: string) => {
@@ -698,15 +791,26 @@ const SettingsScreen = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "data" && (
           <>
-            <SectionHeader title="Opsi Database" />
+            <SectionHeader title="Backup & Restore (Offline)" />
             <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
-              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={() => Alert.alert("Export", "Akan datang.")} activeOpacity={0.7}>
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }} onPress={handleExportData} activeOpacity={0.7}>
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name="download-outline" size={18} color={ACCENT_COLOR} />
+                  <Ionicons name="cloud-upload-outline" size={18} color={ACCENT_COLOR} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Export ke CSV</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>Cetak mutasi & neraca</Text>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Cadangkan Data (Backup)</Text>
+                  <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Simpan seluruh data menjadi file .json yang aman</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={handleImportData} activeOpacity={0.7}>
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${SUCCESS_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="cloud-download-outline" size={18} color={SUCCESS_COLOR} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Pulihkan Data (Restore)</Text>
+                  <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Kembalikan data dari file backup .json sebelumnya</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
               </TouchableOpacity>
