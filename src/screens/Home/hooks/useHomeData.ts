@@ -13,6 +13,7 @@ import {
 } from "../../../utils/calculations";
 import { calculateTransactionAnalytics, calculateFinancialHealthScore } from "../../../utils/analytics";
 import { Colors } from "../../../theme/theme";
+import { DEFAULT_CATEGORIES, CategoryItem } from "../../../components/CategoryPickerModal";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -265,24 +266,11 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     else if (hour < 19) greeting = "Selamat Sore";
     else greeting = "Selamat Malam";
 
-    if (safeNumber(transactionAnalytics.savingsRate) >= 30) {
-      greeting += "! 💰 Tabungan Luar Biasa";
-    } else if (
-      safeNumber(state.balance) >
-      safeNumber(state.totalIncome) * 0.5
-    ) {
-      greeting += "! 👍 Saldo Sehat";
-    } else if (
-      state.budgets.length > 0 &&
-      state.budgets.every(
-        (b) => safeNumber(b.spent) <= safeNumber(b.limit)
-      )
-    ) {
-      greeting += "! ✅ Semua Anggaran Aman";
-    } else {
-      greeting += "! 📊";
+    if (state.userProfile?.name) {
+      return `${greeting}, ${state.userProfile.name} 👋`;
     }
-    return greeting;
+    
+    return `${greeting} 👋`;
   };
 
   const getSmartInsights = () => {
@@ -666,22 +654,18 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     return defaultIcon;
   };
 
-  const transactionIcons: Record<string, SafeIconName> = {
-    Makanan: "restaurant-outline",
-    Transportasi: "car-outline",
-    Belanja: "cart-outline",
-    Hiburan: "film-outline",
-    Kesehatan: "medical-outline",
-    Pendidikan: "school-outline",
-    Gaji: "cash-outline",
-    Investasi: "trending-up-outline",
-    Lainnya: "ellipsis-horizontal-outline",
+  const resolveCategory = (categoryName: string): CategoryItem => {
+    const all: CategoryItem[] = [
+      ...DEFAULT_CATEGORIES,
+      ...(state.customCategories || []).map((c) => ({
+        id: c.id, name: c.name, icon: c.icon, color: c.color,
+        isCustom: true as const, customId: c.id,
+      })),
+    ];
+    const found = all.find((c) => c.name === categoryName);
+    return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: Colors.gray400 };
   };
 
-  const getTransactionIcon = (category: string): SafeIconName => {
-    const icon = transactionIcons[category];
-    return icon ? getSafeIcon(icon) : "receipt-outline";
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return Colors.success;
@@ -707,7 +691,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     goalsPreview,
     quickStats,
     getCurrentDate,
-    getTransactionIcon,
+    resolveCategory,
     getScoreColor,
     getPersonalizedGreeting,
   };

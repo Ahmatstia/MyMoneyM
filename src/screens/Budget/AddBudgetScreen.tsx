@@ -23,6 +23,8 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+
 
 type AddBudgetScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -44,16 +46,6 @@ const WARNING_COLOR = Colors.warning;
 const ERROR_COLOR = Colors.error;
 const INFO_COLOR = Colors.info;
 
-const CATEGORIES = [
-  { id: "makanan", name: "Makanan", icon: "restaurant-outline" },
-  { id: "transportasi", name: "Transportasi", icon: "car-outline" },
-  { id: "belanja", name: "Belanja", icon: "cart-outline" },
-  { id: "hiburan", name: "Hiburan", icon: "film-outline" },
-  { id: "kesehatan", name: "Kesehatan", icon: "medical-outline" },
-  { id: "pendidikan", name: "Pendidikan", icon: "school-outline" },
-  { id: "tagihan", name: "Tagihan", icon: "document-text-outline" },
-  { id: "lainnya", name: "Lainnya", icon: "ellipsis-horizontal-outline" },
-] as const;
 
 // Helper untuk format tanggal
 const formatDateForDisplay = (dateStr: string): string => {
@@ -105,6 +97,7 @@ const AddBudgetScreen: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [limitError, setLimitError] = useState("");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   // State untuk modal kalender
   const [showCalendar, setShowCalendar] = useState(false);
@@ -439,21 +432,28 @@ const AddBudgetScreen: React.FC = () => {
     }
   };
 
-  // Render category icon
-  const renderCategoryIcon = (iconName: string) => {
-    const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-      "restaurant-outline": "restaurant-outline",
-      "car-outline": "car-outline",
-      "cart-outline": "cart-outline",
-      "film-outline": "film-outline",
-      "medical-outline": "medical-outline",
-      "school-outline": "school-outline",
-      "document-text-outline": "document-text-outline",
-      "ellipsis-horizontal-outline": "ellipsis-horizontal-outline",
-    };
+  // Render category icon — removed (now uses CategoryPickerModal)
 
-    return iconMap[iconName] || "wallet-outline";
-  };
+  // Resolve icon+color for the selected category
+  const resolvedCategory = React.useMemo((): CategoryItem | null => {
+    const all: CategoryItem[] = [
+      ...DEFAULT_CATEGORIES,
+      ...(state.customCategories || []).map((c) => ({
+        id: c.id, name: c.name, icon: c.icon, color: c.color,
+        isCustom: true as const, customId: c.id,
+      })),
+    ];
+    return all.find((c) => c.name === category) || null;
+  }, [category, state.customCategories]);
+
+
+  // Categories already in use (for budget duplicate detection)
+  const usedBudgetCategories = React.useMemo(() =>
+    isEditMode
+      ? state.budgets.filter((b) => b.id !== budgetData?.id).map((b) => b.category)
+      : state.budgets.map((b) => b.category),
+    [state.budgets, isEditMode, budgetData]
+  );
 
   return (
     <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
@@ -527,98 +527,50 @@ const AddBudgetScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Category Selection - KONSISTEN DENGAN TRANSAKSI */}
-        <View style={tw`mb-5`}>
-          <View style={tw`flex-row items-center justify-between mb-3`}>
-            <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>
-              Kategori
-            </Text>
-            {category && (
-              <Text style={[tw`text-xs`, { color: ACCENT_COLOR }]}>
-                ✓ {category}
-              </Text>
+        {/* Category Selection */}
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+            {category ? <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>✓ Terpilih</Text> : null}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setShowCategoryPicker(true)}
+            disabled={loading}
+            style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+          >
+            {resolvedCategory ? (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name={resolvedCategory.icon as any} size={16} color={resolvedCategory.color} />
+              </View>
+            ) : (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}12`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
+              </View>
             )}
-          </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                {category || "Pilih kategori..."}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+          </TouchableOpacity>
 
-          <View style={tw`flex-row flex-wrap -mx-1.5`}>
-            {CATEGORIES.map((cat) => {
-              const isUsed =
-                !isEditMode &&
-                state.budgets.some((b) => b.category === cat.name);
-
-              return (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={tw`w-1/4 px-1.5 mb-3`}
-                  onPress={() => !isUsed && setCategory(cat.name)}
-                  disabled={isUsed || loading}
-                >
-                  <View
-                    style={[
-                      tw`rounded-2xl items-center py-3`,
-                      category === cat.name
-                        ? {
-                            backgroundColor: ACCENT_COLOR + "20",
-                            borderWidth: 2,
-                            borderColor: ACCENT_COLOR,
-                          }
-                        : isUsed
-                        ? {
-                            backgroundColor: Colors.surfaceLight,
-                            opacity: 0.5,
-                          }
-                        : { backgroundColor: SURFACE_COLOR },
-                    ]}
-                  >
-                    <Ionicons
-                      name={renderCategoryIcon(cat.icon)}
-                      size={24}
-                      color={
-                        category === cat.name
-                          ? ACCENT_COLOR
-                          : isUsed
-                          ? Colors.textTertiary
-                          : TEXT_SECONDARY
-                      }
-                    />
-                    {isUsed && (
-                      <View
-                        style={[
-                          tw`absolute -top-1 -right-1 rounded-full w-4 h-4 items-center justify-center`,
-                          { backgroundColor: ERROR_COLOR },
-                        ]}
-                      >
-                        <Text style={tw`text-[8px] text-white`}>!</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      tw`text-xs mt-1.5 text-center`,
-                      category === cat.name
-                        ? { fontWeight: "600", color: TEXT_PRIMARY }
-                        : isUsed
-                        ? { color: Colors.textTertiary }
-                        : { color: TEXT_SECONDARY },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <CategoryPickerModal
+            visible={showCategoryPicker}
+            onClose={() => setShowCategoryPicker(false)}
+            onSelect={(name) => setCategory(name)}
+            selectedName={category}
+            usedBudgetCategories={usedBudgetCategories}
+          />
         </View>
 
-        {/* Period Selection - STYLE KONSISTEN */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        {/* Period Selection */}
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Jenis Periode
           </Text>
-          <View style={tw`flex-row flex-wrap gap-2`}>
+          <View style={tw`flex-row flex-wrap gap-3`}>
             {[
               { key: "weekly", label: "Mingguan", days: "7 hari" },
               { key: "monthly", label: "Bulanan", days: "30 hari" },
@@ -628,40 +580,18 @@ const AddBudgetScreen: React.FC = () => {
               <TouchableOpacity
                 key={p.key}
                 style={[
-                  tw`flex-1 min-w-[48%] rounded-2xl px-3 py-2.5 border`,
+                  tw`flex-1 min-w-[46%] rounded-xl px-3 py-3`,
                   period === p.key
-                    ? {
-                        backgroundColor: ACCENT_COLOR + "15",
-                        borderColor: ACCENT_COLOR,
-                      }
-                    : {
-                        backgroundColor: SURFACE_COLOR,
-                        borderColor: BORDER_COLOR,
-                      },
+                    ? { backgroundColor: ACCENT_COLOR + "15" }
+                    : { backgroundColor: SURFACE_COLOR },
                 ]}
                 onPress={() => setPeriod(p.key as any)}
                 disabled={loading}
               >
                 <View style={tw`items-center`}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={16}
-                    color={period === p.key ? ACCENT_COLOR : TEXT_SECONDARY}
-                  />
-                  <Text
-                    style={[
-                      tw`text-xs font-semibold mt-1.5`,
-                      period === p.key
-                        ? { color: ACCENT_COLOR }
-                        : { color: TEXT_SECONDARY },
-                    ]}
-                  >
+                  <Ionicons name="calendar-outline" size={16} color={period === p.key ? ACCENT_COLOR : TEXT_SECONDARY} />
+                  <Text style={[tw`text-xs font-bold mt-1`, period === p.key ? { color: ACCENT_COLOR } : { color: TEXT_SECONDARY }]}>
                     {p.label}
-                  </Text>
-                  <Text
-                    style={[tw`text-xs mt-0.5`, { color: Colors.textTertiary }]}
-                  >
-                    {p.days}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -669,38 +599,21 @@ const AddBudgetScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Quick Limit Suggestions - KONSISTEN DENGAN TRANSAKSI */}
+        {/* Quick Limit Suggestions */}
         {!limit && (
-          <View style={tw`mb-5`}>
-            <Text
-              style={[tw`text-xs font-medium mb-2`, { color: TEXT_SECONDARY }]}
-            >
+          <View style={tw`mb-4`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
               💡 Limit Cepat
             </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={tw`-mx-1`}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
               <View style={tw`flex-row px-1`}>
                 {QUICK_PRESETS.map((preset) => (
                   <TouchableOpacity
                     key={preset.label}
-                    style={[
-                      tw`rounded-2xl px-4 py-2 mr-2`,
-                      {
-                        backgroundColor: SURFACE_COLOR,
-                        borderWidth: 1,
-                        borderColor: BORDER_COLOR,
-                      },
-                    ]}
+                    style={[tw`rounded-xl px-4 py-2 mr-2`, { backgroundColor: SURFACE_COLOR }]}
                     onPress={() => setLimit(preset.value)}
                   >
-                    <Text
-                      style={[tw`text-xs font-medium`, { color: ACCENT_COLOR }]}
-                    >
-                      {preset.label}
-                    </Text>
+                    <Text style={[tw`text-xs font-bold`, { color: ACCENT_COLOR }]}>{preset.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -708,53 +621,29 @@ const AddBudgetScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Limit Input - KONSISTEN DENGAN TRANSAKSI */}
-        <View style={tw`mb-5`}>
-          <View style={tw`flex-row justify-between items-center mb-3`}>
-            <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>
+        {/* Limit Input */}
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row justify-between items-center mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
               Limit Anggaran
             </Text>
             <TouchableOpacity
-              style={tw`flex-row items-center gap-1`}
+              style={tw`flex-row items-center gap-1 mr-1`}
               onPress={() => setShowCalculator(!showCalculator)}
               disabled={loading}
             >
-              <Ionicons
-                name="calculator-outline"
-                size={16}
-                color={showCalculator ? ACCENT_COLOR : TEXT_SECONDARY}
-              />
-              <Text
-                style={[
-                  tw`text-xs`,
-                  showCalculator
-                    ? { color: ACCENT_COLOR, fontWeight: "500" }
-                    : { color: TEXT_SECONDARY },
-                ]}
-              >
-                {showCalculator ? "Tutup" : "Kalkulator"}
+              <Ionicons name="calculator-outline" size={12} color={showCalculator ? ACCENT_COLOR : TEXT_SECONDARY} />
+              <Text style={[tw`text-[10px] font-bold`, showCalculator ? { color: ACCENT_COLOR } : { color: TEXT_SECONDARY }]}>
+                {showCalculator ? "TUTUP" : "KALKULATOR"}
               </Text>
             </TouchableOpacity>
           </View>
 
-          <View
-            style={[
-              tw`rounded-2xl p-5 border`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderColor: limitError ? ERROR_COLOR : BORDER_COLOR,
-              },
-            ]}
-          >
+          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: limitError ? 1 : 0, borderColor: limitError ? ERROR_COLOR : "transparent" }]}>
             <View style={tw`flex-row items-center`}>
-              <Text style={[tw`text-xl mr-2`, { color: TEXT_SECONDARY }]}>
-                Rp
-              </Text>
+              <Text style={[tw`text-lg font-bold mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
               <TextInput
-                style={[
-                  tw`flex-1 text-2xl font-semibold`,
-                  { color: TEXT_PRIMARY },
-                ]}
+                style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
                 placeholderTextColor={Colors.textTertiary}
                 value={limit}
@@ -766,80 +655,36 @@ const AddBudgetScreen: React.FC = () => {
               />
             </View>
             {limit && !limitError ? (
-              <View style={tw`mt-3 pt-3 border-t border-gray-700`}>
-                <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                  {formatLimitDisplay()}
-                </Text>
-                {/* Tips Berdasarkan Limit */}
+              <View style={tw`mt-2 pt-2 border-t border-gray-700`}>
+                <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>{formatLimitDisplay()}</Text>
                 {parseFloat(limit) > 5000000 && (
-                  <View style={tw`flex-row items-center mt-2`}>
-                    <Ionicons
-                      name="bulb-outline"
-                      size={12}
-                      color={WARNING_COLOR}
-                    />
-                    <Text style={[tw`text-xs ml-1`, { color: WARNING_COLOR }]}>
-                      💰 Anggaran besar! Pastikan realistis
-                    </Text>
+                  <View style={tw`flex-row items-center mt-1`}>
+                    <Ionicons name="bulb-outline" size={10} color={WARNING_COLOR} />
+                    <Text style={[tw`text-[10px] ml-1`, { color: WARNING_COLOR }]}>💰 Anggaran besar!</Text>
                   </View>
                 )}
               </View>
             ) : null}
-            {limitError ? (
-              <Text style={[tw`text-xs mt-2`, { color: ERROR_COLOR }]}>
-                {limitError}
-              </Text>
-            ) : null}
+            {limitError ? <Text style={[tw`text-[10px] mt-1`, { color: ERROR_COLOR }]}>{limitError}</Text> : null}
           </View>
         </View>
 
-        {/* Budget Calculator - PERTAHANKAN FITUR DENGAN STYLE KONSISTEN */}
+        {/* Budget Calculator */}
         {showCalculator && (
-          <View
-            style={[
-              tw`rounded-2xl p-4 mb-5`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: BORDER_COLOR,
-              },
-            ]}
-          >
+          <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: SURFACE_COLOR }]}>
             <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text
-                style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}
-              >
-                🧮 Kalkulator Anggaran
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowCalculator(false)}
-                disabled={loading}
-              >
-                <Ionicons
-                  name="close-outline"
-                  size={20}
-                  color={TEXT_SECONDARY}
-                />
+              <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>🧮 Kalkulator Anggaran</Text>
+              <TouchableOpacity onPress={() => setShowCalculator(false)} disabled={loading}>
+                <Ionicons name="close-circle" size={20} color={TEXT_SECONDARY} />
               </TouchableOpacity>
             </View>
 
-            <Text style={[tw`text-xs mb-3`, { color: TEXT_SECONDARY }]}>
-              Masukkan jumlah untuk melihat perhitungan:
-            </Text>
+            <Text style={[tw`text-[10px] mb-2`, { color: TEXT_SECONDARY }]}>Masukkan jumlah untuk perhitungan:</Text>
 
-            <View
-              style={[
-                tw`flex-row items-center rounded-2xl px-4 py-3 mb-4`,
-                {
-                  backgroundColor: Colors.surfaceLight,
-                  borderWidth: 1,
-                  borderColor: BORDER_COLOR,
-                },
-              ]}
-            >
-              <Text style={[tw`mr-2`, { color: TEXT_PRIMARY }]}>Rp</Text>
+            <View style={[tw`flex-row items-center rounded-xl px-4 py-3 mb-4`, { backgroundColor: Colors.background }]}>
+              <Text style={[tw`mr-2 font-bold`, { color: TEXT_PRIMARY }]}>Rp</Text>
               <TextInput
-                style={[tw`flex-1 text-base`, { color: TEXT_PRIMARY }]}
+                style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="Contoh: 200000"
                 placeholderTextColor={Colors.textTertiary}
                 value={calculatorInput}
@@ -853,155 +698,52 @@ const AddBudgetScreen: React.FC = () => {
             {/* Calculator Results */}
             {calculatorResult && (
               <View style={tw`mb-4`}>
-                <Text
-                  style={[
-                    tw`text-xs font-medium mb-3`,
-                    { color: TEXT_SECONDARY },
-                  ]}
-                >
+                <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-3 ml-1`, { color: TEXT_SECONDARY }]}>
                   Perkiraan Pengeluaran:
                 </Text>
 
                 <View>
                   {/* Per Hari */}
                   <TouchableOpacity
-                    style={[
-                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
-                      {
-                        backgroundColor: Colors.surfaceLight,
-                        borderColor: BORDER_COLOR,
-                      },
-                    ]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: Colors.background }]}
                     onPress={() => applyCalculatorResult("daily")}
                     disabled={loading}
                   >
                     <View>
-                      <Text
-                        style={[
-                          tw`text-sm font-medium`,
-                          { color: TEXT_PRIMARY },
-                        ]}
-                      >
-                        Per Hari
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        Untuk pengeluaran harian
-                      </Text>
+                      <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>Per Hari (x30)</Text>
+                      <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{formatCurrency(calculatorResult.daily)}</Text>
                     </View>
-                    <View style={tw`items-end`}>
-                      <Text
-                        style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}
-                      >
-                        {formatCurrency(calculatorResult.daily)}
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        × 30 ={" "}
-                        {formatCurrency(
-                          safeNumber(calculatorResult.daily * 30)
-                        )}
-                      </Text>
-                    </View>
+                    <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>Pakai</Text>
                   </TouchableOpacity>
 
                   {/* Per Minggu */}
                   <TouchableOpacity
-                    style={[
-                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
-                      {
-                        backgroundColor: Colors.surfaceLight,
-                        borderColor: BORDER_COLOR,
-                      },
-                    ]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: Colors.background }]}
                     onPress={() => applyCalculatorResult("weekly")}
                     disabled={loading}
                   >
                     <View>
-                      <Text
-                        style={[
-                          tw`text-sm font-medium`,
-                          { color: TEXT_PRIMARY },
-                        ]}
-                      >
-                        Per Minggu
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        Untuk pengeluaran mingguan
-                      </Text>
+                      <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>Per Minggu (x4)</Text>
+                      <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{formatCurrency(calculatorResult.weekly)}</Text>
                     </View>
-                    <View style={tw`items-end`}>
-                      <Text
-                        style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}
-                      >
-                        {formatCurrency(calculatorResult.weekly)}
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        × 4 ={" "}
-                        {formatCurrency(
-                          safeNumber(calculatorResult.weekly * 4)
-                        )}
-                      </Text>
-                    </View>
+                    <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>Pakai</Text>
                   </TouchableOpacity>
 
                   {/* Per Bulan */}
                   <TouchableOpacity
-                    style={[
-                      tw`flex-row justify-between items-center p-4 rounded-2xl border mb-3`,
-                      {
-                        backgroundColor: Colors.surfaceLight,
-                        borderColor: BORDER_COLOR,
-                      },
-                    ]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl`, { backgroundColor: Colors.background }]}
                     onPress={() => applyCalculatorResult("monthly")}
                     disabled={loading}
                   >
                     <View>
-                      <Text
-                        style={[
-                          tw`text-sm font-medium`,
-                          { color: TEXT_PRIMARY },
-                        ]}
-                      >
-                        Per Bulan
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        Untuk pengeluaran bulanan
-                      </Text>
+                      <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>Per Bulan (Langsung)</Text>
+                      <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{formatCurrency(calculatorResult.monthly)}</Text>
                     </View>
-                    <View style={tw`items-end`}>
-                      <Text
-                        style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}
-                      >
-                        {formatCurrency(calculatorResult.monthly)}
-                      </Text>
-                      <Text
-                        style={[tw`text-xs mt-1`, { color: TEXT_SECONDARY }]}
-                      >
-                        ÷ 30 ={" "}
-                        {formatCurrency(
-                          safeNumber(calculatorResult.monthly / 30)
-                        )}
-                      </Text>
-                    </View>
+                    <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>Pakai</Text>
                   </TouchableOpacity>
                 </View>
 
-                <Text
-                  style={[
-                    tw`text-xs text-center mt-3`,
-                    { color: TEXT_SECONDARY },
-                  ]}
-                >
+                <Text style={[tw`text-[10px] text-center mt-3 font-medium`, { color: Colors.gray500 }]}>
                   Tap salah satu untuk mengatur sebagai limit
                 </Text>
               </View>
@@ -1122,181 +864,84 @@ const AddBudgetScreen: React.FC = () => {
 
         {/* Estimated Daily - KONSISTEN STYLE */}
         {limit && safeNumber(parseFloat(limit)) > 0 && (
-          <View
-            style={[
-              tw`rounded-2xl p-4 mb-5`,
-              {
-                backgroundColor: SUCCESS_COLOR + "10",
-                borderWidth: 1,
-                borderColor: SUCCESS_COLOR + "30",
-              },
-            ]}
-          >
-            <View style={tw`flex-row items-center mb-2`}>
-              <Ionicons
-                name="calculator-outline"
-                size={16}
-                color={SUCCESS_COLOR}
-              />
-              <Text
-                style={[
-                  tw`text-sm font-semibold ml-2`,
-                  { color: SUCCESS_COLOR },
-                ]}
-              >
-                Estimasi Pengeluaran Harian
-              </Text>
-            </View>
-
-            <View style={tw`flex-row justify-between items-center mb-3`}>
+          <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: SUCCESS_COLOR + "10" }]}>
+            <View style={tw`flex-row items-center justify-between`}>
               <View>
-                <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                  Per Hari
-                </Text>
-                <Text style={[tw`text-lg font-bold`, { color: SUCCESS_COLOR }]}>
-                  {formatCurrency(getDailyEstimate())}
-                </Text>
+                <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: SUCCESS_COLOR }]}>Estimasi Harian</Text>
+                <Text style={[tw`text-[13px] font-bold mt-1`, { color: SUCCESS_COLOR }]}>{formatCurrency(getDailyEstimate())} <Text style={tw`font-medium text-[10px]`}>/ hari</Text></Text>
               </View>
               <View style={tw`items-end`}>
-                <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                  Total Periode
-                </Text>
-                <Text style={[tw`text-lg font-bold`, { color: SUCCESS_COLOR }]}>
-                  {calculateTotalDays()} hari
-                </Text>
+                <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: SUCCESS_COLOR }]}>Total Hari</Text>
+                <Text style={[tw`text-[13px] font-bold mt-1`, { color: SUCCESS_COLOR }]}>{calculateTotalDays()}</Text>
               </View>
             </View>
-
-            <Text style={[tw`text-xs`, { color: SUCCESS_COLOR }]}>
-              Dengan limit {formatCurrency(safeNumber(parseFloat(limit)))} untuk{" "}
-              {calculateTotalDays()} hari
-            </Text>
           </View>
         )}
 
-        {/* Tips - PERBAIKI SPACE-Y */}
-        <View
-          style={[
-            tw`rounded-2xl p-4 mb-5`,
-            {
-              backgroundColor: INFO_COLOR + "10",
-              borderWidth: 1,
-              borderColor: INFO_COLOR + "30",
-            },
-          ]}
-        >
-          <View style={tw`flex-row items-center mb-3`}>
-            <Ionicons name="bulb-outline" size={16} color={INFO_COLOR} />
-            <Text
-              style={[tw`text-sm font-semibold ml-2`, { color: INFO_COLOR }]}
-            >
-              💡 Tips Menentukan Anggaran
-            </Text>
+        {/* Tips */}
+        <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: INFO_COLOR + "10" }]}>
+          <View style={tw`flex-row items-center mb-2`}>
+            <Ionicons name="bulb-outline" size={14} color={INFO_COLOR} />
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-widest ml-1`, { color: INFO_COLOR }]}>Tips Anggaran</Text>
           </View>
-
-          {/* GANTI space-y dengan margin manual */}
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Makanan</Text>: Rp
-            15.000-30.000/hari
-          </Text>
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Transportasi</Text>: Rp
-            10.000-20.000/hari
-          </Text>
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Hiburan</Text>: 10-20% dari
-            pendapatan
-          </Text>
-          <Text style={[tw`text-xs`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Tabungan</Text>: Minimal 20% dari
-            pendapatan
-          </Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Makanan</Text>: Rp 15-30k/hari</Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Transport</Text>: Rp 10-20k/hari</Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Hiburan</Text>: 10-20% gaji</Text>
+          <Text style={[tw`text-[11px]`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Tabungan</Text>: Min 20% gaji</Text>
         </View>
 
-        {/* Action Buttons - KONSISTEN DENGAN TRANSAKSI */}
-        <View style={tw`flex-row gap-3 mt-3`}>
-          {/* Batal Button */}
+        {/* Action Buttons */}
+        <View style={tw`flex-row gap-3 mt-2`}>
           <TouchableOpacity
-            style={[
-              tw`flex-1 rounded-2xl py-4 items-center border-2`,
-              { borderColor: BORDER_COLOR, backgroundColor: SURFACE_COLOR },
-            ]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
-              Batal
-            </Text>
+            <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
           </TouchableOpacity>
 
-          {/* Simpan Button */}
           <TouchableOpacity
-            style={[
-              tw`flex-1 rounded-2xl py-4 items-center`,
-              { backgroundColor: ACCENT_COLOR, opacity: loading ? 0.7 : 1 },
-            ]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: ACCENT_COLOR, opacity: (!category || !limit || loading) ? 0.7 : 1 }]}
             onPress={handleSubmit}
             disabled={!category || !limit || loading}
           >
-            <Text style={tw`text-white text-sm font-semibold`}>
+            <Text style={tw`text-white text-[13px] font-bold`}>
               {loading ? "Menyimpan..." : isEditMode ? "Simpan" : "Tambah"}
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Calendar Modal - KONSISTEN DENGAN TRANSAKSI */}
+      {/* Calendar Modal */}
       <Modal
         visible={showCalendar}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowCalendar(false)}
       >
-        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View
-            style={[tw`rounded-t-3xl p-5`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
-                Pilih Tanggal {calendarMode === "start" ? "Mulai" : "Akhir"}
-              </Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={TEXT_SECONDARY}
-                />
-              </TouchableOpacity>
-            </View>
+        <TouchableOpacity
+          style={tw`flex-1 justify-center px-4 bg-black/60`}
+          activeOpacity={1}
+          onPress={() => setShowCalendar(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl overflow-hidden`, { backgroundColor: SURFACE_COLOR }]}>
             <Calendar
+              current={calendarMode === "start" ? startDate : endDate}
               onDayPress={handleDateSelect}
-              markedDates={{
-                [calendarMode === "start" ? startDate : endDate]: {
-                  selected: true,
-                  selectedColor: ACCENT_COLOR,
-                  selectedTextColor: "#FFFFFF",
-                },
-              }}
               theme={{
-                backgroundColor: SURFACE_COLOR,
                 calendarBackground: SURFACE_COLOR,
                 textSectionTitleColor: TEXT_SECONDARY,
-                selectedDayBackgroundColor: ACCENT_COLOR,
+                selectedDayBackgroundColor: PRIMARY_COLOR,
                 selectedDayTextColor: "#FFFFFF",
-                todayTextColor: ACCENT_COLOR,
+                todayTextColor: PRIMARY_COLOR,
                 dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.textTertiary,
-                dotColor: ACCENT_COLOR,
-                selectedDotColor: "#FFFFFF",
-                arrowColor: ACCENT_COLOR,
-                monthTextColor: ACCENT_COLOR,
-                textMonthFontWeight: "bold",
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
+                textDisabledColor: Colors.gray600,
+                monthTextColor: TEXT_PRIMARY,
+                arrowColor: PRIMARY_COLOR,
               }}
             />
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );

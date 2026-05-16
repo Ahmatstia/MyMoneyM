@@ -133,48 +133,41 @@ const SectionLabel = ({
 
 // ─── HEALTH SCORE RING ───────────────────────────────────────────────────────
 const HealthRing = ({ score }: { score: number }) => {
-  const r = 44;
+  const r = 24;
   const circ = 2 * Math.PI * r;
-  const progress = (score / 100) * circ;
   const color = score >= 75 ? C.emerald : score >= 50 ? C.gold : C.rose;
-  const label = score >= 75 ? "Sangat Baik" : score >= 50 ? "Cukup Baik" : "Perlu Perhatian";
+  const label = score >= 75 ? "Sangat Baik" : score >= 50 ? "Cukup Baik" : "Perhatian";
 
   return (
     <View style={tw`items-center justify-center`}>
       {/* SVG-like ring using border radius trick */}
-      <View style={tw`relative w-24 h-24 items-center justify-center`}>
+      <View style={tw`relative w-14 h-14 items-center justify-center`}>
         {/* Background ring */}
         <View
           style={[
-            tw`absolute w-24 h-24 rounded-full`,
-            { borderWidth: 5, borderColor: "rgba(255,255,255,0.05)" },
+            tw`absolute w-14 h-14 rounded-full`,
+            { borderWidth: 3, borderColor: "rgba(255,255,255,0.05)" },
           ]}
         />
         {/* Progress arc — approximated via rotation */}
         <View
           style={[
-            tw`absolute w-24 h-24 rounded-full`,
+            tw`absolute w-14 h-14 rounded-full`,
             {
-              borderWidth: 5,
+              borderWidth: 3,
               borderColor: color,
               borderTopColor: "transparent",
               borderRightColor: score > 50 ? color : "transparent",
               transform: [{ rotate: `-135deg` }],
-              shadowColor: color,
-              shadowOpacity: 0.6,
-              shadowRadius: 8,
             },
           ]}
         />
         {/* Center content */}
         <View style={tw`items-center`}>
-          <Text style={[tw`text-2xl font-black`, { color: C.text1 }]}>{score}</Text>
-          <Text style={[tw`text-[8px] font-black uppercase tracking-widest`, { color }]}>
-            SCORE
-          </Text>
+          <Text style={[tw`text-sm font-black`, { color: C.text1 }]}>{score}</Text>
         </View>
       </View>
-      <Text style={[tw`text-[10px] font-bold mt-2`, { color }]}>{label}</Text>
+      <Text style={[tw`text-[9px] font-bold mt-1.5`, { color }]}>{label}</Text>
     </View>
   );
 };
@@ -185,14 +178,14 @@ const StreakBadge = ({ streak }: { streak: number }) => (
     <LinearGradient
       colors={["rgba(245,158,11,0.2)", "rgba(245,158,11,0.05)"]}
       style={[
-        tw`w-16 h-16 rounded-2xl items-center justify-center mb-1.5`,
+        tw`w-10 h-10 rounded-xl items-center justify-center mb-1`,
         { borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
       ]}
     >
-      <Text style={tw`text-2xl`}>🔥</Text>
+      <Text style={tw`text-lg`}>🔥</Text>
     </LinearGradient>
-    <Text style={[tw`text-xl font-black`, { color: C.gold }]}>{streak}</Text>
-    <Text style={[tw`text-[9px] font-bold uppercase tracking-wider`, { color: C.text3 }]}>
+    <Text style={[tw`text-sm font-black`, { color: C.gold }]}>{streak}</Text>
+    <Text style={[tw`text-[8px] font-bold uppercase tracking-wider`, { color: C.text3 }]}>
       Day Streak
     </Text>
   </View>
@@ -206,7 +199,7 @@ const AchievementCard = ({
 }) => (
   <View
     style={[
-      tw`w-30 mr-3 rounded-2xl p-3.5 items-center`,
+      tw`w-28 mr-2.5 rounded-2xl p-3 items-center`,
       {
         backgroundColor: achievement.unlocked
           ? `${achievement.color}18`
@@ -220,7 +213,7 @@ const AchievementCard = ({
   >
     <View
       style={[
-        tw`w-11 h-11 rounded-xl items-center justify-center mb-2`,
+        tw`w-9 h-9 rounded-xl items-center justify-center mb-2`,
         {
           backgroundColor: achievement.unlocked
             ? `${achievement.color}25`
@@ -230,7 +223,7 @@ const AchievementCard = ({
     >
       <Ionicons
         name={achievement.icon as any}
-        size={20}
+        size={16}
         color={achievement.unlocked ? achievement.color : C.text3}
       />
       {!achievement.unlocked && (
@@ -246,7 +239,7 @@ const AchievementCard = ({
     </View>
     <Text
       style={[
-        tw`text-[10px] font-black text-center leading-tight`,
+        tw`text-[9px] font-black text-center leading-tight`,
         { color: achievement.unlocked ? C.text1 : C.text3 },
       ]}
       numberOfLines={1}
@@ -254,7 +247,7 @@ const AchievementCard = ({
       {achievement.label}
     </Text>
     <Text
-      style={[tw`text-[8px] text-center mt-1`, { color: C.text3 }]}
+      style={[tw`text-[7px] text-center mt-0.5`, { color: C.text3 }]}
       numberOfLines={2}
     >
       {achievement.desc}
@@ -263,13 +256,13 @@ const AchievementCard = ({
     {!achievement.unlocked && achievement.progress !== undefined && (
       <View
         style={[
-          tw`w-full mt-2 rounded-full overflow-hidden`,
-          { height: 3, backgroundColor: "rgba(255,255,255,0.06)" },
+          tw`w-full mt-1.5 rounded-full overflow-hidden`,
+          { height: 2.5, backgroundColor: "rgba(255,255,255,0.06)" },
         ]}
       >
         <View
           style={[
-            { height: 3, borderRadius: 99, backgroundColor: achievement.color, width: `${achievement.progress}%` },
+            { height: 2.5, borderRadius: 99, backgroundColor: achievement.color, width: `${achievement.progress}%` },
           ]}
         />
       </View>
@@ -293,7 +286,7 @@ const QuickStat = ({
 }) => (
   <View
     style={[
-      tw`flex-1 rounded-2xl p-4`,
+      tw`flex-1 rounded-[14px] p-3 flex-row items-center`,
       {
         backgroundColor: `${color}0E`,
         borderWidth: 1,
@@ -303,17 +296,16 @@ const QuickStat = ({
   >
     <View
       style={[
-        tw`w-8 h-8 rounded-xl items-center justify-center mb-3`,
+        tw`w-8 h-8 rounded-lg items-center justify-center mr-2.5`,
         { backgroundColor: `${color}20` },
       ]}
     >
-      <Ionicons name={icon as any} size={15} color={color} />
+      <Ionicons name={icon as any} size={14} color={color} />
     </View>
-    <Text style={[tw`text-xl font-black`, { color: C.text1 }]}>{value}</Text>
-    {sub && (
-      <Text style={[tw`text-[8px] font-bold uppercase`, { color }]}>{sub}</Text>
-    )}
-    <Text style={[tw`text-[9px] mt-0.5`, { color: C.text3 }]}>{label}</Text>
+    <View style={tw`flex-1`}>
+      <Text style={[tw`text-sm font-black`, { color: C.text1 }]} numberOfLines={1}>{value}</Text>
+      <Text style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]} numberOfLines={1}>{label}</Text>
+    </View>
   </View>
 );
 
@@ -337,61 +329,45 @@ const MonthlyPulseCard = ({
       : { emoji: "🚀", label: "Mode Hyper", color: C.gold };
 
   return (
-    <LinearGradient
-      colors={[`${vibe.color}18`, "rgba(8,12,20,0.9)"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <View
       style={[
-        tw`rounded-3xl p-5`,
-        { borderWidth: 1, borderColor: `${vibe.color}30` },
+        tw`rounded-2xl p-3.5 flex-row items-center`,
+        { 
+          backgroundColor: `${vibe.color}10`, 
+          borderWidth: 1, 
+          borderColor: `${vibe.color}30` 
+        },
       ]}
     >
-      <View style={tw`flex-row items-center justify-between mb-4`}>
-        <View>
-          <Text style={[tw`text-[10px] font-black uppercase tracking-widest`, { color: C.text3 }]}>
-            Monthly Pulse
-          </Text>
-          <View style={tw`flex-row items-center gap-2 mt-1`}>
-            <Text style={tw`text-2xl`}>{vibe.emoji}</Text>
-            <Text style={[tw`text-base font-black`, { color: vibe.color }]}>
-              {vibe.label}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            tw`px-3 py-1.5 rounded-full`,
-            { backgroundColor: `${vibe.color}20`, borderWidth: 1, borderColor: `${vibe.color}35` },
-          ]}
-        >
-          <Text style={[tw`text-[10px] font-black`, { color: vibe.color }]}>
+      <View style={tw`flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3 mr-3`}>
+        <View style={tw`flex-row items-center justify-between mb-1.5`}>
+          <Text style={[tw`text-[8px] font-black uppercase tracking-widest`, { color: C.text3 }]}>
             {format(new Date(), "MMM yyyy", { locale: id })}
+          </Text>
+        </View>
+        <View style={tw`flex-row items-center gap-1.5`}>
+          <Text style={tw`text-lg`}>{vibe.emoji}</Text>
+          <Text style={[tw`text-sm font-black`, { color: vibe.color }]}>
+            {vibe.label}
           </Text>
         </View>
       </View>
 
-      <View style={tw`flex-row gap-3`}>
-        {[
-          { label: "Transaksi", val: totalTx.toString(), icon: "flash-outline" },
-          { label: "Hari Aktif", val: activeDays.toString(), icon: "calendar-outline" },
-          { label: "Kategori", val: topCategory || "—", icon: "grid-outline" },
-        ].map((item, i) => (
-          <View
-            key={i}
-            style={[
-              tw`flex-1 rounded-2xl p-3 items-center`,
-              { backgroundColor: "rgba(255,255,255,0.04)" },
-            ]}
-          >
-            <Ionicons name={item.icon as any} size={13} color={vibe.color} />
-            <Text style={[tw`text-sm font-black mt-1`, { color: C.text1 }]} numberOfLines={1}>
-              {item.val}
-            </Text>
-            <Text style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]}>{item.label}</Text>
-          </View>
-        ))}
+      <View style={tw`flex-1 flex-row flex-wrap gap-y-2`}>
+        <View style={tw`w-1/2`}>
+          <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Transaksi</Text>
+          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>{totalTx}</Text>
+        </View>
+        <View style={tw`w-1/2`}>
+          <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Hari Aktif</Text>
+          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>{activeDays}</Text>
+        </View>
+        <View style={tw`w-full`}>
+          <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Kategori Teratas</Text>
+          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]} numberOfLines={1}>{topCategory || "—"}</Text>
+        </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -698,26 +674,21 @@ const ProfileScreen: React.FC = () => {
                 ? { uri: userProfile.coverImage }
                 : require("../../../assets/bg.png")
             }
-            style={tw`h-64 justify-end`}
-            imageStyle={{ opacity: 0.45 }}
+            style={tw`h-56 justify-end`}
+            imageStyle={{ opacity: 1 }}
           >
-            {/* Layered gradients for depth */}
+            {/* Smooth transition di bagian paling bawah saja */}
             <LinearGradient
-              colors={["transparent", "rgba(8,12,20,0.6)", C.bg]}
-              style={tw`absolute inset-0`}
-            />
-            {/* Subtle vignette */}
-            <LinearGradient
-              colors={["rgba(8,12,20,0.4)", "transparent", "transparent"]}
+              colors={["transparent", "transparent", C.bg]}
               style={tw`absolute inset-0`}
             />
 
             {/* Cover edit button */}
-            <View style={tw`absolute top-4 right-5`}>
+            <View style={tw`absolute top-4 right-4`}>
               <TouchableOpacity
                 onPress={() => pickImage("cover")}
                 style={[
-                  tw`flex-row items-center gap-1.5 px-3 py-2 rounded-full`,
+                  tw`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full`,
                   {
                     backgroundColor: "rgba(255,255,255,0.1)",
                     borderWidth: 1,
@@ -725,21 +696,21 @@ const ProfileScreen: React.FC = () => {
                   },
                 ]}
               >
-                <Ionicons name="camera" size={13} color="rgba(255,255,255,0.7)" />
-                <Text style={tw`text-white/70 text-[10px] font-bold`}>Edit Cover</Text>
+                <Ionicons name="camera" size={12} color="rgba(255,255,255,0.7)" />
+                <Text style={tw`text-white/70 text-[9px] font-bold`}>Edit Cover</Text>
               </TouchableOpacity>
             </View>
           </ImageBackground>
 
           {/* Profile info — sits below the hero, overlapping slightly */}
-          <View style={[tw`px-6 pt-0 pb-6`, { backgroundColor: C.bg }]}>
+          <View style={[tw`px-5 pt-0 pb-4`, { backgroundColor: C.bg }]}>
             {/* Avatar row */}
-            <View style={tw`flex-row items-end -mt-14 mb-5`}>
+            <View style={tw`flex-row items-end -mt-10 mb-4`}>
               {/* Avatar */}
               <View style={tw`relative`}>
                 <View
                   style={[
-                    tw`w-24 h-24 rounded-3xl overflow-hidden`,
+                    tw`w-20 h-20 rounded-[24px] overflow-hidden`,
                     {
                       borderWidth: 3,
                       borderColor: C.bg,
@@ -761,7 +732,7 @@ const ProfileScreen: React.FC = () => {
                     />
                   ) : (
                     <View style={tw`flex-1 items-center justify-center`}>
-                      <Ionicons name="person" size={36} color={C.text3} />
+                      <Ionicons name="person" size={28} color={C.text3} />
                     </View>
                   )}
                 </View>
@@ -769,15 +740,15 @@ const ProfileScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => pickImage("avatar")}
                   style={[
-                    tw`absolute -bottom-1 -right-1 w-8 h-8 rounded-xl items-center justify-center`,
+                    tw`absolute -bottom-1 -right-1 w-7 h-7 rounded-lg items-center justify-center`,
                     {
                       backgroundColor: C.cyan,
-                      borderWidth: 2.5,
+                      borderWidth: 2,
                       borderColor: C.bg,
                     },
                   ]}
                 >
-                  <Ionicons name="camera" size={13} color={C.bg} />
+                  <Ionicons name="camera" size={11} color={C.bg} />
                 </TouchableOpacity>
               </View>
 
@@ -786,7 +757,7 @@ const ProfileScreen: React.FC = () => {
                 <View style={tw`flex-row gap-2`}>
                   <View
                     style={[
-                      tw`px-2.5 py-1 rounded-full flex-row items-center gap-1`,
+                      tw`px-2 py-0.5 rounded-full flex-row items-center gap-1`,
                       {
                         backgroundColor: C.cyanDim,
                         borderWidth: 1,
@@ -802,7 +773,7 @@ const ProfileScreen: React.FC = () => {
                     />
                     <Text
                       style={[
-                        tw`text-[9px] font-black uppercase tracking-wider`,
+                        tw`text-[8px] font-black uppercase tracking-wider`,
                         { color: C.cyan },
                       ]}
                     >
@@ -811,7 +782,7 @@ const ProfileScreen: React.FC = () => {
                   </View>
                   <View
                     style={[
-                      tw`px-2.5 py-1 rounded-full`,
+                      tw`px-2 py-0.5 rounded-full`,
                       {
                         backgroundColor: "rgba(255,255,255,0.05)",
                         borderWidth: 1,
@@ -819,7 +790,7 @@ const ProfileScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    <Text style={[tw`text-[9px] font-bold`, { color: C.text3 }]}>
+                    <Text style={[tw`text-[8px] font-bold`, { color: C.text3 }]}>
                       MM-2026
                     </Text>
                   </View>
@@ -828,9 +799,9 @@ const ProfileScreen: React.FC = () => {
             </View>
 
             {/* Name row */}
-            <View style={tw`flex-row items-center gap-3 mb-1`}>
+            <View style={tw`flex-row items-center gap-2 mb-0.5`}>
               <Text
-                style={[tw`text-2xl font-black flex-1`, { color: C.text1 }]}
+                style={[tw`text-xl font-black flex-1`, { color: C.text1 }]}
                 numberOfLines={1}
               >
                 {userProfile.name}
@@ -841,7 +812,7 @@ const ProfileScreen: React.FC = () => {
                   setIsEditModalVisible(true);
                 }}
                 style={[
-                  tw`w-9 h-9 rounded-2xl items-center justify-center`,
+                  tw`w-8 h-8 rounded-xl items-center justify-center`,
                   {
                     backgroundColor: "rgba(255,255,255,0.05)",
                     borderWidth: 1,
@@ -849,10 +820,10 @@ const ProfileScreen: React.FC = () => {
                   },
                 ]}
               >
-                <Ionicons name="pencil" size={14} color={C.text2} />
+                <Ionicons name="pencil" size={12} color={C.text2} />
               </TouchableOpacity>
             </View>
-            <Text style={[tw`text-xs`, { color: C.text3 }]}>
+            <Text style={[tw`text-[10px]`, { color: C.text3 }]}>
               Anggota sejak 2026
             </Text>
           </View>
@@ -865,7 +836,7 @@ const ProfileScreen: React.FC = () => {
           <SectionLabel title="Ikhtisar" icon="pulse" />
           <View
             style={[
-              tw`rounded-3xl p-5`,
+              tw`rounded-2xl p-4`,
               {
                 backgroundColor: C.card,
                 borderWidth: 1,
@@ -898,17 +869,17 @@ const ProfileScreen: React.FC = () => {
                 <LinearGradient
                   colors={[C.emeraldDim, "rgba(16,185,129,0.03)"]}
                   style={[
-                    tw`w-16 h-16 rounded-2xl items-center justify-center mb-1.5`,
+                    tw`w-10 h-10 rounded-xl items-center justify-center mb-1`,
                     { borderWidth: 1, borderColor: "rgba(16,185,129,0.25)" },
                   ]}
                 >
-                  <Text style={tw`text-xl`}>💰</Text>
+                  <Text style={tw`text-lg`}>💰</Text>
                 </LinearGradient>
-                <Text style={[tw`text-xl font-black`, { color: C.emerald }]}>
+                <Text style={[tw`text-sm font-black`, { color: C.emerald }]}>
                   {uiData.savingsRatio}%
                 </Text>
                 <Text
-                  style={[tw`text-[9px] font-bold uppercase tracking-wider`, { color: C.text3 }]}
+                  style={[tw`text-[8px] font-bold uppercase tracking-wider`, { color: C.text3 }]}
                 >
                   Rasio %
                 </Text>
@@ -918,13 +889,13 @@ const ProfileScreen: React.FC = () => {
             {/* Mini tip */}
             <View
               style={[
-                tw`mt-4 px-4 py-3 rounded-2xl flex-row items-center gap-2.5`,
+                tw`mt-3 px-3 py-2 rounded-xl flex-row items-center gap-2.5`,
                 { backgroundColor: "rgba(255,255,255,0.03)" },
               ]}
             >
-              <Ionicons name="information-circle" size={14} color={C.text3} />
-              <Text style={[tw`text-[10px] flex-1 leading-4`, { color: C.text3 }]}>
-                Skor konsistensi dari pencatatan harian · Rasio tabungan = (Pemasukan − Pengeluaran) ÷ Pemasukan
+              <Ionicons name="information-circle" size={12} color={C.text3} />
+              <Text style={[tw`text-[9px] flex-1 leading-3`, { color: C.text3 }]}>
+                Skor dari konsistensi · Rasio tabungan = (In - Out) ÷ In
               </Text>
             </View>
           </View>
@@ -987,7 +958,7 @@ const ProfileScreen: React.FC = () => {
           />
           <View
             style={[
-              tw`rounded-3xl p-5`,
+              tw`rounded-2xl p-4`,
               {
                 backgroundColor: C.card,
                 borderWidth: 1,
@@ -996,15 +967,15 @@ const ProfileScreen: React.FC = () => {
             ]}
           >
             {/* Nav */}
-            <View style={tw`flex-row items-center justify-between mb-6`}>
+            <View style={tw`flex-row items-center justify-between mb-4`}>
               <TouchableOpacity
                 onPress={prevMonth}
                 style={[
-                  tw`w-9 h-9 rounded-2xl items-center justify-center`,
+                  tw`w-8 h-8 rounded-xl items-center justify-center`,
                   { backgroundColor: "rgba(255,255,255,0.05)" },
                 ]}
               >
-                <Ionicons name="chevron-back" size={16} color={C.cyan} />
+                <Ionicons name="chevron-back" size={14} color={C.cyan} />
               </TouchableOpacity>
 
               <View style={tw`items-center`}>
@@ -1012,29 +983,29 @@ const ProfileScreen: React.FC = () => {
                   {format(currentMonth, "MMMM yyyy", { locale: id })}
                 </Text>
                 <Text
-                  style={[tw`text-[9px] font-bold uppercase tracking-widest mt-0.5`, { color: C.text3 }]}
+                  style={[tw`text-[8px] font-bold uppercase tracking-widest mt-0.5`, { color: C.text3 }]}
                 >
-                  {monthTotalActivity} entri dicatat
+                  {monthTotalActivity} entri
                 </Text>
               </View>
 
               <TouchableOpacity
                 onPress={nextMonth}
                 style={[
-                  tw`w-9 h-9 rounded-2xl items-center justify-center`,
+                  tw`w-8 h-8 rounded-xl items-center justify-center`,
                   { backgroundColor: "rgba(255,255,255,0.05)" },
                 ]}
               >
-                <Ionicons name="chevron-forward" size={16} color={C.cyan} />
+                <Ionicons name="chevron-forward" size={14} color={C.cyan} />
               </TouchableOpacity>
             </View>
 
             {/* Day labels */}
-            <View style={tw`flex-row justify-center gap-2 mb-4`}>
+            <View style={tw`flex-row justify-center gap-1.5 mb-3`}>
               {["S", "S", "R", "K", "J", "S", "M"].map((d, i) => (
-                <View key={i} style={tw`w-8 items-center`}>
+                <View key={i} style={tw`w-6 items-center`}>
                   <Text
-                    style={[tw`text-[9px] font-extrabold uppercase`, { color: C.text3 }]}
+                    style={[tw`text-[8px] font-extrabold uppercase`, { color: C.text3 }]}
                   >
                     {d}
                   </Text>
@@ -1052,19 +1023,19 @@ const ProfileScreen: React.FC = () => {
                   rows.push(week);
                 }
                 return rows.map((week, wIdx) => (
-                  <View key={wIdx} style={tw`flex-row justify-center gap-2 mb-2`}>
+                  <View key={wIdx} style={tw`flex-row justify-center gap-1.5 mb-1.5`}>
                     {week.map((day, dIdx) => {
                       const isT = day && isToday(day.date);
                       return (
                         <View
                           key={dIdx}
                           style={[
-                            tw`w-8 h-8 rounded-xl items-center justify-center`,
+                            tw`w-6 h-6 rounded-lg items-center justify-center`,
                             {
                               backgroundColor: day
                                 ? getActivityColor(day.count)
                                 : "transparent",
-                              borderWidth: isT ? 1.5 : 0,
+                              borderWidth: isT ? 1 : 0,
                               borderColor: isT ? C.cyan : "transparent",
                             },
                           ]}
@@ -1072,7 +1043,7 @@ const ProfileScreen: React.FC = () => {
                           {day && (
                             <Text
                               style={[
-                                tw`text-[9px] font-bold`,
+                                tw`text-[8px] font-bold`,
                                 {
                                   color:
                                     day.count >= 4
@@ -1095,21 +1066,21 @@ const ProfileScreen: React.FC = () => {
             </View>
 
             {/* Legend */}
-            <View style={tw`flex-row items-center justify-center gap-3 mt-5`}>
-              <Text style={[tw`text-[8px] font-bold mr-1`, { color: C.text3 }]}>
-                Lebih sedikit
+            <View style={tw`flex-row items-center justify-center gap-2.5 mt-4`}>
+              <Text style={[tw`text-[7px] font-bold mr-1`, { color: C.text3 }]}>
+                Sedikit
               </Text>
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <View
                   key={i}
                   style={[
-                    tw`w-3 h-3 rounded`,
+                    tw`w-2 h-2 rounded-sm`,
                     { backgroundColor: getActivityColor(i) },
                   ]}
                 />
               ))}
-              <Text style={[tw`text-[8px] font-bold ml-1`, { color: C.text3 }]}>
-                Lebih banyak
+              <Text style={[tw`text-[7px] font-bold ml-1`, { color: C.text3 }]}>
+                Banyak
               </Text>
             </View>
           </View>

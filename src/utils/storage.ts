@@ -3,11 +3,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AppState,
   Transaction,
+  SubTransaction,
   Budget,
   Savings,
   SavingsTransaction,
   Note,
   Debt,
+  CustomCategory,
 } from "../types";
 import { calculateTotals } from "./calculations";
 
@@ -22,6 +24,24 @@ const STORAGE_KEYS = {
 // ======================================================
 // SIMPLE VALIDATION FUNCTIONS - NO userId
 // ======================================================
+const validateSubTransaction = (obj: any): SubTransaction | null => {
+  if (!obj || typeof obj !== "object") return null;
+  try {
+    if (typeof obj.id !== "string" || typeof obj.name !== "string" || typeof obj.amount !== "number") {
+      return null;
+    }
+    return {
+      id: obj.id,
+      name: obj.name.trim() || "Item",
+      amount: Math.max(0, obj.amount),
+      qty: typeof obj.qty === "number" && obj.qty > 0 ? obj.qty : 1,
+      note: obj.note || undefined,
+    };
+  } catch {
+    return null;
+  }
+};
+
 const validateTransaction = (obj: any): Transaction | null => {
   if (!obj || typeof obj !== "object") return null;
 
@@ -35,6 +55,12 @@ const validateTransaction = (obj: any): Transaction | null => {
       return null;
     }
 
+    const subTransactions: SubTransaction[] | undefined = Array.isArray(obj.subTransactions)
+      ? (obj.subTransactions
+          .map((s: any) => validateSubTransaction(s))
+          .filter((s: SubTransaction | null): s is SubTransaction => s !== null) as SubTransaction[])
+      : undefined;
+
     return {
       id: obj.id,
       amount: Math.max(0, obj.amount),
@@ -43,7 +69,8 @@ const validateTransaction = (obj: any): Transaction | null => {
       description: obj.description || "",
       date: obj.date || new Date().toISOString().split("T")[0],
       createdAt: obj.createdAt || new Date().toISOString(),
-      cyclePeriod: typeof obj.cyclePeriod === 'number' ? obj.cyclePeriod : undefined,
+      cyclePeriod: typeof obj.cyclePeriod === "number" ? obj.cyclePeriod : undefined,
+      subTransactions: subTransactions && subTransactions.length > 0 ? subTransactions : undefined,
     };
   } catch (error) {
 
@@ -257,7 +284,32 @@ const validateDebt = (obj: any): Debt | null => {
   }
 };
 
+const validateCustomCategory = (obj: any): CustomCategory | null => {
+  if (!obj || typeof obj !== "object") return null;
+  try {
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.name !== "string" ||
+      typeof obj.icon !== "string" ||
+      typeof obj.color !== "string"
+    ) {
+      return null;
+    }
+    return {
+      id: obj.id,
+      name: obj.name.trim().substring(0, 30),
+      icon: obj.icon,
+      color: obj.color,
+      isCustom: true,
+      createdAt: obj.createdAt || new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+};
+
 // ======================================================
+
 // HELPER FUNCTIONS
 // =======================================================================
 // BUG-11 FIX: Accept YYYY-MM-DD and YYYY-M-D formats
@@ -349,6 +401,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
             savingsTransactions,
             notes,
             debts: [],
+            customCategories: [],
             userProfile: { name: "MyMoney" },
             ...totals,
           };
@@ -430,6 +483,12 @@ export const storageService = {
             .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
+      const validatedCustomCategories: CustomCategory[] = data.customCategories
+        ? data.customCategories
+            .map((c: any) => validateCustomCategory(c))
+            .filter((c: CustomCategory | null): c is CustomCategory => c !== null)
+        : [];
+
       const totals = calculateTotals(validatedTransactions);
 
       const appData: AppState = {
@@ -439,6 +498,7 @@ export const storageService = {
         savingsTransactions: validatedSavingsTransactions,
         notes: validatedNotes,
         debts: validatedDebts,
+        customCategories: validatedCustomCategories,
         userProfile: data.userProfile,
         ...totals,
       };
@@ -486,6 +546,7 @@ export const storageService = {
           savingsTransactions: [],
           notes: [],
           debts: [],
+          customCategories: [],
           userProfile: { name: "MyMoney" },
           totalIncome: 0,
           totalExpense: 0,
@@ -538,6 +599,12 @@ export const storageService = {
             .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
+      const customCategories: CustomCategory[] = Array.isArray(parsedData.customCategories)
+        ? parsedData.customCategories
+            .map((c: any) => validateCustomCategory(c))
+            .filter((c: CustomCategory | null): c is CustomCategory => c !== null)
+        : [];
+
       const totals = calculateTotals(transactions);
 
       const appData: AppState = {
@@ -547,6 +614,7 @@ export const storageService = {
         savingsTransactions,
         notes,
         debts,
+        customCategories,
         userProfile: parsedData.userProfile || { name: "MyMoney" },
         ...totals,
       };
@@ -562,6 +630,7 @@ export const storageService = {
         savingsTransactions: [],
         notes: [],
         debts: [],
+        customCategories: [],
         userProfile: { name: "MyMoney" },
         totalIncome: 0,
         totalExpense: 0,

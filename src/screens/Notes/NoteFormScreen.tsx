@@ -384,24 +384,14 @@ const NoteFormScreen: React.FC = () => {
         contentContainerStyle={tw`p-5 pb-8`}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title Input - WAJIB */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        {/* Title Input */}
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Judul Catatan *
           </Text>
-          <View
-            style={[
-              tw`rounded-2xl p-4 border`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderColor: titleError ? ERROR_COLOR : BORDER_COLOR,
-              },
-            ]}
-          >
+          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: titleError ? 1 : 0, borderColor: titleError ? ERROR_COLOR : "transparent" }]}>
             <RNTextInput
-              style={[tw`text-base font-medium`, { color: TEXT_PRIMARY }]}
+              style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Masukkan judul catatan..."
               placeholderTextColor={Colors.textTertiary}
               value={title}
@@ -409,16 +399,11 @@ const NoteFormScreen: React.FC = () => {
               maxLength={100}
               editable={!loading}
             />
-            <View style={tw`flex-row justify-between mt-2`}>
-              <Text
-                style={[
-                  tw`text-xs`,
-                  { color: titleError ? ERROR_COLOR : TEXT_SECONDARY },
-                ]}
-              >
+            <View style={tw`flex-row justify-between mt-2 pt-2 border-t border-gray-700`}>
+              <Text style={[tw`text-[10px] font-medium`, { color: titleError ? ERROR_COLOR : TEXT_SECONDARY }]}>
                 {titleError || "Minimal 3 karakter"}
               </Text>
-              <Text style={[tw`text-xs`, { color: Colors.textTertiary }]}>
+              <Text style={[tw`text-[10px]`, { color: Colors.gray500 }]}>
                 {title.length}/100
               </Text>
             </View>
@@ -426,129 +411,87 @@ const NoteFormScreen: React.FC = () => {
         </View>
 
         {/* Type Selection */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Jenis Catatan (opsional)
           </Text>
           <TouchableOpacity
-            style={[
-              tw`rounded-2xl p-4 flex-row justify-between items-center border`,
-              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-            ]}
+            style={[tw`rounded-xl p-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => setShowTypeModal(true)}
             disabled={loading}
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
-                name={
-                  NOTE_TYPES.find((t) => t.id === type)?.icon || "document-text"
-                }
-                size={20}
-                color={
-                  NOTE_TYPES.find((t) => t.id === type)?.color || TEXT_SECONDARY
-                }
+                name={NOTE_TYPES.find((t) => t.id === type)?.icon || "document-text"}
+                size={16}
+                color={NOTE_TYPES.find((t) => t.id === type)?.color || TEXT_SECONDARY}
                 style={tw`mr-3`}
               />
-              <Text style={[tw`text-sm`, { color: TEXT_PRIMARY }]}>
-                {getSelectedTypeName()}
-              </Text>
+              <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{getSelectedTypeName()}</Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
 
         {/* Mood Selection */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Perasaan Anda (opsional)
           </Text>
           <TouchableOpacity
-            style={[
-              tw`rounded-2xl p-4 flex-row justify-between items-center border`,
-              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-            ]}
+            style={[tw`rounded-xl p-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => setShowMoodModal(true)}
             disabled={loading}
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
                 name={MOODS.find((m) => m.id === mood)?.icon || "help-circle"}
-                size={20}
-                color={
-                  MOODS.find((m) => m.id === mood)?.color || TEXT_SECONDARY
-                }
+                size={16}
+                color={MOODS.find((m) => m.id === mood)?.color || TEXT_SECONDARY}
                 style={tw`mr-3`}
               />
-              <Text style={[tw`text-sm`, { color: TEXT_PRIMARY }]}>
-                {getSelectedMoodName()}
-              </Text>
+              <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{getSelectedMoodName()}</Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
 
         {/* Financial Impact Selection */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Dampak Finansial (opsional)
           </Text>
           <TouchableOpacity
-            style={[
-              tw`rounded-2xl p-4 flex-row justify-between items-center border`,
-              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-            ]}
+            style={[tw`rounded-xl p-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => setShowImpactModal(true)}
             disabled={loading}
           >
             <View style={tw`flex-row items-center`}>
               <Ionicons
                 name={financialImpact ? "trending-up" : "help-circle"}
-                size={20}
-                color={
-                  financialImpact
-                    ? IMPACTS.find((i) => i.id === financialImpact)?.color ||
-                      ACCENT_COLOR
-                    : TEXT_SECONDARY
-                }
+                size={16}
+                color={financialImpact ? IMPACTS.find((i) => i.id === financialImpact)?.color || ACCENT_COLOR : TEXT_SECONDARY}
                 style={tw`mr-3`}
               />
-              <Text style={[tw`text-sm`, { color: TEXT_PRIMARY }]}>
-                {getSelectedImpactName()}
-              </Text>
+              <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{getSelectedImpactName()}</Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
 
         {/* Amount and Category */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Detail Lainnya (opsional)
           </Text>
           <View style={tw`flex-row gap-3`}>
             {/* Amount Input */}
             <View style={tw`flex-1`}>
-              <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-                Jumlah (Rp)
-              </Text>
-              <View
-                style={[
-                  tw`rounded-xl p-3 border`,
-                  { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-                ]}
-              >
+              <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
                 <View style={tw`flex-row items-center`}>
-                  <Text style={[tw`mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
+                  <Text style={[tw`mr-2 text-[13px] font-bold`, { color: TEXT_SECONDARY }]}>Rp</Text>
                   <RNTextInput
-                    style={[tw`flex-1`, { color: TEXT_PRIMARY }]}
+                    style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                     placeholder="0"
                     placeholderTextColor={Colors.textTertiary}
                     value={amount}
@@ -563,18 +506,10 @@ const NoteFormScreen: React.FC = () => {
 
             {/* Category Input */}
             <View style={tw`flex-1`}>
-              <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-                Kategori
-              </Text>
-              <View
-                style={[
-                  tw`rounded-xl p-3 border`,
-                  { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-                ]}
-              >
+              <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
                 <RNTextInput
-                  style={[{ color: TEXT_PRIMARY }]}
-                  placeholder="Contoh: Investasi"
+                  style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY, padding: 0 }]}
+                  placeholder="Kategori..."
                   placeholderTextColor={Colors.textTertiary}
                   value={category}
                   onChangeText={setCategory}
@@ -587,54 +522,32 @@ const NoteFormScreen: React.FC = () => {
         </View>
 
         {/* Date Selection */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Tanggal
           </Text>
           <TouchableOpacity
-            style={[
-              tw`rounded-2xl p-4 flex-row justify-between items-center border`,
-              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-            ]}
+            style={[tw`rounded-xl p-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => setShowDateModal(true)}
             disabled={loading}
           >
             <View style={tw`flex-row items-center`}>
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={ACCENT_COLOR}
-                style={tw`mr-3`}
-              />
-              <Text style={[tw`text-sm`, { color: TEXT_PRIMARY }]}>
-                {formatDisplayDate(date)}
-              </Text>
+              <Ionicons name="calendar-outline" size={16} color={ACCENT_COLOR} style={tw`mr-3`} />
+              <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{formatDisplayDate(date)}</Text>
             </View>
-            <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
 
         {/* Tags */}
-        <View style={tw`mb-5`}>
-          <Text
-            style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
-          >
+        <View style={tw`mb-4`}>
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
             Tags (opsional)
           </Text>
-          <View style={tw`flex-row gap-2 mb-3`}>
-            <View
-              style={[
-                tw`flex-1 rounded-xl p-3 border`,
-                {
-                  backgroundColor: SURFACE_COLOR,
-                  borderColor: BORDER_COLOR,
-                },
-              ]}
-            >
+          <View style={tw`flex-row gap-2 mb-2`}>
+            <View style={[tw`flex-1 rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
               <RNTextInput
-                style={[{ color: TEXT_PRIMARY }]}
+                style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="Tambah tag..."
                 placeholderTextColor={Colors.textTertiary}
                 value={tagInput}
@@ -645,10 +558,7 @@ const NoteFormScreen: React.FC = () => {
               />
             </View>
             <TouchableOpacity
-              style={[
-                tw`rounded-xl px-4 justify-center`,
-                { backgroundColor: ACCENT_COLOR },
-              ]}
+              style={[tw`rounded-xl px-4 justify-center`, { backgroundColor: ACCENT_COLOR }]}
               onPress={handleAddTag}
               disabled={!tagInput.trim() || loading}
             >
@@ -660,21 +570,10 @@ const NoteFormScreen: React.FC = () => {
           {tags.length > 0 && (
             <View style={tw`flex-row flex-wrap gap-2`}>
               {tags.map((tag, index) => (
-                <View
-                  key={index}
-                  style={[
-                    tw`rounded-full px-3 py-1.5 flex-row items-center`,
-                    { backgroundColor: ACCENT_COLOR + "20" },
-                  ]}
-                >
-                  <Text style={[tw`text-xs`, { color: ACCENT_COLOR }]}>
-                    #{tag}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveTag(tag)}
-                    style={tw`ml-2`}
-                  >
-                    <Ionicons name="close" size={14} color={ACCENT_COLOR} />
+                <View key={index} style={[tw`rounded-full px-3 py-1.5 flex-row items-center`, { backgroundColor: ACCENT_COLOR + "20" }]}>
+                  <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>#{tag}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveTag(tag)} style={tw`ml-2`}>
+                    <Ionicons name="close" size={12} color={ACCENT_COLOR} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -683,23 +582,18 @@ const NoteFormScreen: React.FC = () => {
         </View>
 
         {/* Content Input */}
-        <View style={tw`mb-5`}>
-          <View style={tw`flex-row items-center justify-between mb-3`}>
-            <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
               Isi Catatan (opsional)
             </Text>
-            <Text style={[tw`text-xs`, { color: Colors.textTertiary }]}>
+            <Text style={[tw`text-[10px]`, { color: Colors.gray500 }]}>
               {content.length}/2000
             </Text>
           </View>
-          <View
-            style={[
-              tw`rounded-2xl p-4 border`,
-              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-            ]}
-          >
+          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
             <RNTextInput
-              style={[tw`text-sm min-h-40`, { color: TEXT_PRIMARY }]}
+              style={[tw`text-[13px] font-medium min-h-[100px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Tuliskan refleksi, analisis, atau keputusan keuangan Anda..."
               placeholderTextColor={Colors.textTertiary}
               value={content}
@@ -710,75 +604,41 @@ const NoteFormScreen: React.FC = () => {
               editable={!loading}
             />
           </View>
-          <Text style={[tw`text-xs mt-2`, { color: Colors.textTertiary }]}>
+          <Text style={[tw`text-[10px] font-medium mt-2 ml-1`, { color: Colors.gray500 }]}>
             * Hanya judul yang wajib diisi. Semua field lainnya opsional.
           </Text>
         </View>
 
         {/* Tips */}
-        <View
-          style={[
-            tw`rounded-2xl p-4 mb-5`,
-            {
-              backgroundColor: INFO_COLOR + "10",
-              borderWidth: 1,
-              borderColor: INFO_COLOR + "30",
-            },
-          ]}
-        >
-          <View style={tw`flex-row items-center mb-3`}>
-            <Ionicons name="bulb-outline" size={16} color={INFO_COLOR} />
-            <Text
-              style={[tw`text-sm font-semibold ml-2`, { color: INFO_COLOR }]}
-            >
-              💡 Tips Membuat Catatan Keuangan
+        <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: INFO_COLOR + "10" }]}>
+          <View style={tw`flex-row items-center mb-2`}>
+            <Ionicons name="bulb-outline" size={14} color={INFO_COLOR} />
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-widest ml-1`, { color: INFO_COLOR }]}>
+              Tips Membuat Catatan
             </Text>
           </View>
-
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Jujur</Text>: Catat perasaan dan
-            keputusan apa adanya
-          </Text>
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Spesifik</Text>: Sertakan angka dan
-            detail untuk analisis
-          </Text>
-          <Text style={[tw`text-xs mb-1`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Rutin</Text>: Buat catatan secara
-            berkala
-          </Text>
-          <Text style={[tw`text-xs`, { color: INFO_COLOR }]}>
-            • <Text style={tw`font-medium`}>Reflektif</Text>: Gunakan untuk
-            evaluasi pola keuangan
-          </Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Jujur</Text>: Catat perasaan apa adanya</Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Spesifik</Text>: Sertakan angka & detail</Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Rutin</Text>: Buat catatan berkala</Text>
+          <Text style={[tw`text-[11px]`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Reflektif</Text>: Evaluasi pola keuangan</Text>
         </View>
 
-        {/* Action Buttons - KONSISTEN STYLE */}
-        <View style={tw`flex-row gap-3 mt-3`}>
-          {/* Batal Button */}
+        {/* Action Buttons */}
+        <View style={tw`flex-row gap-3 mt-2`}>
           <TouchableOpacity
-            style={[
-              tw`flex-1 rounded-2xl py-4 items-center border-2`,
-              { borderColor: BORDER_COLOR, backgroundColor: SURFACE_COLOR },
-            ]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
-              Batal
-            </Text>
+            <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
           </TouchableOpacity>
 
-          {/* Simpan Button */}
           <TouchableOpacity
-            style={[
-              tw`flex-1 rounded-2xl py-4 items-center`,
-              { backgroundColor: ACCENT_COLOR, opacity: loading ? 0.7 : 1 },
-            ]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: ACCENT_COLOR, opacity: loading || !title.trim() ? 0.7 : 1 }]}
             onPress={handleSubmit}
             disabled={!title.trim() || loading}
           >
-            <Text style={tw`text-white text-sm font-semibold`}>
+            <Text style={tw`text-white text-[13px] font-bold`}>
               {loading ? "Menyimpan..." : isEditMode ? "Simpan" : "Tambah"}
             </Text>
           </TouchableOpacity>
@@ -872,286 +732,134 @@ const NoteFormScreen: React.FC = () => {
       <Modal
         visible={showTypeModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowTypeModal(false)}
       >
-        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View
-            style={[tw`rounded-t-3xl p-5`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
+        <TouchableOpacity style={tw`flex-1 justify-center px-4 bg-black/60`} activeOpacity={1} onPress={() => setShowTypeModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl max-h-[70%]`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-800`}>
+              <Text style={[tw`text-[13px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
                 Pilih Jenis Catatan
               </Text>
               <TouchableOpacity onPress={() => setShowTypeModal(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={TEXT_SECONDARY}
-                />
+                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
               </TouchableOpacity>
             </View>
-
-            <View style={tw`flex-row flex-wrap justify-between`}>
-              {NOTE_TYPES.map((noteType) => (
+            <FlatList
+              data={NOTE_TYPES}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={noteType.id}
-                  style={[
-                    tw`w-[48%] rounded-xl p-4 items-center mb-3`,
-                    {
-                      backgroundColor:
-                        type === noteType.id
-                          ? noteType.color + "20"
-                          : SURFACE_COLOR,
-                      borderWidth: 2,
-                      borderColor:
-                        type === noteType.id ? noteType.color : BORDER_COLOR,
-                    },
-                  ]}
+                  style={[tw`p-4 flex-row items-center border-b`, { borderColor: BORDER_COLOR, backgroundColor: type === item.id ? item.color + "15" : "transparent" }]}
                   onPress={() => {
-                    setType(noteType.id);
+                    setType(item.id as any);
                     setShowTypeModal(false);
                   }}
                 >
-                  <Ionicons
-                    name={noteType.icon}
-                    size={24}
-                    color={
-                      type === noteType.id ? noteType.color : TEXT_SECONDARY
-                    }
-                    style={tw`mb-2`}
-                  />
-                  <Text
-                    style={[
-                      tw`text-xs text-center font-medium`,
-                      {
-                        color:
-                          type === noteType.id ? noteType.color : TEXT_PRIMARY,
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {noteType.name}
-                  </Text>
+                  <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: item.color + "20" }]}>
+                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                  </View>
+                  <Text style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{item.name}</Text>
+                  {type === item.id && <Ionicons name="checkmark" size={20} color={item.color} />}
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
+              )}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Mood Selection Modal */}
       <Modal
         visible={showMoodModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowMoodModal(false)}
       >
-        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View
-            style={[tw`rounded-t-3xl p-5`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
+        <TouchableOpacity style={tw`flex-1 justify-center px-4 bg-black/60`} activeOpacity={1} onPress={() => setShowMoodModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl max-h-[70%]`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-800`}>
+              <Text style={[tw`text-[13px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
                 Pilih Perasaan
               </Text>
               <TouchableOpacity onPress={() => setShowMoodModal(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={TEXT_SECONDARY}
-                />
+                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
               </TouchableOpacity>
             </View>
-
-            <View style={tw`flex-row flex-wrap justify-between`}>
-              <TouchableOpacity
-                style={[
-                  tw`w-[48%] rounded-xl p-4 items-center mb-3`,
-                  {
-                    backgroundColor: !mood
-                      ? ACCENT_COLOR + "20"
-                      : SURFACE_COLOR,
-                    borderWidth: 2,
-                    borderColor: !mood ? ACCENT_COLOR : BORDER_COLOR,
-                  },
-                ]}
-                onPress={() => {
-                  setMood(undefined);
-                  setShowMoodModal(false);
-                }}
-              >
-                <Ionicons
-                  name="help-circle"
-                  size={24}
-                  color={!mood ? ACCENT_COLOR : TEXT_SECONDARY}
-                  style={tw`mb-2`}
-                />
-                <Text
-                  style={[
-                    tw`text-xs text-center font-medium`,
-                    { color: !mood ? ACCENT_COLOR : TEXT_PRIMARY },
-                  ]}
-                >
-                  Tidak memilih
-                </Text>
-              </TouchableOpacity>
-
-              {MOODS.map((moodItem) => (
+            <TouchableOpacity
+              style={[tw`p-4 flex-row items-center border-b`, { borderColor: BORDER_COLOR, backgroundColor: !mood ? PRIMARY_COLOR + "15" : "transparent" }]}
+              onPress={() => { setMood(undefined); setShowMoodModal(false); }}
+            >
+              <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: Colors.surfaceLight }]}>
+                <Ionicons name="help" size={20} color={TEXT_SECONDARY} />
+              </View>
+              <Text style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Tidak memilih / Opsional</Text>
+              {!mood && <Ionicons name="checkmark" size={20} color={ACCENT_COLOR} />}
+            </TouchableOpacity>
+            <FlatList
+              data={MOODS}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={moodItem.id}
-                  style={[
-                    tw`w-[48%] rounded-xl p-4 items-center mb-3`,
-                    {
-                      backgroundColor:
-                        mood === moodItem.id
-                          ? moodItem.color + "20"
-                          : SURFACE_COLOR,
-                      borderWidth: 2,
-                      borderColor:
-                        mood === moodItem.id ? moodItem.color : BORDER_COLOR,
-                    },
-                  ]}
-                  onPress={() => {
-                    setMood(moodItem.id);
-                    setShowMoodModal(false);
-                  }}
+                  style={[tw`p-4 flex-row items-center border-b`, { borderColor: BORDER_COLOR, backgroundColor: mood === item.id ? item.color + "15" : "transparent" }]}
+                  onPress={() => { setMood(item.id as any); setShowMoodModal(false); }}
                 >
-                  <Ionicons
-                    name={moodItem.icon}
-                    size={24}
-                    color={
-                      mood === moodItem.id ? moodItem.color : TEXT_SECONDARY
-                    }
-                    style={tw`mb-2`}
-                  />
-                  <Text
-                    style={[
-                      tw`text-xs text-center font-medium`,
-                      {
-                        color:
-                          mood === moodItem.id ? moodItem.color : TEXT_PRIMARY,
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {moodItem.name}
-                  </Text>
+                  <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: item.color + "20" }]}>
+                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                  </View>
+                  <Text style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{item.name}</Text>
+                  {mood === item.id && <Ionicons name="checkmark" size={20} color={item.color} />}
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
+              )}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* Impact Selection Modal */}
       <Modal
         visible={showImpactModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowImpactModal(false)}
       >
-        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View
-            style={[tw`rounded-t-3xl p-5`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
-                Pilih Dampak Finansial
+        <TouchableOpacity style={tw`flex-1 justify-center px-4 bg-black/60`} activeOpacity={1} onPress={() => setShowImpactModal(false)}>
+          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl max-h-[70%]`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={tw`flex-row justify-between items-center p-4 border-b border-gray-800`}>
+              <Text style={[tw`text-[13px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
+                Dampak Keuangan
               </Text>
               <TouchableOpacity onPress={() => setShowImpactModal(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={TEXT_SECONDARY}
-                />
+                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
               </TouchableOpacity>
             </View>
-
-            <View style={tw`flex-row flex-wrap justify-between`}>
-              <TouchableOpacity
-                style={[
-                  tw`w-[48%] rounded-xl p-4 items-center mb-3`,
-                  {
-                    backgroundColor: !financialImpact
-                      ? ACCENT_COLOR + "20"
-                      : SURFACE_COLOR,
-                    borderWidth: 2,
-                    borderColor: !financialImpact ? ACCENT_COLOR : BORDER_COLOR,
-                  },
-                ]}
-                onPress={() => {
-                  setFinancialImpact(undefined);
-                  setShowImpactModal(false);
-                }}
-              >
-                <Ionicons
-                  name="help-circle"
-                  size={24}
-                  color={!financialImpact ? ACCENT_COLOR : TEXT_SECONDARY}
-                  style={tw`mb-2`}
-                />
-                <Text
-                  style={[
-                    tw`text-xs text-center font-medium`,
-                    { color: !financialImpact ? ACCENT_COLOR : TEXT_PRIMARY },
-                  ]}
-                >
-                  Tidak memilih
-                </Text>
-              </TouchableOpacity>
-
-              {IMPACTS.map((impact) => (
+            <TouchableOpacity
+              style={[tw`p-4 flex-row items-center border-b`, { borderColor: BORDER_COLOR, backgroundColor: !financialImpact ? PRIMARY_COLOR + "15" : "transparent" }]}
+              onPress={() => { setFinancialImpact(undefined); setShowImpactModal(false); }}
+            >
+              <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: Colors.surfaceLight }]}>
+                <Ionicons name="help" size={20} color={TEXT_SECONDARY} />
+              </View>
+              <Text style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Tidak Ada / Opsional</Text>
+              {!financialImpact && <Ionicons name="checkmark" size={20} color={ACCENT_COLOR} />}
+            </TouchableOpacity>
+            <FlatList
+              data={IMPACTS}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={impact.id}
-                  style={[
-                    tw`w-[48%] rounded-xl p-4 items-center mb-3`,
-                    {
-                      backgroundColor:
-                        financialImpact === impact.id
-                          ? impact.color + "20"
-                          : SURFACE_COLOR,
-                      borderWidth: 2,
-                      borderColor:
-                        financialImpact === impact.id
-                          ? impact.color
-                          : BORDER_COLOR,
-                    },
-                  ]}
-                  onPress={() => {
-                    setFinancialImpact(impact.id);
-                    setShowImpactModal(false);
-                  }}
+                  style={[tw`p-4 flex-row items-center border-b`, { borderColor: BORDER_COLOR, backgroundColor: financialImpact === item.id ? item.color + "15" : "transparent" }]}
+                  onPress={() => { setFinancialImpact(item.id as any); setShowImpactModal(false); }}
                 >
-                  <Ionicons
-                    name="trending-up"
-                    size={24}
-                    color={
-                      financialImpact === impact.id
-                        ? impact.color
-                        : TEXT_SECONDARY
-                    }
-                    style={tw`mb-2`}
-                  />
-                  <Text
-                    style={[
-                      tw`text-xs text-center font-medium`,
-                      {
-                        color:
-                          financialImpact === impact.id
-                            ? impact.color
-                            : TEXT_PRIMARY,
-                      },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {impact.name}
-                  </Text>
+                  <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: item.color + "20" }]}>
+                    <Ionicons name="trending-up" size={20} color={item.color} />
+                  </View>
+                  <Text style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>{item.name}</Text>
+                  {financialImpact === item.id && <Ionicons name="checkmark" size={20} color={item.color} />}
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
+              )}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );

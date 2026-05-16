@@ -14,6 +14,7 @@ import {
   Note,
   Debt,
   UserProfile,
+  CustomCategory,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -86,6 +87,11 @@ interface AppContextType {
   deleteDebt: (id: string) => Promise<void>;
   payDebt: (id: string, amount: number) => Promise<void>;
 
+  // 🔹 CUSTOM CATEGORIES
+  addCustomCategory: (category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">) => Promise<void>;
+  editCustomCategory: (id: string, updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>) => Promise<void>;
+  deleteCustomCategory: (id: string) => Promise<void>;
+
   // 🔹 NOTIFICATIONS
   triggerNotificationCheck: () => Promise<void>;
 
@@ -105,6 +111,7 @@ const defaultAppState: AppState = {
   savingsTransactions: [],
   notes: [],
   debts: [],
+  customCategories: [],
   userProfile: {
     name: "MyMoney",
   },
@@ -149,6 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        customCategories: appData.customCategories || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
 
@@ -226,9 +234,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const completeAppData: AppState = {
         ...defaultAppState,
         ...appData,
-        ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        customCategories: appData.customCategories || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
       if (isMounted.current) {
@@ -738,6 +746,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // ========== CUSTOM CATEGORIES FUNCTIONS ==========
+  const addCustomCategory = async (
+    category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">
+  ) => {
+    const newCategory: CustomCategory = {
+      ...category,
+      id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      isCustom: true,
+      createdAt: new Date().toISOString(),
+    };
+    const newState: AppState = {
+      ...state,
+      customCategories: [...state.customCategories, newCategory],
+    };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const editCustomCategory = async (
+    id: string,
+    updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>
+  ) => {
+    const updated = state.customCategories.map((c) =>
+      c.id === id ? { ...c, ...updates } : c
+    );
+    const newState: AppState = { ...state, customCategories: updated };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const deleteCustomCategory = async (id: string) => {
+    const categoryToDelete = state.customCategories.find((c) => c.id === id);
+    if (!categoryToDelete) return;
+
+    // Smart delete: migrate existing transactions that used this category to 'Lainnya'
+    const updatedTransactions = state.transactions.map((t) =>
+      t.category === categoryToDelete.name ? { ...t, category: "Lainnya" } : t
+    );
+    const updatedBudgets = state.budgets.map((b) =>
+      b.category === categoryToDelete.name ? { ...b, category: "Lainnya" } : b
+    );
+
+    const newState: AppState = {
+      ...state,
+      customCategories: state.customCategories.filter((c) => c.id !== id),
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+    };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
   // ========== PROVIDER VALUE ==========
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     setState((prevState) => {
@@ -775,6 +835,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     editDebt,
     deleteDebt,
     payDebt,
+
+    addCustomCategory,
+    editCustomCategory,
+    deleteCustomCategory,
 
     updateUserProfile,
 

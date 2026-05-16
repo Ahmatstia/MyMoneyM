@@ -157,7 +157,7 @@ const HomeScreen: React.FC = () => {
   const [scaleAnim] = useState(new Animated.Value(1));
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("monthly");
 
-  const { activeCycle, filteredTransactions, filteredIncome, filteredExpense, filteredPeriodNetto, openingBalance, filteredBalance, hasFinancialData, transactionAnalytics, financialHealthScore, smartInsights, dynamicQuickActions, projectionData, goalsPreview, quickStats, getCurrentDate, getTransactionIcon, getPersonalizedGreeting } = useHomeData(state, timeFilter, navigation);
+  const { activeCycle, filteredTransactions, filteredIncome, filteredExpense, filteredPeriodNetto, openingBalance, filteredBalance, hasFinancialData, transactionAnalytics, financialHealthScore, smartInsights, dynamicQuickActions, projectionData, goalsPreview, quickStats, getCurrentDate, resolveCategory, getPersonalizedGreeting } = useHomeData(state, timeFilter, navigation);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -608,7 +608,7 @@ const HomeScreen: React.FC = () => {
           <Text
             style={{
               color: "#F8FAFC",
-              fontSize: 34,
+              fontSize: 23,
               fontWeight: "800",
               letterSpacing: -0.5,
               marginBottom: 20,
@@ -1142,20 +1142,13 @@ const HomeScreen: React.FC = () => {
                       alignItems: "center",
                       justifyContent: "center",
                       marginRight: 13,
-                      backgroundColor:
-                        transaction.type === "income"
-                          ? `${SUCCESS_COLOR}15`
-                          : `${ERROR_COLOR}15`,
+                      backgroundColor: `${resolveCategory(transaction.category).color}15`,
                     }}
                   >
                     <Ionicons
-                      name={getTransactionIcon(transaction.category)}
+                      name={resolveCategory(transaction.category).icon as any}
                       size={17}
-                      color={
-                        transaction.type === "income"
-                          ? SUCCESS_COLOR
-                          : ERROR_COLOR
-                      }
+                      color={resolveCategory(transaction.category).color}
                     />
                   </View>
                   <View style={{ flex: 1 }}>

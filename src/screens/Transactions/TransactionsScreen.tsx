@@ -22,6 +22,7 @@ import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Transaction } from "../../types";
 import { Colors } from "../../theme/theme";
+import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 const { width } = Dimensions.get("window");
 
@@ -141,19 +142,16 @@ const TransactionsScreen: React.FC = () => {
     return defaultIcon;
   };
 
-  const getCategoryIcon = (category: string): SafeIconName => {
-    const icons: Record<string, SafeIconName> = {
-      Makanan:      "restaurant-outline",
-      Transportasi: "car-outline",
-      Belanja:      "cart-outline",
-      Hiburan:      "film-outline",
-      Kesehatan:    "medical-outline",
-      Pendidikan:   "school-outline",
-      Gaji:         "cash-outline",
-      Investasi:    "trending-up-outline",
-      Lainnya:      "ellipsis-horizontal-outline",
-    };
-    return icons[category] || "receipt-outline";
+  const resolveCategory = (categoryName: string): CategoryItem => {
+    const all: CategoryItem[] = [
+      ...DEFAULT_CATEGORIES,
+      ...(state.customCategories || []).map((c) => ({
+        id: c.id, name: c.name, icon: c.icon, color: c.color,
+        isCustom: true as const, customId: c.id,
+      })),
+    ];
+    const found = all.find((c) => c.name === categoryName);
+    return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: Colors.gray400 };
   };
 
   const filteredTransactions = useMemo(() => {
@@ -936,32 +934,25 @@ const TransactionsScreen: React.FC = () => {
                             }
                             delayLongPress={500}
                           >
-                            {/* Category icon */}
-                            <View
-                              style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 13,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                marginRight: 13,
-                                flexShrink: 0,
-                                backgroundColor:
-                                  transaction.type === "income"
-                                    ? `${SUCCESS_COLOR}15`
-                                    : `${ERROR_COLOR}15`,
-                              }}
-                            >
-                              <Ionicons
-                                name={getCategoryIcon(transaction.category)}
-                                size={17}
-                                color={
-                                  transaction.type === "income"
-                                    ? SUCCESS_COLOR
-                                    : ERROR_COLOR
-                                }
-                              />
-                            </View>
+                              {/* Category icon */}
+                              <View
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 13,
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginRight: 13,
+                                  flexShrink: 0,
+                                  backgroundColor: `${resolveCategory(transaction.category).color}15`,
+                                }}
+                              >
+                                <Ionicons
+                                  name={resolveCategory(transaction.category).icon as any}
+                                  size={17}
+                                  color={resolveCategory(transaction.category).color}
+                                />
+                              </View>
 
                             {/* Info */}
                             <View style={{ flex: 1 }}>
@@ -985,6 +976,19 @@ const TransactionsScreen: React.FC = () => {
                                 {transaction.description || "—"} ·{" "}
                                 {formatDisplayDate(transaction.date)}
                               </Text>
+                              {transaction.subTransactions && transaction.subTransactions.length > 0 && (
+                                <View style={{
+                                  flexDirection: "row", alignItems: "center",
+                                  backgroundColor: `${Colors.accent}15`,
+                                  borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
+                                  alignSelf: "flex-start", marginTop: 4,
+                                }}>
+                                  <Ionicons name="cart-outline" size={10} color={Colors.accent} style={{ marginRight: 3 }} />
+                                  <Text style={{ color: Colors.accent, fontSize: 10, fontWeight: "700" }}>
+                                    {transaction.subTransactions.length} item
+                                  </Text>
+                                </View>
+                              )}
                             </View>
 
                             {/* Amount + chevron */}

@@ -1,4 +1,4 @@
-import { Note, Budget, Savings, Transaction, SavingsTransaction } from "../types";
+import { Note, Budget, Savings, Transaction, SavingsTransaction, SubTransaction } from "../types";
 import { safeNumber } from "./calculations";
 import { generateId, generateSavingsId, generateTransactionId, generateBudgetId } from "./idGenerator";
 
@@ -164,6 +164,19 @@ export const validateSavings = (savings: any): Savings => {
 
 export const validateTransaction = (transaction: any): Transaction => {
   try {
+    // Validate and preserve subTransactions
+    const subTransactions: SubTransaction[] | undefined = Array.isArray(transaction.subTransactions)
+      ? (transaction.subTransactions
+          .filter((s: any) => s && typeof s === "object" && typeof s.id === "string" && typeof s.name === "string" && typeof s.amount === "number")
+          .map((s: any): SubTransaction => ({
+            id: s.id,
+            name: s.name.trim() || "Item",
+            amount: Math.max(0, s.amount),
+            qty: typeof s.qty === "number" && s.qty > 0 ? s.qty : 1,
+            note: s.note || undefined,
+          })) as SubTransaction[])
+      : undefined;
+
     return {
       id: transaction.id || generateTransactionId(),
       amount: Math.max(0, transaction.amount || 0),
@@ -174,7 +187,8 @@ export const validateTransaction = (transaction: any): Transaction => {
         ? transaction.date
         : new Date().toISOString().split("T")[0],
       createdAt: transaction.createdAt || new Date().toISOString(),
-      cyclePeriod: typeof transaction.cyclePeriod === 'number' ? transaction.cyclePeriod : undefined,
+      cyclePeriod: typeof transaction.cyclePeriod === "number" ? transaction.cyclePeriod : undefined,
+      subTransactions: subTransactions && subTransactions.length > 0 ? subTransactions : undefined,
     };
   } catch (error) {
 
@@ -227,10 +241,49 @@ export const updateBudgetsFromTransactions = (
 ): Budget[] => {
   if (!budgets.length) return budgets;
 
+  const today = new Date().toISOString().split("T")[0];
+
   return budgets.map((budget) => {
     try {
-      const startDate = budget.startDate;
-      const endDate = budget.endDate;
+      let startDate = budget.startDate;
+      let endDate = budget.endDate;
+
+      // Auto rollover logic if budget period has ended
+      if (today > endDate) {
+        let start = new Date(startDate);
+        let end = new Date(endDate);
+        
+        // Loop to advance the period until it covers today
+        while (today > end.toISOString().split("T")[0]) {
+          switch (budget.period) {
+            case "weekly":
+              start.setDate(start.getDate() + 7);
+              end.setDate(end.getDate() + 7);
+              break;
+            case "monthly":
+              start.setMonth(start.getMonth() + 1);
+              end.setMonth(end.getMonth() + 1);
+              break;
+            case "yearly":
+              start.setFullYear(start.getFullYear() + 1);
+              end.setFullYear(end.getFullYear() + 1);
+              break;
+            case "custom":
+              // Custom period length in days
+              const origStart = new Date(budget.startDate);
+              const origEnd = new Date(budget.endDate);
+              const diffDays = Math.round((origEnd.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              start.setDate(start.getDate() + (diffDays > 0 ? diffDays : 30));
+              end.setDate(end.getDate() + (diffDays > 0 ? diffDays : 30));
+              break;
+            default:
+              start.setMonth(start.getMonth() + 1);
+              end.setMonth(end.getMonth() + 1);
+          }
+        }
+        startDate = start.toISOString().split("T")[0];
+        endDate = end.toISOString().split("T")[0];
+      }
 
       const spent = transactions
         .filter((t) => {
@@ -243,10 +296,11 @@ export const updateBudgetsFromTransactions = (
 
       return {
         ...budget,
+        startDate,
+        endDate,
         spent: Math.max(0, spent),
       };
     } catch (error) {
-
       return budget;
     }
   });

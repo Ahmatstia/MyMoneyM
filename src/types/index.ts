@@ -1,14 +1,32 @@
 export type TransactionType = "income" | "expense";
 
+export interface CustomCategory {
+  id: string;          // Unique ID, e.g. "cat_abc123"
+  name: string;        // Display name, e.g. "Vape"
+  icon: string;        // Ionicons key, e.g. "flame-outline"
+  color: string;       // Hex color, e.g. "#F59E0B"
+  isCustom: true;      // Always true, to distinguish from built-ins
+  createdAt: string;   // ISO string
+}
+
+export interface SubTransaction {
+  id: string;
+  name: string;        // Item name, e.g. "Kopi Susu", "Nasi Goreng"
+  amount: number;      // Price of this item
+  qty: number;         // Quantity, default 1
+  note?: string;       // Optional note
+}
+
 export interface Transaction {
   id: string;
   amount: number;
   type: TransactionType;
   category: string;
   description: string;
-  date: string; // Format: YYYY-MM-DD
-  createdAt: string; // ISO string
-  cyclePeriod?: number; // NEW: The number of days this income starts a cycle for (7, 30, etc). If undefined, it doesn't establish a cycle.
+  date: string;           // Format: YYYY-MM-DD
+  createdAt: string;      // ISO string
+  cyclePeriod?: number;   // Days for income cycle (7, 30, etc)
+  subTransactions?: SubTransaction[]; // Optional: itemized cart items
 }
 
 export interface Budget {
@@ -103,8 +121,9 @@ export interface AppState {
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];
   notes: Note[];
-  debts: Debt[]; // NEW: Fitur Hutang
-  userProfile: UserProfile; // NEW: Profil Pengguna
+  debts: Debt[];
+  userProfile: UserProfile;
+  customCategories: CustomCategory[]; // NEW: User-defined categories
 
   // Calculated totals
   totalIncome: number;
