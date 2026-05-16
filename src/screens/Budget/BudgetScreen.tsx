@@ -207,12 +207,6 @@ const BudgetScreen: React.FC = () => {
     return SUCCESS_COLOR;
   };
 
-  const getStatusLabel = (b: Budget) => {
-    const p = getProgress(b);
-    if (p > 100) return "Melebihi";
-    if (p >= 80)  return "Perhatian";
-    return "Aman";
-  };
 
   const getDaysRemaining = (b: Budget): number => {
     const now  = new Date();
@@ -390,43 +384,6 @@ const BudgetScreen: React.FC = () => {
                 >
                   {formatCurrency(summary.totalRemaining)}
                 </Text>
-              </View>
-
-              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
-
-              {/* Status chips */}
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
-                  Status
-                </Text>
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  {summary.overBudgets > 0 && (
-                    <View
-                      style={{
-                        paddingHorizontal: 7, paddingVertical: 2,
-                        borderRadius: 20, backgroundColor: `${ERROR_COLOR}18`,
-                        borderWidth: 1, borderColor: `${ERROR_COLOR}28`,
-                      }}
-                    >
-                      <Text style={{ color: ERROR_COLOR, fontSize: 10, fontWeight: "700" }}>
-                        {summary.overBudgets} ↑
-                      </Text>
-                    </View>
-                  )}
-                  {summary.safeBudgets > 0 && (
-                    <View
-                      style={{
-                        paddingHorizontal: 7, paddingVertical: 2,
-                        borderRadius: 20, backgroundColor: `${SUCCESS_COLOR}18`,
-                        borderWidth: 1, borderColor: `${SUCCESS_COLOR}28`,
-                      }}
-                    >
-                      <Text style={{ color: SUCCESS_COLOR, fontSize: 10, fontWeight: "700" }}>
-                        {summary.safeBudgets} ✓
-                      </Text>
-                    </View>
-                  )}
-                </View>
               </View>
             </View>
 
@@ -718,17 +675,6 @@ const BudgetScreen: React.FC = () => {
                             </Text>
                           </View>
                         )}
-                        <View
-                          style={{
-                            paddingHorizontal: 8, paddingVertical: 2,
-                            borderRadius: 20, backgroundColor: `${statusColor}15`,
-                            borderWidth: 1, borderColor: `${statusColor}25`,
-                          }}
-                        >
-                          <Text style={{ color: statusColor, fontSize: 9, fontWeight: "700" }}>
-                            {getStatusLabel(budget)}
-                          </Text>
-                        </View>
                         <Text style={{ color: statusColor, fontSize: 13, fontWeight: "800" }}>
                           {progress.toFixed(0)}%
                         </Text>
