@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -182,21 +182,20 @@ const AddSavingsTransactionScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (day: any) => {
-    try {
-      const selectedDate = new Date(day.dateString);
-      if (isNaN(selectedDate.getTime())) {
-        throw new Error("Tanggal tidak valid");
-      }
+  const handleDateSelect = (event: any, selectedDate?: Date) => {
+    if (event.type === "dismissed") {
+      setShowCalendar(false);
+      return;
+    }
 
+    setShowCalendar(false);
+
+    if (selectedDate) {
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
       const dayStr = String(selectedDate.getDate()).padStart(2, "0");
 
       setDate(`${year}-${month}-${dayStr}`);
-      setShowCalendar(false);
-    } catch (error) {
-      Alert.alert("Error", "Gagal memilih tanggal");
     }
   };
 
@@ -440,7 +439,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
               <Text style={[tw`text-[11px] font-bold uppercase tracking-widest ml-1`, { color: INFO_COLOR }]}>Preview Transaksi</Text>
             </View>
 
-            <View style={tw`space-y-1`}>
+            <View style={{ gap: 4 }}>
               <View style={tw`flex-row justify-between items-center`}>
                 <Text style={[tw`text-[11px] font-bold`, { color: TEXT_SECONDARY }]}>Saldo saat ini:</Text>
                 <Text style={[tw`text-[11px] font-bold`, { color: TEXT_PRIMARY }]}>{formatCurrency(currentBalance)}</Text>
@@ -547,45 +546,16 @@ const AddSavingsTransactionScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <TouchableOpacity
-          style={tw`flex-1 justify-center px-4 bg-black/60`}
-          activeOpacity={1}
-          onPress={() => setShowCalendar(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl overflow-hidden`, { backgroundColor: SURFACE_COLOR }]}>
-            <Calendar
-              current={date}
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [date]: {
-                  selected: true,
-                  selectedColor: ACCENT_COLOR,
-                  selectedTextColor: "#FFFFFF",
-                },
-              }}
-              maxDate={getCurrentDate()}
-              theme={{
-                calendarBackground: SURFACE_COLOR,
-                textSectionTitleColor: TEXT_SECONDARY,
-                selectedDayBackgroundColor: ACCENT_COLOR,
-                selectedDayTextColor: "#FFFFFF",
-                todayTextColor: ACCENT_COLOR,
-                dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.textTertiary,
-                monthTextColor: TEXT_PRIMARY,
-                arrowColor: ACCENT_COLOR,
-              }}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* DateTime Picker Modal */}
+      {showCalendar && (
+        <DateTimePicker
+          value={date ? new Date(date) : new Date()}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          onChange={handleDateSelect}
+        />
+      )}
     </SafeAreaView>
   );
 };

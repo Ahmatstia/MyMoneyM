@@ -8,12 +8,14 @@ import {
   Alert,
   TextInput,
   Modal,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -93,6 +95,9 @@ const AddSavingsScreen: React.FC = () => {
   const [description, setDescription] = useState(
     savingsData?.description || ""
   );
+  const [imageCover, setImageCover] = useState(
+    savingsData?.imageCover || ""
+  );
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState("");
   const [targetError, setTargetError] = useState("");
@@ -155,6 +160,31 @@ const AddSavingsScreen: React.FC = () => {
     }
   };
 
+  // Handle pick image
+  const handlePickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert("Izin Ditolak", "Anda perlu memberikan izin akses galeri untuk mengunggah gambar impian.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImageCover(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Gagal membuka galeri");
+    }
+  };
+
   // Handle target change
   const handleTargetChange = (value: string) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
@@ -191,21 +221,21 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (day: any) => {
-    try {
-      const selectedDate = new Date(day.dateString);
-      if (isNaN(selectedDate.getTime())) {
-        throw new Error("Tanggal tidak valid");
-      }
-
+  const handleDateSelect = (event: any, selectedDate?: Date) => {
+    // Pada Android, ketika dialog ditutup (cancel), event.type akan "dismissed"
+    if (event.type === "dismissed") {
+      setShowCalendar(false);
+      return;
+    }
+    
+    setShowCalendar(false);
+    
+    if (selectedDate) {
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
       const dayStr = String(selectedDate.getDate()).padStart(2, "0");
 
       setDeadline(`${year}-${month}-${dayStr}`);
-      setShowCalendar(false);
-    } catch (error) {
-      Alert.alert("Error", "Gagal memilih tanggal");
     }
   };
 
@@ -347,6 +377,7 @@ const AddSavingsScreen: React.FC = () => {
         category: category || "other",
         priority: priority || "medium",
         description: description.trim() || "",
+        imageCover: imageCover.trim() || undefined,
         icon: selectedCategory?.icon || "wallet",
       };
 
@@ -372,9 +403,38 @@ const AddSavingsScreen: React.FC = () => {
     }
   };
 
+  // Hitung rekomendasi tabungan bulanan berdasarkan deadline
+  const getSmartRecommendation = () => {
+    const targetNum = safeNumber(parseFloat(target));
+    const currentNum = safeNumber(parseFloat(current));
+    const remaining = targetNum - currentNum;
+
+    if (remaining <= 0 || !deadline) return null;
+
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    
+    let months = (deadlineDate.getFullYear() - today.getFullYear()) * 12;
+    months -= today.getMonth();
+    months += deadlineDate.getMonth();
+    
+    if (months <= 0) {
+      const diffTime = deadlineDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        return `Sisa ${diffDays} hari lagi! Yuk nabung Rp ${formatAmountDisplay(remaining.toString())} sekarang agar impianmu tercapai.`;
+      }
+      return "Waktu pencapaian sudah hampir habis.";
+    }
+
+    const perMonth = remaining / months;
+    return `Mulai nabung Rp ${formatAmountDisplay(perMonth.toString())} / bulan untuk mencapai targetmu tepat waktu.`;
+  };
+
   const progress = calculateProgress();
   const categoryColor = getCategoryColor(category);
   const priorityColor = getPriorityColor(priority);
+  const smartRecommendation = getSmartRecommendation();
 
   return (
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
@@ -791,6 +851,46 @@ const AddSavingsScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Image Cover Pick (Poster Style) */}
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Gambar Impian (Opsional)</Text>
+            <Ionicons name="image-outline" size={12} color={Colors.gray500} />
+          </View>
+          
+          {imageCover ? (
+            <View style={[tw`rounded-xl overflow-hidden mb-1 relative`, { backgroundColor: SURFACE_COLOR }]}>
+              <Image source={{ uri: imageCover }} style={{ width: "100%", height: 160 }} />
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  backgroundColor: "rgba(0,0,0,0.6)",
+                  padding: 8,
+                  borderRadius: 20,
+                }}
+                onPress={() => setImageCover("")}
+              >
+                <Ionicons name="close" size={18} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[tw`rounded-xl px-4 py-5 items-center justify-center border-dashed border-2`, { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR }]}
+              onPress={handlePickImage}
+              activeOpacity={0.7}
+              disabled={loading}
+            >
+              <View style={[tw`w-12 h-12 rounded-full items-center justify-center mb-3`, { backgroundColor: `${ACCENT_COLOR}15` }]}>
+                <Ionicons name="camera" size={24} color={ACCENT_COLOR} />
+              </View>
+              <Text style={[tw`text-[13px] font-bold mb-1`, { color: TEXT_PRIMARY }]}>Unggah Gambar Impian</Text>
+              <Text style={[tw`text-[10px] text-center px-4`, { color: Colors.gray400 }]}>Pilih foto barang atau tempat impian Anda dari galeri</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Savings Summary Preview */}
         {name && target && safeNumber(parseFloat(target)) > 0 && (
           <View
@@ -833,6 +933,17 @@ const AddSavingsScreen: React.FC = () => {
                   }`
                 : ""}
             </Text>
+
+            {smartRecommendation && (
+              <View style={[tw`mt-3 pt-3`, { borderTopWidth: 1, borderTopColor: `${categoryColor}30` }]}>
+                <View style={tw`flex-row items-start`}>
+                  <Ionicons name="bulb" size={14} color={categoryColor} style={tw`mt-0.5 mr-2`} />
+                  <Text style={[tw`text-[12px] font-bold flex-1`, { color: categoryColor, lineHeight: 18 }]}>
+                    {smartRecommendation}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -871,38 +982,16 @@ const AddSavingsScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <TouchableOpacity
-          style={tw`flex-1 justify-center px-4 bg-black/60`}
-          activeOpacity={1}
-          onPress={() => setShowCalendar(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl overflow-hidden`, { backgroundColor: SURFACE_COLOR }]}>
-            <Calendar
-              current={deadline || getCurrentDate()}
-              onDayPress={handleDateSelect}
-              minDate={getCurrentDate()}
-              theme={{
-                calendarBackground: SURFACE_COLOR,
-                textSectionTitleColor: TEXT_SECONDARY,
-                selectedDayBackgroundColor: PRIMARY_COLOR,
-                selectedDayTextColor: "#FFFFFF",
-                todayTextColor: PRIMARY_COLOR,
-                dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.gray600,
-                monthTextColor: TEXT_PRIMARY,
-                arrowColor: PRIMARY_COLOR,
-              }}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* DateTime Picker Modal */}
+      {showCalendar && (
+        <DateTimePicker
+          value={deadline ? new Date(deadline) : new Date()}
+          mode="date"
+          display="default"
+          minimumDate={new Date()}
+          onChange={handleDateSelect}
+        />
+      )}
     </SafeAreaView>
   );
 };

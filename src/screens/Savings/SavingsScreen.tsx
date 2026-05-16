@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
+  ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useAppContext } from "../../context/AppContext";
 import {
@@ -523,148 +525,113 @@ const SavingsScreen: React.FC = () => {
               return (
                 <TouchableOpacity
                   key={saving.id}
-                  activeOpacity={0.8}
+                  activeOpacity={0.9}
                   onPress={() =>
                     navigation.navigate("SavingsDetail", { savingsId: saving.id })
                   }
                   style={{
                     backgroundColor: SURFACE_COLOR,
                     borderRadius: CARD_RADIUS,
+                    marginBottom: 16,
+                    overflow: "hidden",
                     borderWidth: 1,
                     borderColor: CARD_BORDER,
-                    padding: CARD_PAD,
-                    marginBottom: 12,
-                    borderLeftWidth: 3,
-                    borderLeftColor: progressColor,
                   }}
                 >
-                  {/* Row 1: Icon + Name + Actions */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
+                  <ImageBackground
+                    source={saving.imageCover ? { uri: saving.imageCover } : require("../../../assets/bg.png")}
+                    style={{ height: 150, justifyContent: "flex-end" }}
+                    imageStyle={{ opacity: saving.imageCover ? 1 : 0.2 }}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 8 }}>
-                      {/* Icon */}
-                      <View
-                        style={{
-                          width: 38, height: 38, borderRadius: 12,
-                          alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${progressColor}15`,
-                        }}
-                      >
-                        <Ionicons name={iconName} size={17} color={progressColor} />
-                      </View>
-                      <View style={{ flex: 1 }}>
+                    <LinearGradient
+                      colors={["transparent", "rgba(8,12,20,0.6)", "rgba(8,12,20,0.95)"]}
+                      style={{
+                        position: "absolute",
+                        left: 0, right: 0, bottom: 0,
+                        height: 100,
+                      }}
+                    />
+                    
+                    <View style={{ padding: CARD_PAD }}>
+                      {/* Title & Category Row */}
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                         <Text
                           style={{
-                            color: TEXT_PRIMARY, fontSize: 14,
-                            fontWeight: "700", marginBottom: 2,
+                            color: TEXT_PRIMARY, fontSize: 18,
+                            fontWeight: "800", flex: 1, marginRight: 10
                           }}
+                          numberOfLines={1}
                         >
                           {saving.name}
                         </Text>
+                        
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          {saving.category && (
+                          <View
+                            style={{
+                              height: 22, paddingHorizontal: 8,
+                              borderRadius: 12, backgroundColor: "rgba(255,255,255,0.08)",
+                              borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Text style={{ color: Colors.gray400, fontSize: 8, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                              {saving.category}
+                            </Text>
+                          </View>
+                          {isCompleted && (
                             <View
                               style={{
-                                paddingHorizontal: 7, paddingVertical: 2,
-                                borderRadius: 20, backgroundColor: `${ACCENT_COLOR}15`,
-                                borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
+                                height: 22, paddingHorizontal: 8,
+                                borderRadius: 12, backgroundColor: `${SUCCESS_COLOR}25`,
+                                borderWidth: 1, borderColor: `${SUCCESS_COLOR}40`,
+                                justifyContent: "center",
                               }}
                             >
-                              <Text style={{ color: ACCENT_COLOR, fontSize: 9, fontWeight: "600" }}>
-                                {saving.category.charAt(0).toUpperCase() + saving.category.slice(1)}
+                              <Text style={{ color: SUCCESS_COLOR, fontSize: 8, fontWeight: "800" }}>
+                                SELESAI 🎉
                               </Text>
                             </View>
                           )}
-                          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
-                            {formatDeadline(saving.deadline)}
-                          </Text>
                         </View>
                       </View>
-                    </View>
-                  </View>
-
-                  {/* Row 2: Progress bar */}
-                  <View style={{ marginBottom: 12 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 7,
-                      }}
-                    >
-                      <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>
-                        {formatCurrency(current)}
-                        <Text style={{ color: Colors.gray400 }}>
-                          {" "}/ {formatCurrency(target)}
+                      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                        <Ionicons name="time-outline" size={12} color={Colors.gray400} style={{ marginRight: 4 }} />
+                        <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+                          Target: {formatDeadline(saving.deadline)}
                         </Text>
-                      </Text>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      </View>
+
+                      {/* Progress Bar & Amount */}
+                      <View style={{ marginBottom: 6 }}>
                         <View
                           style={{
-                            paddingHorizontal: 8, paddingVertical: 2,
-                            borderRadius: 20, backgroundColor: `${progressColor}15`,
-                            borderWidth: 1, borderColor: `${progressColor}25`,
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "flex-end",
+                            marginBottom: 8,
                           }}
                         >
-                          <Text style={{ color: progressColor, fontSize: 9, fontWeight: "700" }}>
-                            {isCompleted ? "Tercapai" : progress >= 50 ? "Berjalan" : "Dimulai"}
+                          <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>
+                            {formatCurrency(current)}
+                            <Text style={{ color: Colors.gray400, fontSize: 12, fontWeight: "500" }}>
+                              {" "} / {formatCurrency(target)}
+                            </Text>
+                          </Text>
+                          <Text style={{ color: progressColor, fontSize: 14, fontWeight: "800" }}>
+                            {progress.toFixed(0)}%
                           </Text>
                         </View>
-                        <Text style={{ color: progressColor, fontSize: 13, fontWeight: "800" }}>
-                          {progress.toFixed(0)}%
-                        </Text>
+                        <ThinBar progress={progress} color={progressColor} />
                       </View>
+                      
+                      {/* Prediction / Remaining Info */}
+                      {!isCompleted && (
+                        <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 6, fontStyle: "italic" }}>
+                          Sisa {formatCurrency(remaining)} lagi untuk mencapai impianmu.
+                        </Text>
+                      )}
                     </View>
-                    <ThinBar progress={progress} color={progressColor} />
-                  </View>
-
-                  {/* Row 3: Stats row */}
-                  <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: 12 }} />
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    {/* Terkumpul */}
-                    <View style={{ flex: 1, alignItems: "center" }}>
-                      <Text
-                        style={{
-                          color: Colors.gray400, fontSize: 9,
-                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                        }}
-                      >
-                        Terkumpul
-                      </Text>
-                      <Text style={{ color: ACCENT_COLOR, fontSize: 13, fontWeight: "700" }}>
-                        {formatCurrency(current)}
-                      </Text>
-                    </View>
-
-                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-
-                    {/* Sisa */}
-                    <View style={{ flex: 1, alignItems: "center" }}>
-                      <Text
-                        style={{
-                          color: Colors.gray400, fontSize: 9,
-                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                        }}
-                      >
-                        Sisa
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 13, fontWeight: "700",
-                          color: remaining <= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-                        }}
-                      >
-                        {remaining <= 0 ? "Lunas 🎉" : formatCurrency(remaining)}
-                      </Text>
-                    </View>
-                  </View>
+                  </ImageBackground>
                 </TouchableOpacity>
               );
             })}

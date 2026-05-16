@@ -12,7 +12,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -220,13 +220,15 @@ const AddBudgetScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (day: any) => {
-    try {
-      const selectedDate = new Date(day.dateString);
-      if (isNaN(selectedDate.getTime())) {
-        throw new Error("Tanggal tidak valid");
-      }
+  const handleDateSelect = (event: any, selectedDate?: Date) => {
+    if (event.type === "dismissed") {
+      setShowCalendar(false);
+      return;
+    }
 
+    setShowCalendar(false);
+
+    if (selectedDate) {
       const formattedDate = formatDateToYYYYMMDD(selectedDate);
 
       if (calendarMode === "start") {
@@ -234,9 +236,6 @@ const AddBudgetScreen: React.FC = () => {
       } else {
         setEndDate(formattedDate);
       }
-      setShowCalendar(false);
-    } catch (error) {
-      Alert.alert("Error", "Gagal memilih tanggal");
     }
   };
 
@@ -912,37 +911,15 @@ const AddBudgetScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <TouchableOpacity
-          style={tw`flex-1 justify-center px-4 bg-black/60`}
-          activeOpacity={1}
-          onPress={() => setShowCalendar(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={[tw`rounded-2xl overflow-hidden`, { backgroundColor: SURFACE_COLOR }]}>
-            <Calendar
-              current={calendarMode === "start" ? startDate : endDate}
-              onDayPress={handleDateSelect}
-              theme={{
-                calendarBackground: SURFACE_COLOR,
-                textSectionTitleColor: TEXT_SECONDARY,
-                selectedDayBackgroundColor: PRIMARY_COLOR,
-                selectedDayTextColor: "#FFFFFF",
-                todayTextColor: PRIMARY_COLOR,
-                dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.gray600,
-                monthTextColor: TEXT_PRIMARY,
-                arrowColor: PRIMARY_COLOR,
-              }}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* DateTime Picker Modal */}
+      {showCalendar && (
+        <DateTimePicker
+          value={calendarMode === "start" ? new Date(startDate) : new Date(endDate)}
+          mode="date"
+          display="default"
+          onChange={handleDateSelect}
+        />
+      )}
     </View>
   );
 };

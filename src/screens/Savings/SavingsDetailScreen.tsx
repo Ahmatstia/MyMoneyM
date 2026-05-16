@@ -7,11 +7,13 @@ import {
   Alert,
   RefreshControl,
   Animated,
+  ImageBackground,
 } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useAppContext } from "../../context/AppContext";
 import {
@@ -438,27 +440,35 @@ const SavingsDetailScreen: React.FC = () => {
         <Spacer size={18} />
 
         {/* ── Hero identity card ───────────────────────────────────────── */}
-        <View
+        <ImageBackground
+          source={saving.imageCover ? { uri: saving.imageCover } : require("../../../assets/bg.png")}
           style={{
             backgroundColor: SURFACE_COLOR,
             borderRadius: CARD_RADIUS,
+            overflow: "hidden",
             borderWidth: 1,
             borderColor: CARD_BORDER,
-            // Left accent stripe per completion status
-            borderLeftWidth: 3,
-            borderLeftColor: activeColor,
-            padding: CARD_PAD,
             marginBottom: 16,
           }}
+          imageStyle={{ opacity: saving.imageCover ? 1 : 0.2 }}
         >
+          <LinearGradient
+            colors={["transparent", "rgba(8,12,20,0.8)", "rgba(8,12,20,0.98)"]}
+            style={{
+              position: "absolute",
+              left: 0, right: 0, bottom: 0,
+              height: "100%",
+            }}
+          />
+          <View style={{ padding: CARD_PAD }}>
           {/* Icon + name row */}
           <View
             style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}
           >
             <View
               style={{
-                width: 52,
-                height: 52,
+                width: 42,
+                height: 42,
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
@@ -470,7 +480,7 @@ const SavingsDetailScreen: React.FC = () => {
             >
               <Ionicons
                 name={(saving.icon as any) || "wallet-outline"}
-                size={24}
+                size={20}
                 color={activeColor}
               />
             </View>
@@ -643,8 +653,9 @@ const SavingsDetailScreen: React.FC = () => {
               </Text>
             )}
           </View>
-        </View>
- 
+          </View>
+        </ImageBackground>
+
          {/* ── Primary Actions ─────────────────────────────────────────── */}
          <View
            style={{

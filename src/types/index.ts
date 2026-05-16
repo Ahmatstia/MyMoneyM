@@ -51,6 +51,7 @@ export interface Savings {
   priority: "low" | "medium" | "high";
   description: string;
   icon: string;
+  imageCover?: string; // NEW: For Wishlist & Dream Planner
   createdAt: string;
 }
 

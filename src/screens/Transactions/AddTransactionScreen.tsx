@@ -12,7 +12,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -224,21 +224,20 @@ const AddTransactionScreen: React.FC = () => {
     }).format(amountNum);
   };
 
-  const handleDateSelect = (day: any) => {
-    try {
-      const selectedDate = new Date(day.dateString);
-      if (isNaN(selectedDate.getTime())) {
-        throw new Error("Tanggal tidak valid");
-      }
+  const handleDateSelect = (event: any, selectedDate?: Date) => {
+    if (event.type === "dismissed") {
+      setShowCalendar(false);
+      return;
+    }
 
+    setShowCalendar(false);
+
+    if (selectedDate) {
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
       const dayStr = String(selectedDate.getDate()).padStart(2, "0");
 
       setDate(`${year}-${month}-${dayStr}`);
-      setShowCalendar(false);
-    } catch (error) {
-      Alert.alert("Error", "Gagal memilih tanggal");
     }
   };
 
@@ -798,59 +797,15 @@ const AddTransactionScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <View style={tw`flex-1 bg-black bg-opacity-50 justify-end`}>
-          <View
-            style={[tw`rounded-t-3xl p-5`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={[tw`text-lg font-bold`, { color: TEXT_PRIMARY }]}>
-                Pilih Tanggal
-              </Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons
-                  name="close-outline"
-                  size={24}
-                  color={TEXT_SECONDARY}
-                />
-              </TouchableOpacity>
-            </View>
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [date]: {
-                  selected: true,
-                  selectedColor: ACCENT_COLOR,
-                  selectedTextColor: "#FFFFFF",
-                },
-              }}
-              theme={{
-                backgroundColor: SURFACE_COLOR,
-                calendarBackground: SURFACE_COLOR,
-                textSectionTitleColor: TEXT_SECONDARY,
-                selectedDayBackgroundColor: ACCENT_COLOR,
-                selectedDayTextColor: "#FFFFFF",
-                todayTextColor: ACCENT_COLOR,
-                dayTextColor: TEXT_PRIMARY,
-                textDisabledColor: Colors.textTertiary,
-                dotColor: ACCENT_COLOR,
-                selectedDotColor: "#FFFFFF",
-                arrowColor: ACCENT_COLOR,
-                monthTextColor: ACCENT_COLOR,
-                textMonthFontWeight: "bold",
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+      {/* DateTime Picker Modal */}
+      {showCalendar && (
+        <DateTimePicker
+          value={date ? new Date(date) : new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateSelect}
+        />
+      )}
     </View>
   );
 };

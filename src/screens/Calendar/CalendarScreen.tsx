@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency } from "../../utils/calculations";
@@ -135,10 +136,18 @@ const VDivider = ({ height = 32 }: { height?: number }) => (
 
 const CalendarScreen: React.FC = () => {
   const { state } = useAppContext();
-  const [selectedDate, setSelectedDate] = useState<string>(
+   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDayDetail, setShowDayDetail] = useState<boolean>(false);
+
+  const handleMonthYearChange = (event: any, date?: Date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date.toISOString().split("T")[0]);
+    }
+  };
 
   // ── Semua logika kalkulasi di bawah ini TIDAK DIUBAH ─────────────────────
 
@@ -257,13 +266,28 @@ const CalendarScreen: React.FC = () => {
           >
             Kalender
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
-            {new Date().toLocaleDateString("id-ID", {
-              month: "long",
-              year: "numeric",
-            })}
-          </Text>
+          <TouchableOpacity 
+            onPress={() => setShowDatePicker(true)}
+            style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}
+          >
+            <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+              {new Date(selectedDate).toLocaleDateString("id-ID", {
+                month: "long",
+                year: "numeric",
+              })}
+            </Text>
+            <Ionicons name="chevron-down" size={10} color={Colors.gray400} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
         </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date(selectedDate)}
+            mode="date"
+            display="default"
+            onChange={handleMonthYearChange}
+          />
+        )}
 
         {/* ── Monthly overview hero card ───────────────────────────────── */}
         <Card style={{ marginBottom: 20 }}>
