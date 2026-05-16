@@ -710,7 +710,7 @@ const ProfileScreen: React.FC = () => {
               <View style={tw`relative`}>
                 <View
                   style={[
-                    tw`w-20 h-20 rounded-[24px] overflow-hidden`,
+                    tw`w-15 h-15 rounded-[24px] overflow-hidden`,
                     {
                       borderWidth: 3,
                       borderColor: C.bg,
@@ -740,7 +740,7 @@ const ProfileScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => pickImage("avatar")}
                   style={[
-                    tw`absolute -bottom-1 -right-1 w-7 h-7 rounded-lg items-center justify-center`,
+                    tw`absolute -bottom-1 -right-1 w-6 h-6 rounded-lg items-center justify-center`,
                     {
                       backgroundColor: C.cyan,
                       borderWidth: 2,
@@ -752,37 +752,22 @@ const ProfileScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Spacer + quick badges row */}
-              <View style={tw`flex-1 ml-4 mb-1`}>
-                <View style={tw`flex-row gap-2`}>
-                  <View
-                    style={[
-                      tw`px-2 py-0.5 rounded-full flex-row items-center gap-1`,
-                      {
-                        backgroundColor: C.cyanDim,
-                        borderWidth: 1,
-                        borderColor: C.borderAccent,
-                      },
-                    ]}
+              {/* Name column next to Avatar */}
+              <View style={tw`flex-1 ml-5 mb-1`}>
+                <View style={tw`flex-row items-center gap-2 mb-0.5`}>
+                  <Text
+                    style={[tw`text-xl font-black`, { color: C.text1 }]}
+                    numberOfLines={1}
                   >
-                    <View
-                      style={[
-                        tw`w-1.5 h-1.5 rounded-full`,
-                        { backgroundColor: C.cyan },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        tw`text-[8px] font-black uppercase tracking-wider`,
-                        { color: C.cyan },
-                      ]}
-                    >
-                      Premium
-                    </Text>
-                  </View>
-                  <View
+                    {userProfile.name}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setTempName(userProfile.name);
+                      setIsEditModalVisible(true);
+                    }}
                     style={[
-                      tw`px-2 py-0.5 rounded-full`,
+                      tw`w-6 h-6 rounded-lg items-center justify-center`,
                       {
                         backgroundColor: "rgba(255,255,255,0.05)",
                         borderWidth: 1,
@@ -790,42 +775,15 @@ const ProfileScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    <Text style={[tw`text-[8px] font-bold`, { color: C.text3 }]}>
-                      MM-2026
-                    </Text>
-                  </View>
+                    <Ionicons name="pencil" size={10} color={C.text2} />
+                  </TouchableOpacity>
                 </View>
+                <Text style={[tw`text-[10px]`, { color: C.text3 }]}>
+                  Anggota sejak 2026
+                </Text>
               </View>
             </View>
 
-            {/* Name row */}
-            <View style={tw`flex-row items-center gap-2 mb-0.5`}>
-              <Text
-                style={[tw`text-xl font-black flex-1`, { color: C.text1 }]}
-                numberOfLines={1}
-              >
-                {userProfile.name}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setTempName(userProfile.name);
-                  setIsEditModalVisible(true);
-                }}
-                style={[
-                  tw`w-8 h-8 rounded-xl items-center justify-center`,
-                  {
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    borderWidth: 1,
-                    borderColor: C.border,
-                  },
-                ]}
-              >
-                <Ionicons name="pencil" size={12} color={C.text2} />
-              </TouchableOpacity>
-            </View>
-            <Text style={[tw`text-[10px]`, { color: C.text3 }]}>
-              Anggota sejak 2026
-            </Text>
           </View>
         </View>
 
@@ -1085,47 +1043,10 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* ── ACCOUNT MANAGEMENT ─────────────────────────────────────── */}
-          <SectionLabel title="Kelola Akun" icon="settings" />
-          <View
-            style={[
-              tw`rounded-3xl overflow-hidden`,
-              {
-                backgroundColor: C.card,
-                borderWidth: 1,
-                borderColor: C.border,
-              },
-            ]}
-          >
-            <SettingsRow
-              icon="shield-checkmark-outline"
-              iconColor="#3B82F6"
-              bgColor="rgba(59,130,246,0.12)"
-              title="Keamanan & Storage"
-              subtitle="Cek integritas database lokal"
-              onPress={debugStorage}
-            />
-            <SettingsRow
-              icon="trash-outline"
-              iconColor={C.rose}
-              bgColor={C.roseDim}
-              title="Hapus Semua Data"
-              subtitle="Reset aplikasi ke pengaturan pabrik"
-              onPress={() =>
-                Alert.alert("Wipe Data", "Hapus semua data?", [
-                  { text: "Batal", style: "cancel" },
-                  { text: "Hapus", style: "destructive", onPress: clearAllData },
-                ])
-              }
-              danger
-              last
-            />
-          </View>
-
           {/* ── FOOTER ─────────────────────────────────────────────────── */}
           <View style={tw`items-center mt-10 mb-2`}>
             <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
-              MoneyMate · v2.0.0 · Obsidian Vault
+              MyMoney
             </Text>
           </View>
         </View>

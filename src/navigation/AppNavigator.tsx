@@ -170,9 +170,6 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         </TouchableOpacity>
       </DrawerContentScrollView>
 
-      <View style={tw`p-6 border-t border-[#334155]`}>
-        <Text style={tw`text-[#CBD5E1] text-xs text-center`}>MyMoney v1.0.1 • © Lexa</Text>
-      </View>
     </View>
   );
 };
