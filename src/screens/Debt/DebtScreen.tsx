@@ -303,31 +303,7 @@ const DebtScreen: React.FC = () => {
 
             <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
 
-            {/* Status */}
-            <View style={{ alignItems: "flex-end" }}>
-              <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
-                Status
-              </Text>
-              <View
-                style={{
-                  paddingHorizontal: 10, paddingVertical: 4,
-                  borderRadius: 20,
-                  backgroundColor: net >= 0 ? `${SUCCESS_COLOR}18` : `${ERROR_COLOR}18`,
-                  borderWidth: 1,
-                  borderColor: net >= 0 ? `${SUCCESS_COLOR}28` : `${ERROR_COLOR}28`,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 10, fontWeight: "700",
-                    color: net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-                  }}
-                >
-                  {net >= 0 ? "Positif" : "Negatif"}
-                </Text>
-              </View>
             </View>
-          </View>
 
           {/* Net bar */}
           <ThinBar
@@ -341,14 +317,6 @@ const DebtScreen: React.FC = () => {
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
             <Text style={{ color: Colors.gray400, fontSize: 10 }}>
               {allDebts.filter((d) => d.status !== "paid").length} aktif
-            </Text>
-            <Text
-              style={{
-                fontSize: 10, fontWeight: "600",
-                color: net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-              }}
-            >
-              {net >= 0 ? "Piutang lebih besar" : "Hutang lebih besar"}
             </Text>
           </View>
         </View>
@@ -508,171 +476,96 @@ const DebtScreen: React.FC = () => {
                     borderLeftColor: statusColor,
                   }}
                 >
-                  {/* Row 1: Name + status badge + actions */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 8 }}>
-                      {/* Icon */}
-                      <View
-                        style={{
-                          width: 38, height: 38, borderRadius: 12,
-                          alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${statusColor}15`,
-                        }}
-                      >
-                        <Ionicons
-                          name={debt.type === "borrowed" ? "arrow-down-outline" : "arrow-up-outline"}
-                          size={17}
-                          color={statusColor}
-                        />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
-                            color: TEXT_PRIMARY, fontSize: 14,
-                            fontWeight: "700", marginBottom: 2,
-                          }}
-                        >
-                          {debt.name}
-                        </Text>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          <View
-                            style={{
-                              paddingHorizontal: 7, paddingVertical: 2,
-                              borderRadius: 20, backgroundColor: `${ACCENT_COLOR}15`,
-                              borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
-                            }}
-                          >
-                            <Text style={{ color: ACCENT_COLOR, fontSize: 9, fontWeight: "600", textTransform: "uppercase" }}>
-                              {debt.category}
-                            </Text>
-                          </View>
-                          {debt.dueDate && debt.status !== "paid" && (
-                            <Text style={{ color: isOverdue ? ERROR_COLOR : Colors.gray400, fontSize: 10 }}>
-                              {isOverdue ? `Terlambat ${Math.abs(days!)}h` : `H-${days}`}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                    </View>
-
-                    {/* Status badge */}
+                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 8 }}>
                     <View
                       style={{
-                        paddingHorizontal: 8, paddingVertical: 4,
-                        borderRadius: INNER_RADIUS,
+                        width: 38, height: 38, borderRadius: 12,
+                        alignItems: "center", justifyContent: "center",
                         backgroundColor: `${statusColor}15`,
-                        borderWidth: 1, borderColor: `${statusColor}25`,
                       }}
                     >
-                      <Text style={{ color: statusColor, fontSize: 9, fontWeight: "800" }}>
-                        {STATUS_LABEL[debt.status].toUpperCase()}
+                      <Ionicons
+                        name={debt.type === "borrowed" ? "arrow-down-outline" : "arrow-up-outline"}
+                        size={17}
+                        color={statusColor}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700", marginBottom: 2 }}>
+                        {debt.name}
+                      </Text>
+                      <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                        {debt.category}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Row 2: Progress */}
-                  <View style={{ marginBottom: 12 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 7,
-                      }}
-                    >
-                      <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>
-                        Sisa{" "}
-                        <Text style={{ color: statusColor, fontWeight: "700" }}>
-                          {formatCurrency(debt.remaining)}
+                  {/* Row 2: Progress Info (Left: Paid, Right: Total) */}
+                  <View style={{ marginBottom: 14, marginTop: 14 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+                      <View>
+                        <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
+                          Terbayar
                         </Text>
-                      </Text>
-                      <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-                        Total: {formatCurrency(debt.amount)}
-                      </Text>
+                        <Text style={{ color: SUCCESS_COLOR, fontSize: 15, fontWeight: "700" }}>
+                          {formatCurrency(debt.amount - debt.remaining)}
+                        </Text>
+                      </View>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
+                          Total
+                        </Text>
+                        <Text style={{ color: Colors.gray400, fontSize: 13, fontWeight: "600" }}>
+                          {formatCurrency(debt.amount)}
+                        </Text>
+                      </View>
                     </View>
                     <ThinBar
                       progress={debt.status === "paid" ? 1 : progress}
                       color={debt.status === "paid" ? SUCCESS_COLOR : statusColor}
                     />
+                    <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6 }}>
+                      <Text style={{ color: statusColor, fontSize: 11, fontWeight: "600" }}>
+                        Sisa: {formatCurrency(debt.remaining)}
+                      </Text>
+                    </View>
                   </View>
 
-                  {/* Row 3: Stats row */}
-                  <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: 12 }} />
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <View style={{ flex: 1, alignItems: "center" }}>
-                      <Text
-                        style={{
-                          color: Colors.gray400, fontSize: 9,
-                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                        }}
-                      >
-                        Dibayar
-                      </Text>
-                      <Text style={{ color: SUCCESS_COLOR, fontSize: 13, fontWeight: "700" }}>
-                        {formatCurrency(debt.amount - debt.remaining)}
-                      </Text>
-                    </View>
-
-                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-
-                    <View style={{ flex: 1, alignItems: "center" }}>
-                      <Text
-                        style={{
-                          color: Colors.gray400, fontSize: 9,
-                          textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                        }}
-                      >
-                        Sisa
-                      </Text>
-                      <Text style={{ color: statusColor, fontSize: 13, fontWeight: "700" }}>
-                        {formatCurrency(debt.remaining)}
-                      </Text>
-                    </View>
-
-                    <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }} />
-
-                    {/* Action */}
-                    <View style={{ flex: 1, alignItems: "center", gap: 6, flexDirection: "row", justifyContent: "center" }}>
-                      {debt.status !== "paid" && (
-                        <TouchableOpacity
-                          style={{
-                            paddingHorizontal: 12, paddingVertical: 6,
-                            borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`,
-                            borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
-                          }}
-                          onPress={() => {
-                            setPayModal({ visible: true, debt });
-                            setPayAmount("");
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>
-                            Bayar
-                          </Text>
-                        </TouchableOpacity>
-                      )}
+                  {/* Row 4: Actions */}
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {debt.status !== "paid" && (
                       <TouchableOpacity
                         style={{
-                          width: 30, height: 30, borderRadius: 9,
+                          flex: 1, height: 38, borderRadius: 12,
                           alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${ERROR_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ERROR_COLOR}20`,
+                          backgroundColor: `${ACCENT_COLOR}15`,
+                          borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
                         }}
-                        onPress={() => handleDelete(debt)}
+                        onPress={() => {
+                          setPayModal({ visible: true, debt });
+                          setPayAmount("");
+                        }}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="trash-outline" size={13} color={ERROR_COLOR} />
+                        <Text style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}>
+                          Bayar Cicilan
+                        </Text>
                       </TouchableOpacity>
-                    </View>
+                    )}
+                    <TouchableOpacity
+                      style={{
+                        width: 38, height: 38, borderRadius: 12,
+                        alignItems: "center", justifyContent: "center",
+                        backgroundColor: `${ERROR_COLOR}15`,
+                        borderWidth: 1, borderColor: `${ERROR_COLOR}25`,
+                      }}
+                      onPress={() => handleDelete(debt)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={ERROR_COLOR} />
+                    </TouchableOpacity>
                   </View>
-                </View>
+                  </View>
               );
             })}
           </View>

@@ -283,7 +283,7 @@ const SavingsScreen: React.FC = () => {
                 marginBottom: 16,
               }}
             >
-              {formatCurrency(totalStats.totalCurrent)}
+              {formatCurrency(totalStats.totalTarget)}
             </Text>
 
             {/* Terkumpul / Target */}
@@ -297,7 +297,7 @@ const SavingsScreen: React.FC = () => {
                     }}
                   />
                   <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Terkumpul
+                    Tersimpan
                   </Text>
                 </View>
                 <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
@@ -323,59 +323,9 @@ const SavingsScreen: React.FC = () => {
                   {formatCurrency(totalStats.totalTarget)}
                 </Text>
               </View>
-
-              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
-
-              {/* Status chips */}
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
-                  Status
-                </Text>
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  {totalStats.completedCount > 0 && (
-                    <View
-                      style={{
-                        paddingHorizontal: 7, paddingVertical: 2,
-                        borderRadius: 20, backgroundColor: `${SUCCESS_COLOR}18`,
-                        borderWidth: 1, borderColor: `${SUCCESS_COLOR}28`,
-                      }}
-                    >
-                      <Text style={{ color: SUCCESS_COLOR, fontSize: 10, fontWeight: "700" }}>
-                        {totalStats.completedCount} ✓
-                      </Text>
-                    </View>
-                  )}
-                  {totalStats.activeCount > 0 && (
-                    <View
-                      style={{
-                        paddingHorizontal: 7, paddingVertical: 2,
-                        borderRadius: 20, backgroundColor: `${ACCENT_COLOR}18`,
-                        borderWidth: 1, borderColor: `${ACCENT_COLOR}28`,
-                      }}
-                    >
-                      <Text style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}>
-                        {totalStats.activeCount} ●
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
             </View>
 
-            {/* Overall progress bar */}
             <ThinBar progress={totalStats.overallProgress} color={utilizationColor} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ color: Colors.gray400, fontSize: 10 }}>
-                {totalStats.overallProgress.toFixed(1)}% tercapai
-              </Text>
-              <Text style={{ fontSize: 10, fontWeight: "600", color: utilizationColor }}>
-                {totalStats.overallProgress >= 100
-                  ? "Semua tercapai! 🎉"
-                  : totalStats.overallProgress >= 75
-                  ? "Hampir sampai"
-                  : "Terus menabung"}
-              </Text>
-            </View>
           </View>
         )}
 
@@ -540,15 +490,14 @@ const SavingsScreen: React.FC = () => {
                 >
                   <ImageBackground
                     source={saving.imageCover ? { uri: saving.imageCover } : require("../../../assets/bg.png")}
-                    style={{ height: 150, justifyContent: "flex-end" }}
+                    style={{ width: "100%" }}
                     imageStyle={{ opacity: saving.imageCover ? 1 : 0.2 }}
                   >
                     <LinearGradient
-                      colors={["transparent", "rgba(8,12,20,0.6)", "rgba(8,12,20,0.95)"]}
+                      colors={["transparent", "rgba(8,12,20,0.4)", "rgba(8,12,20,0.9)"]}
                       style={{
                         position: "absolute",
-                        left: 0, right: 0, bottom: 0,
-                        height: 100,
+                        left: 0, right: 0, bottom: 0, top: 0,
                       }}
                     />
                     
@@ -578,20 +527,6 @@ const SavingsScreen: React.FC = () => {
                               {saving.category}
                             </Text>
                           </View>
-                          {isCompleted && (
-                            <View
-                              style={{
-                                height: 22, paddingHorizontal: 8,
-                                borderRadius: 12, backgroundColor: `${SUCCESS_COLOR}25`,
-                                borderWidth: 1, borderColor: `${SUCCESS_COLOR}40`,
-                                justifyContent: "center",
-                              }}
-                            >
-                              <Text style={{ color: SUCCESS_COLOR, fontSize: 8, fontWeight: "800" }}>
-                                SELESAI 🎉
-                              </Text>
-                            </View>
-                          )}
                         </View>
                       </View>
                       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
@@ -601,35 +536,33 @@ const SavingsScreen: React.FC = () => {
                         </Text>
                       </View>
 
-                      {/* Progress Bar & Amount */}
-                      <View style={{ marginBottom: 6 }}>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "flex-end",
-                            marginBottom: 8,
-                          }}
-                        >
-                          <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>
-                            {formatCurrency(current)}
-                            <Text style={{ color: Colors.gray400, fontSize: 12, fontWeight: "500" }}>
-                              {" "} / {formatCurrency(target)}
+                      {/* Row 2: Progress Info (Left: Saved, Right: Target) */}
+                      <View style={{ marginBottom: 14 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+                          <View>
+                            <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
+                              Tersimpan
                             </Text>
-                          </Text>
-                          <Text style={{ color: progressColor, fontSize: 14, fontWeight: "800" }}>
-                            {progress.toFixed(0)}%
-                          </Text>
+                            <Text style={{ color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700" }}>
+                              {formatCurrency(current)}
+                            </Text>
+                          </View>
+                          <View style={{ alignItems: "flex-end" }}>
+                            <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
+                              Target
+                            </Text>
+                            <Text style={{ color: Colors.gray400, fontSize: 13, fontWeight: "600" }}>
+                              {formatCurrency(target)}
+                            </Text>
+                          </View>
                         </View>
                         <ThinBar progress={progress} color={progressColor} />
+                        <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6 }}>
+                          <Text style={{ color: isCompleted ? SUCCESS_COLOR : ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
+                            Sisa: {formatCurrency(remaining)}
+                          </Text>
+                        </View>
                       </View>
-                      
-                      {/* Prediction / Remaining Info */}
-                      {!isCompleted && (
-                        <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 6, fontStyle: "italic" }}>
-                          Sisa {formatCurrency(remaining)} lagi untuk mencapai impianmu.
-                        </Text>
-                      )}
                     </View>
                   </ImageBackground>
                 </TouchableOpacity>
