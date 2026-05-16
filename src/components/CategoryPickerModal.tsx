@@ -1,5 +1,5 @@
 // File: src/components/CategoryPickerModal.tsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,10 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  PanResponder,
+  Dimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../context/AppContext";
 import { CustomCategory } from "../types";
@@ -60,6 +63,7 @@ const COLOR_PALETTE = [
   "#84CC16","#22C55E","#10B981","#14B8A6",
   "#06B6D4","#3B82F6","#6366F1","#8B5CF6",
   "#A855F7","#EC4899","#F43F5E","#94A3B8",
+
 ];
 
 const BG     = Colors.background;
@@ -68,6 +72,171 @@ const TP     = Colors.textPrimary;
 const TS     = Colors.textSecondary;
 const BORDER = Colors.border;
 const ACCENT = Colors.accent;
+
+// ─── HSV ↔ HEX helpers ────────────────────────────────────────────────────────
+function hsvToHex(h: number, s: number, v: number): string {
+  s /= 100; v /= 100;
+  const f = (n: number) => {
+    const k = (n + h / 60) % 6;
+    const val = v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+    return Math.round(val * 255).toString(16).padStart(2, "0");
+  };
+  return `#${f(5)}${f(3)}${f(1)}`;
+}
+
+function hexToHsv(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = Math.round(h * 60);
+    if (h < 0) h += 360;
+  }
+  const s = max === 0 ? 0 : Math.round((d / max) * 100);
+  const v = Math.round(max * 100);
+  return [h, s, v];
+}
+
+// ─── Single draggable slider bar ─────────────────────────────────────────────
+const SliderBar: React.FC<{
+  value: number; min: number; max: number;
+  gradientColors: string[];
+  onChange: (v: number) => void;
+  label: string;
+}> = ({ value, min, max, gradientColors, onChange, label }) => {
+  const barWidth = Dimensions.get("window").width - 80; // approx
+  const thumbX = useRef(((value - min) / (max - min)) * barWidth);
+  const containerRef = useRef<View>(null);
+  const [containerX, setContainerX] = useState(0);
+
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        const px = evt.nativeEvent.locationX;
+        const clamped = Math.max(0, Math.min(px, barWidth));
+        const newVal = Math.round(min + (clamped / barWidth) * (max - min));
+        thumbX.current = clamped;
+        onChange(newVal);
+      },
+      onPanResponderMove: (evt) => {
+        const px = evt.nativeEvent.locationX;
+        const clamped = Math.max(0, Math.min(px, barWidth));
+        const newVal = Math.round(min + (clamped / barWidth) * (max - min));
+        thumbX.current = clamped;
+        onChange(newVal);
+      },
+    })
+  ).current;
+
+  const thumbPos = ((value - min) / (max - min)) * barWidth;
+
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+        <Text style={{ color: TS, fontSize: 9, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8 }}>{label}</Text>
+        <Text style={{ color: TP, fontSize: 11, fontWeight: "700" }}>{value}</Text>
+      </View>
+      <View
+        style={{ height: 22, borderRadius: 11, overflow: "hidden" }}
+        {...pan.panHandlers}
+      >
+        <LinearGradient
+          colors={gradientColors as any}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ flex: 1, borderRadius: 11 }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            top: 1, left: thumbPos - 10,
+            width: 20, height: 20, borderRadius: 10,
+            backgroundColor: "#FFF",
+            shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 4, elevation: 4,
+          }}
+        />
+      </View>
+    </View>
+  );
+};
+
+// ─── Full HSV Color Picker ────────────────────────────────────────────────────
+const HSVColorPicker: React.FC<{ color: string; onChange: (hex: string) => void }> = ({ color, onChange }) => {
+  const safeHex = /^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#8B5CF6";
+  const [h, s, v] = hexToHsv(safeHex);
+  const [hue, setHue]   = useState(h);
+  const [sat, setSat]   = useState(s);
+  const [val, setVal]   = useState(v);
+  const [hexInput, setHexInput] = useState(safeHex.toUpperCase());
+
+  const update = useCallback((nh: number, ns: number, nv: number) => {
+    const hex = hsvToHex(nh, ns, nv);
+    setHexInput(hex.toUpperCase());
+    onChange(hex);
+  }, [onChange]);
+
+  const hueColors = Array.from({ length: 13 }, (_, i) => `hsl(${i * 30},100%,50%)`);
+  const satColors = [`hsl(${hue},0%,${val}%)`, `hsl(${hue},100%,${val * 0.5}%)`];
+  const valColors = [`#000000`, hsvToHex(hue, sat, 100)];
+
+  return (
+    <View style={{ marginBottom: 16 }}>
+      {/* Preview + hex */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: hsvToHex(hue,sat,val), borderWidth: 2, borderColor: "rgba(255,255,255,0.2)" }} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: TS, fontSize: 9, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>Kode Hex</Text>
+          <TextInput
+            value={hexInput}
+            onChangeText={(t) => {
+              const cleaned = t.startsWith("#") ? t : `#${t}`;
+              setHexInput(cleaned.toUpperCase());
+              if (/^#[0-9A-Fa-f]{6}$/.test(cleaned)) {
+                const [nh,ns,nv] = hexToHsv(cleaned);
+                setHue(nh); setSat(ns); setVal(nv);
+                onChange(cleaned);
+              }
+            }}
+            maxLength={7}
+            autoCapitalize="characters"
+            placeholder="#RRGGBB"
+            placeholderTextColor={Colors.gray500}
+            style={{ backgroundColor: BG, borderRadius: 10, borderWidth: 1.5, borderColor: BORDER, paddingHorizontal: 12, paddingVertical: 8, color: TP, fontSize: 14, fontWeight: "700" }}
+          />
+        </View>
+      </View>
+
+      <SliderBar label="Hue (Warna)" value={hue} min={0} max={360} gradientColors={hueColors} onChange={(v) => { setHue(v); update(v, sat, val); }} />
+      <SliderBar label="Saturasi" value={sat} min={0} max={100} gradientColors={satColors} onChange={(v) => { setSat(v); update(hue, v, val); }} />
+      <SliderBar label="Kecerahan" value={val} min={0} max={100} gradientColors={valColors} onChange={(v) => { setVal(v); update(hue, sat, v); }} />
+
+      {/* Quick palette */}
+      <Text style={{ color: TS, fontSize: 9, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Warna Cepat</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {COLOR_PALETTE.map((c) => (
+          <TouchableOpacity
+            key={c}
+            onPress={() => {
+              const [nh,ns,nv] = hexToHsv(c);
+              setHue(nh); setSat(ns); setVal(nv);
+              setHexInput(c.toUpperCase());
+              onChange(c);
+            }}
+            activeOpacity={0.8}
+            style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c, borderWidth: hsvToHex(hue,sat,val).toUpperCase() === c.toUpperCase() ? 3 : 1.5, borderColor: hsvToHex(hue,sat,val).toUpperCase() === c.toUpperCase() ? "#FFF" : `${c}80` }}
+          />
+        ))}
+      </View>
+    </View>
+  );
+};
 
 // ─── Create / Edit Form ───────────────────────────────────────────────────────
 interface FormProps {
@@ -148,22 +317,11 @@ const CategoryForm: React.FC<FormProps> = ({ title, initial, onSave, onCancel, s
           />
         </TouchableOpacity>
 
-        {/* Color Picker */}
+
+        {/* Color Picker — HSV Sliders */}
         <Text style={{ color: TS, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Warna</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
-          {COLOR_PALETTE.map((c) => (
-            <TouchableOpacity
-              key={c}
-              onPress={() => setColor(c)}
-              activeOpacity={0.8}
-              style={{
-                width: 36, height: 36, borderRadius: 18, backgroundColor: c,
-                borderWidth: color === c ? 3 : 1.5,
-                borderColor: color === c ? "#FFFFFF" : `${c}60`,
-              }}
-            />
-          ))}
-        </View>
+        <HSVColorPicker color={color} onChange={setColor} />
+
 
         {/* Icon Group Tabs */}
         <Text style={{ color: TS, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Ikon</Text>
@@ -194,7 +352,7 @@ const CategoryForm: React.FC<FormProps> = ({ title, initial, onSave, onCancel, s
         </ScrollView>
 
         {/* Icon Grid */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 24, justifyContent: "center" }}>
           {ICON_GROUPS[iconGroup].icons.map((ic) => (
             <TouchableOpacity
               key={ic}
@@ -405,7 +563,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                 <Text style={{ color: Colors.gray500, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
                   Kategori Bawaan
                 </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 20 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
                   {DEFAULT_CATEGORIES.map((cat) => {
                     const isSelected = selectedName === cat.name;
                     const isUsed     = usedBudgetCategories.includes(cat.name);
@@ -416,22 +574,26 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                         disabled={isUsed}
                         activeOpacity={0.8}
                         style={{
-                          width: "23%", alignItems: "center", paddingVertical: 10,
-                          opacity: isUsed ? 0.4 : 1,
+                          width: "22%", alignItems: "center",
+                          paddingVertical: 10, paddingHorizontal: 4,
+                          borderRadius: 16,
+                          backgroundColor: isSelected ? `${cat.color}20` : "rgba(255,255,255,0.04)",
+                          borderWidth: 1.5,
+                          borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
+                          opacity: isUsed ? 0.35 : 1,
                         }}
                       >
-                        <View style={{ 
-                          width: 50, height: 50, borderRadius: 25,
-                          backgroundColor: isSelected ? cat.color : `${cat.color}15`, 
+                        <View style={{
+                          width: 44, height: 44, borderRadius: 14,
+                          backgroundColor: isSelected ? cat.color : `${cat.color}18`,
                           alignItems: "center", justifyContent: "center", marginBottom: 6,
-                          borderWidth: isSelected ? 0 : 1, borderColor: `${cat.color}30`
                         }}>
-                          <Ionicons name={cat.icon as any} size={24} color={isSelected ? "#FFFFFF" : cat.color} />
+                          <Ionicons name={cat.icon as any} size={22} color={isSelected ? "#FFFFFF" : cat.color} />
                         </View>
-                        <Text style={{ color: isSelected ? TP : TS, fontSize: 11, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
+                        <Text style={{ color: isSelected ? cat.color : TS, fontSize: 10, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
                           {cat.name}
                         </Text>
-                        {isUsed && <Text style={{ color: Colors.gray500, fontSize: 9, marginTop: 2 }}>Terpakai</Text>}
+                        {isUsed && <Text style={{ color: Colors.gray600, fontSize: 8, marginTop: 2 }}>Terpakai</Text>}
                       </TouchableOpacity>
                     );
                   })}
@@ -443,7 +605,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                     <Text style={{ color: Colors.gray500, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
                       Kategori Kustom ({customCategories.length})
                     </Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 16 }}>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
                       {customCategories.map((cat) => {
                         const isSelected = selectedName === cat.name;
                         const isUsed     = usedBudgetCategories.includes(cat.name);
@@ -458,29 +620,29 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                             disabled={isUsed}
                             activeOpacity={0.8}
                             style={{
-                              width: "23%", alignItems: "center", paddingVertical: 10,
-                              opacity: isUsed ? 0.4 : 1,
+                              width: "22%", alignItems: "center",
+                              paddingVertical: 10, paddingHorizontal: 4,
+                              borderRadius: 16,
+                              backgroundColor: isSelected ? `${cat.color}20` : "rgba(255,255,255,0.04)",
+                              borderWidth: 1.5,
+                              borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
+                              opacity: isUsed ? 0.35 : 1,
                             }}
                           >
-                            <View style={{ 
-                              width: 50, height: 50, borderRadius: 25,
-                              backgroundColor: isSelected ? cat.color : `${cat.color}15`, 
+                            <View style={{
+                              width: 44, height: 44, borderRadius: 14,
+                              backgroundColor: isSelected ? cat.color : `${cat.color}18`,
                               alignItems: "center", justifyContent: "center", marginBottom: 6,
-                              borderWidth: isSelected ? 0 : 1, borderColor: `${cat.color}30`
                             }}>
-                              <Ionicons name={cat.icon as any} size={24} color={isSelected ? "#FFFFFF" : cat.color} />
+                              <Ionicons name={cat.icon as any} size={22} color={isSelected ? "#FFFFFF" : cat.color} />
                             </View>
-                            <Text style={{ color: isSelected ? TP : TS, fontSize: 11, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
+                            <Text style={{ color: isSelected ? cat.color : TS, fontSize: 10, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
                               {cat.name}
                             </Text>
-                            <Text style={{ color: Colors.gray500, fontSize: 9, marginTop: 2 }}>Tahan edit</Text>
+                            <Text style={{ color: Colors.gray600, fontSize: 8, marginTop: 2 }}>Tahan edit</Text>
                           </TouchableOpacity>
                         );
                       })}
-                      {/* Fill empty spaces to keep left alignment if not a multiple of 4 */}
-                      {Array.from({ length: (4 - (customCategories.length % 4)) % 4 }).map((_, i) => (
-                        <View key={`empty-${i}`} style={{ width: "23%" }} />
-                      ))}
                     </View>
                   </>
                 )}
