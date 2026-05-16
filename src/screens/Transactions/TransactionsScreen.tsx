@@ -623,9 +623,8 @@ const TransactionsScreen: React.FC = () => {
           />
         }
       >
-        {/* ── Summary card ─────────────────────────────────────────────── */}
+        {/* ── Transactions grouped by day ─────────────────────────────── */}
         <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
-          {/* ── Transactions grouped by day ─────────────────────────────── */}
           {Object.entries(groupedByDay).length > 0 ? (
             <View>
               {Object.entries(groupedByDay).map(([day, transactions], groupIndex) => {
