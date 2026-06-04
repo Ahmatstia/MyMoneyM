@@ -166,16 +166,12 @@ const FloatingDrawerHandle: React.FC = () => {
             { width: animatedWidth },
           ]}
         >
-          {/* Main icon — slides inward while pulling */}
-          <Animated.View
-            style={{ transform: [{ translateX: chevronTranslate }] }}
-          >
-            <Ionicons
-              name={isRight ? "chevron-back" : "chevron-forward"}
-              size={16}
-              color="#22D3EE"
-            />
-          </Animated.View>
+          {/* Main icon — naturally stays centered while button width grows */}
+          <Ionicons
+            name={isRight ? "chevron-back" : "chevron-forward"}
+            size={16}
+            color="#22D3EE"
+          />
         </Animated.View>
       </View>
     </Animated.View>
