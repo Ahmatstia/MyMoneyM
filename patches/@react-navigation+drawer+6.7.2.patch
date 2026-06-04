@@ -1,0 +1,39 @@
+diff --git a/node_modules/@react-navigation/drawer/lib/commonjs/views/modern/Drawer.js b/node_modules/@react-navigation/drawer/lib/commonjs/views/modern/Drawer.js
+index 54263d6..e866d1d 100644
+--- a/node_modules/@react-navigation/drawer/lib/commonjs/views/modern/Drawer.js
++++ b/node_modules/@react-navigation/drawer/lib/commonjs/views/modern/Drawer.js
+@@ -151,7 +151,7 @@ function Drawer(_ref) {
+     open,
+     isUserInitiated: false
+   }), [open, toggleDrawer]);
+-  const onGestureEvent = (0, _reactNativeReanimated.useAnimatedGestureHandler)({
++  const _mockHandler = _reactNativeReanimated.useAnimatedGestureHandler || function(){return undefined;}; const onGestureEvent = _mockHandler({
+     onStart: (event, ctx) => {
+       ctx.hasCalledOnStart = false;
+       ctx.startX = translationX.value;
+diff --git a/node_modules/@react-navigation/drawer/lib/module/views/modern/Drawer.js b/node_modules/@react-navigation/drawer/lib/module/views/modern/Drawer.js
+index 3aa1baa..cb929c0 100644
+--- a/node_modules/@react-navigation/drawer/lib/module/views/modern/Drawer.js
++++ b/node_modules/@react-navigation/drawer/lib/module/views/modern/Drawer.js
+@@ -142,7 +142,7 @@ export default function Drawer(_ref) {
+     open,
+     isUserInitiated: false
+   }), [open, toggleDrawer]);
+-  const onGestureEvent = useAnimatedGestureHandler({
++  const _mockHandler = useAnimatedGestureHandler || function(){return undefined;}; const onGestureEvent = _mockHandler({
+     onStart: (event, ctx) => {
+       ctx.hasCalledOnStart = false;
+       ctx.startX = translationX.value;
+diff --git a/node_modules/@react-navigation/drawer/src/views/modern/Drawer.tsx b/node_modules/@react-navigation/drawer/src/views/modern/Drawer.tsx
+index 57af20c..0b1bbd4 100644
+--- a/node_modules/@react-navigation/drawer/src/views/modern/Drawer.tsx
++++ b/node_modules/@react-navigation/drawer/src/views/modern/Drawer.tsx
+@@ -192,7 +192,7 @@ export default function Drawer({
+     [open, toggleDrawer]
+   );
+ 
+-  const onGestureEvent = useAnimatedGestureHandler<
++  const _mockHandler: any = useAnimatedGestureHandler || function(){return undefined;}; const onGestureEvent = _mockHandler<
+     PanGestureHandlerGestureEvent,
+     { startX: number; hasCalledOnStart: boolean }
+   >({
