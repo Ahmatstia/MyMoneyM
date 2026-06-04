@@ -17,7 +17,7 @@ import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import LottieView from "lottie-react-native";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system/next";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -498,16 +498,13 @@ const SettingsScreen = () => {
       const dataToExport = JSON.stringify(state, null, 2);
       
       const fileName = `MyMoney_Backup_${new Date().toISOString().split('T')[0]}.json`;
-      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-      
-      await FileSystem.writeAsStringAsync(fileUri, dataToExport, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const file = new File(Paths.join(Paths.document, fileName));
+      await file.write(dataToExport);
 
       setLoading(false);
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
+        await Sharing.shareAsync(file.uri, {
           mimeType: "application/json",
           dialogTitle: "Simpan Backup MyMoney",
           UTI: "public.json" // iOS specific
@@ -542,9 +539,7 @@ const SettingsScreen = () => {
               onPress: async () => {
                 setLoading(true, "Memulihkan data...");
                 try {
-                  const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-                    encoding: FileSystem.EncodingType.UTF8,
-                  });
+                  const fileContent = await new File(fileUri).text();
                   
                   const importedData = JSON.parse(fileContent);
                   

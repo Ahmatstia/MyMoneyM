@@ -1396,7 +1396,7 @@ const TransactionsScreen: React.FC = () => {
                     justifyContent: "space-around",
                   },
                 },
-              }}
+              } as any}
             />
           </View>
         </View>

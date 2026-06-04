@@ -97,7 +97,7 @@ const OnboardingScreen = ({ navigation }: any) => {
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       
       <LinearGradient
-        colors={[Colors.primaryDark, Colors.primary, Colors.primaryLight]}
+        colors={[Colors.primaryDark, Colors.primary, Colors.primaryLight] as [string, string, ...string[]]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -171,7 +171,7 @@ const OnboardingScreen = ({ navigation }: any) => {
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={Colors.gradient.accent}
+            colors={Colors.gradient.accent as [string, string, ...string[]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.gradientButton}

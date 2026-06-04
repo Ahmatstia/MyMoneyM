@@ -4,7 +4,7 @@ import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system/next";
 import * as Sharing from "expo-sharing";
 import tw from "twrnc";
 
@@ -460,13 +460,10 @@ Kategori: ${financialHealthScore.category}
 #MyMoney #KeuanganSehat
       `.trim();
 
-      const fileUri =
-        FileSystem.documentDirectory +
-        `laporan-${new Date().toISOString().slice(0, 10)}.txt`;
-      await FileSystem.writeAsStringAsync(fileUri, summary, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-      await Sharing.shareAsync(fileUri, {
+      const filename = `laporan-${new Date().toISOString().slice(0, 10)}.txt`;
+      const file = new File(Paths.join(Paths.document, filename));
+      await file.write(summary);
+      await Sharing.shareAsync(file.uri, {
         mimeType: "text/plain",
         dialogTitle: "Bagikan Laporan Keuangan",
       });

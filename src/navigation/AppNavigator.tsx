@@ -242,6 +242,7 @@ const StackWithHandle: React.FC = () => (
 
 const DrawerNavigator = () => (
   <Drawer.Navigator
+    useLegacyImplementation={false}
     drawerContent={(props) => <CustomDrawerContent {...props} />}
     screenOptions={{
       drawerStyle: { width: width * 0.8, backgroundColor: "#0F172A" },

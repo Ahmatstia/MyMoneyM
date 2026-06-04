@@ -70,9 +70,10 @@ const DEFAULT_SETTINGS = {
 // Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -271,7 +272,6 @@ export class NotificationService {
             allowAlert: true,
             allowBadge: true,
             allowSound: true,
-            allowAnnouncements: true,
           },
         });
         finalStatus = status;
@@ -556,8 +556,8 @@ export class NotificationService {
 
       // 4. Construct trigger (Daily atau Weekly)
       const trigger: Notifications.NotificationTriggerInput = weekday
-        ? { weekday, hour, minute, repeats } // Weekly
-        : { hour, minute, repeats }; // Daily
+        ? { type: Notifications.SchedulableTriggerInputTypes.CALENDAR, weekday, hour, minute, repeats } // Weekly
+        : { type: Notifications.SchedulableTriggerInputTypes.CALENDAR, hour, minute, repeats }; // Daily
 
       await Notifications.scheduleNotificationAsync({
         content: {
