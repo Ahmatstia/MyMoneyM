@@ -260,7 +260,7 @@ const DebtScreen: React.FC = () => {
               marginBottom: 16,
             }}
           >
-            {net >= 0  ? formatCurrency(net) : ""}
+            {formatCurrency(net)}
           </Text>
 
           {/* Hutang / Piutang row */}
