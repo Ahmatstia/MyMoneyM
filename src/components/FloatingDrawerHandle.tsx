@@ -166,12 +166,14 @@ const FloatingDrawerHandle: React.FC = () => {
             { width: animatedWidth },
           ]}
         >
-          {/* Main icon — naturally stays centered while button width grows */}
-          <Ionicons
-            name={isRight ? "chevron-back" : "chevron-forward"}
-            size={16}
-            color="#22D3EE"
-          />
+          {/* Main icon — fixed width container to prevent layout squash during parent stretch */}
+          <View style={{ width: BUTTON_W, height: BUTTON_H, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons
+              name={isRight ? "chevron-back" : "chevron-forward"}
+              size={16}
+              color="#22D3EE"
+            />
+          </View>
         </Animated.View>
       </View>
     </Animated.View>
@@ -185,13 +187,11 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   button: {
-    width: undefined, // driven by Animated.View inside
     height: BUTTON_H,
     backgroundColor: "#1E293B",
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
   btnLeft: {
     width: BUTTON_W,
