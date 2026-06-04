@@ -343,7 +343,7 @@ const AddTransactionScreen: React.FC = () => {
   }, [category, state.customCategories]);
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`px-4 pt-4 pb-8`}
@@ -806,7 +806,7 @@ const AddTransactionScreen: React.FC = () => {
           onChange={handleDateSelect}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

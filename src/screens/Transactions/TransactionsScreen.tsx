@@ -12,6 +12,7 @@ import {
   Modal,
   Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
@@ -431,7 +432,7 @@ const TransactionsScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
 
       {/* ── Sticky header ───────────────────────────────────────────────── */}
       <View
@@ -1401,7 +1402,7 @@ const TransactionsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

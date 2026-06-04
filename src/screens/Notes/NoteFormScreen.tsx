@@ -378,7 +378,7 @@ const NoteFormScreen: React.FC = () => {
   };
 
   return (
-    <View style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       <ScrollView
         style={tw`flex-1`}
         contentContainerStyle={tw`p-5 pb-8`}
@@ -861,7 +861,7 @@ const NoteFormScreen: React.FC = () => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

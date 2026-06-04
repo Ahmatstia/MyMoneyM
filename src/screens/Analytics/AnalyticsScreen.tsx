@@ -1,5 +1,6 @@
 // File: src/screens/Analytics/AnalyticsScreen.tsx
 import React, { useState, useMemo } from "react";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -1029,7 +1030,7 @@ Kategori: ${financialHealthScore.category}
   // MAIN RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
 
       {/* ── Fixed Header (redesigned) ────────────────────────────────────── */}
       <View
@@ -1890,7 +1891,7 @@ Kategori: ${financialHealthScore.category}
         </View>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -1,5 +1,6 @@
 // File: src/screens/BudgetScreen.tsx
 import React, { useState, useMemo } from "react";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, ScrollView, Alert, TouchableOpacity, Animated } from "react-native";
 import { Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -284,7 +285,7 @@ const BudgetScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
@@ -824,7 +825,7 @@ const BudgetScreen: React.FC = () => {
           <Ionicons name="add" size={28} color={BACKGROUND_COLOR} />
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 };
 
