@@ -236,6 +236,7 @@ const MainStackNavigator = () => {
 const StackWithHandle: React.FC = () => (
   <View style={{ flex: 1 }}>
     <MainStackNavigator />
+    <FloatingDrawerHandle />
   </View>
 );
 
