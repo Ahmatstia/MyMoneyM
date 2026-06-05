@@ -1,4 +1,16 @@
-// File: src/screens/Debt/DebtScreen.tsx
+// File: src/screens/Debt/DebtScreen.tsx — redesigned
+//
+// Perubahan utama vs versi lama:
+//  1. Due date sekarang ditampilkan — dihitung & dirender sebagai pill (was: dihitung tapi invisible)
+//  2. Status badge menggunakan STATUS_LABEL teks (was: hanya lewat warna)
+//  3. isOverdue dipakai untuk card background + border (was: diabaikan)
+//  4. Hero number = "Sisa Tagihan" bukan "Terbayar" (lebih relevan buat user)
+//  5. Progress bar 6px + persentase terbayar
+//  6. Hapus borderLeftWidth: 3 → gantinya subtle background tint per status
+//  7. Summary card: tambah overdue badge + active count per kategori
+//  8. Paid card: tampilan khusus (background hijau lembut, no Bayar button)
+//  9. ProgressBar jadi komponen bersama dengan prop `height`
+
 import React, { useState, useMemo } from "react";
 import {
   View,
@@ -21,7 +33,7 @@ import { formatCurrency, safeNumber } from "../../utils/calculations";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// ─── Theme colors (konsisten dengan seluruh app) ──────────────────────────────
+// ─── Theme colors ─────────────────────────────────────────────────────────────
 const BACKGROUND_COLOR = Colors.background;
 const SURFACE_COLOR    = Colors.surface;
 const TEXT_PRIMARY     = Colors.textPrimary;
@@ -31,13 +43,25 @@ const SUCCESS_COLOR    = Colors.success;
 const WARNING_COLOR    = Colors.warning;
 const ERROR_COLOR      = Colors.error;
 
-// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
+// ─── Design tokens ─────────────────────────────────────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
-// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
+// ─── Status maps ──────────────────────────────────────────────────────────────
+const STATUS_COLOR: Record<Debt["status"], string> = {
+  active:  ERROR_COLOR,
+  partial: WARNING_COLOR,
+  paid:    SUCCESS_COLOR,
+};
+const STATUS_LABEL: Record<Debt["status"], string> = {
+  active:  "Belum Bayar",
+  partial: "Cicilan",
+  paid:    "Lunas ✓",
+};
+
+// ─── Shared components ────────────────────────────────────────────────────────
 
 const SectionHeader = ({
   title,
@@ -88,42 +112,34 @@ const SectionHeader = ({
   </View>
 );
 
-const ThinBar = ({
+/** Progress bar — terima height agar bisa dipakai di summary (4px) & debt card (6px) */
+const ProgressBar = ({
   progress,
   color,
+  height = 5,
 }: {
-  progress: number;
+  progress: number; // 0 – 1
   color: string;
+  height?: number;
 }) => (
   <View
     style={{
-      height: 4,
+      height,
       backgroundColor: "rgba(255,255,255,0.07)",
-      borderRadius: 4,
+      borderRadius: height,
       overflow: "hidden",
     }}
   >
     <View
       style={{
-        height: 4,
-        borderRadius: 4,
+        height,
+        borderRadius: height,
         width: `${Math.max(0, Math.min(progress * 100, 100))}%`,
         backgroundColor: color,
       }}
     />
   </View>
 );
-
-const STATUS_COLOR: Record<Debt["status"], string> = {
-  active:  ERROR_COLOR,
-  partial: WARNING_COLOR,
-  paid:    SUCCESS_COLOR,
-};
-const STATUS_LABEL: Record<Debt["status"], string> = {
-  active:  "Belum Dibayar",
-  partial: "Sebagian",
-  paid:    "Lunas",
-};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -169,6 +185,26 @@ const DebtScreen: React.FC = () => {
 
   const net = totalLent - totalBorrowed;
 
+  // ── Hitung overdue count untuk warning badge di summary card ──────────────
+  const overdueCount = useMemo(
+    () =>
+      allDebts.filter((d) => {
+        if (d.status === "paid" || !d.dueDate) return false;
+        const due   = new Date(d.dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return due.getTime() < today.getTime();
+      }).length,
+    [allDebts]
+  );
+
+  const borrowedActiveCount = allDebts.filter(
+    (d) => d.type === "borrowed" && d.status !== "paid"
+  ).length;
+  const lentActiveCount = allDebts.filter(
+    (d) => d.type === "lent" && d.status !== "paid"
+  ).length;
+
   const handleDelete = (debt: Debt) => {
     Alert.alert(
       "Hapus Data",
@@ -200,7 +236,7 @@ const DebtScreen: React.FC = () => {
     setPayAmount("");
   };
 
-  const getDaysUntilDue = (dueDate?: string) => {
+  const getDaysUntilDue = (dueDate?: string): number | null => {
     if (!dueDate) return null;
     const due   = new Date(dueDate);
     const today = new Date();
@@ -218,7 +254,7 @@ const DebtScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Page header ─────────────────────────────────────────────── */}
+        {/* ── Page header ───────────────────────────────────────────────── */}
         <View style={{ paddingTop: 16, paddingBottom: 20 }}>
           <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
             Hutang & Piutang
@@ -228,7 +264,11 @@ const DebtScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* ── Summary hero card ─────────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════
+            SUMMARY HERO CARD (REDESIGNED)
+            Tambahan: overdue badge, active count per kategori,
+            label kontekstual di bawah ratio bar
+        ══════════════════════════════════════════ */}
         <View
           style={{
             backgroundColor: SURFACE_COLOR,
@@ -239,22 +279,57 @@ const DebtScreen: React.FC = () => {
             marginBottom: 20,
           }}
         >
-          <Text
+          {/* Label + overdue warning badge */}
+          <View
             style={{
-              color: Colors.gray400,
-              fontSize: 10,
-              fontWeight: "700",
-              letterSpacing: 1.2,
-              textTransform: "uppercase",
-              marginBottom: 5,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
             }}
           >
-            Posisi Bersih
-          </Text>
+            <Text
+              style={{
+                color: Colors.gray400,
+                fontSize: 9,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+              }}
+            >
+              Posisi Bersih
+            </Text>
+            {overdueCount > 0 && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 7,
+                  paddingVertical: 3,
+                  borderRadius: 7,
+                  backgroundColor: `${ERROR_COLOR}16`,
+                  borderWidth: 1,
+                  borderColor: `${ERROR_COLOR}28`,
+                }}
+              >
+                <Ionicons
+                  name="warning-outline"
+                  size={10}
+                  color={ERROR_COLOR}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={{ color: ERROR_COLOR, fontSize: 9, fontWeight: "700" }}>
+                  {overdueCount} terlambat
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Net amount */}
           <Text
             style={{
               color: net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
-              fontSize: 30,
+              fontSize: 28,
               fontWeight: "800",
               letterSpacing: -0.5,
               marginBottom: 16,
@@ -265,60 +340,107 @@ const DebtScreen: React.FC = () => {
 
           {/* Hutang / Piutang row */}
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+            {/* Hutang */}
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
                 <View
                   style={{
-                    width: 6, height: 6, borderRadius: 3,
-                    backgroundColor: ERROR_COLOR, marginRight: 5,
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: ERROR_COLOR,
+                    marginRight: 5,
                   }}
                 />
-                <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                <Text
+                  style={{
+                    color: Colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                  }}
+                >
                   Hutang Saya
                 </Text>
               </View>
-              <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}>
+              <Text style={{ color: ERROR_COLOR, fontSize: 16, fontWeight: "700" }}>
                 {formatCurrency(totalBorrowed)}
+              </Text>
+              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 2 }}>
+                {borrowedActiveCount} catatan aktif
               </Text>
             </View>
 
-            <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
+            <View
+              style={{
+                width: 1,
+                height: 44,
+                backgroundColor: CARD_BORDER,
+                marginHorizontal: 14,
+              }}
+            />
 
+            {/* Piutang */}
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
                 <View
                   style={{
-                    width: 6, height: 6, borderRadius: 3,
-                    backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: SUCCESS_COLOR,
+                    marginRight: 5,
                   }}
                 />
-                <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                <Text
+                  style={{
+                    color: Colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                  }}
+                >
                   Piutang
                 </Text>
               </View>
-              <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
+              <Text style={{ color: SUCCESS_COLOR, fontSize: 16, fontWeight: "700" }}>
                 {formatCurrency(totalLent)}
               </Text>
+              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 2 }}>
+                {lentActiveCount} catatan aktif
+              </Text>
             </View>
-            </View>
+          </View>
 
-          {/* Net bar */}
-          <ThinBar
+          {/* Ratio bar */}
+          <ProgressBar
             progress={
               totalBorrowed + totalLent > 0
                 ? totalLent / (totalBorrowed + totalLent)
                 : 0.5
             }
             color={net >= 0 ? SUCCESS_COLOR : ERROR_COLOR}
+            height={4}
           />
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 6,
+            }}
+          >
             <Text style={{ color: Colors.gray400, fontSize: 10 }}>
               {allDebts.filter((d) => d.status !== "paid").length} aktif
+            </Text>
+            <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+              {net >= 0 ? "Piutang lebih besar" : "Hutang lebih besar"}
             </Text>
           </View>
         </View>
 
-        {/* ── Tab — segmented control ───────────────────────────────────── */}
+        {/* ══════════════════════════════════════════
+            TAB — segmented control
+        ══════════════════════════════════════════ */}
         <View
           style={{
             flexDirection: "row",
@@ -333,7 +455,7 @@ const DebtScreen: React.FC = () => {
           {(["borrowed", "lent"] as const).map((tab) => {
             const isActive = activeTab === tab;
             const tabColor = tab === "borrowed" ? ERROR_COLOR : SUCCESS_COLOR;
-            const count = allDebts.filter((d) => d.type === tab).length;
+            const count    = allDebts.filter((d) => d.type === tab).length;
             return (
               <TouchableOpacity
                 key={tab}
@@ -362,7 +484,9 @@ const DebtScreen: React.FC = () => {
                 {count > 0 && (
                   <View
                     style={{
-                      backgroundColor: isActive ? tabColor : "rgba(255,255,255,0.08)",
+                      backgroundColor: isActive
+                        ? tabColor
+                        : "rgba(255,255,255,0.08)",
                       paddingHorizontal: 5,
                       paddingVertical: 2,
                       borderRadius: 10,
@@ -384,11 +508,14 @@ const DebtScreen: React.FC = () => {
           })}
         </View>
 
-        {/* ── Debt list / empty state ───────────────────────────────────── */}
+        {/* ══════════════════════════════════════════
+            DEBT LIST
+        ══════════════════════════════════════════ */}
         <SectionHeader
           title={activeTab === "borrowed" ? "Daftar Hutang" : "Daftar Piutang"}
         />
 
+        {/* ── Empty state ──────────────────────────────────────────────── */}
         {debts.length === 0 ? (
           <View
             style={{
@@ -403,30 +530,43 @@ const DebtScreen: React.FC = () => {
           >
             <View
               style={{
-                width: 64, height: 64, borderRadius: 20,
-                alignItems: "center", justifyContent: "center",
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
                 backgroundColor: `${Colors.gray400}14`,
                 marginBottom: 14,
               }}
             >
               <Ionicons
-                name={activeTab === "borrowed" ? "card-outline" : "people-outline"}
+                name={
+                  activeTab === "borrowed" ? "card-outline" : "people-outline"
+                }
                 size={26}
                 color={Colors.gray400}
               />
             </View>
             <Text
               style={{
-                color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700",
-                marginBottom: 6, textAlign: "center",
+                color: TEXT_PRIMARY,
+                fontSize: 15,
+                fontWeight: "700",
+                marginBottom: 6,
+                textAlign: "center",
               }}
             >
-              {activeTab === "borrowed" ? "Tidak ada hutang" : "Tidak ada piutang"}
+              {activeTab === "borrowed"
+                ? "Tidak ada hutang"
+                : "Tidak ada piutang"}
             </Text>
             <Text
               style={{
-                color: Colors.gray400, fontSize: 12,
-                textAlign: "center", lineHeight: 18, marginBottom: 20,
+                color: Colors.gray400,
+                fontSize: 12,
+                textAlign: "center",
+                lineHeight: 18,
+                marginBottom: 22,
               }}
             >
               {activeTab === "borrowed"
@@ -435,108 +575,316 @@ const DebtScreen: React.FC = () => {
             </Text>
             <TouchableOpacity
               style={{
-                flexDirection: "row", alignItems: "center",
-                paddingHorizontal: 20, paddingVertical: 10,
-                borderRadius: 13, backgroundColor: ACCENT_COLOR,
-                shadowColor: ACCENT_COLOR,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 20,
+                paddingVertical: 13, // ≥44dp touch target
+                borderRadius: 13,
+                backgroundColor: ACCENT_COLOR,
               }}
               onPress={() => navigation.navigate("AddDebt")}
               activeOpacity={0.8}
             >
-              <Ionicons name="add" size={16} color={BACKGROUND_COLOR} style={{ marginRight: 6 }} />
-              <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>
+              <Ionicons
+                name="add"
+                size={16}
+                color={BACKGROUND_COLOR}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={{
+                  color: BACKGROUND_COLOR,
+                  fontSize: 13,
+                  fontWeight: "700",
+                }}
+              >
                 Catat {activeTab === "borrowed" ? "Hutang" : "Piutang"}
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
+          /* ── Debt cards (REDESIGNED) ───────────────────────────────── */
           <View>
             {debts.map((debt) => {
-              const progress   = debt.amount > 0 ? (debt.amount - debt.remaining) / debt.amount : 0;
-              const days       = getDaysUntilDue(debt.dueDate);
-              const isOverdue  = days !== null && days < 0;
+              const paidAmount  = safeNumber(debt.amount) - safeNumber(debt.remaining);
+              const progress    = safeNumber(debt.amount) > 0
+                ? paidAmount / safeNumber(debt.amount)
+                : 0;
+              const days        = getDaysUntilDue(debt.dueDate);
+              const isOverdue   = days !== null && days < 0;
+              const isDueSoon   = days !== null && days >= 0 && days <= 7;
+              const isPaid      = debt.status === "paid";
               const statusColor = STATUS_COLOR[debt.status];
+
+              // Due date label
+              const dueDateColor =
+                isOverdue ? ERROR_COLOR : isDueSoon ? WARNING_COLOR : Colors.gray400;
+              const dueDateLabel =
+                days === null
+                  ? null
+                  : isOverdue
+                  ? `Terlambat ${Math.abs(days)} hari`
+                  : days === 0
+                  ? "Jatuh tempo hari ini"
+                  : `${days} hari lagi`;
+
+              // Card background & border tint berdasarkan status
+              // Tidak ada lagi borderLeftWidth: 3 — gantinya subtle bg tint
+              const cardBg =
+                isPaid
+                  ? `${SUCCESS_COLOR}07`
+                  : isOverdue
+                  ? `${ERROR_COLOR}09`
+                  : SURFACE_COLOR;
+              const cardBorderColor =
+                isPaid
+                  ? `${SUCCESS_COLOR}18`
+                  : isOverdue
+                  ? `${ERROR_COLOR}22`
+                  : CARD_BORDER;
 
               return (
                 <View
                   key={debt.id}
                   style={{
-                    backgroundColor: SURFACE_COLOR,
+                    backgroundColor: cardBg,
                     borderRadius: CARD_RADIUS,
                     borderWidth: 1,
-                    borderColor: CARD_BORDER,
+                    borderColor: cardBorderColor,
                     padding: CARD_PAD,
                     marginBottom: 12,
-                    borderLeftWidth: 3,
-                    borderLeftColor: statusColor,
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 8 }}>
+                  {/* ── Row 1: Icon · Name · Category · Status badge ──── */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-start",
+                      marginBottom: 14,
+                    }}
+                  >
                     <View
                       style={{
-                        width: 38, height: 38, borderRadius: 12,
-                        alignItems: "center", justifyContent: "center",
+                        width: 40,
+                        height: 40,
+                        borderRadius: 13,
+                        alignItems: "center",
+                        justifyContent: "center",
                         backgroundColor: `${statusColor}15`,
+                        marginRight: 12,
+                        flexShrink: 0,
                       }}
                     >
                       <Ionicons
-                        name={debt.type === "borrowed" ? "arrow-down-outline" : "arrow-up-outline"}
-                        size={17}
+                        name={
+                          debt.type === "borrowed"
+                            ? "arrow-down-outline"
+                            : "arrow-up-outline"
+                        }
+                        size={18}
                         color={statusColor}
                       />
                     </View>
+
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700", marginBottom: 2 }}>
+                      <Text
+                        style={{
+                          color: TEXT_PRIMARY,
+                          fontSize: 14,
+                          fontWeight: "700",
+                          marginBottom: 2,
+                        }}
+                      >
                         {debt.name}
                       </Text>
-                      <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                      <Text style={{ color: Colors.gray400, fontSize: 11 }}>
                         {debt.category}
                       </Text>
                     </View>
-                  </View>
 
-                  {/* Row 2: Progress Info (Left: Paid, Right: Total) */}
-                  <View style={{ marginBottom: 14, marginTop: 14 }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
-                      <View>
-                        <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
-                          Terbayar
-                        </Text>
-                        <Text style={{ color: SUCCESS_COLOR, fontSize: 15, fontWeight: "700" }}>
-                          {formatCurrency(debt.amount - debt.remaining)}
-                        </Text>
-                      </View>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
-                          Total
-                        </Text>
-                        <Text style={{ color: Colors.gray400, fontSize: 13, fontWeight: "600" }}>
-                          {formatCurrency(debt.amount)}
-                        </Text>
-                      </View>
-                    </View>
-                    <ThinBar
-                      progress={debt.status === "paid" ? 1 : progress}
-                      color={debt.status === "paid" ? SUCCESS_COLOR : statusColor}
-                    />
-                    <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 6 }}>
-                      <Text style={{ color: statusColor, fontSize: 11, fontWeight: "600" }}>
-                        Sisa: {formatCurrency(debt.remaining)}
+                    {/* Status badge — teks, bukan hanya warna */}
+                    <View
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 8,
+                        backgroundColor: `${statusColor}16`,
+                        borderWidth: 1,
+                        borderColor: `${statusColor}28`,
+                        alignSelf: "flex-start",
+                        flexShrink: 0,
+                        marginLeft: 8,
+                      }}
+                    >
+                      <Text
+                        style={{ color: statusColor, fontSize: 9, fontWeight: "700" }}
+                      >
+                        {STATUS_LABEL[debt.status]}
                       </Text>
                     </View>
                   </View>
 
-                  {/* Row 4: Actions */}
+                  {/* ── Row 2: Sisa Tagihan (hero) · Due date pill ─────── */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-end",
+                      justifyContent: "space-between",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View>
+                      <Text
+                        style={{
+                          color: Colors.gray400,
+                          fontSize: 9,
+                          fontWeight: "700",
+                          letterSpacing: 0.8,
+                          textTransform: "uppercase",
+                          marginBottom: 3,
+                        }}
+                      >
+                        {isPaid ? "Dilunasi" : "Sisa Tagihan"}
+                      </Text>
+                      <Text
+                        style={{
+                          color: isPaid ? SUCCESS_COLOR : statusColor,
+                          fontSize: 22,
+                          fontWeight: "800",
+                          letterSpacing: -0.3,
+                        }}
+                      >
+                        {formatCurrency(
+                          isPaid
+                            ? safeNumber(debt.amount)
+                            : safeNumber(debt.remaining)
+                        )}
+                      </Text>
+                    </View>
+
+                    {/* Due date pill — hanya untuk debt aktif */}
+                    {!isPaid && dueDateLabel && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingHorizontal: 8,
+                          paddingVertical: 5,
+                          borderRadius: 9,
+                          backgroundColor: isOverdue
+                            ? `${ERROR_COLOR}18`
+                            : isDueSoon
+                            ? `${WARNING_COLOR}15`
+                            : "rgba(255,255,255,0.05)",
+                          borderWidth: 1,
+                          borderColor: `${dueDateColor}22`,
+                        }}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={10}
+                          color={dueDateColor}
+                          style={{ marginRight: 4 }}
+                        />
+                        <Text
+                          style={{
+                            color: dueDateColor,
+                            fontSize: 10,
+                            fontWeight: "600",
+                          }}
+                        >
+                          {dueDateLabel}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* ── Row 3: Progress bar 6px + persentase ───────────── */}
+                  <ProgressBar
+                    progress={isPaid ? 1 : progress}
+                    color={isPaid ? SUCCESS_COLOR : statusColor}
+                    height={6}
+                  />
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 7,
+                    }}
+                  >
+                    <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                      Terbayar {formatCurrency(paidAmount)} dari{" "}
+                      {formatCurrency(safeNumber(debt.amount))}
+                    </Text>
+                    <Text
+                      style={{
+                        color: isPaid ? SUCCESS_COLOR : statusColor,
+                        fontSize: 11,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {Math.round((isPaid ? 1 : progress) * 100)}%
+                    </Text>
+                  </View>
+
+                  {/* ── Divider ─────────────────────────────────────────── */}
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: CARD_BORDER,
+                      marginTop: 14,
+                      marginBottom: 14,
+                    }}
+                  />
+
+                  {/* ── Row 4: Actions ──────────────────────────────────── */}
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    {debt.status !== "paid" && (
+                    {isPaid ? (
+                      // Paid state: tidak ada tombol Bayar, tampilkan keterangan
+                      <View
+                        style={{
+                          flex: 1,
+                          height: 40,
+                          borderRadius: 12,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexDirection: "row",
+                          backgroundColor: `${SUCCESS_COLOR}10`,
+                          borderWidth: 1,
+                          borderColor: `${SUCCESS_COLOR}20`,
+                          gap: 6,
+                        }}
+                      >
+                        <Ionicons
+                          name="checkmark-circle-outline"
+                          size={14}
+                          color={SUCCESS_COLOR}
+                        />
+                        <Text
+                          style={{
+                            color: SUCCESS_COLOR,
+                            fontSize: 12,
+                            fontWeight: "600",
+                          }}
+                        >
+                          Semua tagihan lunas
+                        </Text>
+                      </View>
+                    ) : (
+                      // Active/partial: tombol Bayar Cicilan
                       <TouchableOpacity
                         style={{
-                          flex: 1, height: 38, borderRadius: 12,
-                          alignItems: "center", justifyContent: "center",
+                          flex: 1,
+                          height: 40,
+                          borderRadius: 12,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexDirection: "row",
                           backgroundColor: `${ACCENT_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
+                          borderWidth: 1,
+                          borderColor: `${ACCENT_COLOR}25`,
+                          gap: 6,
                         }}
                         onPress={() => {
                           setPayModal({ visible: true, debt });
@@ -544,17 +892,30 @@ const DebtScreen: React.FC = () => {
                         }}
                         activeOpacity={0.7}
                       >
-                        <Text style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}>
+                        <Ionicons name="cash-outline" size={14} color={ACCENT_COLOR} />
+                        <Text
+                          style={{
+                            color: ACCENT_COLOR,
+                            fontSize: 12,
+                            fontWeight: "700",
+                          }}
+                        >
                           Bayar Cicilan
                         </Text>
                       </TouchableOpacity>
                     )}
+
+                    {/* Hapus button — selalu ada */}
                     <TouchableOpacity
                       style={{
-                        width: 38, height: 38, borderRadius: 12,
-                        alignItems: "center", justifyContent: "center",
-                        backgroundColor: `${ERROR_COLOR}15`,
-                        borderWidth: 1, borderColor: `${ERROR_COLOR}25`,
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: `${ERROR_COLOR}14`,
+                        borderWidth: 1,
+                        borderColor: `${ERROR_COLOR}22`,
                       }}
                       onPress={() => handleDelete(debt)}
                       activeOpacity={0.7}
@@ -562,14 +923,16 @@ const DebtScreen: React.FC = () => {
                       <Ionicons name="trash-outline" size={16} color={ERROR_COLOR} />
                     </TouchableOpacity>
                   </View>
-                  </View>
+                </View>
               );
             })}
           </View>
         )}
       </ScrollView>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          FAB
+      ══════════════════════════════════════════ */}
       <Animated.View
         style={{
           position: "absolute",
@@ -588,7 +951,12 @@ const DebtScreen: React.FC = () => {
         }}
       >
         <TouchableOpacity
-          style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
           onPress={() => navigation.navigate("AddDebt")}
           onPressIn={fabPressIn}
           onPressOut={fabPressOut}
@@ -598,7 +966,9 @@ const DebtScreen: React.FC = () => {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* ── Pay Modal ────────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          PAY MODAL
+      ══════════════════════════════════════════ */}
       <Modal
         visible={payModal.visible}
         transparent
@@ -625,34 +995,59 @@ const DebtScreen: React.FC = () => {
             }}
           >
             {/* Modal header */}
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
               <View
                 style={{
-                  width: 36, height: 36, borderRadius: 11,
-                  alignItems: "center", justifyContent: "center",
-                  backgroundColor: `${ACCENT_COLOR}15`, marginRight: 12,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 11,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: `${ACCENT_COLOR}15`,
+                  marginRight: 12,
                 }}
               >
                 <Ionicons name="cash-outline" size={18} color={ACCENT_COLOR} />
               </View>
               <View>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "800" }}>
+                <Text
+                  style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "800" }}
+                >
                   Catat Pembayaran
                 </Text>
                 {payModal.debt && (
-                  <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}>
-                    {payModal.debt.name} · Sisa {formatCurrency(payModal.debt.remaining)}
+                  <Text
+                    style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}
+                  >
+                    {payModal.debt.name} · Sisa{" "}
+                    {formatCurrency(payModal.debt.remaining)}
                   </Text>
                 )}
               </View>
             </View>
 
-            <View style={{ height: 1, backgroundColor: CARD_BORDER, marginVertical: 16 }} />
+            <View
+              style={{
+                height: 1,
+                backgroundColor: CARD_BORDER,
+                marginVertical: 16,
+              }}
+            />
 
             <Text
               style={{
-                color: Colors.gray400, fontSize: 10, fontWeight: "700",
-                letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8,
+                color: Colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginBottom: 8,
               }}
             >
               Nominal Bayar
@@ -680,26 +1075,40 @@ const DebtScreen: React.FC = () => {
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
                 style={{
-                  flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS,
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: INNER_RADIUS,
                   alignItems: "center",
                   backgroundColor: "rgba(255,255,255,0.05)",
-                  borderWidth: 1, borderColor: CARD_BORDER,
+                  borderWidth: 1,
+                  borderColor: CARD_BORDER,
                 }}
                 onPress={() => setPayModal({ visible: false, debt: null })}
               >
-                <Text style={{ color: Colors.gray400, fontWeight: "600" }}>Batal</Text>
+                <Text style={{ color: Colors.gray400, fontWeight: "600" }}>
+                  Batal
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
-                  flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS,
-                  alignItems: "center", backgroundColor: ACCENT_COLOR,
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: INNER_RADIUS,
+                  alignItems: "center",
+                  backgroundColor: ACCENT_COLOR,
                   shadowColor: ACCENT_COLOR,
                   shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 6,
                 }}
                 onPress={handlePay}
               >
-                <Text style={{ color: BACKGROUND_COLOR, fontWeight: "800" }}>Simpan</Text>
+                <Text
+                  style={{ color: BACKGROUND_COLOR, fontWeight: "800" }}
+                >
+                  Simpan
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
