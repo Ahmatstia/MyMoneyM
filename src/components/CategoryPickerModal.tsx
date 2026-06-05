@@ -25,17 +25,57 @@ export interface CategoryItem {
 }
 
 export const DEFAULT_CATEGORIES: CategoryItem[] = [
-  { id: "makanan",      name: "Makanan",      icon: "restaurant-outline",          color: "#F59E0B" },
-  { id: "transportasi", name: "Transportasi", icon: "car-outline",                 color: "#3B82F6" },
+  // Kebutuhan Pokok & Sehari-hari
+  { id: "makanan",      name: "Makanan",       icon: "restaurant-outline",          color: "#F59E0B" },
+  { id: "jajan",        name: "Jajan",         icon: "fast-food-outline",           color: "#F43F5E" },
+  { id: "ngopi",        name: "Ngopi",         icon: "cafe-outline",                color: "#A855F7" },
   { id: "belanja",      name: "Belanja",       icon: "cart-outline",                color: "#8B5CF6" },
+  { id: "pakaian",      name: "Pakaian",       icon: "shirt-outline",               color: "#EC4899" },
+  
+  // Transportasi
+  { id: "transportasi", name: "Transportasi",  icon: "car-outline",                 color: "#3B82F6" },
+  { id: "bbm",          name: "BBM",           icon: "flame-outline",               color: "#EF4444" },
+  { id: "tol_parkir",   name: "Parkir",        icon: "navigate-outline",            color: "#6366F1" },
+  
+  // Rumah & Keluarga
+  { id: "rumah",        name: "Rumah",         icon: "home-outline",                color: "#22C55E" },
+  { id: "keluarga",     name: "Keluarga",      icon: "people-outline",              color: "#3B82F6" },
+  { id: "hewan",        name: "Hewan",         icon: "paw-outline",                 color: "#F97316" },
+  
+  // Tagihan & Kewajiban
+  { id: "tagihan",      name: "Tagihan",       icon: "document-text-outline",       color: "#6366F1" },
+  { id: "listrik",      name: "Listrik",       icon: "flash-outline",               color: "#EAB308" },
+  { id: "air",          name: "Air",           icon: "water-outline",               color: "#06B6D4" },
+  { id: "internet",     name: "Internet",      icon: "wifi-outline",                color: "#3B82F6" },
+  { id: "pulsa",        name: "Pulsa",         icon: "call-outline",                color: "#06B6D4" },
+  { id: "cicilan",      name: "Cicilan",       icon: "calendar-outline",            color: "#8B5CF6" },
+  { id: "pajak",        name: "Pajak",         icon: "receipt-outline",             color: "#F59E0B" },
+  { id: "asuransi",     name: "Asuransi",      icon: "shield-checkmark-outline",    color: "#10B981" },
+  
+  // Gaya Hidup & Hiburan
   { id: "hiburan",      name: "Hiburan",       icon: "film-outline",                color: "#EC4899" },
+  { id: "langganan",    name: "Langganan",     icon: "play-circle-outline",         color: "#EF4444" },
+  { id: "hobi",         name: "Hobi",          icon: "color-palette-outline",       color: "#EC4899" },
+  { id: "liburan",      name: "Liburan",       icon: "airplane-outline",            color: "#3B82F6" },
+  { id: "olahraga",     name: "Olahraga",      icon: "barbell-outline",             color: "#F97316" },
+  { id: "perawatan",    name: "Perawatan",     icon: "body-outline",                color: "#F43F5E" },
+  { id: "buku",         name: "Buku",          icon: "book-outline",                color: "#8B5CF6" },
+  
+  // Kesehatan & Pendidikan
   { id: "kesehatan",    name: "Kesehatan",     icon: "medical-outline",             color: "#EF4444" },
   { id: "pendidikan",   name: "Pendidikan",    icon: "school-outline",              color: "#10B981" },
-  { id: "tagihan",      name: "Tagihan",       icon: "document-text-outline",       color: "#6366F1" },
+  
+  // Sosial
+  { id: "hadiah",       name: "Hadiah",        icon: "gift-outline",                color: "#EC4899" },
+  { id: "donasi",       name: "Donasi",        icon: "heart-half-outline",          color: "#EF4444" },
+  
+  // Pemasukan & Keuangan
   { id: "gaji",         name: "Gaji",          icon: "cash-outline",                color: "#22D3EE" },
   { id: "investasi",    name: "Investasi",     icon: "trending-up-outline",         color: "#06B6D4" },
   { id: "tabungan",     name: "Tabungan",      icon: "wallet-outline",              color: "#14B8A6" },
   { id: "hutang",       name: "Hutang",        icon: "card-outline",                color: "#F97316" },
+  
+  // Lainnya
   { id: "lainnya",      name: "Lainnya",       icon: "ellipsis-horizontal-outline", color: "#94A3B8" },
 ];
 
