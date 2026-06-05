@@ -1,4 +1,4 @@
-﻿// File: src/screens/Analytics/AnalyticsScreen.tsx
+// File: src/screens/Analytics/AnalyticsScreen.tsx
 import React, { useState, useMemo } from "react";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
@@ -1289,7 +1289,7 @@ Kategori: ${financialHealthScore.category}
                   {transactionAnalytics.transactionCount}
                 </Text>
                 <Text style={{ color: colors.gray400, fontSize: 9 }}>
-                  {transactionAnalytics.incomeTransactionCount} masuk Â· {transactionAnalytics.expenseTransactionCount} keluar
+                  {transactionAnalytics.incomeTransactionCount} masuk • {transactionAnalytics.expenseTransactionCount} keluar
                 </Text>
               </View>
 

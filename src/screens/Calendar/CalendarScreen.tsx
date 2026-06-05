@@ -136,7 +136,10 @@ const VDivider = ({ height = 32 }: { height?: number }) => (
 
 const CalendarScreen: React.FC = () => {
   const { state } = useAppContext();
-   const [selectedDate, setSelectedDate] = useState<string>(
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
+  const [visibleMonth, setVisibleMonth] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -145,7 +148,9 @@ const CalendarScreen: React.FC = () => {
   const handleMonthYearChange = (event: any, date?: Date) => {
     setShowDatePicker(false);
     if (date) {
-      setSelectedDate(date.toISOString().split("T")[0]);
+      const dateString = date.toISOString().split("T")[0];
+      setSelectedDate(dateString);
+      setVisibleMonth(dateString);
     }
   };
 
@@ -190,8 +195,8 @@ const CalendarScreen: React.FC = () => {
   }, [selectedDayTransactions]);
 
   const monthlyOverview = useMemo(() => {
-    const currentMonth = new Date().getMonth();
-    const currentYear  = new Date().getFullYear();
+    const currentMonth = new Date(visibleMonth).getMonth();
+    const currentYear  = new Date(visibleMonth).getFullYear();
     const monthTransactions = state.transactions.filter((t) => {
       const date = new Date(t.date);
       return (
@@ -201,9 +206,7 @@ const CalendarScreen: React.FC = () => {
     });
     let totalIncome = 0;
     let totalExpense = 0;
-    const daysWithTransactions = new Set<string>();
     monthTransactions.forEach((t) => {
-      daysWithTransactions.add(t.date);
       if (t.type === "income") totalIncome += t.amount;
       else totalExpense += t.amount;
     });
@@ -211,10 +214,8 @@ const CalendarScreen: React.FC = () => {
       totalIncome,
       totalExpense,
       net: totalIncome - totalExpense,
-      transactionDays:    daysWithTransactions.size,
-      totalTransactions:  monthTransactions.length,
     };
-  }, [state.transactions]);
+  }, [state.transactions, visibleMonth]);
 
   const calendarInsights = useMemo(
     () => generateCalendarInsights(state.transactions),
@@ -317,7 +318,7 @@ const CalendarScreen: React.FC = () => {
           </Text>
 
           {/* Income / Expense row */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{ flex: 1 }}>
               <View
                 style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}
@@ -372,48 +373,6 @@ const CalendarScreen: React.FC = () => {
               </Text>
             </View>
           </View>
-
-          {/* Divider + stats row */}
-          <View
-            style={{
-              height: 1, backgroundColor: CARD_BORDER, marginBottom: 14,
-            }}
-          />
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400, fontSize: 9,
-                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                }}
-              >
-                Hari Aktif
-              </Text>
-              <Text
-                style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700" }}
-              >
-                {monthlyOverview.transactionDays}
-              </Text>
-            </View>
-            <View
-              style={{ width: 1, height: 28, backgroundColor: CARD_BORDER }}
-            />
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                style={{
-                  color: Colors.gray400, fontSize: 9,
-                  textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4,
-                }}
-              >
-                Transaksi
-              </Text>
-              <Text
-                style={{ color: ACCENT_COLOR, fontSize: 17, fontWeight: "700" }}
-              >
-                {monthlyOverview.totalTransactions}
-              </Text>
-            </View>
-          </View>
         </Card>
 
         {/* ── Calendar card ────────────────────────────────────────────── */}
@@ -430,6 +389,7 @@ const CalendarScreen: React.FC = () => {
           <Calendar
             current={selectedDate}
             onDayPress={handleDayPress}
+            onMonthChange={(month: any) => setVisibleMonth(month.dateString)}
             markedDates={markedDates}
             theme={{
               backgroundColor:            SURFACE_COLOR,

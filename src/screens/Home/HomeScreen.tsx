@@ -1,4 +1,4 @@
-﻿// File: src/screens/HomeScreen.tsx
+// File: src/screens/HomeScreen.tsx
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import {
   View,
@@ -866,11 +866,8 @@ const HomeScreen: React.FC = () => {
                     >
                       {transaction.category}
                     </Text>
-                    <Text
-                      style={{ color: colors.gray400, fontSize: 11 }}
-                      numberOfLines={1}
-                    >
-                      {transaction.description || "Tidak ada deskripsi"} Â·{" "}
+                    <Text style={{ color: "rgba(148,163,184,0.6)", fontSize: 11, marginTop: 4 }}>
+                      {transaction.description || "Tidak ada deskripsi"} •{" "}
                       {new Date(transaction.date).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -878,18 +875,8 @@ const HomeScreen: React.FC = () => {
                       })}
                     </Text>
                   </View>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color:
-                        transaction.type === "income"
-                          ? colors.success
-                          : colors.error,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {transaction.type === "income" ? "+" : "âˆ’"}
+                  <Text style={{ color: transaction.type === "income" ? "#22C55E" : "#EF4444", fontSize: 15, fontWeight: "800", letterSpacing: -0.5 }}>
+                    {transaction.type === "income" ? "+" : "-"}
                     {formatCurrency(safeNumber(transaction.amount))}
                   </Text>
                 </TouchableOpacity>
@@ -979,9 +966,9 @@ const HomeScreen: React.FC = () => {
               >
                 Tambah transaksi pertama
               </Text>
-              <Text style={{ color: colors.gray400, fontSize: 11 }}>
-                ðŸ’¡ Catat pemasukan atau pengeluaran Â· Buat anggaran Â· Tetapkan tabungan
-              </Text>
+                <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 10, lineHeight: 16, marginTop: 4 }}>
+                  💡 Catat pemasukan atau pengeluaran • Buat anggaran • Tetapkan tabungan
+                </Text>
             </View>
             <Ionicons
               name="chevron-forward"
