@@ -97,12 +97,12 @@ const AddDebtScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={tw`flex-1`}
       >
-        <ScrollView contentContainerStyle={tw`px-4 pb-24 pt-4`} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={tw`px-4 pt-4 pb-2`} showsVerticalScrollIndicator={false}>
           {/* Type Selector */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Jenis Transaksi" />

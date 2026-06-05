@@ -345,10 +345,10 @@ const AddTransactionScreen: React.FC = () => {
   }, [category, state.customCategories]);
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-8`}
+        contentContainerStyle={tw`px-4 pt-4 pb-2`}
         showsVerticalScrollIndicator={false}
       >
         {/* Transaction Type - 2 Columns Compact */}
