@@ -8,6 +8,8 @@ import {
   Alert,
   PanResponder,
   Dimensions,
+  Modal,
+  Pressable,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -217,6 +219,9 @@ export default function ManageCategoriesScreen() {
   const [view, setView] = useState<"list" | "create" | "edit" | "delete">("list");
   const [editTarget, setEditTarget] = useState<CustomCategory | null>(null);
   const [saving, setSaving] = useState(false);
+  
+  const [optionsVisible, setOptionsVisible] = useState(false);
+  const [optionsTarget, setOptionsTarget] = useState<CustomCategory | null>(null);
 
   // Form states
   const [name, setName] = useState("");
@@ -247,6 +252,11 @@ export default function ManageCategoriesScreen() {
   const handleDeleteRequest = (cat: CustomCategory) => {
     setEditTarget(cat);
     setView("delete");
+  };
+
+  const handleLongPress = (cat: CustomCategory) => {
+    setOptionsTarget(cat);
+    setOptionsVisible(true);
   };
 
   const handleSaveForm = async () => {
@@ -331,21 +341,29 @@ export default function ManageCategoriesScreen() {
               <Text style={{ color: TS, fontSize: 14, marginTop: 12 }}>Belum ada kategori kustom.</Text>
             </View>
           ) : (
-            <View style={{ backgroundColor: SURF, borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
-              {customCategories.map((cat, idx) => (
-                <View key={cat.id} style={{ flexDirection: "row", alignItems: "center", padding: 16, borderBottomWidth: idx < customCategories.length - 1 ? 1 : 0, borderBottomColor: BORDER }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${cat.color}20`, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginBottom: 24 }}>
+              {customCategories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  onPress={() => {}}
+                  onLongPress={() => handleLongPress(cat)}
+                  activeOpacity={0.8}
+                  style={{
+                    width: "20%", alignItems: "center"
+                  }}
+                >
+                  <View style={{
+                    width: 44, height: 44, borderRadius: 14,
+                    backgroundColor: SURF,
+                    alignItems: "center", justifyContent: "center", marginBottom: 6,
+                    borderWidth: 1, borderColor: BORDER
+                  }}>
                     <Ionicons name={cat.icon as any} size={22} color={cat.color} />
                   </View>
-                  <Text style={{ flex: 1, color: TP, fontSize: 16, fontWeight: "600" }}>{cat.name}</Text>
-                  
-                  <TouchableOpacity onPress={() => handleEditPress(cat)} style={{ padding: 8 }}>
-                    <Ionicons name="pencil" size={20} color={Colors.info} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteRequest(cat)} style={{ padding: 8, marginLeft: 4 }}>
-                    <Ionicons name="trash-outline" size={20} color={Colors.error} />
-                  </TouchableOpacity>
-                </View>
+                  <Text style={{ color: TS, fontSize: 9, textAlign: "center" }} numberOfLines={1}>
+                    {cat.name}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           )}
@@ -353,13 +371,13 @@ export default function ManageCategoriesScreen() {
           <Text style={{ color: TS, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
             Kategori Bawaan
           </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16 }}>
             {DEFAULT_CATEGORIES.map((cat) => (
-              <View key={cat.id} style={{ width: "22%", alignItems: "center", marginBottom: 16 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: SURF, alignItems: "center", justifyContent: "center", marginBottom: 8, borderWidth: 1, borderColor: BORDER }}>
+              <View key={cat.id} style={{ width: "20%", alignItems: "center" }}>
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: SURF, alignItems: "center", justifyContent: "center", marginBottom: 6, borderWidth: 1, borderColor: BORDER }}>
                   <Ionicons name={cat.icon as any} size={22} color={cat.color} />
                 </View>
-                <Text style={{ color: TS, fontSize: 10, textAlign: "center" }} numberOfLines={1}>{cat.name}</Text>
+                <Text style={{ color: TS, fontSize: 9, textAlign: "center" }} numberOfLines={1}>{cat.name}</Text>
               </View>
             ))}
           </View>
@@ -464,16 +482,56 @@ export default function ManageCategoriesScreen() {
             </Text>
           </View>
 
-          <View style={{ gap: 12 }}>
-            <TouchableOpacity onPress={confirmDelete} disabled={saving} style={{ padding: 18, borderRadius: 16, alignItems: "center", backgroundColor: Colors.error }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>{saving ? "Menghapus..." : "Ya, Hapus Kategori"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setView("list")} disabled={saving} style={{ padding: 18, borderRadius: 16, alignItems: "center", backgroundColor: SURF, borderWidth: 1.5, borderColor: BORDER }}>
-              <Text style={{ color: TS, fontSize: 16, fontWeight: "700" }}>Batal</Text>
-            </TouchableOpacity>
+            <View style={{ gap: 12 }}>
+              <TouchableOpacity onPress={confirmDelete} disabled={saving} style={{ padding: 18, borderRadius: 16, alignItems: "center", backgroundColor: Colors.error }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>{saving ? "Menghapus..." : "Ya, Hapus Kategori"}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setView("list")} disabled={saving} style={{ padding: 18, borderRadius: 16, alignItems: "center", backgroundColor: SURF, borderWidth: 1.5, borderColor: BORDER }}>
+                <Text style={{ color: TS, fontSize: 16, fontWeight: "700" }}>Batal</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
-  );
-}
+        )}
+
+        {/* ─── OPTIONS MODAL ─── */}
+        <Modal visible={optionsVisible} transparent animationType="fade" onRequestClose={() => setOptionsVisible(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 }} onPress={() => setOptionsVisible(false)}>
+            <Pressable onPress={() => {}} style={{ backgroundColor: SURF, borderRadius: 24, padding: 24 }}>
+              <Text style={{ color: TP, fontSize: 18, fontWeight: "800", marginBottom: 8, textAlign: "center" }}>Kategori Kustom</Text>
+              <Text style={{ color: TS, fontSize: 14, textAlign: "center", marginBottom: 24 }}>
+                Pilih tindakan untuk kategori "{optionsTarget?.name}"
+              </Text>
+              
+              <TouchableOpacity 
+                style={{ backgroundColor: `${Colors.info}15`, padding: 16, borderRadius: 16, alignItems: "center", marginBottom: 12, borderWidth: 1.5, borderColor: `${Colors.info}30` }}
+                onPress={() => {
+                  setOptionsVisible(false);
+                  if (optionsTarget) handleEditPress(optionsTarget);
+                }}
+              >
+                <Text style={{ color: Colors.info, fontSize: 16, fontWeight: "700" }}>Edit Kategori</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={{ backgroundColor: `${Colors.error}15`, padding: 16, borderRadius: 16, alignItems: "center", marginBottom: 16, borderWidth: 1.5, borderColor: `${Colors.error}30` }}
+                onPress={() => {
+                  setOptionsVisible(false);
+                  if (optionsTarget) handleDeleteRequest(optionsTarget);
+                }}
+              >
+                <Text style={{ color: Colors.error, fontSize: 16, fontWeight: "700" }}>Hapus Kategori</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={{ padding: 16, borderRadius: 16, alignItems: "center", borderWidth: 1.5, borderColor: BORDER }}
+                onPress={() => setOptionsVisible(false)}
+              >
+                <Text style={{ color: TS, fontSize: 16, fontWeight: "700" }}>Batal</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+      </SafeAreaView>
+    );
+  }

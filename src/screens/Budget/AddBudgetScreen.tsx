@@ -24,8 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
-import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
-import CategoryGrid from "../../components/CategoryGrid";
+import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 
 type AddBudgetScreenNavigationProp = StackNavigationProp<
@@ -99,7 +98,7 @@ const AddBudgetScreen: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [limitError, setLimitError] = useState("");
-
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   // State untuk modal kalender
   const [showCalendar, setShowCalendar] = useState(false);
@@ -528,28 +527,41 @@ const AddBudgetScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Category Selection — Inline Grid */}
+        {/* Category Selection */}
         <View style={tw`mb-4`}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginLeft: 2 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Kategori</Text>
-            </View>
-            {category ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                {resolvedCategory && (
-                  <View style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: resolvedCategory.color, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name={resolvedCategory.icon as any} size={10} color="#FFF" />
-                  </View>
-                )}
-                <Text style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}>{category}</Text>
-              </View>
-            ) : null}
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+            {category ? <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>✓ Terpilih</Text> : null}
           </View>
-          <CategoryGrid
-            selectedName={category}
-            onSelect={setCategory}
-            usedCategories={usedBudgetCategories}
+
+          <TouchableOpacity
+            onPress={() => setShowCategoryPicker(true)}
             disabled={loading}
+            style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+          >
+            {resolvedCategory ? (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name={resolvedCategory.icon as any} size={16} color={resolvedCategory.color} />
+              </View>
+            ) : (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}12`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                {category || "Pilih kategori..."}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+          </TouchableOpacity>
+
+          <CategoryPickerModal
+            visible={showCategoryPicker}
+            onClose={() => setShowCategoryPicker(false)}
+            onSelect={(name) => setCategory(name)}
+            selectedName={category}
+            usedBudgetCategories={usedBudgetCategories}
           />
         </View>
 

@@ -21,8 +21,7 @@ import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction } from "../../types";
 import { Colors } from "../../theme/theme";
-import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
-import CategoryGrid from "../../components/CategoryGrid";
+import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -58,7 +57,7 @@ const AddTransactionScreen: React.FC = () => {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(getCurrentDate());
   const [showCalendar, setShowCalendar] = useState(false);
-
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [amountError, setAmountError] = useState("");
   const [isCycleActive, setIsCycleActive] = useState(false);
@@ -459,27 +458,39 @@ const AddTransactionScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Category Selection — Inline Grid */}
+        {/* Category Selection */}
         <View style={tw`mb-4`}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginLeft: 2 }}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Kategori</Text>
-            {category ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                {resolvedCategory && (
-                  <View style={{ width: 18, height: 18, borderRadius: 6, backgroundColor: resolvedCategory.color, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name={resolvedCategory.icon as any} size={10} color="#FFF" />
-                  </View>
-                )}
-                <Text style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}>{category}</Text>
-              </View>
-            ) : null}
-          </View>
-          <CategoryGrid
-            selectedName={category}
-            onSelect={setCategory}
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+          <TouchableOpacity
+            onPress={() => setShowCategoryPicker(true)}
             disabled={loading}
-          />
+            style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+          >
+            {resolvedCategory ? (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name={resolvedCategory.icon as any} size={16} color={resolvedCategory.color} />
+              </View>
+            ) : (
+              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}12`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                {category || "Pilih kategori..."}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+          </TouchableOpacity>
         </View>
+
+        {/* CategoryPickerModal */}
+        <CategoryPickerModal
+          visible={showCategoryPicker}
+          onClose={() => setShowCategoryPicker(false)}
+          onSelect={(name) => setCategory(name)}
+          selectedName={category}
+        />
 
         {/* Date Selection */}
         <View style={tw`mb-4`}>

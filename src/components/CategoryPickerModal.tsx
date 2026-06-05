@@ -111,7 +111,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
             <Text style={{ color: Colors.gray500, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
               Kategori Bawaan
             </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginBottom: 20 }}>
               {DEFAULT_CATEGORIES.map((cat) => {
                 const isSelected = selectedName === cat.name;
                 const isUsed     = usedBudgetCategories.includes(cat.name);
@@ -122,26 +122,22 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                     disabled={isUsed}
                     activeOpacity={0.8}
                     style={{
-                      width: "22%", alignItems: "center",
-                      paddingVertical: 10, paddingHorizontal: 4,
-                      borderRadius: 16,
-                      backgroundColor: isSelected ? `${cat.color}20` : "rgba(255,255,255,0.04)",
-                      borderWidth: 1.5,
-                      borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
+                      width: "20%", alignItems: "center",
                       opacity: isUsed ? 0.35 : 1,
                     }}
                   >
                     <View style={{
                       width: 44, height: 44, borderRadius: 14,
-                      backgroundColor: isSelected ? cat.color : `${cat.color}18`,
+                      backgroundColor: isSelected ? cat.color : SURF,
                       alignItems: "center", justifyContent: "center", marginBottom: 6,
+                      borderWidth: 1.5, borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
                     }}>
                       <Ionicons name={cat.icon as any} size={22} color={isSelected ? "#FFFFFF" : cat.color} />
                     </View>
-                    <Text style={{ color: isSelected ? cat.color : TS, fontSize: 10, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
+                    <Text style={{ color: isSelected ? cat.color : TS, fontSize: 9, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
                       {cat.name}
                     </Text>
-                    {isUsed && <Text style={{ color: Colors.gray600, fontSize: 8, marginTop: 2 }}>Terpakai</Text>}
+                    {isUsed && <Text style={{ color: Colors.gray600, fontSize: 7, marginTop: 2 }}>Terpakai</Text>}
                   </TouchableOpacity>
                 );
               })}
@@ -153,7 +149,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                 <Text style={{ color: Colors.gray500, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
                   Kategori Kustom ({customCategories.length})
                 </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginBottom: 16 }}>
                   {customCategories.map((cat) => {
                     const isSelected = selectedName === cat.name;
                     const isUsed     = usedBudgetCategories.includes(cat.name);
@@ -164,23 +160,19 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                         disabled={isUsed}
                         activeOpacity={0.8}
                         style={{
-                          width: "22%", alignItems: "center",
-                          paddingVertical: 10, paddingHorizontal: 4,
-                          borderRadius: 16,
-                          backgroundColor: isSelected ? `${cat.color}20` : "rgba(255,255,255,0.04)",
-                          borderWidth: 1.5,
-                          borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
+                          width: "20%", alignItems: "center",
                           opacity: isUsed ? 0.35 : 1,
                         }}
                       >
                         <View style={{
                           width: 44, height: 44, borderRadius: 14,
-                          backgroundColor: isSelected ? cat.color : `${cat.color}18`,
+                          backgroundColor: isSelected ? cat.color : SURF,
                           alignItems: "center", justifyContent: "center", marginBottom: 6,
+                          borderWidth: 1.5, borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
                         }}>
                           <Ionicons name={cat.icon as any} size={22} color={isSelected ? "#FFFFFF" : cat.color} />
                         </View>
-                        <Text style={{ color: isSelected ? cat.color : TS, fontSize: 10, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
+                        <Text style={{ color: isSelected ? cat.color : TS, fontSize: 9, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
                           {cat.name}
                         </Text>
                       </TouchableOpacity>
