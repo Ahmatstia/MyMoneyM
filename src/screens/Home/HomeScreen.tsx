@@ -1,4 +1,4 @@
-// File: src/screens/HomeScreen.tsx
+﻿// File: src/screens/HomeScreen.tsx
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import {
   View,
@@ -32,31 +32,16 @@ import {
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
 
-import { Colors } from "../../theme/theme";
+import { useTheme } from '../../theme/ThemeContext';
 import { BalanceCarousel } from "./components/BalanceCarousel";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const PRIMARY_COLOR    = Colors.primary;
-const ACCENT_COLOR     = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const BORDER_COLOR     = Colors.border;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
-
-// ─── Komponen UI ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Komponen UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Spacer vertikal antar section */
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -72,46 +57,50 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.gray400,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 /** Kartu dengan background surface dan border tipis */
 const Card = ({
@@ -120,38 +109,45 @@ const Card = ({
 }: {
   children: React.ReactNode;
   style?: object;
-}) => (
-  <View
-    style={[
-      {
-        backgroundColor: SURFACE_COLOR,
-        borderRadius: CARD_RADIUS,
-        borderWidth: 1,
-        borderColor: CARD_BORDER,
-        padding: CARD_PAD,
-      },
-      style,
-    ]}
-  >
-    {children}
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderRadius: CARD_RADIUS,
+          borderWidth: 1,
+          borderColor: `${colors.border}80`,
+          padding: CARD_PAD,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
 /** Divider vertikal */
-const VDivider = ({ height = 32 }: { height?: number }) => (
-  <View
-    style={{
-      width: 1,
-      height,
-      backgroundColor: CARD_BORDER,
-      marginHorizontal: 14,
-    }}
-  />
-);
+const VDivider = ({ height = 32 }: { height?: number }) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        width: 1,
+        height,
+        backgroundColor: `${colors.border}80`,
+        marginHorizontal: 14,
+      }}
+    />
+  );
+};
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const HomeScreen: React.FC = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const { state, isLoading, refreshData } = useAppContext();
   const [refreshing, setRefreshing] = useState(false);
@@ -183,11 +179,11 @@ const HomeScreen: React.FC = () => {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return Colors.success;
-    if (score >= 60) return Colors.info;
-    if (score >= 40) return Colors.warning;
-    if (score >= 20) return Colors.error;
-    return Colors.errorDark;
+    if (score >= 80) return colors.success;
+    if (score >= 60) return colors.info;
+    if (score >= 40) return colors.warning;
+    if (score >= 20) return colors.error;
+    return colors.errorDark;
   };
 
   const getScoreDescription = (score: number) => {
@@ -198,14 +194,14 @@ const HomeScreen: React.FC = () => {
     return "Kritis";
   };
 
-  // ── Progress bar color helper ───────────────────────────────────────────
+  // â”€â”€ Progress bar color helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const getProgressColor = (status: string | undefined) => {
-    if (status === "surplus") return SUCCESS_COLOR;
-    if (status === "warning") return WARNING_COLOR;
-    return ERROR_COLOR;
+    if (status === "surplus") return colors.success;
+    if (status === "warning") return colors.warning;
+    return colors.error;
   };
 
-  // ── Skeleton loading ───────────────────────────────────────────────────────
+  // â”€â”€ Skeleton loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (isLoading && !refreshing) {
     const SkeletonBox = ({
       w,
@@ -224,7 +220,7 @@ const HomeScreen: React.FC = () => {
             width: w,
             height: h,
             borderRadius: radius,
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
           },
           style,
         ]}
@@ -233,7 +229,7 @@ const HomeScreen: React.FC = () => {
 
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}
+        style={{ flex: 1, backgroundColor: colors.background }}
       >
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 18 }}
@@ -264,7 +260,7 @@ const HomeScreen: React.FC = () => {
           {/* Balance card skeleton */}
           <View
             style={{
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               padding: CARD_PAD,
               marginBottom: 20,
@@ -301,7 +297,7 @@ const HomeScreen: React.FC = () => {
           <SkeletonBox w={80} h={10} style={{ marginBottom: 14 }} />
           <View
             style={{
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: INNER_RADIUS,
               padding: 16,
               flexDirection: "row",
@@ -323,7 +319,7 @@ const HomeScreen: React.FC = () => {
           <SkeletonBox w={120} h={10} style={{ marginBottom: 14 }} />
           <View
             style={{
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               padding: 4,
             }}
@@ -336,7 +332,7 @@ const HomeScreen: React.FC = () => {
                   alignItems: "center",
                   padding: 12,
                   borderBottomWidth: i < 3 ? 1 : 0,
-                  borderBottomColor: CARD_BORDER,
+                  borderBottomColor: `${colors.border}80`,
                 }}
               >
                 <SkeletonBox w={38} h={38} radius={12} style={{ marginRight: 12 }} />
@@ -353,9 +349,9 @@ const HomeScreen: React.FC = () => {
     );
   }
 
-  // ── RENDER ────────────────────────────────────────────────────────────────
+  // â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
@@ -363,16 +359,16 @@ const HomeScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[ACCENT_COLOR]}
-            tintColor={ACCENT_COLOR}
+            colors={[colors.accent]}
+            tintColor={colors.accent}
             title="Memperbarui data..."
-            titleColor={TEXT_SECONDARY}
+            titleColor={colors.textSecondary}
           />
         }
       >
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             HEADER
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <View
           style={{
             flexDirection: "row",
@@ -385,7 +381,7 @@ const HomeScreen: React.FC = () => {
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 11,
                 marginBottom: 4,
               }}
@@ -394,7 +390,7 @@ const HomeScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: TEXT_PRIMARY,
+                color: colors.textPrimary,
                 fontSize: 18,
                 fontWeight: "700",
                 lineHeight: 24,
@@ -447,7 +443,7 @@ const HomeScreen: React.FC = () => {
                   {getScoreDescription(financialHealthScore.overallScore)}
                 </Text>
                 <Text
-                  style={{ color: Colors.gray400, fontSize: 9, marginTop: 1 }}
+                  style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}
                 >
                   Skor keuangan
                 </Text>
@@ -461,9 +457,9 @@ const HomeScreen: React.FC = () => {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 20,
-                backgroundColor: `${ACCENT_COLOR}14`,
+                backgroundColor: `${colors.accent}14`,
                 borderWidth: 1,
-                borderColor: `${ACCENT_COLOR}30`,
+                borderColor: `${colors.accent}30`,
               }}
               onPress={() => navigation.navigate("AddTransaction")}
               activeOpacity={0.7}
@@ -471,13 +467,13 @@ const HomeScreen: React.FC = () => {
               <Ionicons
                 name="rocket-outline"
                 size={13}
-                color={ACCENT_COLOR}
+                color={colors.accent}
                 style={{ marginRight: 5 }}
               />
               <View>
                 <Text
                   style={{
-                    color: ACCENT_COLOR,
+                    color: colors.accent,
                     fontSize: 10,
                     fontWeight: "700",
                   }}
@@ -486,7 +482,7 @@ const HomeScreen: React.FC = () => {
                 </Text>
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: colors.gray400,
                     fontSize: 9,
                     marginTop: 1,
                   }}
@@ -500,18 +496,18 @@ const HomeScreen: React.FC = () => {
 
         <Spacer size={14} />
 
-        {/* ══════════════════════════════════════════
-            TIME FILTER — segmented control
-        ══════════════════════════════════════════ */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            TIME FILTER â€” segmented control
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: 13,
             padding: 3,
             marginBottom: 20,
             borderWidth: 1,
-            borderColor: CARD_BORDER,
+            borderColor: `${colors.border}80`,
           }}
         >
           {(["weekly", "monthly", "yearly", "all"] as TimeFilter[]).map(
@@ -531,7 +527,7 @@ const HomeScreen: React.FC = () => {
                     paddingVertical: 8,
                     borderRadius: 10,
                     backgroundColor: isActive
-                      ? `${ACCENT_COLOR}20`
+                      ? `${colors.accent}20`
                       : "transparent",
                     alignItems: "center",
                   }}
@@ -540,7 +536,7 @@ const HomeScreen: React.FC = () => {
                 >
                   <Text
                     style={{
-                      color: isActive ? ACCENT_COLOR : Colors.gray400,
+                      color: isActive ? colors.accent : colors.gray400,
                       fontSize: 10,
                       fontWeight: isActive ? "700" : "500",
                     }}
@@ -553,9 +549,9 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             BALANCE HERO CARD (CAROUSEL)
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <BalanceCarousel
           hasFinancialData={hasFinancialData}
           balance={safeNumber(state.balance)}
@@ -567,9 +563,9 @@ const HomeScreen: React.FC = () => {
           openingBalance={openingBalance}
         />
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             QUICK ACTIONS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <SectionHeader title="Aksi Cepat" />
         <View
           style={{
@@ -609,7 +605,7 @@ const HomeScreen: React.FC = () => {
               </Animated.View>
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 9,
                   fontWeight: "600",
                   textAlign: "center",
@@ -621,21 +617,21 @@ const HomeScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             QUICK STATS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <SectionHeader title="Statistik" />
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: INNER_RADIUS,
             paddingVertical: 16,
             paddingHorizontal: 8,
             marginBottom: 20,
             borderWidth: 1,
-            borderColor: CARD_BORDER,
+            borderColor: `${colors.border}80`,
           }}
         >
           {quickStats.map((stat, index) => (
@@ -643,7 +639,7 @@ const HomeScreen: React.FC = () => {
               <View style={{ flex: 1, alignItems: "center" }}>
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: colors.gray400,
                     fontSize: 9,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
@@ -668,7 +664,7 @@ const HomeScreen: React.FC = () => {
                 {stat.unit && (
                   <Text
                     style={{
-                      color: Colors.gray400,
+                      color: colors.gray400,
                       fontSize: 9,
                       marginTop: 2,
                       textAlign: "center",
@@ -683,7 +679,7 @@ const HomeScreen: React.FC = () => {
                   style={{
                     width: 1,
                     height: 36,
-                    backgroundColor: CARD_BORDER,
+                    backgroundColor: `${colors.border}80`,
                   }}
                 />
               )}
@@ -691,9 +687,9 @@ const HomeScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             SMART INSIGHTS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {smartInsights.length > 0 && (
           <>
             <SectionHeader
@@ -740,7 +736,7 @@ const HomeScreen: React.FC = () => {
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        color: TEXT_PRIMARY,
+                        color: colors.textPrimary,
                         fontSize: 12,
                         fontWeight: "600",
                         marginBottom: 2,
@@ -750,7 +746,7 @@ const HomeScreen: React.FC = () => {
                     </Text>
                     <Text
                       style={{
-                        color: Colors.gray400,
+                        color: colors.gray400,
                         fontSize: 11,
                         lineHeight: 15,
                       }}
@@ -775,9 +771,9 @@ const HomeScreen: React.FC = () => {
           </>
         )}
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             RECENT TRANSACTIONS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <SectionHeader
           title={
             filteredTransactions.length > 0
@@ -799,10 +795,10 @@ const HomeScreen: React.FC = () => {
         {filteredTransactions.length > 0 ? (
           <View
             style={{
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
-              borderColor: CARD_BORDER,
+              borderColor: `${colors.border}80`,
               paddingHorizontal: 4,
               marginBottom: 20,
             }}
@@ -823,7 +819,7 @@ const HomeScreen: React.FC = () => {
                     paddingVertical: 12,
                     paddingHorizontal: 14,
                     borderBottomWidth: index < arr.length - 1 ? 1 : 0,
-                    borderBottomColor: CARD_BORDER,
+                    borderBottomColor: `${colors.border}80`,
                   }}
                   onPress={() =>
                     navigation.navigate("AddTransaction", {
@@ -862,7 +858,7 @@ const HomeScreen: React.FC = () => {
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        color: TEXT_PRIMARY,
+                        color: colors.textPrimary,
                         fontSize: 13,
                         fontWeight: "500",
                         marginBottom: 2,
@@ -871,10 +867,10 @@ const HomeScreen: React.FC = () => {
                       {transaction.category}
                     </Text>
                     <Text
-                      style={{ color: Colors.gray400, fontSize: 11 }}
+                      style={{ color: colors.gray400, fontSize: 11 }}
                       numberOfLines={1}
                     >
-                      {transaction.description || "Tidak ada deskripsi"} ·{" "}
+                      {transaction.description || "Tidak ada deskripsi"} Â·{" "}
                       {new Date(transaction.date).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -888,28 +884,28 @@ const HomeScreen: React.FC = () => {
                       fontWeight: "700",
                       color:
                         transaction.type === "income"
-                          ? SUCCESS_COLOR
-                          : ERROR_COLOR,
+                          ? colors.success
+                          : colors.error,
                       marginLeft: 8,
                     }}
                   >
-                    {transaction.type === "income" ? "+" : "−"}
+                    {transaction.type === "income" ? "+" : "âˆ’"}
                     {formatCurrency(safeNumber(transaction.amount))}
                   </Text>
                 </TouchableOpacity>
               ))}
           </View>
         ) : state.transactions.length > 0 ? (
-          /* Empty state — periode ini kosong */
+          /* Empty state â€” periode ini kosong */
           <View
             style={{
               paddingVertical: 28,
               alignItems: "center",
               marginBottom: 20,
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
-              borderColor: CARD_BORDER,
+              borderColor: `${colors.border}80`,
             }}
           >
             <View
@@ -919,19 +915,19 @@ const HomeScreen: React.FC = () => {
                 borderRadius: 16,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: `${Colors.gray400}14`,
+                backgroundColor: `${colors.gray400}14`,
                 marginBottom: 10,
               }}
             >
               <Ionicons
                 name="documents-outline"
                 size={22}
-                color={Colors.gray400}
+                color={colors.gray400}
               />
             </View>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 12,
                 fontWeight: "500",
               }}
@@ -950,9 +946,9 @@ const HomeScreen: React.FC = () => {
               paddingVertical: 18,
               paddingHorizontal: 18,
               borderRadius: CARD_RADIUS,
-              backgroundColor: `${ACCENT_COLOR}0C`,
+              backgroundColor: `${colors.accent}0C`,
               borderWidth: 1,
-              borderColor: `${ACCENT_COLOR}20`,
+              borderColor: `${colors.accent}20`,
               marginBottom: 20,
             }}
             onPressIn={handlePressIn}
@@ -966,16 +962,16 @@ const HomeScreen: React.FC = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 14,
-                backgroundColor: `${ACCENT_COLOR}22`,
+                backgroundColor: `${colors.accent}22`,
                 transform: [{ scale: scaleAnim }],
               }}
             >
-              <Ionicons name="add" size={20} color={ACCENT_COLOR} />
+              <Ionicons name="add" size={20} color={colors.accent} />
             </Animated.View>
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  color: TEXT_PRIMARY,
+                  color: colors.textPrimary,
                   fontSize: 13,
                   fontWeight: "600",
                   marginBottom: 3,
@@ -983,21 +979,21 @@ const HomeScreen: React.FC = () => {
               >
                 Tambah transaksi pertama
               </Text>
-              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-                💡 Catat pemasukan atau pengeluaran · Buat anggaran · Tetapkan tabungan
+              <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                ðŸ’¡ Catat pemasukan atau pengeluaran Â· Buat anggaran Â· Tetapkan tabungan
               </Text>
             </View>
             <Ionicons
               name="chevron-forward"
               size={14}
-              color={Colors.gray400}
+              color={colors.gray400}
             />
           </TouchableOpacity>
         )}
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             BUDGET + GOALS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {hasFinancialData &&
           (state.budgets.length > 0 || goalsPreview.length > 0) && (
             <>
@@ -1014,14 +1010,14 @@ const HomeScreen: React.FC = () => {
                     style={{
                       width: 3,
                       height: 13,
-                      backgroundColor: ACCENT_COLOR,
+                      backgroundColor: colors.accent,
                       borderRadius: 2,
                       marginRight: 8,
                     }}
                   />
                   <Text
                     style={{
-                      color: Colors.gray400,
+                      color: colors.gray400,
                       fontSize: 10,
                       fontWeight: "700",
                       letterSpacing: 1.2,
@@ -1039,7 +1035,7 @@ const HomeScreen: React.FC = () => {
                     >
                       <Text
                         style={{
-                          color: ACCENT_COLOR,
+                          color: colors.accent,
                           fontSize: 11,
                           fontWeight: "600",
                         }}
@@ -1055,7 +1051,7 @@ const HomeScreen: React.FC = () => {
                     >
                       <Text
                         style={{
-                          color: SUCCESS_COLOR,
+                          color: colors.success,
                           fontSize: 11,
                           fontWeight: "600",
                         }}
@@ -1070,15 +1066,15 @@ const HomeScreen: React.FC = () => {
               <View
                 style={{
                   flexDirection: "row",
-                  backgroundColor: SURFACE_COLOR,
+                  backgroundColor: colors.surface,
                   borderRadius: CARD_RADIUS,
                   borderWidth: 1,
-                  borderColor: CARD_BORDER,
+                  borderColor: `${colors.border}80`,
                   padding: CARD_PAD,
                   marginBottom: 20,
                 }}
               >
-                {/* LEFT — Budget */}
+                {/* LEFT â€” Budget */}
                 {state.budgets.length > 0 && (
                   <View
                     style={[
@@ -1086,13 +1082,13 @@ const HomeScreen: React.FC = () => {
                       goalsPreview.length > 0 && {
                         paddingRight: 16,
                         borderRightWidth: 1,
-                        borderRightColor: CARD_BORDER,
+                        borderRightColor: `${colors.border}80`,
                       },
                     ]}
                   >
                     <Text
                       style={{
-                        color: Colors.gray400,
+                        color: colors.gray400,
                         fontSize: 9,
                         textTransform: "uppercase",
                         letterSpacing: 0.8,
@@ -1109,10 +1105,10 @@ const HomeScreen: React.FC = () => {
                         safeLimit > 0 ? (safeSpent / safeLimit) * 100 : 0;
                       const barColor =
                         progress > 90
-                          ? ERROR_COLOR
+                          ? colors.error
                           : progress > 70
-                          ? WARNING_COLOR
-                          : SUCCESS_COLOR;
+                          ? colors.warning
+                          : colors.success;
                       return (
                         <View key={budget.id} style={{ marginBottom: 14 }}>
                           <View
@@ -1125,7 +1121,7 @@ const HomeScreen: React.FC = () => {
                           >
                             <Text
                               style={{
-                                color: TEXT_SECONDARY,
+                                color: colors.textSecondary,
                                 fontSize: 11,
                                 fontWeight: "500",
                               }}
@@ -1136,8 +1132,8 @@ const HomeScreen: React.FC = () => {
                               style={{
                                 color:
                                   progress > 90
-                                    ? ERROR_COLOR
-                                    : Colors.gray400,
+                                    ? colors.error
+                                    : colors.gray400,
                                 fontSize: 10,
                                 fontWeight: "600",
                               }}
@@ -1148,7 +1144,7 @@ const HomeScreen: React.FC = () => {
                           <View
                             style={{
                               height: 4,
-                              backgroundColor: "rgba(255,255,255,0.07)",
+                              backgroundColor: `${colors.border}80`,
                               borderRadius: 4,
                               overflow: "hidden",
                             }}
@@ -1167,7 +1163,7 @@ const HomeScreen: React.FC = () => {
                           </View>
                           <Text
                             style={{
-                              color: Colors.gray400,
+                              color: colors.gray400,
                               fontSize: 9,
                               marginTop: 4,
                             }}
@@ -1181,7 +1177,7 @@ const HomeScreen: React.FC = () => {
                   </View>
                 )}
 
-                {/* RIGHT — Goals */}
+                {/* RIGHT â€” Goals */}
                 {goalsPreview.length > 0 && (
                   <View
                     style={[
@@ -1191,7 +1187,7 @@ const HomeScreen: React.FC = () => {
                   >
                     <Text
                       style={{
-                        color: Colors.gray400,
+                        color: colors.gray400,
                         fontSize: 9,
                         textTransform: "uppercase",
                         letterSpacing: 0.8,
@@ -1210,10 +1206,10 @@ const HomeScreen: React.FC = () => {
                           : 0;
                       const barColor =
                         progress >= 80
-                          ? SUCCESS_COLOR
+                          ? colors.success
                           : progress >= 50
-                          ? WARNING_COLOR
-                          : ACCENT_COLOR;
+                          ? colors.warning
+                          : colors.accent;
                       return (
                         <TouchableOpacity
                           key={goal.id}
@@ -1231,7 +1227,7 @@ const HomeScreen: React.FC = () => {
                           >
                             <Text
                               style={{
-                                color: TEXT_SECONDARY,
+                                color: colors.textSecondary,
                                 fontSize: 11,
                                 fontWeight: "500",
                               }}
@@ -1252,7 +1248,7 @@ const HomeScreen: React.FC = () => {
                           <View
                             style={{
                               height: 4,
-                              backgroundColor: "rgba(255,255,255,0.07)",
+                              backgroundColor: `${colors.border}80`,
                               borderRadius: 4,
                               overflow: "hidden",
                             }}
@@ -1271,7 +1267,7 @@ const HomeScreen: React.FC = () => {
                           </View>
                           <Text
                             style={{
-                              color: Colors.gray400,
+                              color: colors.gray400,
                               fontSize: 9,
                               marginTop: 4,
                             }}
@@ -1288,9 +1284,9 @@ const HomeScreen: React.FC = () => {
             </>
           )}
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             HEALTH SCORE RECOMMENDATIONS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {hasFinancialData &&
           financialHealthScore.recommendations &&
           financialHealthScore.recommendations.length > 0 &&
@@ -1305,10 +1301,10 @@ const HomeScreen: React.FC = () => {
               />
               <View
                 style={{
-                  backgroundColor: SURFACE_COLOR,
+                  backgroundColor: colors.surface,
                   borderRadius: CARD_RADIUS,
                   borderWidth: 1,
-                  borderColor: CARD_BORDER,
+                  borderColor: `${colors.border}80`,
                   padding: CARD_PAD,
                   marginBottom: 20,
                 }}
@@ -1333,13 +1329,13 @@ const HomeScreen: React.FC = () => {
                           justifyContent: "center",
                           marginRight: 12,
                           marginTop: 1,
-                          backgroundColor: `${ACCENT_COLOR}20`,
+                          backgroundColor: `${colors.accent}20`,
                           flexShrink: 0,
                         }}
                       >
                         <Text
                           style={{
-                            color: ACCENT_COLOR,
+                            color: colors.accent,
                             fontSize: 10,
                             fontWeight: "700",
                           }}
@@ -1349,7 +1345,7 @@ const HomeScreen: React.FC = () => {
                       </View>
                       <Text
                         style={{
-                          color: TEXT_SECONDARY,
+                          color: colors.textSecondary,
                           fontSize: 12,
                           flex: 1,
                           lineHeight: 18,
@@ -1364,9 +1360,9 @@ const HomeScreen: React.FC = () => {
           )}
       </ScrollView>
 
-      {/* ══════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           FLOATING ADD BUTTON
-      ══════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <Animated.View
         style={{
           position: "absolute",
@@ -1375,7 +1371,7 @@ const HomeScreen: React.FC = () => {
           width: 54,
           height: 54,
           borderRadius: 17,
-          backgroundColor: ACCENT_COLOR,
+          backgroundColor: colors.accent,
           transform: [{ scale: scaleAnim }],
         }}
       >
@@ -1395,7 +1391,7 @@ const HomeScreen: React.FC = () => {
           accessibilityHint="Tekan untuk menambahkan transaksi pemasukan atau pengeluaran"
           accessibilityRole="button"
         >
-          <Ionicons name="add" size={28} color={BACKGROUND_COLOR} />
+          <Ionicons name="add" size={28} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>

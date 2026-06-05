@@ -22,6 +22,7 @@ import tw from "twrnc";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LottieView from "lottie-react-native";
 import { useAppContext } from "../context/AppContext";
+import { useTheme } from "../theme/ThemeContext";
 
 // Screens
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -74,28 +75,30 @@ type StackParamList = {
 };
 
 const MainStack = createStackNavigator<StackParamList>();
-const RootStack = createStackNavigator();
-const Drawer = createDrawerNavigator();
-const { width } = Dimensions.get("window");
+const RootStack  = createStackNavigator();
+const Drawer     = createDrawerNavigator();
+const { width }  = Dimensions.get("window");
 
-// Custom Drawer Content
+// ─── Custom Drawer Content ────────────────────────────────────────────────────
+
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
-  const { state } = useAppContext();
+  const { state }       = useAppContext();
+  const { colors }      = useTheme();
   const { userProfile } = state;
 
   if (!userProfile) return null;
 
   const menuItems = [
-    { name: "Home", label: "Beranda", icon: "home-outline" as const, color: "#22D3EE" },
-    { name: "Transactions", label: "Transaksi", icon: "swap-horizontal-outline" as const, color: "#10B981" },
-    { name: "Calendar", label: "Kalender", icon: "calendar-outline" as const, color: "#3B82F6" },
-    { name: "Analytics", label: "Analitik", icon: "stats-chart-outline" as const, color: "#F59E0B" },
-    { name: "Budget", label: "Anggaran", icon: "pie-chart-outline" as const, color: "#8B5CF6" },
-    { name: "Savings", label: "Tabungan", icon: "wallet-outline" as const, color: "#22D3EE" },
-    { name: "Notes", label: "Catatan", icon: "document-text-outline" as const, color: "#EC4899" },
-    { name: "Debt", label: "Hutang", icon: "card-outline" as const, color: "#EF4444" },
-    { name: "Tools", label: "Alat Cerdas", icon: "calculator-outline" as const, color: "#8B5CF6" },
-    { name: "Profile", label: "Profil Saya", icon: "person-outline" as const, color: "#22D3EE" },
+    { name: "Home",         label: "Beranda",      icon: "home-outline" as const,            color: colors.accent },
+    { name: "Transactions", label: "Transaksi",    icon: "swap-horizontal-outline" as const, color: colors.success },
+    { name: "Calendar",     label: "Kalender",     icon: "calendar-outline" as const,        color: colors.info },
+    { name: "Analytics",    label: "Analitik",     icon: "stats-chart-outline" as const,     color: colors.warning },
+    { name: "Budget",       label: "Anggaran",     icon: "pie-chart-outline" as const,       color: colors.purple },
+    { name: "Savings",      label: "Tabungan",     icon: "wallet-outline" as const,          color: colors.accent },
+    { name: "Notes",        label: "Catatan",      icon: "document-text-outline" as const,   color: colors.pink },
+    { name: "Debt",         label: "Hutang",       icon: "card-outline" as const,            color: colors.error },
+    { name: "Tools",        label: "Alat Cerdas",  icon: "calculator-outline" as const,      color: colors.purple },
+    { name: "Profile",      label: "Profil Saya",  icon: "person-outline" as const,          color: colors.accent },
   ];
 
   const navigateToScreen = (screenName: keyof StackParamList) => {
@@ -104,131 +107,199 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   };
 
   return (
-    <View style={tw`flex-1 bg-[#0F172A]`}>
-      <DrawerContentScrollView {...props} contentContainerStyle={tw`pt-0`} showsVerticalScrollIndicator={false}>
-        {/* Header dengan Gambar Latar (Sekarang bisa di-scroll) */}
-        <TouchableOpacity 
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <DrawerContentScrollView
+        {...props}
+        contentContainerStyle={{ paddingTop: 0 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header dengan foto profil */}
+        <TouchableOpacity
           onPress={() => {
             props.navigation.navigate("Profile");
             props.navigation.closeDrawer();
-          }} 
+          }}
           activeOpacity={0.9}
         >
           <ImageBackground
-            source={userProfile.coverImage ? { uri: userProfile.coverImage } : require("../../assets/bg.png")}
-            style={tw`pt-14 pb-8 px-6 mb-4`}
+            source={
+              userProfile.coverImage
+                ? { uri: userProfile.coverImage }
+                : require("../../assets/bg.png")
+            }
+            style={{ paddingTop: 56, paddingBottom: 32, paddingHorizontal: 24, marginBottom: 16 }}
             imageStyle={{ opacity: 0.4 }}
           >
-            <View style={tw`flex-row items-center`}>
-              <View style={tw`w-16 h-16 bg-[#1E293B] border-2 border-[#22D3EE] rounded-full items-center justify-center overflow-hidden`}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{
+                  width: 64, height: 64,
+                  backgroundColor: colors.surface,
+                  borderWidth: 2,
+                  borderColor: colors.accent,
+                  borderRadius: 32,
+                  alignItems: "center", justifyContent: "center",
+                  overflow: "hidden",
+                }}
+              >
                 {userProfile.avatar ? (
-                  <Image source={{ uri: userProfile.avatar }} style={tw`w-full h-full`} />
+                  <Image source={{ uri: userProfile.avatar }} style={{ width: "100%", height: "100%" }} />
                 ) : (
-                  <Ionicons name="person" size={32} color="#22D3EE" />
+                  <Ionicons name="person" size={32} color={colors.accent} />
                 )}
               </View>
-              <View style={tw`ml-4 flex-1`}>
-                <Text style={tw`text-[#F8FAFC] text-xl font-bold`} numberOfLines={1}>
+              <View style={{ marginLeft: 16, flex: 1 }}>
+                <Text
+                  style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "700" }}
+                  numberOfLines={1}
+                >
                   {userProfile.name}
                 </Text>
-                <View style={tw`flex-row items-center mt-1`}>
-                  <View style={tw`w-2 h-2 rounded-full bg-[#10B981] mr-2`} />
-                  <Text style={tw`text-[#CBD5E1] text-xs font-medium`}>Online</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success, marginRight: 6 }} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "500" }}>Online</Text>
                 </View>
               </View>
             </View>
           </ImageBackground>
         </TouchableOpacity>
 
-        <View style={tw`px-6 mb-3`}>
-          <Text style={tw`text-[#94A3B8] text-[10px] font-bold uppercase tracking-wider`}>Menu Utama</Text>
+        {/* Label */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 12 }}>
+          <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1.4 }}>
+            Menu Utama
+          </Text>
         </View>
 
+        {/* Menu Items */}
         {menuItems.map((item) => (
           <TouchableOpacity
             key={item.name}
-            style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-1`}
+            style={{
+              flexDirection: "row", alignItems: "center",
+              paddingVertical: 12, paddingHorizontal: 24,
+              marginHorizontal: 16, borderRadius: 12, marginBottom: 4,
+            }}
             onPress={() => navigateToScreen(item.name as keyof StackParamList)}
             activeOpacity={0.7}
           >
-            <View style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}>
+            <View
+              style={{
+                width: 40, height: 40, borderRadius: 11,
+                backgroundColor: colors.surface,
+                borderWidth: 1, borderColor: colors.border,
+                alignItems: "center", justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
               <Ionicons name={item.icon} size={20} color={item.color} />
             </View>
-            <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#334155" />
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "500", flex: 1 }}>
+              {item.label}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.border} />
           </TouchableOpacity>
         ))}
 
-        <View style={tw`h-px bg-[#334155] my-6 mx-6`} />
+        {/* Divider */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 20, marginHorizontal: 24 }} />
 
-        <TouchableOpacity style={tw`flex-row items-center py-3 px-6 mx-4 rounded-xl mb-2`} onPress={() => props.navigation.navigate("Settings")}>
-          <View style={tw`w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] items-center justify-center mr-3`}>
-            <Ionicons name="settings-outline" size={20} color="#F59E0B" />
+        {/* Settings */}
+        <TouchableOpacity
+          style={{
+            flexDirection: "row", alignItems: "center",
+            paddingVertical: 12, paddingHorizontal: 24,
+            marginHorizontal: 16, borderRadius: 12, marginBottom: 8,
+          }}
+          onPress={() => props.navigation.navigate("Settings")}
+        >
+          <View
+            style={{
+              width: 40, height: 40, borderRadius: 11,
+              backgroundColor: colors.surface,
+              borderWidth: 1, borderColor: colors.border,
+              alignItems: "center", justifyContent: "center",
+              marginRight: 12,
+            }}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.warning} />
           </View>
-          <Text style={tw`text-[#F8FAFC] text-sm font-medium flex-1`}>Pengaturan</Text>
-          <Ionicons name="chevron-forward" size={16} color="#334155" />
+          <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "500", flex: 1 }}>
+            Pengaturan
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.border} />
         </TouchableOpacity>
       </DrawerContentScrollView>
-
     </View>
   );
 };
 
-// Main Stack Navigator
+// ─── Main Stack Navigator ─────────────────────────────────────────────────────
+
 const MainStackNavigator = () => {
+  const { colors } = useTheme();
+
   return (
     <MainStack.Navigator
       screenOptions={({ navigation, route }) => {
         const mainScreens = [
-          "Home", "Transactions", "Analytics", "Calendar", "Budget", 
+          "Home", "Transactions", "Analytics", "Calendar", "Budget",
           "Savings", "Profile", "Settings", "Notes", "Debt", "Tools",
-          "SavingsDetail", "SavingsHistory", "AddSavings", "AddSavingsTransaction"
+          "SavingsDetail", "SavingsHistory", "AddSavings", "AddSavingsTransaction",
         ];
         const isMainScreen = mainScreens.includes(route.name);
 
         return {
           headerShown: !isMainScreen,
-          cardStyle: { backgroundColor: "#0F172A" }, // Mencegah flash putih saat transisi antar layar utama
+          cardStyle: { backgroundColor: colors.background },
           headerStyle: {
-            backgroundColor: "#0F172A",
+            backgroundColor: colors.background,
             height: Platform.OS === "ios" ? 100 : 80,
             borderBottomWidth: 1,
-            borderBottomColor: "#334155",
+            borderBottomColor: colors.border,
           },
-          headerTintColor: "#F8FAFC",
+          headerTintColor: colors.textPrimary,
           headerTitleStyle: { fontWeight: "700", fontSize: 20 },
           headerTitleAlign: "center" as const,
           headerLeft: () => (
             <TouchableOpacity
-              onPress={() => route.name === "Home" ? navigation.openDrawer() : navigation.goBack()}
+              onPress={() =>
+                route.name === "Home"
+                  ? navigation.openDrawer()
+                  : navigation.goBack()
+              }
               style={tw`ml-4 p-2 rounded-lg`}
             >
-              <Ionicons name={route.name === "Home" ? "menu" : "arrow-back"} size={26} color="#22D3EE" />
+              <Ionicons
+                name={route.name === "Home" ? "menu" : "arrow-back"}
+                size={26}
+                color={colors.accent}
+              />
             </TouchableOpacity>
           ),
         };
       }}
     >
-      <MainStack.Screen name="Home" component={HomeScreen} options={{ title: "Beranda" }} />
-      <MainStack.Screen name="Transactions" component={TransactionsScreen} options={{ title: "Transaksi" }} />
-      <MainStack.Screen name="Analytics" component={AnalyticsScreen} options={{ title: "Analitik" }} />
-      <MainStack.Screen name="Calendar" component={CalendarScreen} options={{ title: "Kalender Keuangan" }} />
-      <MainStack.Screen name="Budget" component={BudgetScreen} options={{ title: "Anggaran" }} />
-      <MainStack.Screen name="Savings" component={SavingsScreen} options={{ title: "Tabungan" }} />
-      <MainStack.Screen name="Profile" component={ProfileScreen} options={{ title: "Profil Saya" }} />
-      <MainStack.Screen name="Settings" component={SettingsScreen} options={{ title: "Pengaturan" }} />
-      <MainStack.Screen name="Notes" component={NotesScreen} options={{ title: "Catatan Finansial" }} />
-      <MainStack.Screen name="SavingsDetail" component={SavingsDetailScreen} options={{ title: "Detail Tabungan" }} />
-      <MainStack.Screen name="SavingsHistory" component={SavingsHistoryScreen} options={{ title: "Riwayat Transaksi" }} />
-      <MainStack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false }} />
-      <MainStack.Screen name="AddTransaction" component={AddTransactionScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Transaksi" : "Transaksi Baru" })} />
-      <MainStack.Screen name="AddBudget" component={AddBudgetScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Anggaran" : "Anggaran Baru" })} />
-      <MainStack.Screen name="AddSavings" component={AddSavingsScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Tabungan" : "Tabungan Baru" })} />
-      <MainStack.Screen name="AddSavingsTransaction" component={AddSavingsTransactionScreen} options={({ route }: any) => ({ title: route.params?.type === "deposit" ? "Tambah Setoran" : "Penarikan Dana" })} />
-      <MainStack.Screen name="NoteForm" component={NoteFormScreen} options={({ route }: any) => ({ title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru" })} />
-      <MainStack.Screen name="Debt" component={DebtScreen} options={{ title: "Hutang & Piutang" }} />
-      <MainStack.Screen name="AddDebt" component={AddDebtScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Hutang" : "Tambah Hutang" })} />
-      <MainStack.Screen name="Tools" component={ToolsScreen} options={{ title: "Alat Cerdas" }} />
+      <MainStack.Screen name="Home"                    component={HomeScreen} options={{ title: "Beranda" }} />
+      <MainStack.Screen name="Transactions"            component={TransactionsScreen} options={{ title: "Transaksi" }} />
+      <MainStack.Screen name="Analytics"              component={AnalyticsScreen} options={{ title: "Analitik" }} />
+      <MainStack.Screen name="Calendar"               component={CalendarScreen} options={{ title: "Kalender Keuangan" }} />
+      <MainStack.Screen name="Budget"                 component={BudgetScreen} options={{ title: "Anggaran" }} />
+      <MainStack.Screen name="Savings"                component={SavingsScreen} options={{ title: "Tabungan" }} />
+      <MainStack.Screen name="Profile"                component={ProfileScreen} options={{ title: "Profil Saya" }} />
+      <MainStack.Screen name="Settings"               component={SettingsScreen} options={{ title: "Pengaturan" }} />
+      <MainStack.Screen name="Notes"                  component={NotesScreen} options={{ title: "Catatan Finansial" }} />
+      <MainStack.Screen name="SavingsDetail"          component={SavingsDetailScreen} options={{ title: "Detail Tabungan" }} />
+      <MainStack.Screen name="SavingsHistory"         component={SavingsHistoryScreen} options={{ title: "Riwayat Transaksi" }} />
+      <MainStack.Screen name="NoteDetail"             component={NoteDetailScreen} options={{ headerShown: false }} />
+      <MainStack.Screen name="AddTransaction"         component={AddTransactionScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Transaksi" : "Transaksi Baru" })} />
+      <MainStack.Screen name="AddBudget"              component={AddBudgetScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Anggaran" : "Anggaran Baru" })} />
+      <MainStack.Screen name="AddSavings"             component={AddSavingsScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Tabungan" : "Tabungan Baru" })} />
+      <MainStack.Screen name="AddSavingsTransaction"  component={AddSavingsTransactionScreen} options={({ route }: any) => ({ title: route.params?.type === "deposit" ? "Tambah Setoran" : "Penarikan Dana" })} />
+      <MainStack.Screen name="NoteForm"               component={NoteFormScreen} options={({ route }: any) => ({ title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru" })} />
+      <MainStack.Screen name="Debt"                   component={DebtScreen} options={{ title: "Hutang & Piutang" }} />
+      <MainStack.Screen name="AddDebt"                component={AddDebtScreen} options={({ route }: any) => ({ title: route.params?.editMode ? "Edit Hutang" : "Tambah Hutang" })} />
+      <MainStack.Screen name="Tools"                  component={ToolsScreen} options={{ title: "Alat Cerdas" }} />
     </MainStack.Navigator>
   );
 };
@@ -240,71 +311,76 @@ const StackWithHandle: React.FC = () => (
   </View>
 );
 
-const DrawerNavigator = () => (
-  <Drawer.Navigator
-    useLegacyImplementation={false}
-    drawerContent={(props) => <CustomDrawerContent {...props} />}
-    screenOptions={{
-      drawerStyle: { width: width * 0.8, backgroundColor: "#0F172A" },
-      drawerType: "front",
-      overlayColor: "rgba(0,0,0,0.7)",
-      swipeEnabled: true,
-      headerShown: false,
-    }}
-  >
-    <Drawer.Screen name="MainStack" component={StackWithHandle} />
-  </Drawer.Navigator>
-);
+// ─── Drawer Navigator ─────────────────────────────────────────────────────────
 
-// Theme Navigation untuk mencegah "White Flash" saat ganti halaman
-const MyNavigationTheme = {
-  ...NavigationDarkTheme,
-  colors: {
-    ...NavigationDarkTheme.colors,
-    background: "#0F172A",
-    card: "#0F172A",
-    text: "#F8FAFC",
-    border: "#334155",
-    primary: "#22D3EE",
-  },
+const DrawerNavigator = () => {
+  const { colors } = useTheme();
+
+  return (
+    <Drawer.Navigator
+      useLegacyImplementation={false}
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{
+        drawerStyle:  { width: width * 0.8, backgroundColor: colors.background },
+        drawerType:   "front",
+        overlayColor: "rgba(0,0,0,0.7)",
+        swipeEnabled: true,
+        headerShown:  false,
+      }}
+    >
+      <Drawer.Screen name="MainStack" component={StackWithHandle} />
+    </Drawer.Navigator>
+  );
 };
 
+// ─── Root App Navigator ───────────────────────────────────────────────────────
+
 const AppNavigator: React.FC = () => {
+  const { colors }      = useTheme();
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      try {
-        const value = await AsyncStorage.getItem("@onboarding_completed");
-        setIsFirstLaunch(value !== "true");
-      } catch (error) {
-        setIsFirstLaunch(true);
-      }
-    };
-    checkOnboarding();
+    AsyncStorage.getItem("@onboarding_completed")
+      .then((value) => setIsFirstLaunch(value !== "true"))
+      .catch(()    => setIsFirstLaunch(true));
   }, []);
+
+  // Tema navigasi mengikuti warna tema aktif — menghindari "white flash"
+  const MyNavigationTheme = {
+    ...NavigationDarkTheme,
+    colors: {
+      ...NavigationDarkTheme.colors,
+      background: colors.background,
+      card:       colors.background,
+      text:       colors.textPrimary,
+      border:     colors.border,
+      primary:    colors.accent,
+    },
+  };
 
   if (isFirstLaunch === null) {
     return (
-      <View style={tw`flex-1 bg-[#0F172A] justify-center items-center`}>
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
         <LottieView
           source={require("../../assets/lottie/Loading 50 _ Among Us.json")}
           autoPlay
           loop
           style={{ width: 200, height: 200 }}
         />
-        <Text style={tw`text-[#CBD5E1] mt-2 font-medium`}>Memuat MyMoney...</Text>
+        <Text style={{ color: colors.textSecondary, marginTop: 8, fontWeight: "500" }}>
+          Memuat MyMoney...
+        </Text>
       </View>
     );
   }
 
   return (
     <NavigationContainer theme={MyNavigationTheme}>
-      <RootStack.Navigator 
-        screenOptions={{ 
+      <RootStack.Navigator
+        screenOptions={{
           headerShown: false,
-          cardStyle: { backgroundColor: "#0F172A" } // Mencegah flash putih di Root Stack
-        }} 
+          cardStyle: { backgroundColor: colors.background },
+        }}
         initialRouteName={isFirstLaunch ? "Onboarding" : "MainDrawer"}
       >
         {isFirstLaunch && <RootStack.Screen name="Onboarding" component={OnboardingScreen} />}

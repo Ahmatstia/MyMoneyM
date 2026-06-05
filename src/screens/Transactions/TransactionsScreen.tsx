@@ -22,7 +22,7 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Transaction } from "../../types";
-import { Colors } from "../../theme/theme";
+import { useTheme } from '../../theme/ThemeContext';
 import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 const { width } = Dimensions.get("window");
@@ -30,23 +30,11 @@ const { width } = Dimensions.get("window");
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 // ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const BORDER_COLOR     = Colors.border;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-
 // ─── Design tokens (konsisten dengan HomeScreen & AnalyticsScreen) ────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
-
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -61,50 +49,55 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.gray400,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const TransactionsScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const CARD_BORDER = `${colors.border}80`;
   const navigation = useNavigation<any>();
   const { state, deleteTransaction } = useAppContext();
 
@@ -152,7 +145,7 @@ const TransactionsScreen: React.FC = () => {
       })),
     ];
     const found = all.find((c) => c.name === categoryName);
-    return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: Colors.gray400 };
+    return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: colors.gray400 };
   };
 
   const filteredTransactions = useMemo(() => {
@@ -384,7 +377,7 @@ const TransactionsScreen: React.FC = () => {
           width: 52,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: `${ACCENT_COLOR}20`,
+          backgroundColor: `${colors.accent}20`,
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
         }}
@@ -397,10 +390,10 @@ const TransactionsScreen: React.FC = () => {
             borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: `${ACCENT_COLOR}25`,
+            backgroundColor: `${colors.accent}25`,
           }}
         >
-          <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
+          <Ionicons name="pencil-outline" size={15} color={colors.accent} />
         </View>
       </TouchableOpacity>
       <TouchableOpacity
@@ -408,7 +401,7 @@ const TransactionsScreen: React.FC = () => {
           width: 52,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: `${ERROR_COLOR}20`,
+          backgroundColor: `${colors.error}20`,
         }}
         onPress={() => handleDelete(transaction.id)}
       >
@@ -419,10 +412,10 @@ const TransactionsScreen: React.FC = () => {
             borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: `${ERROR_COLOR}25`,
+            backgroundColor: `${colors.error}25`,
           }}
         >
-          <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
+          <Ionicons name="trash-outline" size={15} color={colors.error} />
         </View>
       </TouchableOpacity>
     </View>
@@ -432,12 +425,12 @@ const TransactionsScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
 
       {/* ── Sticky header ───────────────────────────────────────────────── */}
       <View
         style={{
-          backgroundColor: BACKGROUND_COLOR,
+          backgroundColor: colors.background,
           paddingHorizontal: 18,
           paddingTop: 14,
           paddingBottom: 12,
@@ -455,7 +448,7 @@ const TransactionsScreen: React.FC = () => {
           }}
         >
           <Text
-            style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
+            style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
           >
             Transaksi
           </Text>
@@ -467,11 +460,11 @@ const TransactionsScreen: React.FC = () => {
               paddingVertical: 7,
               borderRadius: 20,
               backgroundColor: dateFilter !== "all"
-                ? `${ACCENT_COLOR}18`
-                : SURFACE_COLOR,
+                ? `${colors.accent}18`
+                : colors.surface,
               borderWidth: 1,
               borderColor: dateFilter !== "all"
-                ? `${ACCENT_COLOR}30`
+                ? `${colors.accent}30`
                 : "transparent",
             }}
             onPress={() => setShowFilterModal(true)}
@@ -480,13 +473,13 @@ const TransactionsScreen: React.FC = () => {
             <Ionicons
               name="calendar-outline"
               size={13}
-              color={dateFilter !== "all" ? ACCENT_COLOR : Colors.gray400}
+              color={dateFilter !== "all" ? colors.accent : colors.gray400}
             />
             <Text
               style={{
                 fontSize: 11,
                 fontWeight: dateFilter !== "all" ? "700" : "500",
-                color: dateFilter !== "all" ? ACCENT_COLOR : Colors.gray400,
+                color: dateFilter !== "all" ? colors.accent : colors.gray400,
                 marginLeft: 5,
               }}
             >
@@ -498,7 +491,7 @@ const TransactionsScreen: React.FC = () => {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={{ marginLeft: 5 }}
               >
-                <Ionicons name="close" size={11} color={ACCENT_COLOR} />
+                <Ionicons name="close" size={11} color={colors.accent} />
               </TouchableOpacity>
             )}
           </TouchableOpacity>
@@ -509,13 +502,13 @@ const TransactionsScreen: React.FC = () => {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: INNER_RADIUS,
             paddingHorizontal: 13,
             paddingVertical: 10,
             borderWidth: searchFocused ? 1 : 1,
             borderColor: searchFocused
-              ? `${ACCENT_COLOR}45`
+              ? `${colors.accent}45`
               : CARD_BORDER,
             marginBottom: 12,
           }}
@@ -523,18 +516,18 @@ const TransactionsScreen: React.FC = () => {
           <Ionicons
             name="search-outline"
             size={15}
-            color={searchFocused ? ACCENT_COLOR : Colors.gray400}
+            color={searchFocused ? colors.accent : colors.gray400}
           />
           <TextInput
             style={{
               flex: 1,
-              color: TEXT_PRIMARY,
+              color: colors.textPrimary,
               fontSize: 13,
               marginLeft: 9,
               paddingVertical: 0,
             }}
             placeholder="Cari kategori, deskripsi..."
-            placeholderTextColor={Colors.gray400}
+            placeholderTextColor={colors.gray400}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onFocus={() => setSearchFocused(true)}
@@ -551,7 +544,7 @@ const TransactionsScreen: React.FC = () => {
               <Ionicons
                 name="close-circle"
                 size={16}
-                color={Colors.gray400}
+                color={colors.gray400}
               />
             </TouchableOpacity>
           ) : null}
@@ -561,7 +554,7 @@ const TransactionsScreen: React.FC = () => {
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: 13,
             padding: 3,
             borderWidth: 1,
@@ -576,10 +569,10 @@ const TransactionsScreen: React.FC = () => {
             const isActive = filterType === item.key;
             const activeColor =
               item.key === "income"
-                ? SUCCESS_COLOR
+                ? colors.success
                 : item.key === "expense"
-                ? ERROR_COLOR
-                : ACCENT_COLOR;
+                ? colors.error
+                : colors.accent;
             return (
               <TouchableOpacity
                 key={item.key}
@@ -599,7 +592,7 @@ const TransactionsScreen: React.FC = () => {
                   style={{
                     fontSize: 11,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? activeColor : Colors.gray400,
+                    color: isActive ? activeColor : colors.gray400,
                   }}
                 >
                   {item.label}
@@ -619,8 +612,8 @@ const TransactionsScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={[ACCENT_COLOR]}
-            tintColor={ACCENT_COLOR}
+            colors={[colors.accent]}
+            tintColor={colors.accent}
           />
         }
       >
@@ -650,7 +643,7 @@ const TransactionsScreen: React.FC = () => {
                     >
                       <Text
                         style={{
-                          color: Colors.gray400,
+                          color: colors.gray400,
                           fontSize: 11,
                           fontWeight: "700",
                           letterSpacing: 0.3,
@@ -665,15 +658,15 @@ const TransactionsScreen: React.FC = () => {
                           borderRadius: 20,
                           backgroundColor:
                             dayNet >= 0
-                              ? `${SUCCESS_COLOR}15`
-                              : `${ERROR_COLOR}15`,
+                              ? `${colors.success}15`
+                              : `${colors.error}15`,
                         }}
                       >
                         <Text
                           style={{
                             fontSize: 11,
                             fontWeight: "700",
-                            color: dayNet >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                            color: dayNet >= 0 ? colors.success : colors.error,
                           }}
                         >
                           {dayNet >= 0 ? "+" : ""}
@@ -685,7 +678,7 @@ const TransactionsScreen: React.FC = () => {
                     {/* Transaction card */}
                     <View
                       style={{
-                        backgroundColor: SURFACE_COLOR,
+                        backgroundColor: colors.surface,
                         borderRadius: CARD_RADIUS,
                         borderWidth: 1,
                         borderColor: CARD_BORDER,
@@ -707,7 +700,7 @@ const TransactionsScreen: React.FC = () => {
                           }
                           friction={2}
                           containerStyle={{
-                            backgroundColor: SURFACE_COLOR,
+                            backgroundColor: colors.surface,
                           }}
                           onSwipeableWillOpen={() => {
                             Object.keys(swipeableRefs.current).forEach(
@@ -730,7 +723,7 @@ const TransactionsScreen: React.FC = () => {
                               alignItems: "center",
                               paddingVertical: 13,
                               paddingHorizontal: 16,
-                              backgroundColor: SURFACE_COLOR,
+                              backgroundColor: colors.surface,
                               borderBottomWidth:
                                 index < transactions.length - 1 ? 1 : 0,
                               borderBottomColor: CARD_BORDER,
@@ -766,7 +759,7 @@ const TransactionsScreen: React.FC = () => {
                             <View style={{ flex: 1 }}>
                               <Text
                                 style={{
-                                  color: TEXT_PRIMARY,
+                                  color: colors.textPrimary,
                                   fontSize: 13,
                                   fontWeight: "500",
                                   marginBottom: 2,
@@ -776,7 +769,7 @@ const TransactionsScreen: React.FC = () => {
                               </Text>
                               <Text
                                 style={{
-                                  color: Colors.gray400,
+                                  color: colors.gray400,
                                   fontSize: 11,
                                 }}
                                 numberOfLines={1}
@@ -791,12 +784,12 @@ const TransactionsScreen: React.FC = () => {
                               {transaction.subTransactions && transaction.subTransactions.length > 0 && (
                                 <View style={{
                                   flexDirection: "row", alignItems: "center",
-                                  backgroundColor: `${Colors.accent}15`,
+                                  backgroundColor: `${colors.accent}15`,
                                   borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
                                   alignSelf: "flex-start", marginTop: 4,
                                 }}>
-                                  <Ionicons name="cart-outline" size={10} color={Colors.accent} style={{ marginRight: 3 }} />
-                                  <Text style={{ color: Colors.accent, fontSize: 10, fontWeight: "700" }}>
+                                  <Ionicons name="cart-outline" size={10} color={colors.accent} style={{ marginRight: 3 }} />
+                                  <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
                                     {transaction.subTransactions.length} item
                                   </Text>
                                 </View>
@@ -816,8 +809,8 @@ const TransactionsScreen: React.FC = () => {
                                   fontWeight: "700",
                                   color:
                                     transaction.type === "income"
-                                      ? SUCCESS_COLOR
-                                      : ERROR_COLOR,
+                                      ? colors.success
+                                      : colors.error,
                                   marginBottom: 2,
                                 }}
                               >
@@ -829,7 +822,7 @@ const TransactionsScreen: React.FC = () => {
                               <Ionicons
                                 name="chevron-forward"
                                 size={11}
-                                color={Colors.gray400}
+                                color={colors.gray400}
                               />
                             </View>
                           </TouchableOpacity>
@@ -846,7 +839,7 @@ const TransactionsScreen: React.FC = () => {
               style={{
                 alignItems: "center",
                 paddingVertical: 48,
-                backgroundColor: SURFACE_COLOR,
+                backgroundColor: colors.surface,
                 borderRadius: CARD_RADIUS,
                 borderWidth: 1,
                 borderColor: CARD_BORDER,
@@ -860,7 +853,7 @@ const TransactionsScreen: React.FC = () => {
                   borderRadius: 20,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: `${Colors.gray400}14`,
+                  backgroundColor: `${colors.gray400}14`,
                   marginBottom: 14,
                 }}
               >
@@ -869,12 +862,12 @@ const TransactionsScreen: React.FC = () => {
                     hasActiveFilter ? "search-outline" : "receipt-outline"
                   }
                   size={26}
-                  color={Colors.gray400}
+                  color={colors.gray400}
                 />
               </View>
               <Text
                 style={{
-                  color: TEXT_PRIMARY,
+                  color: colors.textPrimary,
                   fontSize: 15,
                   fontWeight: "700",
                   marginBottom: 6,
@@ -887,7 +880,7 @@ const TransactionsScreen: React.FC = () => {
               </Text>
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 12,
                   textAlign: "center",
                   lineHeight: 18,
@@ -907,7 +900,7 @@ const TransactionsScreen: React.FC = () => {
                     paddingHorizontal: 20,
                     paddingVertical: 10,
                     borderRadius: 13,
-                    backgroundColor: ACCENT_COLOR,
+                    backgroundColor: colors.accent,
                   }}
                   onPress={() => navigation.navigate("AddTransaction")}
                   activeOpacity={0.8}
@@ -915,12 +908,12 @@ const TransactionsScreen: React.FC = () => {
                   <Ionicons
                     name="add"
                     size={16}
-                    color={BACKGROUND_COLOR}
+                    color={colors.background}
                     style={{ marginRight: 6 }}
                   />
                   <Text
                     style={{
-                      color: BACKGROUND_COLOR,
+                      color: colors.background,
                       fontSize: 13,
                       fontWeight: "700",
                     }}
@@ -936,7 +929,7 @@ const TransactionsScreen: React.FC = () => {
                     paddingHorizontal: 18,
                     paddingVertical: 10,
                     borderRadius: 13,
-                    backgroundColor: SURFACE_COLOR,
+                    backgroundColor: colors.surface,
                     borderWidth: 1,
                     borderColor: CARD_BORDER,
                   }}
@@ -950,12 +943,12 @@ const TransactionsScreen: React.FC = () => {
                   <Ionicons
                     name="close-outline"
                     size={15}
-                    color={Colors.gray400}
+                    color={colors.gray400}
                     style={{ marginRight: 5 }}
                   />
                   <Text
                     style={{
-                      color: TEXT_SECONDARY,
+                      color: colors.textSecondary,
                       fontSize: 13,
                       fontWeight: "500",
                     }}
@@ -978,8 +971,8 @@ const TransactionsScreen: React.FC = () => {
           width: 54,
           height: 54,
           borderRadius: 17,
-          backgroundColor: ACCENT_COLOR,
-          shadowColor: ACCENT_COLOR,
+          backgroundColor: colors.accent,
+          shadowColor: colors.accent,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.45,
           shadowRadius: 14,
@@ -996,7 +989,7 @@ const TransactionsScreen: React.FC = () => {
           accessibilityLabel="Tambah transaksi baru"
           accessibilityRole="button"
         >
-          <Ionicons name="add" size={28} color={BACKGROUND_COLOR} />
+          <Ionicons name="add" size={28} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -1022,7 +1015,7 @@ const TransactionsScreen: React.FC = () => {
               paddingHorizontal: 20,
               paddingTop: 20,
               paddingBottom: 36,
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderTopWidth: 1,
               borderTopColor: CARD_BORDER,
             }}
@@ -1050,7 +1043,7 @@ const TransactionsScreen: React.FC = () => {
             >
               <Text
                 style={{
-                  color: TEXT_PRIMARY,
+                  color: colors.textPrimary,
                   fontSize: 16,
                   fontWeight: "700",
                 }}
@@ -1064,19 +1057,19 @@ const TransactionsScreen: React.FC = () => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "rgba(255,255,255,0.07)",
+                  backgroundColor: `${colors.border}80`,
                 }}
                 onPress={() => setShowFilterModal(false)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close" size={16} color={Colors.gray400} />
+                <Ionicons name="close" size={16} color={colors.gray400} />
               </TouchableOpacity>
             </View>
 
             {/* Time range label */}
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.2,
@@ -1111,11 +1104,11 @@ const TransactionsScreen: React.FC = () => {
                       paddingVertical: 9,
                       borderRadius: 20,
                       backgroundColor: isActive
-                        ? `${ACCENT_COLOR}20`
-                        : "rgba(255,255,255,0.07)",
+                        ? `${colors.accent}20`
+                        : `${colors.border}80`,
                       borderWidth: 1,
                       borderColor: isActive
-                        ? `${ACCENT_COLOR}35`
+                        ? `${colors.accent}35`
                         : "transparent",
                     }}
                     onPress={() => setDateFilter(option.key as any)}
@@ -1125,7 +1118,7 @@ const TransactionsScreen: React.FC = () => {
                       style={{
                         fontSize: 13,
                         fontWeight: isActive ? "700" : "500",
-                        color: isActive ? ACCENT_COLOR : TEXT_SECONDARY,
+                        color: isActive ? colors.accent : colors.textSecondary,
                       }}
                     >
                       {option.label}
@@ -1147,7 +1140,7 @@ const TransactionsScreen: React.FC = () => {
                 />
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: colors.gray400,
                     fontSize: 10,
                     fontWeight: "700",
                     letterSpacing: 1.2,
@@ -1163,7 +1156,7 @@ const TransactionsScreen: React.FC = () => {
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        color: Colors.gray400,
+                        color: colors.gray400,
                         fontSize: 11,
                         marginBottom: 7,
                       }}
@@ -1174,7 +1167,7 @@ const TransactionsScreen: React.FC = () => {
                       style={{
                         borderRadius: INNER_RADIUS,
                         padding: 13,
-                        backgroundColor: "rgba(255,255,255,0.07)",
+                        backgroundColor: `${colors.border}80`,
                         borderWidth: 1,
                         borderColor: CARD_BORDER,
                       }}
@@ -1182,7 +1175,7 @@ const TransactionsScreen: React.FC = () => {
                       activeOpacity={0.7}
                     >
                       <Text
-                        style={{ color: TEXT_PRIMARY, fontSize: 13 }}
+                        style={{ color: colors.textPrimary, fontSize: 13 }}
                       >
                         {customStartDate.toLocaleDateString("id-ID")}
                       </Text>
@@ -1191,7 +1184,7 @@ const TransactionsScreen: React.FC = () => {
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        color: Colors.gray400,
+                        color: colors.gray400,
                         fontSize: 11,
                         marginBottom: 7,
                       }}
@@ -1202,7 +1195,7 @@ const TransactionsScreen: React.FC = () => {
                       style={{
                         borderRadius: INNER_RADIUS,
                         padding: 13,
-                        backgroundColor: "rgba(255,255,255,0.07)",
+                        backgroundColor: `${colors.border}80`,
                         borderWidth: 1,
                         borderColor: CARD_BORDER,
                       }}
@@ -1210,7 +1203,7 @@ const TransactionsScreen: React.FC = () => {
                       activeOpacity={0.7}
                     >
                       <Text
-                        style={{ color: TEXT_PRIMARY, fontSize: 13 }}
+                        style={{ color: colors.textPrimary, fontSize: 13 }}
                       >
                         {customEndDate.toLocaleDateString("id-ID")}
                       </Text>
@@ -1228,7 +1221,7 @@ const TransactionsScreen: React.FC = () => {
                   borderRadius: INNER_RADIUS,
                   paddingVertical: 13,
                   alignItems: "center",
-                  backgroundColor: "rgba(255,255,255,0.07)",
+                  backgroundColor: `${colors.border}80`,
                   borderWidth: 1,
                   borderColor: CARD_BORDER,
                 }}
@@ -1240,7 +1233,7 @@ const TransactionsScreen: React.FC = () => {
               >
                 <Text
                   style={{
-                    color: TEXT_SECONDARY,
+                    color: colors.textSecondary,
                     fontSize: 14,
                     fontWeight: "500",
                   }}
@@ -1254,8 +1247,8 @@ const TransactionsScreen: React.FC = () => {
                   borderRadius: INNER_RADIUS,
                   paddingVertical: 13,
                   alignItems: "center",
-                  backgroundColor: ACCENT_COLOR,
-                  shadowColor: ACCENT_COLOR,
+                  backgroundColor: colors.accent,
+                  shadowColor: colors.accent,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.3,
                   shadowRadius: 8,
@@ -1266,7 +1259,7 @@ const TransactionsScreen: React.FC = () => {
               >
                 <Text
                   style={{
-                    color: BACKGROUND_COLOR,
+                    color: colors.background,
                     fontSize: 14,
                     fontWeight: "700",
                   }}
@@ -1301,7 +1294,7 @@ const TransactionsScreen: React.FC = () => {
               paddingHorizontal: 16,
               paddingTop: 20,
               paddingBottom: 36,
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderTopWidth: 1,
               borderTopColor: CARD_BORDER,
             }}
@@ -1328,7 +1321,7 @@ const TransactionsScreen: React.FC = () => {
             >
               <Text
                 style={{
-                  color: TEXT_PRIMARY,
+                  color: colors.textPrimary,
                   fontSize: 16,
                   fontWeight: "700",
                 }}
@@ -1344,12 +1337,12 @@ const TransactionsScreen: React.FC = () => {
                   borderRadius: 10,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "rgba(255,255,255,0.07)",
+                  backgroundColor: `${colors.border}80`,
                 }}
                 onPress={() => setShowCalendar(null)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close" size={16} color={Colors.gray400} />
+                <Ionicons name="close" size={16} color={colors.gray400} />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -1359,8 +1352,8 @@ const TransactionsScreen: React.FC = () => {
                   showCalendar === "start" ? customStartDate : customEndDate
                 )]: {
                   selected: true,
-                  selectedColor: ACCENT_COLOR,
-                  selectedTextColor: BACKGROUND_COLOR,
+                  selectedColor: colors.accent,
+                  selectedTextColor: colors.background,
                 },
               }}
               minDate={
@@ -1374,18 +1367,18 @@ const TransactionsScreen: React.FC = () => {
                   : undefined
               }
               theme={{
-                backgroundColor:            SURFACE_COLOR,
-                calendarBackground:         SURFACE_COLOR,
-                textSectionTitleColor:      Colors.gray400,
-                selectedDayBackgroundColor: ACCENT_COLOR,
-                selectedDayTextColor:       BACKGROUND_COLOR,
-                todayTextColor:             ACCENT_COLOR,
-                dayTextColor:               TEXT_PRIMARY,
-                textDisabledColor:          Colors.textTertiary,
-                dotColor:                   ACCENT_COLOR,
-                selectedDotColor:           BACKGROUND_COLOR,
-                arrowColor:                 ACCENT_COLOR,
-                monthTextColor:             TEXT_PRIMARY,
+                backgroundColor:            colors.surface,
+                calendarBackground:         colors.surface,
+                textSectionTitleColor:      colors.gray400,
+                selectedDayBackgroundColor: colors.accent,
+                selectedDayTextColor:       colors.background,
+                todayTextColor:             colors.accent,
+                dayTextColor:               colors.textPrimary,
+                textDisabledColor:          colors.textTertiary,
+                dotColor:                   colors.accent,
+                selectedDotColor:           colors.background,
+                arrowColor:                 colors.accent,
+                monthTextColor:             colors.textPrimary,
                 textMonthFontWeight:        "700",
                 textDayFontSize:            15,
                 textMonthFontSize:          16,

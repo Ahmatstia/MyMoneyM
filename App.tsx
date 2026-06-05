@@ -10,6 +10,7 @@ import {
 } from "@react-navigation/native";
 import { AppProvider, useAppContext } from "./src/context/AppContext";
 import { Colors } from "./src/theme/theme";
+import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Notifications from "expo-notifications";
 import { adaptNavigationTheme } from "react-native-paper";
@@ -21,83 +22,86 @@ const { DarkTheme } = adaptNavigationTheme({
   reactNavigationDark: NavigationDarkTheme,
 });
 
-// Buat tema kustom untuk React Native Paper MD3
-const CustomDarkTheme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: Colors.accent,
-    primaryContainer: Colors.surfaceLight,
-    secondary: Colors.info,
-    secondaryContainer: Colors.surface,
-    tertiary: Colors.warning,
-    tertiaryContainer: Colors.surface,
-    surface: Colors.surface,
-    surfaceVariant: Colors.surfaceLight,
-    background: Colors.background,
-    error: Colors.error,
-    errorContainer: Colors.error + "20",
-    onPrimary: Colors.textPrimary,
-    onPrimaryContainer: Colors.textPrimary,
-    onSecondary: Colors.textPrimary,
-    onSecondaryContainer: Colors.textPrimary,
-    onSurface: Colors.textPrimary,
-    onSurfaceVariant: Colors.textSecondary,
-    onBackground: Colors.textPrimary,
-    outline: Colors.border,
-    outlineVariant: Colors.borderLight,
-    inverseSurface: Colors.textPrimary,
-    inverseOnSurface: Colors.primary,
-    inversePrimary: Colors.accent,
-    shadow: Colors.primaryDark,
-    scrim: Colors.primaryDark + "CC",
-    surfaceDisabled: Colors.surface + "80",
-    onSurfaceDisabled: Colors.textTertiary + "80",
-    backdrop: Colors.primaryDark + "CC",
-    elevation: {
-      level0: "transparent",
-      level1: Colors.surface,
-      level2: Colors.surfaceLight,
-      level3: Colors.surfaceLight,
-      level4: Colors.surfaceLight,
-      level5: Colors.surfaceLight,
-    },
-  },
-  roundness: 14,
-};
-
-// Wrapper untuk menyediakan akses context ke Loading
+// ─── AppContent: Wrapper di dalam ThemeProvider agar bisa pakai useTheme ─────
 const AppContent = () => {
   const { globalLoading } = useAppContext();
+  const { colors } = useTheme();
+
+  // Buat tema React Native Paper yang reaktif terhadap tema aktif
+  const CustomDarkTheme = {
+    ...MD3DarkTheme,
+    colors: {
+      ...MD3DarkTheme.colors,
+      primary:              colors.accent,
+      primaryContainer:     colors.surfaceLight,
+      secondary:            colors.info,
+      secondaryContainer:   colors.surface,
+      tertiary:             colors.warning,
+      tertiaryContainer:    colors.surface,
+      surface:              colors.surface,
+      surfaceVariant:       colors.surfaceLight,
+      background:           colors.background,
+      error:                colors.error,
+      errorContainer:       colors.error + "20",
+      onPrimary:            colors.textPrimary,
+      onPrimaryContainer:   colors.textPrimary,
+      onSecondary:          colors.textPrimary,
+      onSecondaryContainer: colors.textPrimary,
+      onSurface:            colors.textPrimary,
+      onSurfaceVariant:     colors.textSecondary,
+      onBackground:         colors.textPrimary,
+      outline:              colors.border,
+      outlineVariant:       colors.borderLight,
+      inverseSurface:       colors.textPrimary,
+      inverseOnSurface:     colors.primary,
+      inversePrimary:       colors.accent,
+      shadow:               colors.primaryDark,
+      scrim:                colors.primaryDark + "CC",
+      surfaceDisabled:      colors.surface + "80",
+      onSurfaceDisabled:    colors.textTertiary + "80",
+      backdrop:             colors.primaryDark + "CC",
+      elevation: {
+        level0: "transparent",
+        level1: colors.surface,
+        level2: colors.surfaceLight,
+        level3: colors.surfaceLight,
+        level4: colors.surfaceLight,
+        level5: colors.surfaceLight,
+      },
+    },
+    roundness: 14,
+  };
+
   return (
-    <>
-      <AppNavigator />
-      <GlobalLoading 
-        visible={globalLoading.visible} 
-        message={globalLoading.message} 
+    <PaperProvider theme={CustomDarkTheme}>
+      <StatusBar
+        backgroundColor={colors.background}
+        barStyle={colors.background === "#F8FAFC" ? "dark-content" : "light-content"}
+        translucent={false}
       />
-    </>
+      <AppNavigator />
+      <GlobalLoading
+        visible={globalLoading.visible}
+        message={globalLoading.message}
+      />
+    </PaperProvider>
   );
 };
 
+// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  // Configure notification behavior
   useEffect(() => {
-    // Listen for notifications when app is foreground
     const subscription = Notifications.addNotificationReceivedListener(
-      (notification) => {
+      (_notification) => {
         // Handle notification foreground receipt
       }
     );
 
-    // Handle notification response (user taps)
     const responseSubscription =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        // Here you can handle navigation based on notification type
-        const data = response.notification.request.content.data;
+        // Handle navigation based on notification type
+        const _data = response.notification.request.content.data;
       });
-
-    // BUG-16 FIX: Removed duplicate setNotificationHandler — already configured in notifications/index.ts
 
     return () => {
       subscription.remove();
@@ -106,21 +110,17 @@ export default function App() {
   }, []);
 
   return (
-    <PaperProvider theme={CustomDarkTheme}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <StatusBar
-            backgroundColor={Colors.primary}
-            barStyle="light-content"
-            translucent={false}
-          />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        {/* ThemeProvider harus di luar AppProvider agar warna bisa dipakai oleh AppContent */}
+        <ThemeProvider>
           <AppProvider>
             <CustomAlertProvider>
               <AppContent />
             </CustomAlertProvider>
           </AppProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </PaperProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -24,7 +24,8 @@ import * as DocumentPicker from "expo-document-picker";
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
 import { storageService } from "../../utils/storage";
-import { Colors } from "../../theme/theme";
+import { useTheme } from '../../theme/ThemeContext';
+import { THEMES, ThemeId } from "../../theme/theme";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -89,44 +90,23 @@ const DEFAULT_APP_SETTINGS = {
   hapticFeedback: true,
 };
 
-// ─── Theme colors (konsisten) ────────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-const INFO_COLOR       = Colors.info;
-const PURPLE_COLOR     = Colors.purple || "#8B5CF6";
-const PINK_COLOR       = Colors.pink || "#EC4899";
 
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
-
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-const SectionHeader = ({ title }: { title: string }) => (
-  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
-    <View
-      style={{
-        width: 3, height: 13, backgroundColor: ACCENT_COLOR,
-        borderRadius: 2, marginRight: 8,
-      }}
-    />
-    <Text
-      style={{
-        color: Colors.gray400, fontSize: 10, fontWeight: "700",
-        letterSpacing: 1.2, textTransform: "uppercase",
-      }}
-    >
-      {title}
-    </Text>
-  </View>
-);
+const SectionHeader = ({ title }: { title: string }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+      <View style={{ width: 3, height: 13, backgroundColor: colors.accent, borderRadius: 2, marginRight: 8 }} />
+      <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
+        {title}
+      </Text>
+    </View>
+  );
+};
 
 const SettingRow = ({
   label,
@@ -135,7 +115,7 @@ const SettingRow = ({
   onValueChange,
   disabled = false,
   icon,
-  iconColor = ACCENT_COLOR,
+  iconColor,
   isLast = false,
 }: {
   label: string;
@@ -146,47 +126,35 @@ const SettingRow = ({
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   isLast?: boolean;
-}) => (
-  <View>
-    <View
-      style={{
-        flexDirection: "row", alignItems: "center", paddingVertical: 12,
-        opacity: disabled ? 0.45 : 1,
-      }}
-    >
-      {icon && (
-        <View
-          style={{
-            width: 36, height: 36, borderRadius: 10,
-            alignItems: "center", justifyContent: "center",
-            backgroundColor: `${iconColor}15`, marginRight: 14, flexShrink: 0,
-          }}
-        >
-          <Ionicons name={icon} size={18} color={iconColor} />
-        </View>
-      )}
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: description ? 2 : 0 }}>
-          {label}
-        </Text>
-        {description && (
-          <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8, lineHeight: 16 }}>
-            {description}
-          </Text>
+}) => {
+  const { colors } = useTheme();
+  const resolvedIconColor = iconColor ?? colors.accent;
+  const CARD_BORDER = `${colors.border}80`;
+  return (
+    <View>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, opacity: disabled ? 0.45 : 1 }}>
+        {icon && (
+          <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", backgroundColor: `${resolvedIconColor}15`, marginRight: 14, flexShrink: 0 }}>
+            <Ionicons name={icon} size={18} color={resolvedIconColor} />
+          </View>
         )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: description ? 2 : 0 }}>{label}</Text>
+          {description && <Text style={{ color: colors.gray400, fontSize: 11, paddingRight: 8, lineHeight: 16 }}>{description}</Text>}
+        </View>
+        <Switch
+          value={value}
+          onValueChange={onValueChange}
+          trackColor={{ false: colors.surfaceLight, true: colors.accent }}
+          thumbColor="#FFFFFF"
+          disabled={disabled}
+          style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+        />
       </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
-        thumbColor="#FFFFFF"
-        disabled={disabled}
-        style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
-      />
+      {!isLast && <View style={{ height: 1, backgroundColor: CARD_BORDER, marginLeft: icon ? 50 : 0 }} />}
     </View>
-    {!isLast && <View style={{ height: 1, backgroundColor: CARD_BORDER, marginLeft: icon ? 50 : 0 }} />}
-  </View>
-);
+  );
+};
 
 // ─── TimePickerModal ──────────────────────────────────────────────────────────
 
@@ -203,6 +171,8 @@ const TimePickerModal = ({
   initialTime?: string;
   title?: string;
 }) => {
+  const { colors } = useTheme();
+  const CARD_BORDER = `${colors.border}80`;
   const [selectedTime, setSelectedTime] = useState(() => {
     const [hours, minutes] = initialTime.split(":").map(Number);
     const date = new Date();
@@ -242,11 +212,11 @@ const TimePickerModal = ({
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={{ backgroundColor: SURFACE_COLOR, borderTopLeftRadius: CARD_RADIUS, borderTopRightRadius: CARD_RADIUS }}>
+          <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: CARD_RADIUS, borderTopRightRadius: CARD_RADIUS }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700" }}>{title}</Text>
+              <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700" }}>{title}</Text>
               <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-                <Ionicons name="close" size={22} color={Colors.gray400} />
+                <Ionicons name="close" size={22} color={colors.gray400} />
               </TouchableOpacity>
             </View>
             <View style={{ padding: 20 }}>
@@ -256,27 +226,27 @@ const TimePickerModal = ({
                 display="spinner"
                 onChange={handleTimeChange}
                 style={{ width: "100%" }}
-                textColor={TEXT_PRIMARY}
+                textColor={colors.textPrimary}
                 themeVariant="dark"
               />
               <View style={{ alignItems: "center", marginTop: 16 }}>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 36, fontWeight: "800" }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 36, fontWeight: "800" }}>
                   {selectedTime.getHours().toString().padStart(2, "0")}:{selectedTime.getMinutes().toString().padStart(2, "0")}
                 </Text>
               </View>
             </View>
             <View style={{ flexDirection: "row", padding: 20, paddingTop: 0, gap: 12 }}>
               <TouchableOpacity
-                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: CARD_BORDER }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: `${colors.border}70`, borderWidth: 1, borderColor: CARD_BORDER }}
                 onPress={onClose}
               >
-                <Text style={{ color: Colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
+                <Text style={{ color: colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: ACCENT_COLOR, shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: colors.accent, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }}
                 onPress={handleConfirm}
               >
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "800" }}>Simpan</Text>
+                <Text style={{ color: colors.background, fontSize: 14, fontWeight: "800" }}>Simpan</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -293,12 +263,12 @@ const TimePickerModal = ({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }} pointerEvents="box-none">
         <TouchableOpacity style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.6)" }} activeOpacity={1} onPress={onClose} />
-        <View style={{ width: "100%", backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, overflow: "hidden" }}>
+        <View style={{ width: "100%", backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, overflow: "hidden" }}>
           <View style={{ padding: 24, paddingBottom: 16 }}>
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "800", textAlign: "center", marginBottom: 6 }}>{title}</Text>
-            <Text style={{ color: Colors.gray400, fontSize: 12, textAlign: "center", marginBottom: 24 }}>Pilih waktu notifikasi</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "800", textAlign: "center", marginBottom: 6 }}>{title}</Text>
+            <Text style={{ color: colors.gray400, fontSize: 12, textAlign: "center", marginBottom: 24 }}>Pilih waktu notifikasi</Text>
             <View style={{ alignItems: "center", marginBottom: 24 }}>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 48, fontWeight: "800", letterSpacing: -1 }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 48, fontWeight: "800", letterSpacing: -1 }}>
                 {selectedTime.getHours().toString().padStart(2, "0")}:{selectedTime.getMinutes().toString().padStart(2, "0")}
               </Text>
             </View>
@@ -311,25 +281,25 @@ const TimePickerModal = ({
                     key={time}
                     style={{
                       paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-                      backgroundColor: isSelected ? ACCENT_COLOR : `${Colors.gray400}15`,
-                      borderWidth: 1, borderColor: isSelected ? ACCENT_COLOR : `${Colors.gray400}25`,
+                      backgroundColor: isSelected ? colors.accent : `${colors.gray400}15`,
+                      borderWidth: 1, borderColor: isSelected ? colors.accent : `${colors.gray400}25`,
                     }}
                     onPress={() => {
                       const d = new Date(); d.setHours(h, m, 0, 0); setSelectedTime(d);
                     }}
                   >
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: isSelected ? BACKGROUND_COLOR : TEXT_SECONDARY }}>{time}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: isSelected ? colors.background : colors.textSecondary }}>{time}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </View>
           <View style={{ flexDirection: "row", padding: 24, paddingTop: 16, gap: 12 }}>
-            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderWidth: 1, borderColor: CARD_BORDER }} onPress={onClose}>
-              <Text style={{ color: Colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
+            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: `${colors.border}70`, borderWidth: 1, borderColor: CARD_BORDER }} onPress={onClose}>
+              <Text style={{ color: colors.gray300, fontSize: 14, fontWeight: "600" }}>Batal</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: ACCENT_COLOR, shadowColor: ACCENT_COLOR, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }} onPress={() => setShowPicker(true)}>
-              <Text style={{ color: BACKGROUND_COLOR, fontSize: 14, fontWeight: "800" }}>Pilih Waktu</Text>
+            <TouchableOpacity style={{ flex: 1, paddingVertical: 14, borderRadius: INNER_RADIUS, alignItems: "center", backgroundColor: colors.accent, shadowColor: colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }} onPress={() => setShowPicker(true)}>
+              <Text style={{ color: colors.background, fontSize: 14, fontWeight: "800" }}>Pilih Waktu</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -341,6 +311,8 @@ const TimePickerModal = ({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const SettingsScreen = () => {
+  const { colors, themeId, setTheme } = useTheme();
+  const CARD_BORDER = `${colors.border}80`;
   const { clearAllData, refreshData, debugStorage, state, setLoading } = useAppContext();
 
   const [notificationSettings, setNotificationSettings] = useState(DEFAULT_NOTIFICATION_SETTINGS);
@@ -348,7 +320,7 @@ const SettingsScreen = () => {
   const [hasPermission, setHasPermission]               = useState(false);
   const [scheduledNotifications, setScheduledNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading]                       = useState(true);
-  const [activeTab, setActiveTab]                       = useState<"notifications" | "data">("notifications");
+  const [activeTab, setActiveTab] = useState<"appearance" | "notifications" | "data">("appearance");
   const [showAdvanced, setShowAdvanced]                 = useState(false);
   const [timePickerConfig, setTimePickerConfig]         = useState<{ visible: boolean; type: "morning" | "evening" | "quietStart" | "quietEnd" | null; }>({ visible: false, type: null });
 
@@ -586,14 +558,14 @@ const SettingsScreen = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}>
         <LottieView
           source={require("../../../assets/lottie/Loading 50 _ Among Us.json")}
           autoPlay
           loop
           style={{ width: 180, height: 180 }}
         />
-        <Text style={{ color: TEXT_SECONDARY, fontSize: 13, marginTop: 10, fontWeight: "500" }}>
+        <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 10, fontWeight: "500" }}>
           Menyiapkan Pengaturan...
         </Text>
       </View>
@@ -601,27 +573,27 @@ const SettingsScreen = () => {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <View style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20 }}>
-        <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>Pengaturan</Text>
-        <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>Kelola prevensi dan data aplikasi</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>Pengaturan</Text>
+        <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>Kelola prevensi dan data aplikasi</Text>
       </View>
 
       {/* ── Tab Control ─────────────────────────────────────────────── */}
       <View style={{ paddingHorizontal: 18, marginBottom: 20 }}>
-        <View style={{ flexDirection: "row", backgroundColor: SURFACE_COLOR, borderRadius: 13, padding: 3, borderWidth: 1, borderColor: CARD_BORDER }}>
-          {(["notifications", "data"] as const).map((tab) => {
+        <View style={{ flexDirection: "row", backgroundColor: colors.surface, borderRadius: 13, padding: 3, borderWidth: 1, borderColor: CARD_BORDER }}>
+          {(["appearance", "notifications", "data"] as const).map((tab) => {
             const isActive = activeTab === tab;
             return (
               <TouchableOpacity
                 key={tab}
-                style={{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", backgroundColor: isActive ? `${ACCENT_COLOR}20` : "transparent" }}
+                style={{ flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", backgroundColor: isActive ? `${colors.accent}20` : "transparent" }}
                 onPress={() => setActiveTab(tab)}
                 activeOpacity={0.7}
               >
-                <Text style={{ fontSize: 11, fontWeight: isActive ? "700" : "500", color: isActive ? ACCENT_COLOR : Colors.gray400 }}>
-                  {tab === "notifications" ? "Notifikasi" : "Manajemen Data"}
+                <Text style={{ fontSize: 11, fontWeight: isActive ? "700" : "500", color: isActive ? colors.accent : colors.gray400 }}>
+                  {tab === "appearance" ? "Tampilan" : tab === "notifications" ? "Notifikasi" : "Manajemen Data"}
                 </Text>
               </TouchableOpacity>
             );
@@ -631,50 +603,107 @@ const SettingsScreen = () => {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
+        
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAMPILAN
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "appearance" && (
+          <>
+            <SectionHeader title="Tema Aplikasi" />
+            <View style={{ marginBottom: 24 }}>
+              {Object.entries(THEMES).map(([id, themeData], index) => {
+                const isSelected = themeId === id;
+                return (
+                  <TouchableOpacity
+                    key={id}
+                    onPress={() => setTheme(id as ThemeId)}
+                    activeOpacity={0.8}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.surface,
+                      padding: 16,
+                      borderRadius: CARD_RADIUS,
+                      borderWidth: 1,
+                      borderColor: isSelected ? themeData.accent : CARD_BORDER,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                      {/* Warna preview */}
+                      <View style={{ flexDirection: "row", marginRight: 14 }}>
+                        <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: themeData.background, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", zIndex: 3 }} />
+                        <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: themeData.surface, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", marginLeft: -8, zIndex: 2 }} />
+                        <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: themeData.accent, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", marginLeft: -8, zIndex: 1 }} />
+                      </View>
+                      <View>
+                        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: isSelected ? "700" : "600" }}>{id.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</Text>
+                        <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2 }}>
+                          {id === "emerald" ? "Tema default (Hijau zamrud)" : 
+                           id === "sapphire" ? "Elegan (Biru safir)" : 
+                           id === "ruby" ? "Berani (Merah rubi)" : 
+                           id === "amethyst" ? "Mewah (Ungu ametis)" : 
+                           id === "midnight" ? "Gelap murni (Midnight)" : "Tema kustom"}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    {isSelected && (
+                      <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: themeData.accent, alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="checkmark" size={16} color={themeData.background} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
+
         {/* ══════════════════════════════════════════════════════════════════════
             NOTIFIKASI
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "notifications" && (
           <>
             {/* Master Toggle */}
-            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
               <View style={{ flexDirection: "row", alignItems: "center", marginBottom: !hasPermission ? 16 : 0 }}>
-                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: notificationSettings.enabled ? `${ACCENT_COLOR}15` : `${Colors.gray500}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name={notificationSettings.enabled ? "notifications" : "notifications-off"} size={22} color={notificationSettings.enabled ? ACCENT_COLOR : Colors.gray500} />
+                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: notificationSettings.enabled ? `${colors.accent}15` : `${colors.gray500}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name={notificationSettings.enabled ? "notifications" : "notifications-off"} size={22} color={notificationSettings.enabled ? colors.accent : colors.gray500} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "700", marginBottom: 2 }}>{notificationSettings.enabled ? "Notifikasi Aktif" : "Notifikasi Mati"}</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 11 }}>{hasPermission ? "Aplikasi memiliki izin mengirim push." : "Izin OS dibutuhkan."}</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 2 }}>{notificationSettings.enabled ? "Notifikasi Aktif" : "Notifikasi Mati"}</Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11 }}>{hasPermission ? "Aplikasi memiliki izin mengirim push." : "Izin OS dibutuhkan."}</Text>
                 </View>
                 <Switch
                   value={notificationSettings.enabled}
                   onValueChange={toggleNotificationMaster}
-                  trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                  trackColor={{ false: colors.surfaceLight, true: colors.accent }}
                   thumbColor="#FFFFFF"
                 />
               </View>
 
               {!hasPermission ? (
                 <TouchableOpacity
-                  style={{ backgroundColor: ACCENT_COLOR, paddingVertical: 12, borderRadius: INNER_RADIUS, alignItems: "center" }}
+                  style={{ backgroundColor: colors.accent, paddingVertical: 12, borderRadius: INNER_RADIUS, alignItems: "center" }}
                   onPress={requestPermission}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>Berikan Izin OS</Text>
+                  <Text style={{ color: colors.background, fontSize: 13, fontWeight: "700" }}>Berikan Izin OS</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
 
             {/* Notification Types */}
             <SectionHeader title="Jenis Peringatan" />
-            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
               {[
-                { key: "dailyReminders",       label: "Pengingat Harian",    desc: "Alert rutin di pagi & malam",          icon: "alarm-outline"         as const, color: ACCENT_COLOR },
-                { key: "budgetAlerts",          label: "Peringatan Anggaran", desc: "Beritahu bila hampir capai limit", icon: "pie-chart-outline"     as const, color: WARNING_COLOR },
-                { key: "savingsProgress",       label: "Target Tabungan",     desc: "Info capaian nominal tabungan",        icon: "wallet-outline"        as const, color: SUCCESS_COLOR },
-                { key: "transactionReminders",  label: "Pencatatan",          desc: "Ingatkan catat uang masuk & keluar",   icon: "receipt-outline"       as const, color: INFO_COLOR },
-                { key: "notesReminders",        label: "Buku Catatan",        desc: "Jadwal tenggat catatan tersimpan",     icon: "document-text-outline" as const, color: PURPLE_COLOR },
-                { key: "weeklyReports",         label: "Laporan Mingguan",    desc: "Rekap data tiap hari minggu",          icon: "bar-chart-outline"     as const, color: PINK_COLOR },
+                { key: "dailyReminders",       label: "Pengingat Harian",    desc: "Alert rutin di pagi & malam",          icon: "alarm-outline"         as const, color: colors.accent },
+                { key: "budgetAlerts",          label: "Peringatan Anggaran", desc: "Beritahu bila hampir capai limit", icon: "pie-chart-outline"     as const, color: colors.warning },
+                { key: "savingsProgress",       label: "Target Tabungan",     desc: "Info capaian nominal tabungan",        icon: "wallet-outline"        as const, color: colors.success },
+                { key: "transactionReminders",  label: "Pencatatan",          desc: "Ingatkan catat uang masuk & keluar",   icon: "receipt-outline"       as const, color: colors.info },
+                { key: "notesReminders",        label: "Buku Catatan",        desc: "Jadwal tenggat catatan tersimpan",     icon: "document-text-outline" as const, color: colors.purple },
+                { key: "weeklyReports",         label: "Laporan Mingguan",    desc: "Rekap data tiap hari minggu",          icon: "bar-chart-outline"     as const, color: colors.pink },
               ].map(({ key, label, desc, icon, color }, idx, arr) => (
                 <SettingRow
                   key={key} label={label} description={desc} icon={icon} iconColor={color}
@@ -688,42 +717,42 @@ const SettingsScreen = () => {
 
             {/* Advanced Trigger */}
             <TouchableOpacity
-              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: SURFACE_COLOR, borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, padding: 16, marginBottom: 20 }}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: CARD_BORDER, padding: 16, marginBottom: 20 }}
               onPress={() => setShowAdvanced(!showAdvanced)}
               activeOpacity={0.7}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${Colors.gray400}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name="options-outline" size={18} color={Colors.gray400} />
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.gray400}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="options-outline" size={18} color={colors.gray400} />
                 </View>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600" }}>Pengaturan Jadwal Tepat</Text>
+                <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600" }}>Pengaturan Jadwal Tepat</Text>
               </View>
-              <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={18} color={Colors.gray400} />
+              <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={18} color={colors.gray400} />
             </TouchableOpacity>
 
             {/* Advanced Section */}
             {showAdvanced && (
               <>
                 <SectionHeader title="Jadwal & Waktu" />
-                <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+                <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
                   
                   {/* Morning Routine */}
                   <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${WARNING_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                      <Ionicons name="sunny-outline" size={18} color={WARNING_COLOR} />
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.warning}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                      <Ionicons name="sunny-outline" size={18} color={colors.warning} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Notifikasi Pagi</Text>
+                      <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Notifikasi Pagi</Text>
                       <TouchableOpacity onPress={() => setTimePickerConfig({ visible: true, type: "morning" })}>
-                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${ACCENT_COLOR}15` }}>
-                          <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.morning || "07:30")}</Text>
+                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${colors.accent}15` }}>
+                          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.morning || "07:30")}</Text>
                         </View>
                       </TouchableOpacity>
                     </View>
                     <Switch
                       value={notificationSettings.advanced?.customSchedule?.morningEnabled !== false}
                       onValueChange={(v) => updateCustomSchedule("morningEnabled", v)}
-                      trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                      trackColor={{ false: colors.surfaceLight, true: colors.accent }}
                       thumbColor="#FFFFFF"
                       style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
                     />
@@ -731,21 +760,21 @@ const SettingsScreen = () => {
 
                   {/* Evening Routine */}
                   <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${PURPLE_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                      <Ionicons name="moon-outline" size={18} color={PURPLE_COLOR} />
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.purple}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                      <Ionicons name="moon-outline" size={18} color={colors.purple} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Rekapitulasi Malam</Text>
+                      <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>Rekapitulasi Malam</Text>
                       <TouchableOpacity onPress={() => setTimePickerConfig({ visible: true, type: "evening" })}>
-                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${ACCENT_COLOR}15` }}>
-                          <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.evening || "20:00")}</Text>
+                        <View style={{ alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: `${colors.accent}15` }}>
+                          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>{formatTime(notificationSettings.advanced?.customSchedule?.evening || "20:00")}</Text>
                         </View>
                       </TouchableOpacity>
                     </View>
                     <Switch
                       value={notificationSettings.advanced?.customSchedule?.eveningEnabled !== false}
                       onValueChange={(v) => updateCustomSchedule("eveningEnabled", v)}
-                      trackColor={{ false: Colors.surfaceLight, true: ACCENT_COLOR }}
+                      trackColor={{ false: colors.surfaceLight, true: colors.accent }}
                       thumbColor="#FFFFFF"
                       style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
                     />
@@ -754,8 +783,8 @@ const SettingsScreen = () => {
 
                 {/* Days Active */}
                 <SectionHeader title="Hari Aktif" />
-                <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
-                  <Text style={{ color: Colors.gray400, fontSize: 11, marginBottom: 12 }}>Filter notifikasi diabaikan pasca tidak diceklis</Text>
+                <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, padding: CARD_PAD, marginBottom: 20 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 11, marginBottom: 12 }}>Filter notifikasi diabaikan pasca tidak diceklis</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                     {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
                       const isActive = notificationSettings.advanced?.activeDays?.includes(dayIndex);
@@ -764,13 +793,13 @@ const SettingsScreen = () => {
                           key={dayIndex}
                           style={{
                             width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center",
-                            backgroundColor: isActive ? ACCENT_COLOR : "transparent",
-                            borderWidth: 1, borderColor: isActive ? ACCENT_COLOR : CARD_BORDER,
+                            backgroundColor: isActive ? colors.accent : "transparent",
+                            borderWidth: 1, borderColor: isActive ? colors.accent : CARD_BORDER,
                           }}
                           onPress={() => toggleActiveDay(dayIndex)}
                           activeOpacity={0.7}
                         >
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? BACKGROUND_COLOR : Colors.gray400 }}>{getDayName(dayIndex)}</Text>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: isActive ? colors.background : colors.gray400 }}>{getDayName(dayIndex)}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -787,42 +816,42 @@ const SettingsScreen = () => {
         {activeTab === "data" && (
           <>
             <SectionHeader title="Backup & Restore (Offline)" />
-            <View style={{ backgroundColor: SURFACE_COLOR, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
               <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }} onPress={handleExportData} activeOpacity={0.7}>
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name="cloud-upload-outline" size={18} color={ACCENT_COLOR} />
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.accent}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="cloud-upload-outline" size={18} color={colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Cadangkan Data (Backup)</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Simpan seluruh data menjadi file .json yang aman</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Cadangkan Data (Backup)</Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Simpan seluruh data menjadi file .json yang aman</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+                <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
               </TouchableOpacity>
 
               <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} onPress={handleImportData} activeOpacity={0.7}>
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${SUCCESS_COLOR}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-                  <Ionicons name="cloud-download-outline" size={18} color={SUCCESS_COLOR} />
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.success}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="cloud-download-outline" size={18} color={colors.success} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Pulihkan Data (Restore)</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Kembalikan data dari file backup .json sebelumnya</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Pulihkan Data (Restore)</Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Kembalikan data dari file backup .json sebelumnya</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+                <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
               </TouchableOpacity>
             </View>
 
             <SectionHeader title="Zona Kritis" />
             <TouchableOpacity
-              style={{ flexDirection: "row", alignItems: "center", backgroundColor: `${ERROR_COLOR}10`, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: `${ERROR_COLOR}25`, padding: 16 }}
+              style={{ flexDirection: "row", alignItems: "center", backgroundColor: `${colors.error}10`, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: `${colors.error}25`, padding: 16 }}
               onPress={handleClearData}
               activeOpacity={0.7}
             >
-              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${ERROR_COLOR}20`, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                <Ionicons name="trash" size={20} color={ERROR_COLOR} />
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: `${colors.error}20`, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
+                <Ionicons name="trash" size={20} color={colors.error} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: ERROR_COLOR, fontSize: 14, fontWeight: "700" }}>Wipe All Data</Text>
-                <Text style={{ color: `${ERROR_COLOR}90`, fontSize: 11, marginTop: 4, lineHeight: 16 }}>Seluruh catatan keuangan, hutang, catatan akan dihapus permanen.</Text>
+                <Text style={{ color: colors.error, fontSize: 14, fontWeight: "700" }}>Wipe All Data</Text>
+                <Text style={{ color: `${colors.error}90`, fontSize: 11, marginTop: 4, lineHeight: 16 }}>Seluruh catatan keuangan, hutang, catatan akan dihapus permanen.</Text>
               </View>
             </TouchableOpacity>
           </>

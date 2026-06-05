@@ -28,38 +28,22 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useAppContext } from "../../context/AppContext";
 import { Debt } from "../../types";
-import { Colors } from "../../theme/theme";
+import { useTheme } from '../../theme/ThemeContext';
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// ─── Theme colors ─────────────────────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-
-// ─── Design tokens ─────────────────────────────────────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
-
 // ─── Status maps ──────────────────────────────────────────────────────────────
-const STATUS_COLOR: Record<Debt["status"], string> = {
-  active:  ERROR_COLOR,
-  partial: WARNING_COLOR,
-  paid:    SUCCESS_COLOR,
-};
 const STATUS_LABEL: Record<Debt["status"], string> = {
   active:  "Belum Bayar",
   partial: "Cicilan",
   paid:    "Lunas ✓",
 };
+
+// STATUS_COLOR defined inside DebtScreen component (uses theme colors)
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
@@ -71,46 +55,24 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={{ width: 3, height: 13, backgroundColor: colors.accent, borderRadius: 2, marginRight: 8 }} />
+        <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>{linkLabel}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 /** Progress bar — terima height agar bisa dipakai di summary (4px) & debt card (6px) */
 const ProgressBar = ({
@@ -118,32 +80,28 @@ const ProgressBar = ({
   color,
   height = 5,
 }: {
-  progress: number; // 0 – 1
+  progress: number;
   color: string;
   height?: number;
-}) => (
-  <View
-    style={{
-      height,
-      backgroundColor: "rgba(255,255,255,0.07)",
-      borderRadius: height,
-      overflow: "hidden",
-    }}
-  >
-    <View
-      style={{
-        height,
-        borderRadius: height,
-        width: `${Math.max(0, Math.min(progress * 100, 100))}%`,
-        backgroundColor: color,
-      }}
-    />
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View style={{ height, backgroundColor: `${colors.border}80`, borderRadius: height, overflow: "hidden" }}>
+      <View style={{ height, borderRadius: height, width: `${Math.max(0, Math.min(progress * 100, 100))}%`, backgroundColor: color }} />
+    </View>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const DebtScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const STATUS_COLOR: Record<Debt["status"], string> = {
+    active: colors.error,
+    partial: colors.warning,
+    paid: colors.success,
+  };
+  const CARD_BORDER = `${colors.border}80`;
   const navigation = useNavigation<any>();
   const { state, deleteDebt, payDebt } = useAppContext();
 
@@ -248,7 +206,7 @@ const DebtScreen: React.FC = () => {
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
@@ -256,10 +214,10 @@ const DebtScreen: React.FC = () => {
       >
         {/* ── Page header ───────────────────────────────────────────────── */}
         <View style={{ paddingTop: 16, paddingBottom: 20 }}>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>
             Hutang & Piutang
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
+          <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
             Kelola beban dan pinjaman uang Anda
           </Text>
         </View>
@@ -271,7 +229,7 @@ const DebtScreen: React.FC = () => {
         ══════════════════════════════════════════ */}
         <View
           style={{
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: CARD_RADIUS,
             borderWidth: 1,
             borderColor: CARD_BORDER,
@@ -290,7 +248,7 @@ const DebtScreen: React.FC = () => {
           >
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 9,
                 fontWeight: "700",
                 letterSpacing: 1.2,
@@ -307,18 +265,18 @@ const DebtScreen: React.FC = () => {
                   paddingHorizontal: 7,
                   paddingVertical: 3,
                   borderRadius: 7,
-                  backgroundColor: `${ERROR_COLOR}16`,
+                  backgroundColor: `${colors.error}16`,
                   borderWidth: 1,
-                  borderColor: `${ERROR_COLOR}28`,
+                  borderColor: `${colors.error}28`,
                 }}
               >
                 <Ionicons
                   name="warning-outline"
                   size={10}
-                  color={ERROR_COLOR}
+                  color={colors.error}
                   style={{ marginRight: 4 }}
                 />
-                <Text style={{ color: ERROR_COLOR, fontSize: 9, fontWeight: "700" }}>
+                <Text style={{ color: colors.error, fontSize: 9, fontWeight: "700" }}>
                   {overdueCount} terlambat
                 </Text>
               </View>
@@ -328,7 +286,7 @@ const DebtScreen: React.FC = () => {
           {/* Net amount */}
           <Text
             style={{
-              color: net >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+              color: net >= 0 ? colors.success : colors.error,
               fontSize: 28,
               fontWeight: "800",
               letterSpacing: -0.5,
@@ -348,13 +306,13 @@ const DebtScreen: React.FC = () => {
                     width: 6,
                     height: 6,
                     borderRadius: 3,
-                    backgroundColor: ERROR_COLOR,
+                    backgroundColor: colors.error,
                     marginRight: 5,
                   }}
                 />
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: colors.gray400,
                     fontSize: 9,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
@@ -363,10 +321,10 @@ const DebtScreen: React.FC = () => {
                   Hutang Saya
                 </Text>
               </View>
-              <Text style={{ color: ERROR_COLOR, fontSize: 16, fontWeight: "700" }}>
+              <Text style={{ color: colors.error, fontSize: 16, fontWeight: "700" }}>
                 {formatCurrency(totalBorrowed)}
               </Text>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 2 }}>
+              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 2 }}>
                 {borrowedActiveCount} catatan aktif
               </Text>
             </View>
@@ -388,13 +346,13 @@ const DebtScreen: React.FC = () => {
                     width: 6,
                     height: 6,
                     borderRadius: 3,
-                    backgroundColor: SUCCESS_COLOR,
+                    backgroundColor: colors.success,
                     marginRight: 5,
                   }}
                 />
                 <Text
                   style={{
-                    color: Colors.gray400,
+                    color: colors.gray400,
                     fontSize: 9,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
@@ -403,10 +361,10 @@ const DebtScreen: React.FC = () => {
                   Piutang
                 </Text>
               </View>
-              <Text style={{ color: SUCCESS_COLOR, fontSize: 16, fontWeight: "700" }}>
+              <Text style={{ color: colors.success, fontSize: 16, fontWeight: "700" }}>
                 {formatCurrency(totalLent)}
               </Text>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 2 }}>
+              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 2 }}>
                 {lentActiveCount} catatan aktif
               </Text>
             </View>
@@ -419,7 +377,7 @@ const DebtScreen: React.FC = () => {
                 ? totalLent / (totalBorrowed + totalLent)
                 : 0.5
             }
-            color={net >= 0 ? SUCCESS_COLOR : ERROR_COLOR}
+            color={net >= 0 ? colors.success : colors.error}
             height={4}
           />
           <View
@@ -429,10 +387,10 @@ const DebtScreen: React.FC = () => {
               marginTop: 6,
             }}
           >
-            <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+            <Text style={{ color: colors.gray400, fontSize: 10 }}>
               {allDebts.filter((d) => d.status !== "paid").length} aktif
             </Text>
-            <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+            <Text style={{ color: colors.gray400, fontSize: 10 }}>
               {net >= 0 ? "Piutang lebih besar" : "Hutang lebih besar"}
             </Text>
           </View>
@@ -444,7 +402,7 @@ const DebtScreen: React.FC = () => {
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: 13,
             padding: 3,
             marginBottom: 20,
@@ -454,7 +412,7 @@ const DebtScreen: React.FC = () => {
         >
           {(["borrowed", "lent"] as const).map((tab) => {
             const isActive = activeTab === tab;
-            const tabColor = tab === "borrowed" ? ERROR_COLOR : SUCCESS_COLOR;
+            const tabColor = tab === "borrowed" ? colors.error : colors.success;
             const count    = allDebts.filter((d) => d.type === tab).length;
             return (
               <TouchableOpacity
@@ -476,7 +434,7 @@ const DebtScreen: React.FC = () => {
                   style={{
                     fontSize: 10,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? tabColor : Colors.gray400,
+                    color: isActive ? tabColor : colors.gray400,
                   }}
                 >
                   {tab === "borrowed" ? "Hutang Saya" : "Piutang"}
@@ -486,7 +444,7 @@ const DebtScreen: React.FC = () => {
                     style={{
                       backgroundColor: isActive
                         ? tabColor
-                        : "rgba(255,255,255,0.08)",
+                        : `${colors.border}70`,
                       paddingHorizontal: 5,
                       paddingVertical: 2,
                       borderRadius: 10,
@@ -495,7 +453,7 @@ const DebtScreen: React.FC = () => {
                     <Text
                       style={{
                         fontSize: 9,
-                        color: isActive ? BACKGROUND_COLOR : Colors.gray400,
+                        color: isActive ? colors.background : colors.gray400,
                         fontWeight: "700",
                       }}
                     >
@@ -521,7 +479,7 @@ const DebtScreen: React.FC = () => {
             style={{
               alignItems: "center",
               paddingVertical: 48,
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
               borderColor: CARD_BORDER,
@@ -535,7 +493,7 @@ const DebtScreen: React.FC = () => {
                 borderRadius: 20,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: `${Colors.gray400}14`,
+                backgroundColor: `${colors.gray400}14`,
                 marginBottom: 14,
               }}
             >
@@ -544,12 +502,12 @@ const DebtScreen: React.FC = () => {
                   activeTab === "borrowed" ? "card-outline" : "people-outline"
                 }
                 size={26}
-                color={Colors.gray400}
+                color={colors.gray400}
               />
             </View>
             <Text
               style={{
-                color: TEXT_PRIMARY,
+                color: colors.textPrimary,
                 fontSize: 15,
                 fontWeight: "700",
                 marginBottom: 6,
@@ -562,7 +520,7 @@ const DebtScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 12,
                 textAlign: "center",
                 lineHeight: 18,
@@ -580,7 +538,7 @@ const DebtScreen: React.FC = () => {
                 paddingHorizontal: 20,
                 paddingVertical: 13, // ≥44dp touch target
                 borderRadius: 13,
-                backgroundColor: ACCENT_COLOR,
+                backgroundColor: colors.accent,
               }}
               onPress={() => navigation.navigate("AddDebt")}
               activeOpacity={0.8}
@@ -588,12 +546,12 @@ const DebtScreen: React.FC = () => {
               <Ionicons
                 name="add"
                 size={16}
-                color={BACKGROUND_COLOR}
+                color={colors.background}
                 style={{ marginRight: 6 }}
               />
               <Text
                 style={{
-                  color: BACKGROUND_COLOR,
+                  color: colors.background,
                   fontSize: 13,
                   fontWeight: "700",
                 }}
@@ -618,7 +576,7 @@ const DebtScreen: React.FC = () => {
 
               // Due date label
               const dueDateColor =
-                isOverdue ? ERROR_COLOR : isDueSoon ? WARNING_COLOR : Colors.gray400;
+                isOverdue ? colors.error : isDueSoon ? colors.warning : colors.gray400;
               const dueDateLabel =
                 days === null
                   ? null
@@ -632,15 +590,15 @@ const DebtScreen: React.FC = () => {
               // Tidak ada lagi borderLeftWidth: 3 — gantinya subtle bg tint
               const cardBg =
                 isPaid
-                  ? `${SUCCESS_COLOR}07`
+                  ? `${colors.success}07`
                   : isOverdue
-                  ? `${ERROR_COLOR}09`
-                  : SURFACE_COLOR;
+                  ? `${colors.error}09`
+                  : colors.surface;
               const cardBorderColor =
                 isPaid
-                  ? `${SUCCESS_COLOR}18`
+                  ? `${colors.success}18`
                   : isOverdue
-                  ? `${ERROR_COLOR}22`
+                  ? `${colors.error}22`
                   : CARD_BORDER;
 
               return (
@@ -689,7 +647,7 @@ const DebtScreen: React.FC = () => {
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
-                          color: TEXT_PRIMARY,
+                          color: colors.textPrimary,
                           fontSize: 14,
                           fontWeight: "700",
                           marginBottom: 2,
@@ -697,7 +655,7 @@ const DebtScreen: React.FC = () => {
                       >
                         {debt.name}
                       </Text>
-                      <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+                      <Text style={{ color: colors.gray400, fontSize: 11 }}>
                         {debt.category}
                       </Text>
                     </View>
@@ -736,7 +694,7 @@ const DebtScreen: React.FC = () => {
                     <View>
                       <Text
                         style={{
-                          color: Colors.gray400,
+                          color: colors.gray400,
                           fontSize: 9,
                           fontWeight: "700",
                           letterSpacing: 0.8,
@@ -748,7 +706,7 @@ const DebtScreen: React.FC = () => {
                       </Text>
                       <Text
                         style={{
-                          color: isPaid ? SUCCESS_COLOR : statusColor,
+                          color: isPaid ? colors.success : statusColor,
                           fontSize: 22,
                           fontWeight: "800",
                           letterSpacing: -0.3,
@@ -772,10 +730,10 @@ const DebtScreen: React.FC = () => {
                           paddingVertical: 5,
                           borderRadius: 9,
                           backgroundColor: isOverdue
-                            ? `${ERROR_COLOR}18`
+                            ? `${colors.error}18`
                             : isDueSoon
-                            ? `${WARNING_COLOR}15`
-                            : "rgba(255,255,255,0.05)",
+                            ? `${colors.warning}15`
+                            : `${colors.border}70`,
                           borderWidth: 1,
                           borderColor: `${dueDateColor}22`,
                         }}
@@ -802,7 +760,7 @@ const DebtScreen: React.FC = () => {
                   {/* ── Row 3: Progress bar 6px + persentase ───────────── */}
                   <ProgressBar
                     progress={isPaid ? 1 : progress}
-                    color={isPaid ? SUCCESS_COLOR : statusColor}
+                    color={isPaid ? colors.success : statusColor}
                     height={6}
                   />
                   <View
@@ -813,13 +771,13 @@ const DebtScreen: React.FC = () => {
                       marginTop: 7,
                     }}
                   >
-                    <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                    <Text style={{ color: colors.gray400, fontSize: 10 }}>
                       Terbayar {formatCurrency(paidAmount)} dari{" "}
                       {formatCurrency(safeNumber(debt.amount))}
                     </Text>
                     <Text
                       style={{
-                        color: isPaid ? SUCCESS_COLOR : statusColor,
+                        color: isPaid ? colors.success : statusColor,
                         fontSize: 11,
                         fontWeight: "700",
                       }}
@@ -850,20 +808,20 @@ const DebtScreen: React.FC = () => {
                           alignItems: "center",
                           justifyContent: "center",
                           flexDirection: "row",
-                          backgroundColor: `${SUCCESS_COLOR}10`,
+                          backgroundColor: `${colors.success}10`,
                           borderWidth: 1,
-                          borderColor: `${SUCCESS_COLOR}20`,
+                          borderColor: `${colors.success}20`,
                           gap: 6,
                         }}
                       >
                         <Ionicons
                           name="checkmark-circle-outline"
                           size={14}
-                          color={SUCCESS_COLOR}
+                          color={colors.success}
                         />
                         <Text
                           style={{
-                            color: SUCCESS_COLOR,
+                            color: colors.success,
                             fontSize: 12,
                             fontWeight: "600",
                           }}
@@ -881,9 +839,9 @@ const DebtScreen: React.FC = () => {
                           alignItems: "center",
                           justifyContent: "center",
                           flexDirection: "row",
-                          backgroundColor: `${ACCENT_COLOR}15`,
+                          backgroundColor: `${colors.accent}15`,
                           borderWidth: 1,
-                          borderColor: `${ACCENT_COLOR}25`,
+                          borderColor: `${colors.accent}25`,
                           gap: 6,
                         }}
                         onPress={() => {
@@ -892,10 +850,10 @@ const DebtScreen: React.FC = () => {
                         }}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="cash-outline" size={14} color={ACCENT_COLOR} />
+                        <Ionicons name="cash-outline" size={14} color={colors.accent} />
                         <Text
                           style={{
-                            color: ACCENT_COLOR,
+                            color: colors.accent,
                             fontSize: 12,
                             fontWeight: "700",
                           }}
@@ -913,14 +871,14 @@ const DebtScreen: React.FC = () => {
                         borderRadius: 12,
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: `${ERROR_COLOR}14`,
+                        backgroundColor: `${colors.error}14`,
                         borderWidth: 1,
-                        borderColor: `${ERROR_COLOR}22`,
+                        borderColor: `${colors.error}22`,
                       }}
                       onPress={() => handleDelete(debt)}
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="trash-outline" size={16} color={ERROR_COLOR} />
+                      <Ionicons name="trash-outline" size={16} color={colors.error} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -941,8 +899,8 @@ const DebtScreen: React.FC = () => {
           width: 52,
           height: 52,
           borderRadius: 16,
-          backgroundColor: ACCENT_COLOR,
-          shadowColor: ACCENT_COLOR,
+          backgroundColor: colors.accent,
+          shadowColor: colors.accent,
           shadowOffset: { width: 0, height: 6 },
           shadowOpacity: 0.4,
           shadowRadius: 10,
@@ -962,7 +920,7 @@ const DebtScreen: React.FC = () => {
           onPressOut={fabPressOut}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={26} color={BACKGROUND_COLOR} />
+          <Ionicons name="add" size={26} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -987,7 +945,7 @@ const DebtScreen: React.FC = () => {
           <View
             style={{
               width: "100%",
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
               borderColor: CARD_BORDER,
@@ -1009,21 +967,21 @@ const DebtScreen: React.FC = () => {
                   borderRadius: 11,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: `${ACCENT_COLOR}15`,
+                  backgroundColor: `${colors.accent}15`,
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="cash-outline" size={18} color={ACCENT_COLOR} />
+                <Ionicons name="cash-outline" size={18} color={colors.accent} />
               </View>
               <View>
                 <Text
-                  style={{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: "800" }}
+                  style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "800" }}
                 >
                   Catat Pembayaran
                 </Text>
                 {payModal.debt && (
                   <Text
-                    style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}
+                    style={{ color: colors.gray400, fontSize: 11, marginTop: 2 }}
                   >
                     {payModal.debt.name} · Sisa{" "}
                     {formatCurrency(payModal.debt.remaining)}
@@ -1042,7 +1000,7 @@ const DebtScreen: React.FC = () => {
 
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.2,
@@ -1057,13 +1015,13 @@ const DebtScreen: React.FC = () => {
               onChangeText={(t) => setPayAmount(t.replace(/\D/g, ""))}
               keyboardType="numeric"
               placeholder="0"
-              placeholderTextColor={Colors.gray500}
+              placeholderTextColor={colors.gray500}
               autoFocus
               style={{
-                backgroundColor: BACKGROUND_COLOR,
+                backgroundColor: colors.background,
                 borderRadius: INNER_RADIUS,
                 padding: 16,
-                color: TEXT_PRIMARY,
+                color: colors.textPrimary,
                 fontSize: 24,
                 fontWeight: "800",
                 marginBottom: 20,
@@ -1079,13 +1037,13 @@ const DebtScreen: React.FC = () => {
                   paddingVertical: 14,
                   borderRadius: INNER_RADIUS,
                   alignItems: "center",
-                  backgroundColor: "rgba(255,255,255,0.05)",
+                  backgroundColor: `${colors.border}70`,
                   borderWidth: 1,
                   borderColor: CARD_BORDER,
                 }}
                 onPress={() => setPayModal({ visible: false, debt: null })}
               >
-                <Text style={{ color: Colors.gray400, fontWeight: "600" }}>
+                <Text style={{ color: colors.gray400, fontWeight: "600" }}>
                   Batal
                 </Text>
               </TouchableOpacity>
@@ -1095,8 +1053,8 @@ const DebtScreen: React.FC = () => {
                   paddingVertical: 14,
                   borderRadius: INNER_RADIUS,
                   alignItems: "center",
-                  backgroundColor: ACCENT_COLOR,
-                  shadowColor: ACCENT_COLOR,
+                  backgroundColor: colors.accent,
+                  shadowColor: colors.accent,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.3,
                   shadowRadius: 8,
@@ -1105,7 +1063,7 @@ const DebtScreen: React.FC = () => {
                 onPress={handlePay}
               >
                 <Text
-                  style={{ color: BACKGROUND_COLOR, fontWeight: "800" }}
+                  style={{ color: colors.background, fontWeight: "800" }}
                 >
                   Simpan
                 </Text>

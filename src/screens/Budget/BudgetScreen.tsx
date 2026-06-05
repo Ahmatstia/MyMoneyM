@@ -10,25 +10,15 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { Budget } from "../../types";
-import { Colors } from "../../theme/theme";
+import { useTheme } from '../../theme/ThemeContext';
+
 
 // ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-
 // ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
-
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -43,46 +33,49 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.gray400,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 const Card = ({
   children,
@@ -90,22 +83,25 @@ const Card = ({
 }: {
   children: React.ReactNode;
   style?: object;
-}) => (
-  <View
-    style={[
-      {
-        backgroundColor: SURFACE_COLOR,
-        borderRadius: CARD_RADIUS,
-        borderWidth: 1,
-        borderColor: CARD_BORDER,
-        padding: CARD_PAD,
-      },
-      style,
-    ]}
-  >
-    {children}
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderRadius: CARD_RADIUS,
+          borderWidth: 1,
+          borderColor: `${colors.border}80`,
+          padding: CARD_PAD,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
 const ThinBar = ({
   progress,
@@ -113,29 +109,34 @@ const ThinBar = ({
 }: {
   progress: number;
   color: string;
-}) => (
-  <View
-    style={{
-      height: 4,
-      backgroundColor: "rgba(255,255,255,0.07)",
-      borderRadius: 4,
-      overflow: "hidden",
-    }}
-  >
+}) => {
+  const { colors } = useTheme();
+  return (
     <View
       style={{
         height: 4,
+        backgroundColor: `${colors.border}80`,
         borderRadius: 4,
-        width: `${Math.max(0, Math.min(progress, 100))}%`,
-        backgroundColor: color,
+        overflow: "hidden",
       }}
-    />
-  </View>
-);
+    >
+      <View
+        style={{
+          height: 4,
+          borderRadius: 4,
+          width: `${Math.max(0, Math.min(progress, 100))}%`,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const BudgetScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const CARD_BORDER = `${colors.border}80`;
   const navigation = useNavigation<any>();
   const { state, deleteBudget } = useAppContext();
   const [filter, setFilter] = useState<"all" | "over" | "warning" | "safe">("all");
@@ -203,9 +204,9 @@ const BudgetScreen: React.FC = () => {
 
   const getStatusColor = (b: Budget) => {
     const p = getProgress(b);
-    if (p > 100) return ERROR_COLOR;
-    if (p >= 80)  return WARNING_COLOR;
-    return SUCCESS_COLOR;
+    if (p > 100) return colors.error;
+    if (p >= 80)  return colors.warning;
+    return colors.success;
   };
 
 
@@ -276,16 +277,16 @@ const BudgetScreen: React.FC = () => {
 
   const utilizationColor =
     utilizationRate > 100
-      ? ERROR_COLOR
+      ? colors.error
       : utilizationRate >= 80
-      ? WARNING_COLOR
-      : SUCCESS_COLOR;
+      ? colors.warning
+      : colors.success;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
@@ -303,12 +304,12 @@ const BudgetScreen: React.FC = () => {
         >
           <View>
             <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
+              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
             >
               Anggaran
             </Text>
             <Text
-              style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}
+              style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}
             >
               {state.budgets.length} anggaran aktif
             </Text>
@@ -321,7 +322,7 @@ const BudgetScreen: React.FC = () => {
             {/* Total limit + bar */}
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.2,
@@ -333,7 +334,7 @@ const BudgetScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: TEXT_PRIMARY,
+                color: colors.textPrimary,
                 fontSize: 30,
                 fontWeight: "800",
                 letterSpacing: -0.5,
@@ -350,14 +351,14 @@ const BudgetScreen: React.FC = () => {
                   <View
                     style={{
                       width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: ACCENT_COLOR, marginRight: 5,
+                      backgroundColor: colors.accent, marginRight: 5,
                     }}
                   />
-                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
                     Terpakai
                   </Text>
                 </View>
-                <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
+                <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700" }}>
                   {formatCurrency(summary.totalSpent)}
                 </Text>
               </View>
@@ -369,18 +370,18 @@ const BudgetScreen: React.FC = () => {
                   <View
                     style={{
                       width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: summary.totalRemaining >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                      backgroundColor: summary.totalRemaining >= 0 ? colors.success : colors.error,
                       marginRight: 5,
                     }}
                   />
-                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
                     Sisa
                   </Text>
                 </View>
                 <Text
                   style={{
                     fontSize: 14, fontWeight: "700",
-                    color: summary.totalRemaining >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                    color: summary.totalRemaining >= 0 ? colors.success : colors.error,
                   }}
                 >
                   {formatCurrency(summary.totalRemaining)}
@@ -391,7 +392,7 @@ const BudgetScreen: React.FC = () => {
             {/* Overall utilization bar */}
             <ThinBar progress={utilizationRate} color={utilizationColor} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+              <Text style={{ color: colors.gray400, fontSize: 10 }}>
                 {utilizationRate.toFixed(1)}% terpakai
               </Text>
               <Text
@@ -414,7 +415,7 @@ const BudgetScreen: React.FC = () => {
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: SURFACE_COLOR,
+            backgroundColor: colors.surface,
             borderRadius: 13,
             padding: 3,
             marginBottom: 20,
@@ -425,9 +426,9 @@ const BudgetScreen: React.FC = () => {
           {filterTabs.map((tab) => {
             const isActive    = filter === tab.key;
             const tabColor    =
-              tab.key === "over"    ? ERROR_COLOR   :
-              tab.key === "warning" ? WARNING_COLOR :
-              tab.key === "safe"    ? SUCCESS_COLOR : ACCENT_COLOR;
+              tab.key === "over"    ? colors.error   :
+              tab.key === "warning" ? colors.warning :
+              tab.key === "safe"    ? colors.success : colors.accent;
             return (
               <TouchableOpacity
                 key={tab.key}
@@ -448,7 +449,7 @@ const BudgetScreen: React.FC = () => {
                   style={{
                     fontSize: 10,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? tabColor : Colors.gray400,
+                    color: isActive ? tabColor : colors.gray400,
                   }}
                 >
                   {tab.label}
@@ -456,7 +457,7 @@ const BudgetScreen: React.FC = () => {
                 {tab.count > 0 && (
                   <View
                     style={{
-                      backgroundColor: isActive ? tabColor : "rgba(255,255,255,0.08)",
+                      backgroundColor: isActive ? tabColor : `${colors.border}70`,
                       paddingHorizontal: 5,
                       paddingVertical: 2,
                       borderRadius: 10,
@@ -465,7 +466,7 @@ const BudgetScreen: React.FC = () => {
                     <Text
                       style={{
                         fontSize: 9,
-                        color: isActive ? BACKGROUND_COLOR : Colors.gray400,
+                        color: isActive ? colors.background : colors.gray400,
                         fontWeight: "700",
                       }}
                     >
@@ -484,7 +485,7 @@ const BudgetScreen: React.FC = () => {
             style={{
               alignItems: "center",
               paddingVertical: 48,
-              backgroundColor: SURFACE_COLOR,
+              backgroundColor: colors.surface,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
               borderColor: CARD_BORDER,
@@ -495,15 +496,15 @@ const BudgetScreen: React.FC = () => {
               style={{
                 width: 64, height: 64, borderRadius: 20,
                 alignItems: "center", justifyContent: "center",
-                backgroundColor: `${Colors.gray400}14`,
+                backgroundColor: `${colors.gray400}14`,
                 marginBottom: 14,
               }}
             >
-              <Ionicons name="pie-chart-outline" size={26} color={Colors.gray400} />
+              <Ionicons name="pie-chart-outline" size={26} color={colors.gray400} />
             </View>
             <Text
               style={{
-                color: TEXT_PRIMARY, fontSize: 15, fontWeight: "700",
+                color: colors.textPrimary, fontSize: 15, fontWeight: "700",
                 marginBottom: 6, textAlign: "center",
               }}
             >
@@ -511,7 +512,7 @@ const BudgetScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: Colors.gray400, fontSize: 12,
+                color: colors.gray400, fontSize: 12,
                 textAlign: "center", lineHeight: 18, marginBottom: 20,
               }}
             >
@@ -524,16 +525,16 @@ const BudgetScreen: React.FC = () => {
                 style={{
                   flexDirection: "row", alignItems: "center",
                   paddingHorizontal: 20, paddingVertical: 10,
-                  borderRadius: 13, backgroundColor: ACCENT_COLOR,
-                  shadowColor: ACCENT_COLOR,
+                  borderRadius: 13, backgroundColor: colors.accent,
+                  shadowColor: colors.accent,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
                 }}
                 onPress={() => navigation.navigate("AddBudget")}
                 activeOpacity={0.8}
               >
-                <Ionicons name="add" size={16} color={BACKGROUND_COLOR} style={{ marginRight: 6 }} />
-                <Text style={{ color: BACKGROUND_COLOR, fontSize: 13, fontWeight: "700" }}>
+                <Ionicons name="add" size={16} color={colors.background} style={{ marginRight: 6 }} />
+                <Text style={{ color: colors.background, fontSize: 13, fontWeight: "700" }}>
                   Buat Anggaran Pertama
                 </Text>
               </TouchableOpacity>
@@ -552,7 +553,7 @@ const BudgetScreen: React.FC = () => {
                 <View
                   key={budget.id}
                   style={{
-                    backgroundColor: SURFACE_COLOR,
+                    backgroundColor: colors.surface,
                     borderRadius: CARD_RADIUS,
                     borderWidth: 1,
                     borderColor: CARD_BORDER,
@@ -586,7 +587,7 @@ const BudgetScreen: React.FC = () => {
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            color: TEXT_PRIMARY, fontSize: 14,
+                            color: colors.textPrimary, fontSize: 14,
                             fontWeight: "700", marginBottom: 2,
                           }}
                         >
@@ -597,15 +598,15 @@ const BudgetScreen: React.FC = () => {
                           <View
                             style={{
                               paddingHorizontal: 7, paddingVertical: 2,
-                              borderRadius: 20, backgroundColor: `${ACCENT_COLOR}15`,
-                              borderWidth: 1, borderColor: `${ACCENT_COLOR}25`,
+                              borderRadius: 20, backgroundColor: `${colors.accent}15`,
+                              borderWidth: 1, borderColor: `${colors.accent}25`,
                             }}
                           >
-                            <Text style={{ color: ACCENT_COLOR, fontSize: 9, fontWeight: "600" }}>
+                            <Text style={{ color: colors.accent, fontSize: 9, fontWeight: "600" }}>
                               {formatPeriod(budget)}
                             </Text>
                           </View>
-                          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+                          <Text style={{ color: colors.gray400, fontSize: 10 }}>
                             {formatDateRange(budget)}
                           </Text>
                         </View>
@@ -618,8 +619,8 @@ const BudgetScreen: React.FC = () => {
                         style={{
                           width: 34, height: 34, borderRadius: 10,
                           alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${ACCENT_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ACCENT_COLOR}20`,
+                          backgroundColor: `${colors.accent}15`,
+                          borderWidth: 1, borderColor: `${colors.accent}20`,
                         }}
                         onPress={() =>
                           navigation.navigate("AddBudget", {
@@ -629,19 +630,19 @@ const BudgetScreen: React.FC = () => {
                         }
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="pencil-outline" size={15} color={ACCENT_COLOR} />
+                        <Ionicons name="pencil-outline" size={15} color={colors.accent} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={{
                           width: 34, height: 34, borderRadius: 10,
                           alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${ERROR_COLOR}15`,
-                          borderWidth: 1, borderColor: `${ERROR_COLOR}20`,
+                          backgroundColor: `${colors.error}15`,
+                          borderWidth: 1, borderColor: `${colors.error}20`,
                         }}
                         onPress={() => handleDelete(budget)}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="trash-outline" size={15} color={ERROR_COLOR} />
+                        <Ionicons name="trash-outline" size={15} color={colors.error} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -656,9 +657,9 @@ const BudgetScreen: React.FC = () => {
                         marginBottom: 7,
                       }}
                     >
-                      <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
                         {formatCurrency(safeNumber(budget.spent))}
-                        <Text style={{ color: Colors.gray400 }}>
+                        <Text style={{ color: colors.gray400 }}>
                           {" "}/ {formatCurrency(safeNumber(budget.limit))}
                         </Text>
                       </Text>
@@ -667,11 +668,11 @@ const BudgetScreen: React.FC = () => {
                           <View
                             style={{
                               paddingHorizontal: 8, paddingVertical: 2,
-                              borderRadius: 20, backgroundColor: `${Colors.info}15`,
-                              borderWidth: 1, borderColor: `${Colors.info}25`,
+                              borderRadius: 20, backgroundColor: `${colors.info}15`,
+                              borderWidth: 1, borderColor: `${colors.info}25`,
                             }}
                           >
-                            <Text style={{ color: Colors.info, fontSize: 9, fontWeight: "600" }}>
+                            <Text style={{ color: colors.info, fontSize: 9, fontWeight: "600" }}>
                               {daysLeft} hari lagi
                             </Text>
                           </View>
@@ -695,14 +696,14 @@ const BudgetScreen: React.FC = () => {
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
                         style={{
-                          color: Colors.gray400, fontSize: 9,
+                          color: colors.gray400, fontSize: 9,
                           textTransform: "uppercase", letterSpacing: 0.8,
                           marginBottom: 4,
                         }}
                       >
                         Terpakai
                       </Text>
-                      <Text style={{ color: ACCENT_COLOR, fontSize: 13, fontWeight: "700" }}>
+                      <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "700" }}>
                         {formatCurrency(safeNumber(budget.spent))}
                       </Text>
                     </View>
@@ -713,7 +714,7 @@ const BudgetScreen: React.FC = () => {
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
                         style={{
-                          color: Colors.gray400, fontSize: 9,
+                          color: colors.gray400, fontSize: 9,
                           textTransform: "uppercase", letterSpacing: 0.8,
                           marginBottom: 4,
                         }}
@@ -723,7 +724,7 @@ const BudgetScreen: React.FC = () => {
                       <Text
                         style={{
                           fontSize: 13, fontWeight: "700",
-                          color: remaining >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                          color: remaining >= 0 ? colors.success : colors.error,
                         }}
                       >
                         {formatCurrency(remaining)}
@@ -736,7 +737,7 @@ const BudgetScreen: React.FC = () => {
                     <View style={{ flex: 1, alignItems: "center" }}>
                       <Text
                         style={{
-                          color: Colors.gray400, fontSize: 9,
+                          color: colors.gray400, fontSize: 9,
                           textTransform: "uppercase", letterSpacing: 0.8,
                           marginBottom: 4,
                         }}
@@ -748,8 +749,8 @@ const BudgetScreen: React.FC = () => {
                           fontSize: 13, fontWeight: "700",
                           color:
                             daysLeft > 0
-                              ? dailyLeft > 0 ? SUCCESS_COLOR : ERROR_COLOR
-                              : WARNING_COLOR,
+                              ? dailyLeft > 0 ? colors.success : colors.error
+                              : colors.warning,
                         }}
                       >
                         {daysLeft > 0
@@ -771,18 +772,18 @@ const BudgetScreen: React.FC = () => {
                           alignItems: "center",
                           padding: 10,
                           borderRadius: INNER_RADIUS,
-                          backgroundColor: `${ERROR_COLOR}0C`,
+                          backgroundColor: `${colors.error}0C`,
                           borderWidth: 1,
-                          borderColor: `${ERROR_COLOR}20`,
+                          borderColor: `${colors.error}20`,
                         }}
                       >
                         <Ionicons
                           name="warning-outline"
                           size={14}
-                          color={ERROR_COLOR}
+                          color={colors.error}
                           style={{ marginRight: 8, flexShrink: 0 }}
                         />
-                        <Text style={{ color: ERROR_COLOR, fontSize: 11, fontWeight: "600", flex: 1 }}>
+                        <Text style={{ color: colors.error, fontSize: 11, fontWeight: "600", flex: 1 }}>
                           Anggaran melebihi {formatCurrency(Math.abs(remaining))}
                         </Text>
                       </View>
@@ -804,8 +805,8 @@ const BudgetScreen: React.FC = () => {
           width: 54,
           height: 54,
           borderRadius: 17,
-          backgroundColor: ACCENT_COLOR,
-          shadowColor: ACCENT_COLOR,
+          backgroundColor: colors.accent,
+          shadowColor: colors.accent,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.45,
           shadowRadius: 14,
@@ -822,7 +823,7 @@ const BudgetScreen: React.FC = () => {
           accessibilityLabel="Tambah anggaran baru"
           accessibilityRole="button"
         >
-          <Ionicons name="add" size={28} color={BACKGROUND_COLOR} />
+          <Ionicons name="add" size={28} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>

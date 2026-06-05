@@ -1,9 +1,3 @@
-// File: src/screens/Profile/ProfileScreen.tsx
-// ═══════════════════════════════════════════════════════════════
-// OBSIDIAN VAULT — Premium Profile UI Redesign
-// UI Designer: Claude | No business logic was harmed in this file
-// ═══════════════════════════════════════════════════════════════
-
 import React, { useState, useMemo, useRef } from "react";
 import {
   View,
@@ -865,32 +859,6 @@ const ProfileScreen: React.FC = () => {
             activeDays={uiData.activeDays}
             topCategory={uiData.topCategory}
           />
-
-          {/* ── QUICK STATS ────────────────────────────────────────────── */}
-          <SectionLabel title="Statistik Bulan Ini" icon="stats-chart" />
-          <View style={tw`flex-row gap-3`}>
-            <QuickStat
-              label="Transaksi"
-              value={uiData.totalTx}
-              icon="flash"
-              color={C.cyan}
-              sub="bulan ini"
-            />
-            <QuickStat
-              label="Kategori Terbanyak"
-              value={uiData.topExpenseCategory}
-              icon="receipt-outline"
-              color={C.rose}
-              sub="pengeluaran"
-            />
-            <QuickStat
-              label="Streak"
-              value={`${uiData.streak}🔥`}
-              icon="flame"
-              color={C.gold}
-              sub="hari"
-            />
-          </View>
 
           {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
           <SectionLabel
