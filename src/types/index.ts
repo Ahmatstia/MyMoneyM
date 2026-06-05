@@ -193,6 +193,7 @@ export type RootStackParamList = {
   };
   SavingsHistory: { savingsId: string };
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
+  ManageCategories: undefined;
 };
 
 declare global {

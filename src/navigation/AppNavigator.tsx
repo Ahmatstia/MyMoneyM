@@ -40,6 +40,7 @@ import SavingsHistoryScreen from "../screens/Savings/SavingsHistoryScreen";
 import ProfileScreen from "../screens/Profile/ProfileScreen";
 import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
+import ManageCategoriesScreen from "../screens/Settings/ManageCategoriesScreen";
 
 import NotesScreen from "../screens/Notes/NotesScreen";
 import NoteFormScreen from "../screens/Notes/NoteFormScreen";
@@ -61,6 +62,7 @@ type StackParamList = {
   Profile: undefined;
   Notes: undefined;
   Settings: undefined;
+  ManageCategories: undefined;
   Debt: undefined;
   Tools: undefined;
   SavingsDetail: { savingsId: string };
@@ -288,6 +290,7 @@ const MainStackNavigator = () => {
       <MainStack.Screen name="Savings"                component={SavingsScreen} options={{ title: "Tabungan" }} />
       <MainStack.Screen name="Profile"                component={ProfileScreen} options={{ title: "Profil Saya" }} />
       <MainStack.Screen name="Settings"               component={SettingsScreen} options={{ title: "Pengaturan" }} />
+      <MainStack.Screen name="ManageCategories"       component={ManageCategoriesScreen} options={{ title: "Kelola Kategori" }} />
       <MainStack.Screen name="Notes"                  component={NotesScreen} options={{ title: "Catatan Finansial" }} />
       <MainStack.Screen name="SavingsDetail"          component={SavingsDetailScreen} options={{ title: "Detail Tabungan" }} />
       <MainStack.Screen name="SavingsHistory"         component={SavingsHistoryScreen} options={{ title: "Riwayat Transaksi" }} />

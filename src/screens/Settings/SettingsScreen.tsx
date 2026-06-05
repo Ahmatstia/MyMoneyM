@@ -20,6 +20,7 @@ import LottieView from "lottie-react-native";
 import { File, Paths } from "expo-file-system/next";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
+import { useNavigation } from "@react-navigation/native";
 
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
@@ -312,6 +313,7 @@ const TimePickerModal = ({
 
 const SettingsScreen = () => {
   const { colors, themeId, setTheme } = useTheme();
+  const navigation = useNavigation<any>();
   const CARD_BORDER = `${colors.border}80`;
   const { clearAllData, refreshData, debugStorage, state, setLoading } = useAppContext();
 
@@ -815,6 +817,24 @@ const SettingsScreen = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "data" && (
           <>
+            <SectionHeader title="Kategori" />
+            <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
+              <TouchableOpacity 
+                style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14 }} 
+                onPress={() => navigation.navigate("ManageCategories")} 
+                activeOpacity={0.7}
+              >
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: `${colors.info}15`, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
+                  <Ionicons name="list-outline" size={18} color={colors.info} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 2 }}>Kelola Kategori Kustom</Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, paddingRight: 8 }} numberOfLines={2}>Tambah, ubah, atau hapus kategori buatan sendiri</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
+              </TouchableOpacity>
+            </View>
+
             <SectionHeader title="Backup & Restore (Offline)" />
             <View style={{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: CARD_BORDER, paddingHorizontal: 16, marginBottom: 20 }}>
               <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CARD_BORDER }} onPress={handleExportData} activeOpacity={0.7}>
