@@ -694,93 +694,7 @@ const HomeScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            SMART INSIGHTS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-        {smartInsights.length > 0 && (
-          <>
-            <SectionHeader
-              title="Insight Cerdas"
-              linkLabel="Analitik"
-              onPress={() => navigation.navigate("Analytics")}
-            />
-            <View style={{ marginBottom: 20 }}>
-              {smartInsights.map((insight, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingVertical: 12,
-                    paddingHorizontal: 14,
-                    backgroundColor: `${insight.color}09`,
-                    borderRadius: INNER_RADIUS,
-                    borderWidth: 1,
-                    borderColor: `${insight.color}18`,
-                    marginBottom: i < smartInsights.length - 1 ? 8 : 0,
-                  }}
-                  onPress={insight.onPress}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 10,
-                      backgroundColor: `${insight.color}18`,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 12,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Ionicons
-                      name={insight.icon}
-                      size={16}
-                      color={insight.color}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        color: colors.textPrimary,
-                        fontSize: 12,
-                        fontWeight: "600",
-                        marginBottom: 2,
-                      }}
-                    >
-                      {insight.title}
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.gray400,
-                        fontSize: 11,
-                        lineHeight: 15,
-                      }}
-                    >
-                      {insight.message}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      color: insight.color,
-                      fontSize: 10,
-                      fontWeight: "700",
-                      marginLeft: 10,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {insight.action}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            RECENT TRANSACTIONS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* RECENT TRANSACTIONS */}
         <SectionHeader
           title={
             filteredTransactions.length > 0
@@ -1276,9 +1190,89 @@ const HomeScreen: React.FC = () => {
             </>
           )}
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            HEALTH SCORE RECOMMENDATIONS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+                {/* SMART INSIGHTS */}
+        {smartInsights.length > 0 && (
+          <>
+            <SectionHeader
+              title="Insight Cerdas"
+              linkLabel="Analitik"
+              onPress={() => navigation.navigate("Analytics")}
+            />
+            <View style={{ marginBottom: 20 }}>
+              {smartInsights.map((insight, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    backgroundColor: `${insight.color}09`,
+                    borderRadius: INNER_RADIUS,
+                    borderWidth: 1,
+                    borderColor: `${insight.color}18`,
+                    marginBottom: i < smartInsights.length - 1 ? 8 : 0,
+                  }}
+                  onPress={insight.onPress}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      backgroundColor: `${insight.color}18`,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Ionicons
+                      name={insight.icon}
+                      size={16}
+                      color={insight.color}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: "600",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {insight.title}
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.gray400,
+                        fontSize: 11,
+                        lineHeight: 15,
+                      }}
+                    >
+                      {insight.message}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      color: insight.color,
+                      fontSize: 10,
+                      fontWeight: "700",
+                      marginLeft: 10,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {insight.action}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* HEALTH SCORE RECOMMENDATIONS */}
         {hasFinancialData &&
           financialHealthScore.recommendations &&
           financialHealthScore.recommendations.length > 0 &&

@@ -72,15 +72,35 @@ const AddDebtScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const amt = parseFloat(amount.replace(/\D/g, ""));
+      
+      let finalRemaining = amt;
+      let finalStatus = (editMode && existingDebt ? existingDebt.status : "active") as Debt["status"];
+
+      if (editMode && existingDebt) {
+        // Hitung berapa nominal yang sudah dibayar sebelumnya
+        const paidAmount = existingDebt.amount - existingDebt.remaining;
+        
+        // Sisa hutang baru adalah nominal baru dikurangi yang sudah dibayar
+        finalRemaining = amt - paidAmount;
+        
+        if (finalRemaining <= 0) {
+          finalRemaining = 0;
+          finalStatus = "paid";
+        } else if (finalStatus === "paid" && finalRemaining > 0) {
+          // Jika sebelumnya lunas tapi nominal dinaikkan, kembalikan ke aktif
+          finalStatus = "active";
+        }
+      }
+
       const payload = {
         type,
         name: name.trim(),
         amount: amt,
-        remaining: editMode && existingDebt ? existingDebt.remaining : amt,
+        remaining: finalRemaining,
         category,
         description: description.trim(),
         dueDate: dueDate || undefined,
-        status: (editMode && existingDebt ? existingDebt.status : "active") as Debt["status"],
+        status: finalStatus,
       };
 
       if (editMode && existingDebt) {
