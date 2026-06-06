@@ -1016,6 +1016,9 @@ const ProfileScreen: React.FC = () => {
             <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
               MyMoney
             </Text>
+            <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
+              Version 0.9.0
+            </Text>
           </View>
         </View>
       </ScrollView>

@@ -796,11 +796,12 @@ const TransactionsScreen: React.FC = () => {
                               )}
                             </View>
 
-                            {/* Amount + chevron */}
+                            {/* Amount */}
                             <View
                               style={{
                                 alignItems: "flex-end",
                                 marginLeft: 8,
+                                justifyContent: "center"
                               }}
                             >
                               <Text
@@ -811,7 +812,6 @@ const TransactionsScreen: React.FC = () => {
                                     transaction.type === "income"
                                       ? colors.success
                                       : colors.error,
-                                  marginBottom: 2,
                                 }}
                               >
                                 {transaction.type === "income" ? "+" : "−"}
@@ -819,11 +819,6 @@ const TransactionsScreen: React.FC = () => {
                                   safeNumber(transaction.amount)
                                 )}
                               </Text>
-                              <Ionicons
-                                name="chevron-forward"
-                                size={11}
-                                color={colors.gray400}
-                              />
                             </View>
                           </TouchableOpacity>
                         </Swipeable>
