@@ -35,10 +35,8 @@ const G_WARNING = "#FFB84D";
 const G_GOLD = "#F5A623";
 
 // ─── Per-slide identity ─────────────────────────────────────────────────────────
-// Each slide has distinct chromatic personality
 const SLIDE_THEMES = [
   {
-    // Slide 1 — Saldo Utama (GoPay Green)
     accent: G_GREEN_PRIMARY,
     gradientStart: "#001A08",
     gradientEnd: "#0A2E15",
@@ -47,7 +45,6 @@ const SLIDE_THEMES = [
     accentDeep: G_GREEN_DEEP,
   },
   {
-    // Slide 2 — Aktivitas (Gold/Amber)
     accent: G_GOLD,
     gradientStart: "#1A1100",
     gradientEnd: "#2A1C05",
@@ -56,7 +53,6 @@ const SLIDE_THEMES = [
     accentDeep: "#8B5E00",
   },
   {
-    // Slide 3 — Proyeksi (Violet/Teal)
     accent: "#00D4AA",
     gradientStart: "#001A14",
     gradientEnd: "#052E24",
@@ -81,7 +77,7 @@ interface BalanceCarouselProps {
 // ─── Helper: Teks "periode berakhir dalam X hari" ────────────────────────────────
 const getPeriodEndLabel = (
   timeFilter: string,
-  projectionData: any
+  projectionData: any,
 ): string | null => {
   if (!projectionData || timeFilter === "all") return null;
 
@@ -94,16 +90,21 @@ const getPeriodEndLabel = (
   }
 
   if (timeFilter === "monthly") {
-    return days === 1 ? "Bulan berakhir besok" : `Bulan berakhir dalam ${days} hari`;
+    return days === 1
+      ? "Bulan berakhir besok"
+      : `Bulan berakhir dalam ${days} hari`;
   }
   if (timeFilter === "yearly") {
-    return days === 1 ? "Tahun berakhir besok" : `Tahun berakhir dalam ${days} hari`;
+    return days === 1
+      ? "Tahun berakhir besok"
+      : `Tahun berakhir dalam ${days} hari`;
   }
-  // weekly / custom cycle
-  return days === 1 ? "Periode berakhir besok" : `Periode berakhir dalam ${days} hari`;
+  return days === 1
+    ? "Periode berakhir besok"
+    : `Periode berakhir dalam ${days} hari`;
 };
 
-// ─── PeriodEndBadge — Teks kecil di footer setiap card ──────────────────────────
+// ─── PeriodEndBadge ─────────────────────────────────────────────────────────────
 const PeriodEndBadge = ({
   timeFilter,
   projectionData,
@@ -117,25 +118,18 @@ const PeriodEndBadge = ({
   const isUrgent = safeNumber(projectionData?.daysRemaining) <= 3;
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 4,
-      }}
-    >
+    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
       <Ionicons
         name="hourglass-outline"
-        size={8}
+        size={7}
         color={isUrgent ? "#FFB84D" : "rgba(255,255,255,0.25)"}
-        style={{ marginRight: 4 }}
+        style={{ marginRight: 3 }}
       />
       <Text
         style={{
           color: isUrgent ? "rgba(255,184,77,0.8)" : "rgba(255,255,255,0.25)",
-          fontSize: 8,
+          fontSize: 7,
           fontWeight: isUrgent ? "600" : "400",
-          letterSpacing: 0.2,
         }}
       >
         {label}
@@ -144,7 +138,7 @@ const PeriodEndBadge = ({
   );
 };
 
-// ─── Counting Number Component ──────────────────────────────────────────────────
+// ─── AnimatedNumber ──────────────────────────────────────────────────────────────
 const AnimatedNumber = ({
   value,
   style,
@@ -227,7 +221,7 @@ const GlassChip = ({
   </View>
 );
 
-// ─── Decorative Glow Orbs ───────────────────────────────────────────────────────
+// ─── GlowOrb ────────────────────────────────────────────────────────────────────
 const GlowOrb = ({
   color,
   size = 120,
@@ -267,7 +261,7 @@ const GlowOrb = ({
   </View>
 );
 
-// ─── ChromaCard — Premium sliding card ──────────────────────────────────────────
+// ─── ChromaCard ─────────────────────────────────────────────────────────────────
 const ChromaCard = ({
   slideIndex,
   children,
@@ -288,7 +282,6 @@ const ChromaCard = ({
         padding: BORDER_W,
       }}
     >
-      {/* Inner surface */}
       <View
         style={{
           flex: 1,
@@ -297,7 +290,6 @@ const ChromaCard = ({
           backgroundColor: "rgba(6,13,10,0.6)",
         }}
       >
-        {/* Glow orbs */}
         <GlowOrb
           color={t.glowColor}
           size={160}
@@ -312,8 +304,6 @@ const ChromaCard = ({
           left={-30}
           opacity={0.08}
         />
-
-        {/* Top accent line */}
         <LinearGradient
           colors={[`${t.accent}00`, t.accent, `${t.accent}00`]}
           start={{ x: 0, y: 0 }}
@@ -326,8 +316,6 @@ const ChromaCard = ({
             height: 1.5,
           }}
         />
-
-        {/* Decorative circular ring */}
         <View
           style={{
             position: "absolute",
@@ -352,41 +340,25 @@ const ChromaCard = ({
             borderColor: `${t.accent}18`,
           }}
         />
-
-        {/* Content layer */}
         <View style={{ flex: 1, padding: 20 }}>{children}</View>
       </View>
     </LinearGradient>
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────────
-// SLIDE 1 — Saldo Utama (GoPay Style)
-// Hero: Big balance number, action buttons, glow effects
-// ─────────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════════
+// SLIDE 1 — Saldo Utama
+// ═════════════════════════════════════════════════════════════════════════════════
 const Slide1 = (props: BalanceCarouselProps) => {
   const t = SLIDE_THEMES[0];
   const isPositive = props.filteredPeriodNetto >= 0;
   const netColor = isPositive ? G_SUCCESS : G_ERROR;
-
-  // Calculate percentage change (dummy example — in real app this could be from props)
   const hasChange = props.hasFinancialData && props.filteredPeriodNetto !== 0;
-
-  const periodLabel =
-    props.timeFilter === "all"
-      ? "Seluruh riwayat"
-      : props.timeFilter === "monthly"
-        ? "Bulan ini"
-        : props.timeFilter === "weekly"
-          ? "Minggu ini"
-          : props.timeFilter === "yearly"
-            ? "Tahun ini"
-            : props.timeFilter;
 
   return (
     <ChromaCard slideIndex={0}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* ── Row 1: Brand + Status ── */}
+        {/* Row 1: Brand */}
         <View
           style={{
             flexDirection: "row",
@@ -395,7 +367,6 @@ const Slide1 = (props: BalanceCarouselProps) => {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* GoPay-style icon badge */}
             <LinearGradient
               colors={[t.accent, t.accentDark]}
               start={{ x: 0, y: 0 }}
@@ -436,21 +407,17 @@ const Slide1 = (props: BalanceCarouselProps) => {
               )}
             </View>
           </View>
-
-          {/* Change indicator chip */}
           {hasChange && (
             <GlassChip
               icon={isPositive ? "trending-up" : "trending-down"}
-              label={`${isPositive ? "+" : "-"}${formatCurrency(
-                safeNumber(Math.abs(props.filteredPeriodNetto)),
-              )}`}
+              label={`${isPositive ? "+" : "-"}${formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}`}
               color={netColor}
               compact
             />
           )}
         </View>
 
-        {/* ── Row 2: Hero Balance Number ── */}
+        {/* Row 2: Balance */}
         <View style={{ marginTop: 2 }}>
           {!props.hasFinancialData && (
             <Text
@@ -468,13 +435,11 @@ const Slide1 = (props: BalanceCarouselProps) => {
               value={
                 props.hasFinancialData
                   ? (() => {
-                      const balanceNum = safeNumber(props.balance);
-                      const isNegative = balanceNum < 0;
-                      return `${isNegative ? "-" : ""}${formatCurrency(Math.abs(balanceNum))}`;
+                      const n = safeNumber(props.balance);
+                      return `${n < 0 ? "-" : ""}${formatCurrency(Math.abs(n))}`;
                     })()
                   : "Rp 0"
               }
-              duration={1000}
               style={{
                 color:
                   props.hasFinancialData && props.balance < 0
@@ -482,7 +447,6 @@ const Slide1 = (props: BalanceCarouselProps) => {
                     : G_TEXT,
               }}
             />
-            {/* Small decorative indicator */}
             {hasChange && (
               <View
                 style={{
@@ -496,13 +460,11 @@ const Slide1 = (props: BalanceCarouselProps) => {
               />
             )}
           </View>
-
-          {/* Subtle opening balance info */}
           {props.timeFilter !== "all" && props.openingBalance !== 0 && (
             <Text
               style={{
                 color: "rgba(255,255,255,0.3)",
-                fontSize: 7,
+                fontSize: 9,
                 marginTop: 1,
               }}
             >
@@ -511,28 +473,17 @@ const Slide1 = (props: BalanceCarouselProps) => {
           )}
         </View>
 
-        {/* ── Row 2.5: Mini period stat cards ── */}
+        {/* Row 3: Income/Expense with divider */}
         {props.hasFinancialData && (
-          <View style={{ flexDirection: "row", gap: 6, marginVertical: 2 }}>
-            {/* Income mini card */}
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: `${G_SUCCESS}12`,
-                borderRadius: 10,
-                paddingHorizontal: 8,
-                paddingVertical: 6,
-                borderWidth: 1,
-                borderColor: `${G_SUCCESS}18`,
-              }}
-            >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.4)",
-                  fontSize: 7,
+                  fontSize: 9,
                   letterSpacing: 0.5,
                   textTransform: "uppercase",
-                  marginBottom: 1,
+                  textAlign: "center",
                 }}
               >
                 Masuk
@@ -540,9 +491,9 @@ const Slide1 = (props: BalanceCarouselProps) => {
               <Text
                 style={{
                   color: G_TEXT,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: "700",
-                  letterSpacing: -0.3,
+                  textAlign: "center",
                 }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -550,26 +501,22 @@ const Slide1 = (props: BalanceCarouselProps) => {
                 {formatCurrency(safeNumber(props.filteredIncome))}
               </Text>
             </View>
-
-            {/* Expense mini card */}
             <View
               style={{
-                flex: 1,
-                backgroundColor: `${G_ERROR}12`,
-                borderRadius: 10,
-                paddingHorizontal: 8,
-                paddingVertical: 6,
-                borderWidth: 1,
-                borderColor: `${G_ERROR}18`,
+                width: 1,
+                height: 32,
+                backgroundColor: "rgba(255,255,255,0.1)",
+                marginHorizontal: 8,
               }}
-            >
+            />
+            <View style={{ flex: 1 }}>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.4)",
-                  fontSize: 7,
+                  fontSize: 9,
                   letterSpacing: 0.5,
                   textTransform: "uppercase",
-                  marginBottom: 1,
+                  textAlign: "center",
                 }}
               >
                 Keluar
@@ -577,9 +524,9 @@ const Slide1 = (props: BalanceCarouselProps) => {
               <Text
                 style={{
                   color: G_TEXT,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: "700",
-                  letterSpacing: -0.3,
+                  textAlign: "center",
                 }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -590,43 +537,14 @@ const Slide1 = (props: BalanceCarouselProps) => {
           </View>
         )}
 
-        {/* ── Row 3: Period indicator ── */}
+        {/* Row 4: Period end badge only */}
         <View
           style={{
-            paddingTop: 6,
+            paddingTop: 4,
             borderTopWidth: 1,
             borderTopColor: "rgba(255,255,255,0.06)",
           }}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons
-                name="calendar-outline"
-                size={8}
-                color="rgba(255,255,255,0.3)"
-                style={{ marginRight: 4 }}
-              />
-              <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 7 }}>
-                {props.hasFinancialData ? periodLabel : "Belum ada transaksi"}
-              </Text>
-            </View>
-            <Text
-              style={{
-                color: `${t.accent}60`,
-                fontSize: 7,
-                fontWeight: "600",
-              }}
-            >
-              Geser →
-            </Text>
-          </View>
-          {/* ── Periode Berakhir ── */}
           <PeriodEndBadge
             timeFilter={props.timeFilter}
             projectionData={props.projectionData}
@@ -637,10 +555,9 @@ const Slide1 = (props: BalanceCarouselProps) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────────
-// SLIDE 2 — Cash Flow Activity (Gold/Amber theme)
-// Hero: Income vs Expense with animated thick bars
-// ─────────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════════
+// SLIDE 2 — Cash Flow Activity
+// ═════════════════════════════════════════════════════════════════════════════════
 const Slide2 = (props: BalanceCarouselProps) => {
   const total = props.filteredIncome + props.filteredExpense;
   const incomeRatio = total > 0 ? (props.filteredIncome / total) * 100 : 0;
@@ -679,7 +596,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
   return (
     <ChromaCard slideIndex={1}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* ── Header ── */}
+        {/* Header */}
         <View
           style={{
             flexDirection: "row",
@@ -693,23 +610,23 @@ const Slide2 = (props: BalanceCarouselProps) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
+                width: 26,
+                height: 26,
+                borderRadius: 8,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 10,
+                marginRight: 8,
               }}
             >
-              <Ionicons name="pulse" size={16} color="#1A1100" />
+              <Ionicons name="pulse" size={13} color="#1A1100" />
             </LinearGradient>
             <View>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.5)",
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: "600",
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                   textTransform: "uppercase",
                 }}
               >
@@ -722,7 +639,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 1,
                 }}
               >
-                {props.timeFilter === "all" ? "Semua riwayat" : "Periode ini"}
+                Periode ini
               </Text>
             </View>
           </View>
@@ -733,139 +650,114 @@ const Slide2 = (props: BalanceCarouselProps) => {
           />
         </View>
 
-        {/* ── Income Bar ── */}
-        <View>
+        {/* Income Bar — smaller */}
+        <View style={{ marginBottom: -4 }}>
           <View
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 6,
+              marginBottom: 3,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
                   backgroundColor: G_SUCCESS,
-                  marginRight: 8,
+                  marginRight: 6,
                 }}
               />
               <Text
                 style={{
                   color: "rgba(255,255,255,0.6)",
-                  fontSize: 11,
+                  fontSize: 9,
                   fontWeight: "500",
                 }}
               >
                 Pemasukan
               </Text>
             </View>
-            <Text
-              style={{
-                color: G_TEXT,
-                fontSize: 15,
-                fontWeight: "700",
-                letterSpacing: -0.3,
-              }}
-            >
+            <Text style={{ color: G_TEXT, fontSize: 12, fontWeight: "700" }}>
               {formatCurrency(safeNumber(props.filteredIncome))}
             </Text>
           </View>
           <View
             style={{
-              height: 10,
+              height: 6,
               backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 6,
+              borderRadius: 3,
               overflow: "hidden",
             }}
           >
             <Animated.View
               style={[
-                {
-                  height: 10,
-                  borderRadius: 6,
-                  backgroundColor: G_SUCCESS,
-                },
+                { height: 6, borderRadius: 3, backgroundColor: G_SUCCESS },
                 incomeAnimStyle,
               ]}
             />
           </View>
         </View>
 
-        {/* ── Expense Bar ── */}
-        <View>
+        {/* Expense Bar — smaller */}
+        <View style={{ marginBottom: -4 }}>
           <View
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 6,
+              marginBottom: 3,
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
                   backgroundColor: G_ERROR,
-                  marginRight: 8,
+                  marginRight: 6,
                 }}
               />
               <Text
                 style={{
                   color: "rgba(255,255,255,0.6)",
-                  fontSize: 11,
+                  fontSize: 9,
                   fontWeight: "500",
                 }}
               >
                 Pengeluaran
               </Text>
             </View>
-            <Text
-              style={{
-                color: G_TEXT,
-                fontSize: 15,
-                fontWeight: "700",
-                letterSpacing: -0.3,
-              }}
-            >
+            <Text style={{ color: G_TEXT, fontSize: 12, fontWeight: "700" }}>
               {formatCurrency(safeNumber(props.filteredExpense))}
             </Text>
           </View>
           <View
             style={{
-              height: 10,
+              height: 6,
               backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 6,
+              borderRadius: 3,
               overflow: "hidden",
             }}
           >
             <Animated.View
               style={[
-                {
-                  height: 10,
-                  borderRadius: 6,
-                  backgroundColor: G_ERROR,
-                },
+                { height: 6, borderRadius: 3, backgroundColor: G_ERROR },
                 expenseAnimStyle,
               ]}
             />
           </View>
         </View>
 
-        {/* ── Net Kas Footer ── */}
+        {/* Net Kas — no wrapper, just divider line */}
         <View
           style={{
-            backgroundColor: `${netColor}15`,
-            borderRadius: 14,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-            borderWidth: 1,
-            borderColor: `${netColor}25`,
+            paddingTop: 4,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.06)",
           }}
         >
           <View
@@ -878,7 +770,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
             <Text
               style={{
                 color: "rgba(255,255,255,0.5)",
-                fontSize: 9,
+                fontSize: 8,
                 fontWeight: "700",
                 letterSpacing: 1,
                 textTransform: "uppercase",
@@ -886,33 +778,20 @@ const Slide2 = (props: BalanceCarouselProps) => {
             >
               Net Kas
             </Text>
-            <Text
-              style={{
-                color: netColor,
-                fontSize: 18,
-                fontWeight: "800",
-                letterSpacing: -0.5,
-              }}
-            >
+            <Text style={{ color: netColor, fontSize: 14, fontWeight: "800" }}>
               {props.filteredPeriodNetto > 0 ? "+" : ""}
               {formatCurrency(safeNumber(props.filteredPeriodNetto))}
             </Text>
           </View>
-          {/* ── Periode Berakhir ── */}
-          <PeriodEndBadge
-            timeFilter={props.timeFilter}
-            projectionData={props.projectionData}
-          />
         </View>
       </View>
     </ChromaCard>
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────────
-// SLIDE 3 — Proyeksi & Insight (Teal theme)
-// Hero: Circular gauge + glass pills for projection
-// ─────────────────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════════
+// SLIDE 3 — Proyeksi & Insight
+// ═════════════════════════════════════════════════════════════════════════════════
 const Slide3 = (props: BalanceCarouselProps) => {
   const projStatus = props.projectionData?.status;
   const statusColor =
@@ -948,7 +827,6 @@ const Slide3 = (props: BalanceCarouselProps) => {
   );
   const t = SLIDE_THEMES[2];
 
-  // Animated gauge
   const gaugeValue = useSharedValue(0);
   useEffect(() => {
     gaugeValue.value = withDelay(
@@ -960,17 +838,14 @@ const Slide3 = (props: BalanceCarouselProps) => {
     );
   }, [progressPct]);
 
-  const gaugeAnimStyle = useAnimatedStyle(() => {
-    const clampedWidth = Math.max(gaugeValue.value, 2);
-    return {
-      width: `${clampedWidth}%`,
-    };
-  });
+  const gaugeAnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(gaugeValue.value, 2)}%`,
+  }));
 
   return (
     <ChromaCard slideIndex={2}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* ── Header ── */}
+        {/* Header */}
         <View
           style={{
             flexDirection: "row",
@@ -984,32 +859,32 @@ const Slide3 = (props: BalanceCarouselProps) => {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
+                width: 26,
+                height: 26,
+                borderRadius: 8,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 10,
+                marginRight: 8,
               }}
             >
-              <Ionicons name="compass" size={16} color="#001A14" />
+              <Ionicons name="compass" size={13} color="#001A14" />
             </LinearGradient>
             <View>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.5)",
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: "600",
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                   textTransform: "uppercase",
                 }}
               >
-                {props.timeFilter === "all" ? "Ringkasan" : "Proyeksi"}
+                Proyeksi
               </Text>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.3)",
-                  fontSize: 8,
+                  fontSize: 7,
                   marginTop: 1,
                 }}
               >
@@ -1026,74 +901,67 @@ const Slide3 = (props: BalanceCarouselProps) => {
           )}
         </View>
 
-        {/* ── Hero Net Cashflow ── */}
+        {/* Arus Kas value */}
         <View>
           <Text
             style={{
               color: "rgba(255,255,255,0.35)",
-              fontSize: 10,
+              fontSize: 8,
               letterSpacing: 0.8,
-              marginBottom: 2,
+              marginBottom: 1,
               textTransform: "uppercase",
             }}
           >
-            {props.timeFilter === "all" ? "Saldo Netto" : "Arus Kas"}
+            Arus Kas
           </Text>
           <AnimatedNumber
-            value={`${props.filteredPeriodNetto > 0 ? "+" : ""}${formatCurrency(
-              safeNumber(props.filteredPeriodNetto),
-            )}`}
-            duration={1000}
-            style={{ color: netColor, fontSize: 28, lineHeight: 36 }}
+            value={`${props.filteredPeriodNetto > 0 ? "+" : ""}${formatCurrency(safeNumber(props.filteredPeriodNetto))}`}
+            style={{ color: netColor, fontSize: 22, lineHeight: 28 }}
           />
         </View>
 
-        {/* ── Gauge Bar + Detail Pills ── */}
+        {/* Gauge + Tersisa/Est. Saldo */}
         {props.hasFinancialData && props.projectionData ? (
           <View>
-            {/* Animated gauge */}
-            <View style={{ marginBottom: 10 }}>
+            {/* Animated gauge — smaller */}
+            <View style={{ marginBottom: 6 }}>
               <View
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 5,
+                  marginBottom: 3,
                 }}
               >
                 <Text
                   style={{
                     color: "rgba(255,255,255,0.4)",
-                    fontSize: 8,
+                    fontSize: 7,
                     textTransform: "uppercase",
                     letterSpacing: 0.5,
                   }}
                 >
-                  Periode berjalan
+                  Periode
                 </Text>
                 <Text
-                  style={{
-                    color: t.accent,
-                    fontSize: 11,
-                    fontWeight: "700",
-                  }}
+                  style={{ color: t.accent, fontSize: 9, fontWeight: "700" }}
                 >
                   {Math.round(progressPct)}%
                 </Text>
               </View>
               <View
                 style={{
-                  height: 6,
+                  height: 4,
                   backgroundColor: "rgba(255,255,255,0.06)",
-                  borderRadius: 3,
+                  borderRadius: 2,
                   overflow: "hidden",
                 }}
               >
                 <Animated.View
                   style={[
                     {
-                      height: 6,
-                      borderRadius: 3,
+                      height: 4,
+                      borderRadius: 2,
                       backgroundColor: statusColor,
                     },
                     gaugeAnimStyle,
@@ -1102,49 +970,28 @@ const Slide3 = (props: BalanceCarouselProps) => {
               </View>
             </View>
 
-            {/* Detail pills */}
+            {/* Tersisa & Est. Saldo with divider — no wrapper */}
             {props.projectionData.daysRemaining > 0 && (
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: "rgba(255,255,255,0.04)",
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.08)",
-                    padding: 12,
-                  }}
-                >
-                  <View
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <Text
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
+                      color: "rgba(255,255,255,0.4)",
+                      fontSize: 7,
+                      fontWeight: "600",
+                      letterSpacing: 0.8,
+                      textTransform: "uppercase",
+                      textAlign: "center",
                     }}
                   >
-                    <Ionicons
-                      name="time-outline"
-                      size={11}
-                      color={t.accent}
-                      style={{ marginRight: 4 }}
-                    />
-                    <Text
-                      style={{
-                        color: "rgba(255,255,255,0.4)",
-                        fontSize: 8,
-                        fontWeight: "600",
-                        letterSpacing: 0.8,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Tersisa
-                    </Text>
-                  </View>
+                    Tersisa
+                  </Text>
                   <Text
                     style={{
                       color: G_TEXT,
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: "700",
+                      textAlign: "center",
                     }}
                   >
                     {props.projectionData.daysRemaining} hari
@@ -1152,44 +999,31 @@ const Slide3 = (props: BalanceCarouselProps) => {
                 </View>
                 <View
                   style={{
-                    flex: 1,
-                    backgroundColor: "rgba(255,255,255,0.04)",
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.08)",
-                    padding: 12,
+                    width: 1,
+                    height: 28,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    marginHorizontal: 6,
                   }}
-                >
-                  <View
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 4,
+                      color: "rgba(255,255,255,0.4)",
+                      fontSize: 7,
+                      fontWeight: "600",
+                      letterSpacing: 0.8,
+                      textTransform: "uppercase",
+                      textAlign: "center",
                     }}
                   >
-                    <Ionicons
-                      name="calculator-outline"
-                      size={11}
-                      color={projBalColor}
-                      style={{ marginRight: 4 }}
-                    />
-                    <Text
-                      style={{
-                        color: "rgba(255,255,255,0.4)",
-                        fontSize: 8,
-                        fontWeight: "600",
-                        letterSpacing: 0.8,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Est. Saldo
-                    </Text>
-                  </View>
+                    Est. Saldo
+                  </Text>
                   <Text
                     style={{
                       color: projBalColor,
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: "700",
+                      textAlign: "center",
                     }}
                     numberOfLines={1}
                     adjustsFontSizeToFit
@@ -1204,14 +1038,9 @@ const Slide3 = (props: BalanceCarouselProps) => {
                 </View>
               </View>
             )}
-            {/* ── Periode Berakhir ── */}
-            <PeriodEndBadge
-              timeFilter={props.timeFilter}
-              projectionData={props.projectionData}
-            />
           </View>
         ) : (
-          <View style={{ height: 40 }} />
+          <View style={{ height: 30 }} />
         )}
       </View>
     </ChromaCard>
@@ -1234,27 +1063,31 @@ const CarouselItem = ({
       index * SCREEN_WIDTH,
       (index + 1) * SCREEN_WIDTH,
     ];
-    const scale = interpolate(
-      scrollX.value,
-      inputRange,
-      [0.9, 1, 0.9],
-      Extrapolation.CLAMP,
-    );
-    const opacity = interpolate(
-      scrollX.value,
-      inputRange,
-      [0.4, 1, 0.4],
-      Extrapolation.CLAMP,
-    );
-    const translateY = interpolate(
-      scrollX.value,
-      inputRange,
-      [15, 0, 15],
-      Extrapolation.CLAMP,
-    );
     return {
-      transform: [{ scale }, { translateY }],
-      opacity,
+      transform: [
+        {
+          scale: interpolate(
+            scrollX.value,
+            inputRange,
+            [0.9, 1, 0.9],
+            Extrapolation.CLAMP,
+          ),
+        },
+        {
+          translateY: interpolate(
+            scrollX.value,
+            inputRange,
+            [15, 0, 15],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+      opacity: interpolate(
+        scrollX.value,
+        inputRange,
+        [0.4, 1, 0.4],
+        Extrapolation.CLAMP,
+      ),
     };
   });
 
@@ -1269,7 +1102,7 @@ const CarouselItem = ({
   );
 };
 
-// ─── PaginationDot — color-coded per slide ───────────────────────────────────────
+// ─── PaginationDot ──────────────────────────────────────────────────────────────
 const PaginationDot = ({
   index,
   scrollX,
@@ -1278,32 +1111,26 @@ const PaginationDot = ({
   scrollX: SharedValue<number>;
 }) => {
   const accent = SLIDE_THEMES[index].accent;
-
   const dotStyle = useAnimatedStyle(() => {
     const inputRange = [
       (index - 1) * SCREEN_WIDTH,
       index * SCREEN_WIDTH,
       (index + 1) * SCREEN_WIDTH,
     ];
-    const width = interpolate(
-      scrollX.value,
-      inputRange,
-      [6, 28, 6],
-      Extrapolation.CLAMP,
-    );
-    const opacity = interpolate(
-      scrollX.value,
-      inputRange,
-      [0.15, 1, 0.15],
-      Extrapolation.CLAMP,
-    );
-    const height = interpolate(
-      scrollX.value,
-      inputRange,
-      [6, 6, 6],
-      Extrapolation.CLAMP,
-    );
-    return { width, opacity, height };
+    return {
+      width: interpolate(
+        scrollX.value,
+        inputRange,
+        [6, 28, 6],
+        Extrapolation.CLAMP,
+      ),
+      opacity: interpolate(
+        scrollX.value,
+        inputRange,
+        [0.15, 1, 0.15],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
 
   return (
@@ -1313,6 +1140,7 @@ const PaginationDot = ({
           borderRadius: 3,
           backgroundColor: accent,
           marginHorizontal: 4,
+          height: 6,
         },
         dotStyle,
       ]}
@@ -1323,7 +1151,6 @@ const PaginationDot = ({
 // ─── Main export ─────────────────────────────────────────────────────────────────
 export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
   const scrollX = useSharedValue(0);
-
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x;
@@ -1347,8 +1174,6 @@ export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
           <CarouselItem index={index} scrollX={scrollX} carouselProps={props} />
         )}
       />
-
-      {/* Premium pagination dots */}
       <View
         style={{
           flexDirection: "row",
@@ -1361,6 +1186,25 @@ export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
           <PaginationDot key={i} index={i} scrollX={scrollX} />
         ))}
       </View>
+      <Text
+        style={{
+          color: "rgba(255,255,255,0.3)",
+          fontSize: 9,
+          textAlign: "center",
+          marginTop: 8,
+          letterSpacing: 0.5,
+        }}
+      >
+        {props.timeFilter === "all"
+          ? "Seluruh riwayat"
+          : props.timeFilter === "monthly"
+            ? "Bulan ini"
+            : props.timeFilter === "weekly"
+              ? "Minggu ini"
+              : props.timeFilter === "yearly"
+                ? "Tahun ini"
+                : props.timeFilter}
+      </Text>
     </View>
   );
 };
