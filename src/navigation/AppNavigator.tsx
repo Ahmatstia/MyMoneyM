@@ -613,24 +613,24 @@ const AppNavigator: React.FC = () => {
 
   if (isFirstLaunch === null) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#001A08" }}>
-        {/* Background gradient */}
+      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+        {/* Subtle premium light gradient */}
         <LinearGradient
-          colors={["#001A08", "#0A2E15", "#060D0A"]}
+          colors={["#FFFFFF", "#F8FAFC", "#F1F5F9"]}
           style={StyleSheet.absoluteFill}
         />
-        {/* Glow behind logo */}
+        {/* Elegant subtle glow */}
         <View
           style={{
             position: "absolute",
-            top: "40%",
+            top: "50%",
             left: "50%",
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: "#00D84A",
-            opacity: 0.06,
-            transform: [{ translateX: -100 }, { translateY: -100 }],
+            width: 300,
+            height: 300,
+            borderRadius: 150,
+            backgroundColor: "#0284C7",
+            opacity: 0.05,
+            transform: [{ translateX: -150 }, { translateY: -150 }],
           }}
         />
         <View
@@ -642,63 +642,24 @@ const AppNavigator: React.FC = () => {
         >
           <Image
             source={require("../../assets/logo.png")}
-            style={{ width: 90, height: 90, resizeMode: "contain" }}
+            style={{ width: 140, height: 140, resizeMode: "contain" }}
           />
         </View>
-        {/* Bottom loading text */}
+        {/* Sleek bottom loading dots */}
         <View style={{ paddingBottom: 60, alignItems: "center" }}>
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 5,
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#00D84A",
-                opacity: 0.3,
-              }}
-            />
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#00D84A",
-                opacity: 0.5,
-              }}
-            />
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#00D84A",
-                opacity: 0.7,
-              }}
-            />
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#00D84A",
-                opacity: 0.5,
-              }}
-            />
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#00D84A",
-                opacity: 0.3,
-              }}
-            />
+          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            {[0.2, 0.4, 0.6, 0.8, 0.6, 0.4, 0.2].map((opacity, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: "#0284C7",
+                  opacity,
+                }}
+              />
+            ))}
           </View>
         </View>
       </View>

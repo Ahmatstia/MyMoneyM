@@ -2,7 +2,7 @@
   "expo": {
     "name": "MyMoney",
     "slug": "MyMoney",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "dark",
@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -30,7 +30,7 @@
       "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#0F172A"
+        "backgroundColor": "#FFFFFF"
       },
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
@@ -46,17 +46,6 @@
       "favicon": "./assets/logo.png"
     },
     "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0",
-            "kotlinVersion": "2.0.21"
-          }
-        }
-      ],
       "expo-font",
       [
         "expo-notifications",
