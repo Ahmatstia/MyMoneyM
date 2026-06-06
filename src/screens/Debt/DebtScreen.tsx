@@ -863,6 +863,29 @@ const DebtScreen: React.FC = () => {
                       </TouchableOpacity>
                     )}
 
+                    {/* Edit button */}
+                    <TouchableOpacity
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: `${colors.accent}14`,
+                        borderWidth: 1,
+                        borderColor: `${colors.accent}22`,
+                      }}
+                      onPress={() =>
+                        navigation.navigate("AddDebt", {
+                          editMode: true,
+                          debtData: debt,
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="create-outline" size={16} color={colors.accent} />
+                    </TouchableOpacity>
+
                     {/* Hapus button — selalu ada */}
                     <TouchableOpacity
                       style={{

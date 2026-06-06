@@ -465,11 +465,11 @@ Kategori: ${financialHealthScore.category}
                 borderColor: `${statusColor}25`,
               }}
             >
-              <Text style={{ fontSize: 10, fontWeight: "600", color: statusColor }}>
+              <Text style={{ fontSize: 10, fontWeight: "700", color: statusColor }}>
                 {item.status === "above"
-                  ? "â†‘ Tinggi"
+                  ? "↑ Tinggi"
                   : item.status === "below"
-                  ? "â†“ Rendah"
+                  ? "↓ Rendah"
                   : "Normal"}
               </Text>
             </View>
@@ -1279,82 +1279,50 @@ Kategori: ${financialHealthScore.category}
 
             {/* Quick stats row */}
             <SectionHeader title="Statistik" />
-            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: SURFACE_COLOR,
+                borderRadius: INNER_RADIUS,
+                paddingVertical: 16,
+                paddingHorizontal: 8,
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+              }}
+            >
               {/* Transaksi */}
-              <View style={{ flex: 1, borderRadius: INNER_RADIUS, padding: 14, backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: CARD_BORDER }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
                   Transaksi
                 </Text>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700", marginBottom: 3 }}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700", textAlign: "center" }}>
                   {transactionAnalytics.transactionCount}
                 </Text>
-                <Text style={{ color: colors.gray400, fontSize: 9 }}>
-                  {transactionAnalytics.incomeTransactionCount} masuk • {transactionAnalytics.expenseTransactionCount} keluar
-                </Text>
               </View>
+
+              <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
 
               {/* Anggaran */}
-              <View style={{ flex: 1, borderRadius: INNER_RADIUS, padding: 14, backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: CARD_BORDER }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
                   Anggaran
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 17,
-                    fontWeight: "700",
-                    marginBottom: 3,
-                    color:
-                      budgetAnalytics.overBudgetCount > 0
-                        ? ERROR_COLOR
-                        : budgetAnalytics.hasBudgets
-                        ? SUCCESS_COLOR
-                        : TEXT_PRIMARY,
-                  }}
-                >
-                  {budgetAnalytics.hasBudgets
-                    ? budgetAnalytics.overBudgetCount > 0
-                      ? `${budgetAnalytics.overBudgetCount} âš `
-                      : `${budgetAnalytics.underBudgetCount} âœ“`
-                    : "0"}
-                </Text>
-                <Text style={{ color: colors.gray400, fontSize: 9 }}>
-                  {budgetAnalytics.hasBudgets
-                    ? budgetAnalytics.overBudgetCount > 0
-                      ? "Melebihi limit"
-                      : "Semua aman"
-                    : "Belum ada anggaran"}
+                <Text style={{ color: budgetAnalytics.hasBudgets ? (budgetAnalytics.overBudgetCount > 0 ? ERROR_COLOR : SUCCESS_COLOR) : TEXT_PRIMARY, fontSize: 17, fontWeight: "700", textAlign: "center" }}>
+                  {budgetAnalytics.hasBudgets ? (budgetAnalytics.overBudgetCount > 0 ? `${budgetAnalytics.overBudgetCount} ⚠️` : `${budgetAnalytics.underBudgetCount} `) : "0"}
                 </Text>
               </View>
 
+              <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
+
               {/* Tabungan */}
-              <View style={{ flex: 1, borderRadius: INNER_RADIUS, padding: 14, backgroundColor: SURFACE_COLOR, borderWidth: 1, borderColor: CARD_BORDER }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+              <View style={{ flex: 1, alignItems: "center" }}>
+                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
                   Tabungan
                 </Text>
-                <Text
-                  style={{
-                    fontSize: 17,
-                    fontWeight: "700",
-                    marginBottom: 3,
-                    color: !savingsAnalytics.hasSavings
-                      ? TEXT_PRIMARY
-                      : savingsAnalytics.overallProgress >= 100
-                      ? SUCCESS_COLOR
-                      : savingsAnalytics.overallProgress >= 50
-                      ? WARNING_COLOR
-                      : TEXT_PRIMARY,
-                  }}
-                >
-                  {savingsAnalytics.hasSavings
-                    ? `${savingsAnalytics.completedSavings}/${savingsAnalytics.activeSavings + savingsAnalytics.completedSavings}`
-                    : "0"}
-                </Text>
-                <Text style={{ color: colors.gray400, fontSize: 9 }}>
-                  {savingsAnalytics.hasSavings
-                    ? savingsAnalytics.overallProgress > 0
-                      ? `${savingsAnalytics.overallProgress.toFixed(0)}% tercapai`
-                      : "Belum ada progress"
-                    : "Belum ada tabungan"}
+                <Text style={{ color: !savingsAnalytics.hasSavings ? TEXT_PRIMARY : (savingsAnalytics.overallProgress >= 100 ? SUCCESS_COLOR : (savingsAnalytics.overallProgress >= 50 ? WARNING_COLOR : TEXT_PRIMARY)), fontSize: 17, fontWeight: "700", textAlign: "center" }}>
+                  {savingsAnalytics.hasSavings ? `${savingsAnalytics.completedSavings}/${savingsAnalytics.activeSavings + savingsAnalytics.completedSavings}` : "0"}
                 </Text>
               </View>
             </View>
@@ -1576,7 +1544,7 @@ Kategori: ${financialHealthScore.category}
                       color: transactionAnalytics.avgDailyExpense > 100000 ? ERROR_COLOR : SUCCESS_COLOR,
                     }}
                   >
-                    {transactionAnalytics.avgDailyExpense > 100000 ? "â†‘ Tinggi" : "â†“ Hemat"}
+                    {transactionAnalytics.avgDailyExpense > 100000 ? "↑ Tinggi" : "↓ Hemat"}
                   </Text>
                 </View>
               </View>
@@ -1788,50 +1756,6 @@ Kategori: ${financialHealthScore.category}
             </Card>
           </>
         )}
-
-        <Spacer size={20} />
-
-        {/* â”€â”€ Quick actions (semua tab) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        <SectionHeader title="Aksi Cepat" />
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {[
-            { label: "Transaksi Baru",    icon: "add-circle-outline" as SafeIconName, color: ACCENT_COLOR,   nav: "AddTransaction" },
-            { label: "Cek Anggaran",      icon: "pie-chart-outline"  as SafeIconName, color: colors.purple, nav: "Budget"          },
-            { label: "Progress Tabungan", icon: "wallet-outline"     as SafeIconName, color: colors.pink,   nav: "Savings"         },
-          ].map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                paddingVertical: 18,
-                borderRadius: INNER_RADIUS,
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: CARD_BORDER,
-              }}
-              onPress={() => navigation.navigate(item.nav as any)}
-              activeOpacity={0.7}
-            >
-              <View
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 13,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: `${item.color}18`,
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name={item.icon} size={19} color={item.color} />
-              </View>
-              <Text style={{ color: TEXT_PRIMARY, fontSize: 10, fontWeight: "600", textAlign: "center" }}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
       </ScrollView>
     </SafeAreaView>
