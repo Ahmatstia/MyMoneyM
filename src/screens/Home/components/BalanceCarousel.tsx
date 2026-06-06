@@ -78,6 +78,72 @@ interface BalanceCarouselProps {
   openingBalance: number;
 }
 
+// ─── Helper: Teks "periode berakhir dalam X hari" ────────────────────────────────
+const getPeriodEndLabel = (
+  timeFilter: string,
+  projectionData: any
+): string | null => {
+  if (!projectionData || timeFilter === "all") return null;
+
+  const days = safeNumber(projectionData.daysRemaining);
+
+  if (days <= 0) {
+    if (timeFilter === "monthly") return "Bulan berakhir hari ini";
+    if (timeFilter === "yearly") return "Tahun berakhir hari ini";
+    return "Periode berakhir hari ini";
+  }
+
+  if (timeFilter === "monthly") {
+    return days === 1 ? "Bulan berakhir besok" : `Bulan berakhir dalam ${days} hari`;
+  }
+  if (timeFilter === "yearly") {
+    return days === 1 ? "Tahun berakhir besok" : `Tahun berakhir dalam ${days} hari`;
+  }
+  // weekly / custom cycle
+  return days === 1 ? "Periode berakhir besok" : `Periode berakhir dalam ${days} hari`;
+};
+
+// ─── PeriodEndBadge — Teks kecil di footer setiap card ──────────────────────────
+const PeriodEndBadge = ({
+  timeFilter,
+  projectionData,
+}: {
+  timeFilter: string;
+  projectionData: any;
+}) => {
+  const label = getPeriodEndLabel(timeFilter, projectionData);
+  if (!label) return null;
+
+  const isUrgent = safeNumber(projectionData?.daysRemaining) <= 3;
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 4,
+      }}
+    >
+      <Ionicons
+        name="hourglass-outline"
+        size={8}
+        color={isUrgent ? "#FFB84D" : "rgba(255,255,255,0.25)"}
+        style={{ marginRight: 4 }}
+      />
+      <Text
+        style={{
+          color: isUrgent ? "rgba(255,184,77,0.8)" : "rgba(255,255,255,0.25)",
+          fontSize: 8,
+          fontWeight: isUrgent ? "600" : "400",
+          letterSpacing: 0.2,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+};
+
 // ─── Counting Number Component ──────────────────────────────────────────────────
 const AnimatedNumber = ({
   value,
@@ -401,7 +467,11 @@ const Slide1 = (props: BalanceCarouselProps) => {
             <AnimatedNumber
               value={
                 props.hasFinancialData
-                  ? formatCurrency(Math.abs(safeNumber(props.balance)))
+                  ? (() => {
+                      const balanceNum = safeNumber(props.balance);
+                      const isNegative = balanceNum < 0;
+                      return `${isNegative ? "-" : ""}${formatCurrency(Math.abs(balanceNum))}`;
+                    })()
                   : "Rp 0"
               }
               duration={1000}
@@ -523,34 +593,44 @@ const Slide1 = (props: BalanceCarouselProps) => {
         {/* ── Row 3: Period indicator ── */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
             paddingTop: 6,
             borderTopWidth: 1,
             borderTopColor: "rgba(255,255,255,0.06)",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name="calendar-outline"
-              size={8}
-              color="rgba(255,255,255,0.3)"
-              style={{ marginRight: 4 }}
-            />
-            <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 7 }}>
-              {props.hasFinancialData ? periodLabel : "Belum ada transaksi"}
-            </Text>
-          </View>
-          <Text
+          <View
             style={{
-              color: `${t.accent}60`,
-              fontSize: 7,
-              fontWeight: "600",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            Geser →
-          </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="calendar-outline"
+                size={8}
+                color="rgba(255,255,255,0.3)"
+                style={{ marginRight: 4 }}
+              />
+              <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 7 }}>
+                {props.hasFinancialData ? periodLabel : "Belum ada transaksi"}
+              </Text>
+            </View>
+            <Text
+              style={{
+                color: `${t.accent}60`,
+                fontSize: 7,
+                fontWeight: "600",
+              }}
+            >
+              Geser →
+            </Text>
+          </View>
+          {/* ── Periode Berakhir ── */}
+          <PeriodEndBadge
+            timeFilter={props.timeFilter}
+            projectionData={props.projectionData}
+          />
         </View>
       </View>
     </ChromaCard>
@@ -590,10 +670,10 @@ const Slide2 = (props: BalanceCarouselProps) => {
   }, [incomeRatio, expenseRatio]);
 
   const incomeAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(incomeBarWidth.value, 1)}%`,
+    width: `${Math.max(incomeBarWidth.value, incomeRatio > 0 ? 1 : 0)}%`,
   }));
   const expenseAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(expenseBarWidth.value, 1)}%`,
+    width: `${Math.max(expenseBarWidth.value, expenseRatio > 0 ? 1 : 0)}%`,
   }));
 
   return (
@@ -780,9 +860,6 @@ const Slide2 = (props: BalanceCarouselProps) => {
         {/* ── Net Kas Footer ── */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
             backgroundColor: `${netColor}15`,
             borderRadius: 14,
             paddingHorizontal: 16,
@@ -791,28 +868,41 @@ const Slide2 = (props: BalanceCarouselProps) => {
             borderColor: `${netColor}25`,
           }}
         >
-          <Text
+          <View
             style={{
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 9,
-              fontWeight: "700",
-              letterSpacing: 1,
-              textTransform: "uppercase",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            Net Kas
-          </Text>
-          <Text
-            style={{
-              color: netColor,
-              fontSize: 18,
-              fontWeight: "800",
-              letterSpacing: -0.5,
-            }}
-          >
-            {props.filteredPeriodNetto > 0 ? "+" : ""}
-            {formatCurrency(safeNumber(props.filteredPeriodNetto))}
-          </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 9,
+                fontWeight: "700",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+              }}
+            >
+              Net Kas
+            </Text>
+            <Text
+              style={{
+                color: netColor,
+                fontSize: 18,
+                fontWeight: "800",
+                letterSpacing: -0.5,
+              }}
+            >
+              {props.filteredPeriodNetto > 0 ? "+" : ""}
+              {formatCurrency(safeNumber(props.filteredPeriodNetto))}
+            </Text>
+          </View>
+          {/* ── Periode Berakhir ── */}
+          <PeriodEndBadge
+            timeFilter={props.timeFilter}
+            projectionData={props.projectionData}
+          />
         </View>
       </View>
     </ChromaCard>
@@ -1114,6 +1204,11 @@ const Slide3 = (props: BalanceCarouselProps) => {
                 </View>
               </View>
             )}
+            {/* ── Periode Berakhir ── */}
+            <PeriodEndBadge
+              timeFilter={props.timeFilter}
+              projectionData={props.projectionData}
+            />
           </View>
         ) : (
           <View style={{ height: 40 }} />

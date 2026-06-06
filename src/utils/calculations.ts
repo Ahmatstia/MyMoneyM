@@ -275,12 +275,15 @@ export const filterTransactionsByTime = (
         if (d < startOfWeek || d > endOfWeek) return false;
 
         // Smart Day Sorting: Jika hari sama dengan awal siklus
-        if (cycleIncome && d.setHours(0,0,0,0) === startOfWeek.getTime() && t.id !== cycleIncomeId) {
+        const dNormalized = new Date(d);
+        dNormalized.setHours(0, 0, 0, 0);
+
+        if (cycleIncome && dNormalized.getTime() === startOfWeek.getTime() && t.id !== cycleIncomeId) {
           // Jika transaksi ini dicatat SEBELUM income pembuka siklus, jangan masukkan ke filter ini
           // (Karena akan dianggap sebagai bagian dari Saldo Awal/Bawaan)
           if (t.createdAt < cycleIncome.createdAt) return false;
         }
-        
+
         return true;
       }
       return true; // Fallback
@@ -314,7 +317,8 @@ export const calculateProjection = (
     const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
     // Hari yang sudah berjalan (minimal 1 agar tidak pembagian nol)
-    const daysPassed = Math.max(1, Math.min(totalDays, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))));
+    // Use floor + 1 untuk calendar days: hari pertama = 1, bukan 0
+    const daysPassed = Math.max(1, Math.min(totalDays, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1));
 
     // Sisa hari
     const daysRemaining = Math.max(0, totalDays - daysPassed);

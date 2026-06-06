@@ -19,7 +19,25 @@ type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation: any) => {
   const activeCycle = useMemo(
-    () => getActiveCycleInfo(state.transactions),
+    () => {
+      const cycle = getActiveCycleInfo(state.transactions);
+
+      // FIX-004: Validate single cycle anchor
+      if (cycle && state.transactions.length > 0) {
+        const activeCycles = state.transactions.filter(
+          t => t.cyclePeriod && new Date(t.date).getTime() <= new Date().getTime()
+        );
+        if (activeCycles.length > 1) {
+          console.warn(
+            "⚠️ MULTIPLE CYCLE INCOMES DETECTED:",
+            activeCycles.map(t => `${t.date} (${t.cyclePeriod} days)`).join(", "),
+            "→ Using latest anchor. Consider consolidating to single cycle income."
+          );
+        }
+      }
+
+      return cycle;
+    },
     [state.transactions]
   );
 
@@ -491,6 +509,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     } else if (timeFilter === "yearly") {
       startDate = new Date(now.getFullYear(), 0, 1);
       endDate = new Date(now.getFullYear(), 11, 31);
+      endDate.setHours(23, 59, 59, 999); // FIX-007: Set end time to avoid off-by-1 error
       label = "akhir tahun";
     }
 
