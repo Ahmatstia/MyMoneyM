@@ -1017,7 +1017,7 @@ const ProfileScreen: React.FC = () => {
               MyMoney
             </Text>
             <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
-              Version 0.9.0
+              Version 1.0.5
             </Text>
           </View>
         </View>
