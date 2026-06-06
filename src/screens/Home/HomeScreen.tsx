@@ -34,6 +34,7 @@ import { calculateFinancialHealthScore } from "../../utils/analytics";
 
 import { useTheme } from '../../theme/ThemeContext';
 import { BalanceCarousel } from "./components/BalanceCarousel";
+import ExpenseTrendChart from "./components/ExpenseTrendChart";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -617,9 +618,15 @@ const HomeScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        {/* ══════════════════════════════════════════
+            EXPENSE TREND CHART
+        ══════════════════════════════════════════ */}
+        <SectionHeader title="Tren Pengeluaran" />
+        <ExpenseTrendChart transactions={state.transactions} />
+
+        {/* ══════════════════════════════════════════════════════════════════════════════
             QUICK STATS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        ══════════════════════════════════════════════════════════════════════════════ */}
         <SectionHeader title="Statistik" />
         <View
           style={{
