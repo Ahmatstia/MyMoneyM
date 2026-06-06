@@ -645,6 +645,7 @@ export const storageService = {
       await Promise.all([
         AsyncStorage.removeItem(STORAGE_KEYS.APP_DATA),
         AsyncStorage.removeItem(STORAGE_KEYS.MIGRATION_FLAG),
+        AsyncStorage.removeItem("@onboarding_completed"),
       ]);
 
       // Hapus juga semua key lama untuk kebersihan

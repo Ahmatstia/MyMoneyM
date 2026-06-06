@@ -21,6 +21,7 @@ import { File, Paths } from "expo-file-system/next";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
+import * as Updates from "expo-updates";
 
 import { notificationService } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
@@ -452,9 +453,19 @@ const SettingsScreen = () => {
             try {
               await clearAllData();
               setLoading(false);
-              // Gunakan setTimeout agar alert tidak tertutup modal loading
-              setTimeout(() => {
-                Alert.alert("Berhasil", "Semua data telah dibersihkan.");
+              setTimeout(async () => {
+                Alert.alert("Berhasil", "Semua data telah dibersihkan. Aplikasi akan dimuat ulang.", [
+                  {
+                    text: "OK",
+                    onPress: async () => {
+                      try {
+                        await Updates.reloadAsync();
+                      } catch (e) {
+                        // Fallback jika tidak bisa reload otomatis
+                      }
+                    }
+                  }
+                ]);
               }, 100);
             } catch (err) {
               setLoading(false);
@@ -562,7 +573,7 @@ const SettingsScreen = () => {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}>
         <LottieView
-          source={require("../../../assets/lottie/Loading 50 _ Among Us.json")}
+          source={require("../../../assets/lottie/task/Loading 50 _ Among Us.json")}
           autoPlay
           loop
           style={{ width: 180, height: 180 }}

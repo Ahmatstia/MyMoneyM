@@ -16,7 +16,7 @@ const GlobalLoading: React.FC<GlobalLoadingProps> = ({ visible, message = "Memua
       <View style={styles.container}>
         <View style={styles.card}>
           <LottieView
-            source={require("../../../assets/lottie/Loading 50 _ Among Us.json")}
+            source={require("../../../assets/lottie/task/Loading 50 _ Among Us.json")}
             autoPlay
             loop
             style={styles.lottie}

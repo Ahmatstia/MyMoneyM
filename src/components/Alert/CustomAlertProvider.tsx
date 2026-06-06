@@ -100,11 +100,11 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
     : ACCENT_COLOR;
 
   const getLottieSource = () => {
-    if (isDelete) return require("../../../assets/lottie/Delete.json");
-    if (isError) return require("../../../assets/lottie/Error animation.json");
-    if (isSuccess) return require("../../../assets/lottie/success.json");
-    if (isWarning) return require("../../../assets/lottie/Warning Status.json");
-    return require("../../../assets/lottie/info.json");
+    if (isDelete) return require("../../../assets/lottie/task/Delete.json");
+    if (isError) return require("../../../assets/lottie/task/Error animation.json");
+    if (isSuccess) return require("../../../assets/lottie/task/success.json");
+    if (isWarning) return require("../../../assets/lottie/task/Warning Status.json");
+    return require("../../../assets/lottie/task/info.json");
   };
 
   return (

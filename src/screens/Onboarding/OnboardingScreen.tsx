@@ -32,7 +32,7 @@ const OnboardingScreen = ({ navigation }: any) => {
       title: "Kelola Keuangan\nLebih Santai",
       description:
         "Pantau arus kas dengan mudah dan menyenangkan tanpa pusing hitung manual.",
-      lottie: require("../../../assets/lottie/Finance Surfer.json"),
+      lottie: require("../../../assets/lottie/Businessman flies up with rocket.json"),
       accent: G_GREEN_PRIMARY,
     },
     {
@@ -48,7 +48,7 @@ const OnboardingScreen = ({ navigation }: any) => {
       title: "Masa Depan\nTerjamin",
       description:
         "Rencanakan tabungan dan capai target finansialmu demi masa depan yang lebih mapan.",
-      lottie: require("../../../assets/lottie/Annual Revenue Chart.json"),
+      lottie: require("../../../assets/lottie/Job Success.json"),
       accent: "#00D4AA",
     },
   ];
@@ -88,6 +88,12 @@ const OnboardingScreen = ({ navigation }: any) => {
       setCurrentPage((p) => p + 1);
     } else {
       handleFinish();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentPage > 0) {
+      setCurrentPage((p) => p - 1);
     }
   };
 
@@ -159,6 +165,18 @@ const OnboardingScreen = ({ navigation }: any) => {
           height: 1.5,
         }}
       />
+
+      {/* Back Button */}
+      {currentPage > 0 && (
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons
+            name="chevron-back"
+            size={16}
+            color="rgba(255,255,255,0.7)"
+          />
+          <Text style={styles.backText}>Kembali</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Skip Button */}
       {currentPage < onboardingData.length - 1 && (
@@ -302,6 +320,26 @@ const OnboardingScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backButton: {
+    position: "absolute",
+    top: 54,
+    left: 24,
+    zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  backText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 2,
   },
   skipButton: {
     position: "absolute",

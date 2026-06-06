@@ -613,25 +613,11 @@ const AppNavigator: React.FC = () => {
 
   if (isFirstLaunch === null) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-        {/* Subtle premium light gradient */}
+      <View style={{ flex: 1, backgroundColor: "#0F172A" }}>
+        {/* Subtle premium dark gradient */}
         <LinearGradient
-          colors={["#FFFFFF", "#F8FAFC", "#F1F5F9"]}
+          colors={["#0F172A", "#1E293B", "#0F172A"]}
           style={StyleSheet.absoluteFill}
-        />
-        {/* Elegant subtle glow */}
-        <View
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            width: 300,
-            height: 300,
-            borderRadius: 150,
-            backgroundColor: "#0284C7",
-            opacity: 0.05,
-            transform: [{ translateX: -150 }, { translateY: -150 }],
-          }}
         />
         <View
           style={{
