@@ -661,9 +661,7 @@ const AppNavigator: React.FC = () => {
         }}
         initialRouteName={isFirstLaunch ? "Onboarding" : "MainDrawer"}
       >
-        {isFirstLaunch && (
-          <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
-        )}
+        <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
         <RootStack.Screen name="MainDrawer" component={DrawerNavigator} />
       </RootStack.Navigator>
     </NavigationContainer>

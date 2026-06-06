@@ -453,20 +453,11 @@ const SettingsScreen = () => {
             try {
               await clearAllData();
               setLoading(false);
-              setTimeout(async () => {
-                Alert.alert("Berhasil", "Semua data telah dibersihkan. Aplikasi akan dimuat ulang.", [
-                  {
-                    text: "OK",
-                    onPress: async () => {
-                      try {
-                        await Updates.reloadAsync();
-                      } catch (e) {
-                        // Fallback jika tidak bisa reload otomatis
-                      }
-                    }
-                  }
-                ]);
-              }, 100);
+              // Langsung navigasi ke Onboarding tanpa reload app
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Onboarding" }],
+              });
             } catch (err) {
               setLoading(false);
             }
