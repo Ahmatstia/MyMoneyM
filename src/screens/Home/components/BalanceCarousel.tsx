@@ -1,16 +1,4 @@
-/**
- * BalanceCarousel — "AURORA GLASS" Edition
- * ─────────────────────────────────────────────────────────────────────────────
- * Design language:
- *   • Aurora nebula background: 4 layered translucent glow orbs per slide
- *   • Gradient border ring via outer wrapper (no BorderImage hack)
- *   • Abstract decorative rings cut by overflow:hidden
- *   • Neon accent typography, glowing badges
- *   • Diagonal slash accent line (Slide 1)
- *   • Pill-shaped animated pagination dots with gradient color
- */
-
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -19,29 +7,66 @@ import Animated, {
   interpolate,
   Extrapolation,
   SharedValue,
+  withTiming,
+  withDelay,
+  Easing,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { formatCurrency, safeNumber } from "../../../utils/calculations";
-import { Colors } from "../../../theme/theme";
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH  = SCREEN_WIDTH - 32;
+const CARD_WIDTH = SCREEN_WIDTH - 32;
 const CARD_HEIGHT = 210;
-const CARD_RADIUS = 26;
-const BORDER_WIDTH = 1.5;
-
-const C_SUCCESS  = "#22D3A0";   // neon emerald
-const C_ERROR    = "#FF5F7E";   // neon rose
-const C_WARNING  = "#FFBA3B";   // neon amber
-const C_ACCENT   = "#7C6FF7";   // electric violet
-const C_CYAN     = "#22D3EE";   // neon cyan
-const C_PINK     = "#EC4899";   // neon pink
-
+const CARD_RADIUS = 28;
+const BORDER_W = 1.5;
 const SLIDE_COUNT = 3;
 
-// ─── Interfaces ────────────────────────────────────────────────────────────────
+// ─── GoPay-Inspired Color Palette ───────────────────────────────────────────────
+const G_TEXT = "#FFFFFF";
+const G_DIM = "#A0AEC0";
+const G_GREEN_PRIMARY = "#00D84A";
+const G_GREEN_DARK = "#00B341";
+const G_GREEN_DEEP = "#007A2F";
+const G_SUCCESS = "#00ED64";
+const G_ERROR = "#FF4D6A";
+const G_WARNING = "#FFB84D";
+const G_GOLD = "#F5A623";
+
+// ─── Per-slide identity ─────────────────────────────────────────────────────────
+// Each slide has distinct chromatic personality
+const SLIDE_THEMES = [
+  {
+    // Slide 1 — Saldo Utama (GoPay Green)
+    accent: G_GREEN_PRIMARY,
+    gradientStart: "#001A08",
+    gradientEnd: "#0A2E15",
+    glowColor: G_GREEN_PRIMARY,
+    accentDark: G_GREEN_DARK,
+    accentDeep: G_GREEN_DEEP,
+  },
+  {
+    // Slide 2 — Aktivitas (Gold/Amber)
+    accent: G_GOLD,
+    gradientStart: "#1A1100",
+    gradientEnd: "#2A1C05",
+    glowColor: G_GOLD,
+    accentDark: "#D4890A",
+    accentDeep: "#8B5E00",
+  },
+  {
+    // Slide 3 — Proyeksi (Violet/Teal)
+    accent: "#00D4AA",
+    gradientStart: "#001A14",
+    gradientEnd: "#052E24",
+    glowColor: "#00D4AA",
+    accentDark: "#00B894",
+    accentDeep: "#006B56",
+  },
+];
+
+// ─── Interface ──────────────────────────────────────────────────────────────────
 interface BalanceCarouselProps {
   hasFinancialData: boolean;
   balance: number;
@@ -53,578 +78,1052 @@ interface BalanceCarouselProps {
   openingBalance: number;
 }
 
-// ─── Utility: neon pill badge ──────────────────────────────────────────────────
-const NeonBadge = ({
+// ─── Counting Number Component ──────────────────────────────────────────────────
+const AnimatedNumber = ({
+  value,
+  style,
+  duration = 800,
+}: {
+  value: string;
+  style?: any;
+  duration?: number;
+}) => {
+  const animVal = useSharedValue(0);
+
+  useEffect(() => {
+    animVal.value = withTiming(1, {
+      duration,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [value]);
+
+  return (
+    <Animated.Text
+      style={[
+        {
+          color: G_TEXT,
+          fontSize: 26,
+          fontWeight: "800",
+          letterSpacing: -1,
+          lineHeight: 32,
+        },
+        style,
+      ]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+    >
+      {value}
+    </Animated.Text>
+  );
+};
+
+// ─── Glass Chip ─────────────────────────────────────────────────────────────────
+const GlassChip = ({
+  icon,
   label,
   color,
-  icon,
+  compact = false,
 }: {
+  icon: string;
   label: string;
   color: string;
-  icon?: string;
+  compact?: boolean;
 }) => (
   <View
     style={{
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 9,
-      paddingVertical: 4,
-      borderRadius: 99,
-      backgroundColor: `${color}18`,
+      paddingHorizontal: compact ? 8 : 12,
+      paddingVertical: compact ? 4 : 6,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.08)",
       borderWidth: 1,
-      borderColor: `${color}45`,
+      borderColor: "rgba(255,255,255,0.12)",
+      alignSelf: "flex-start",
     }}
   >
-    {icon && (
-      <Ionicons name={icon as any} size={9} color={color} style={{ marginRight: 4 }} />
-    )}
-    <Text style={{ color, fontSize: 9, fontWeight: "800", letterSpacing: 0.6 }}>
+    <Ionicons
+      name={icon as any}
+      size={compact ? 10 : 12}
+      color={color}
+      style={{ marginRight: 4 }}
+    />
+    <Text
+      style={{
+        color,
+        fontSize: compact ? 9 : 10,
+        fontWeight: "700",
+        letterSpacing: 0.3,
+      }}
+    >
       {label}
     </Text>
   </View>
 );
 
-// ─── Utility: glowing horizontal bar ──────────────────────────────────────────
-const GlowBar = ({
-  percent,
+// ─── Decorative Glow Orbs ───────────────────────────────────────────────────────
+const GlowOrb = ({
   color,
-  height = 3,
+  size = 120,
+  top,
+  right,
+  bottom,
+  left,
+  opacity = 0.15,
 }: {
-  percent: number;
   color: string;
-  height?: number;
-}) => {
-  const pct = Math.max(0, Math.min(percent, 100));
-  return (
-    <View
-      style={{
-        height,
-        backgroundColor: "rgba(255,255,255,0.06)",
-        borderRadius: height,
-        overflow: "hidden",
-      }}
-    >
-      <LinearGradient
-        colors={[color, `${color}AA`]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          height,
-          borderRadius: height,
-          width: `${pct}%`,
-          shadowColor: color,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.8,
-          shadowRadius: 6,
-        }}
-      />
-    </View>
-  );
-};
-
-// ─── Aurora Card Shell ─────────────────────────────────────────────────────────
-// Outer wrapper creates the gradient-border illusion.
-// Inner card has the dark background + glow orbs + content.
-const AuroraCard = ({
-  children,
-  gradientBorder,
-  orb1Color = C_ACCENT,
-  orb2Color = C_CYAN,
-  orb3Color,
-  orb4Color,
-}: {
-  children: React.ReactNode;
-  gradientBorder: readonly [string, string, ...string[]];
-  orb1Color?: string;
-  orb2Color?: string;
-  orb3Color?: string;
-  orb4Color?: string;
+  size?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+  opacity?: number;
 }) => (
-  /* Gradient border wrapper */
-  <LinearGradient
-    colors={gradientBorder}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
+  <View
     style={{
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT,
-      borderRadius: CARD_RADIUS + BORDER_WIDTH,
-      padding: BORDER_WIDTH,
+      position: "absolute",
+      top,
+      right,
+      bottom,
+      left,
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      backgroundColor: color,
+      opacity,
+      overflow: "hidden",
     }}
   >
-    {/* Dark inner card */}
-    <View
-      style={{
-        flex: 1,
-        borderRadius: CARD_RADIUS,
-        overflow: "hidden",
-        backgroundColor: "#070D1A",
-      }}
-    >
-      {/* Aurora background gradient */}
-      <LinearGradient
-        colors={["#0A1428", "#060E1E", "#060A16"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ position: "absolute", inset: 0 } as any}
-      />
-
-      {/* Glow orb — top right (large) */}
-      <View
-        style={{
-          position: "absolute",
-          top: -50,
-          right: -50,
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: `${orb1Color}12`,
-        }}
-      />
-      {/* Glow orb — bottom left (medium) */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: -40,
-          left: -30,
-          width: 160,
-          height: 160,
-          borderRadius: 80,
-          backgroundColor: `${orb2Color}0E`,
-        }}
-      />
-      {/* Glow orb — top left (tiny accent) */}
-      {orb3Color && (
-        <View
-          style={{
-            position: "absolute",
-            top: 20,
-            left: -20,
-            width: 90,
-            height: 90,
-            borderRadius: 45,
-            backgroundColor: `${orb3Color}09`,
-          }}
-        />
-      )}
-      {/* Glow orb — bottom right (tiny accent) */}
-      {orb4Color && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 10,
-            right: 10,
-            width: 70,
-            height: 70,
-            borderRadius: 35,
-            backgroundColor: `${orb4Color}0A`,
-          }}
-        />
-      )}
-
-      {/* Abstract decorative ring — top right */}
-      <View
-        style={{
-          position: "absolute",
-          top: -38,
-          right: -38,
-          width: 140,
-          height: 140,
-          borderRadius: 70,
-          borderWidth: 1.5,
-          borderColor: `${orb1Color}20`,
-        }}
-      />
-      {/* Abstract decorative ring — smaller inside */}
-      <View
-        style={{
-          position: "absolute",
-          top: -12,
-          right: -12,
-          width: 88,
-          height: 88,
-          borderRadius: 44,
-          borderWidth: 1,
-          borderColor: `${orb1Color}14`,
-        }}
-      />
-
-      {/* Content layer */}
-      <View style={{ flex: 1, padding: 20 }}>{children}</View>
-    </View>
-  </LinearGradient>
+    <LinearGradient
+      colors={[color, "transparent"]}
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+    />
+  </View>
 );
 
-// ─── Slide 1 — Total Saldo ─────────────────────────────────────────────────────
-const Slide1 = (props: BalanceCarouselProps) => {
-  const total = props.filteredIncome + props.filteredExpense;
-  const incomePercent = total > 0 ? (props.filteredIncome / total) * 100 : 0;
-  const isPositive = props.filteredPeriodNetto >= 0;
-  const netColor = isPositive ? C_SUCCESS : C_ERROR;
-
+// ─── ChromaCard — Premium sliding card ──────────────────────────────────────────
+const ChromaCard = ({
+  slideIndex,
+  children,
+}: {
+  slideIndex: number;
+  children: React.ReactNode;
+}) => {
+  const t = SLIDE_THEMES[slideIndex];
   return (
-    <AuroraCard
-      gradientBorder={[`${C_ACCENT}80`, `${C_CYAN}40`, `${C_PINK}30`, `${C_ACCENT}60`]}
-      orb1Color={C_ACCENT}
-      orb2Color={C_CYAN}
-      orb3Color={C_PINK}
-      orb4Color={C_SUCCESS}
+    <LinearGradient
+      colors={[t.gradientStart, t.gradientEnd, "#060D0A"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1.2, y: 1 }}
+      style={{
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        borderRadius: CARD_RADIUS + BORDER_W,
+        padding: BORDER_W,
+      }}
     >
-      <View style={{ flex: 1, justifyContent: "space-between" }}>
+      {/* Inner surface */}
+      <View
+        style={{
+          flex: 1,
+          borderRadius: CARD_RADIUS,
+          overflow: "hidden",
+          backgroundColor: "rgba(6,13,10,0.6)",
+        }}
+      >
+        {/* Glow orbs */}
+        <GlowOrb
+          color={t.glowColor}
+          size={160}
+          top={-60}
+          right={-50}
+          opacity={0.12}
+        />
+        <GlowOrb
+          color={t.glowColor}
+          size={100}
+          bottom={-20}
+          left={-30}
+          opacity={0.08}
+        />
 
-        {/* ── Top row ── */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* Glowing dot */}
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: C_ACCENT,
-                marginRight: 7,
-                shadowColor: C_ACCENT,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 1,
-                shadowRadius: 4,
-              }}
-            />
-            <Text style={{
-              color: "rgba(148,163,184,0.6)",
-              fontSize: 9,
-              fontWeight: "700",
-              letterSpacing: 2,
-              textTransform: "uppercase",
-            }}>
-              {props.hasFinancialData ? "Total Saldo" : "Selamat Datang"}
-            </Text>
-          </View>
+        {/* Top accent line */}
+        <LinearGradient
+          colors={[`${t.accent}00`, t.accent, `${t.accent}00`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: CARD_RADIUS / 2,
+            right: CARD_RADIUS / 2,
+            height: 1.5,
+          }}
+        />
 
-          {props.hasFinancialData && props.filteredPeriodNetto !== 0 && (
-            <NeonBadge
-              label={isPositive
-                ? `▲ ${formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}`
-                : `▼ ${formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}`
-              }
-              color={netColor}
-            />
-          )}
-        </View>
+        {/* Decorative circular ring */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: -40,
+            right: -40,
+            width: 140,
+            height: 140,
+            borderRadius: 70,
+            borderWidth: 1,
+            borderColor: `${t.accent}10`,
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            bottom: -16,
+            right: -16,
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            borderWidth: 1,
+            borderColor: `${t.accent}18`,
+          }}
+        />
 
-        {/* ── Hero Balance ── */}
-        <View>
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 34,
-              fontWeight: "900",
-              letterSpacing: -1,
-              lineHeight: 42,
-              textShadowColor: `${C_ACCENT}60`,
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 16,
-            }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            {props.hasFinancialData
-              ? formatCurrency(safeNumber(props.balance))
-              : "Rp 0"}
-          </Text>
-          {props.timeFilter !== "all" && props.openingBalance !== 0 && (
-            <Text style={{ color: "rgba(148,163,184,0.35)", fontSize: 9, fontStyle: "italic", marginTop: 3 }}>
-              * termasuk saldo awal {formatCurrency(props.openingBalance)}
-            </Text>
-          )}
-          {!props.hasFinancialData && (
-            <Text style={{ color: "rgba(148,163,184,0.4)", fontSize: 10, marginTop: 4 }}>
-              Mulai catat transaksi pertamamu →
-            </Text>
-          )}
-        </View>
-
-        {/* ── Flow bars ── */}
-        {props.hasFinancialData && total > 0 ? (
-          <View>
-            {/* Dual bar track */}
-            <View style={{ height: 3, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden", flexDirection: "row" }}>
-              {/* Income portion */}
-              <View style={{ flex: incomePercent, backgroundColor: C_SUCCESS, borderRadius: 3 }} />
-              {/* Expense portion */}
-              <View style={{ flex: 100 - incomePercent, backgroundColor: C_ERROR, opacity: 0.6 }} />
-            </View>
-
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-              {/* Income label */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C_SUCCESS, marginRight: 6,
-                  shadowColor: C_SUCCESS, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 3 }} />
-                <View>
-                  <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 8, letterSpacing: 1, textTransform: "uppercase" }}>Masuk</Text>
-                  <Text style={{ color: C_SUCCESS, fontSize: 11, fontWeight: "700" }}>
-                    +{formatCurrency(safeNumber(props.filteredIncome))}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Expense label */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View>
-                  <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 8, letterSpacing: 1, textTransform: "uppercase", textAlign: "right" }}>Keluar</Text>
-                  <Text style={{ color: C_ERROR, fontSize: 11, fontWeight: "700", textAlign: "right" }}>
-                    -{formatCurrency(safeNumber(props.filteredExpense))}
-                  </Text>
-                </View>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C_ERROR, marginLeft: 6,
-                  shadowColor: C_ERROR, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 3 }} />
-              </View>
-            </View>
-          </View>
-        ) : (
-          <View style={{ height: 28 }} />
-        )}
+        {/* Content layer */}
+        <View style={{ flex: 1, padding: 20 }}>{children}</View>
       </View>
-    </AuroraCard>
+    </LinearGradient>
   );
 };
 
-// ─── Slide 2 — Aktivitas ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// SLIDE 1 — Saldo Utama (GoPay Style)
+// Hero: Big balance number, action buttons, glow effects
+// ─────────────────────────────────────────────────────────────────────────────────
+const Slide1 = (props: BalanceCarouselProps) => {
+  const t = SLIDE_THEMES[0];
+  const isPositive = props.filteredPeriodNetto >= 0;
+  const netColor = isPositive ? G_SUCCESS : G_ERROR;
+
+  // Calculate percentage change (dummy example — in real app this could be from props)
+  const hasChange = props.hasFinancialData && props.filteredPeriodNetto !== 0;
+
+  const periodLabel =
+    props.timeFilter === "all"
+      ? "Seluruh riwayat"
+      : props.timeFilter === "monthly"
+        ? "Bulan ini"
+        : props.timeFilter === "weekly"
+          ? "Minggu ini"
+          : props.timeFilter === "yearly"
+            ? "Tahun ini"
+            : props.timeFilter;
+
+  return (
+    <ChromaCard slideIndex={0}>
+      <View style={{ flex: 1, justifyContent: "space-between" }}>
+        {/* ── Row 1: Brand + Status ── */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* GoPay-style icon badge */}
+            <LinearGradient
+              colors={[t.accent, t.accentDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 8,
+              }}
+            >
+              <Ionicons name="wallet" size={13} color="#001A08" />
+            </LinearGradient>
+            <View>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 8,
+                  fontWeight: "600",
+                  letterSpacing: 1.2,
+                  textTransform: "uppercase",
+                }}
+              >
+                {props.hasFinancialData ? "Total Saldo" : "My Money"}
+              </Text>
+              {props.hasFinancialData && (
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.3)",
+                    fontSize: 8,
+                    marginTop: 1,
+                  }}
+                >
+                  Akun Utama
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {/* Change indicator chip */}
+          {hasChange && (
+            <GlassChip
+              icon={isPositive ? "trending-up" : "trending-down"}
+              label={`${isPositive ? "+" : "-"}${formatCurrency(
+                safeNumber(Math.abs(props.filteredPeriodNetto)),
+              )}`}
+              color={netColor}
+              compact
+            />
+          )}
+        </View>
+
+        {/* ── Row 2: Hero Balance Number ── */}
+        <View style={{ marginTop: 2 }}>
+          {!props.hasFinancialData && (
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 10,
+                marginBottom: 4,
+              }}
+            >
+              Mulai catat transaksi pertamamu
+            </Text>
+          )}
+          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+            <AnimatedNumber
+              value={
+                props.hasFinancialData
+                  ? formatCurrency(Math.abs(safeNumber(props.balance)))
+                  : "Rp 0"
+              }
+              duration={1000}
+              style={{
+                color:
+                  props.hasFinancialData && props.balance < 0
+                    ? G_ERROR
+                    : G_TEXT,
+              }}
+            />
+            {/* Small decorative indicator */}
+            {hasChange && (
+              <View
+                style={{
+                  marginLeft: 8,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: netColor,
+                  opacity: 0.6,
+                }}
+              />
+            )}
+          </View>
+
+          {/* Subtle opening balance info */}
+          {props.timeFilter !== "all" && props.openingBalance !== 0 && (
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.3)",
+                fontSize: 7,
+                marginTop: 1,
+              }}
+            >
+              Termasuk saldo awal {formatCurrency(props.openingBalance)}
+            </Text>
+          )}
+        </View>
+
+        {/* ── Row 2.5: Mini period stat cards ── */}
+        {props.hasFinancialData && (
+          <View style={{ flexDirection: "row", gap: 6, marginVertical: 2 }}>
+            {/* Income mini card */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: `${G_SUCCESS}12`,
+                borderRadius: 10,
+                paddingHorizontal: 8,
+                paddingVertical: 6,
+                borderWidth: 1,
+                borderColor: `${G_SUCCESS}18`,
+              }}
+            >
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 7,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
+                  marginBottom: 1,
+                }}
+              >
+                Masuk
+              </Text>
+              <Text
+                style={{
+                  color: G_TEXT,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: -0.3,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {formatCurrency(safeNumber(props.filteredIncome))}
+              </Text>
+            </View>
+
+            {/* Expense mini card */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: `${G_ERROR}12`,
+                borderRadius: 10,
+                paddingHorizontal: 8,
+                paddingVertical: 6,
+                borderWidth: 1,
+                borderColor: `${G_ERROR}18`,
+              }}
+            >
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 7,
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
+                  marginBottom: 1,
+                }}
+              >
+                Keluar
+              </Text>
+              <Text
+                style={{
+                  color: G_TEXT,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: -0.3,
+                }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {formatCurrency(safeNumber(props.filteredExpense))}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── Row 3: Period indicator ── */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingTop: 6,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.06)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="calendar-outline"
+              size={8}
+              color="rgba(255,255,255,0.3)"
+              style={{ marginRight: 4 }}
+            />
+            <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 7 }}>
+              {props.hasFinancialData ? periodLabel : "Belum ada transaksi"}
+            </Text>
+          </View>
+          <Text
+            style={{
+              color: `${t.accent}60`,
+              fontSize: 7,
+              fontWeight: "600",
+            }}
+          >
+            Geser →
+          </Text>
+        </View>
+      </View>
+    </ChromaCard>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────────
+// SLIDE 2 — Cash Flow Activity (Gold/Amber theme)
+// Hero: Income vs Expense with animated thick bars
+// ─────────────────────────────────────────────────────────────────────────────────
 const Slide2 = (props: BalanceCarouselProps) => {
   const total = props.filteredIncome + props.filteredExpense;
   const incomeRatio = total > 0 ? (props.filteredIncome / total) * 100 : 0;
   const expenseRatio = total > 0 ? (props.filteredExpense / total) * 100 : 0;
   const isPositive = props.filteredPeriodNetto >= 0;
-  const netColor = isPositive ? C_SUCCESS : C_ERROR;
+  const netColor = isPositive ? G_SUCCESS : G_ERROR;
+  const t = SLIDE_THEMES[1];
+
+  const incomeBarWidth = useSharedValue(0);
+  const expenseBarWidth = useSharedValue(0);
+
+  useEffect(() => {
+    incomeBarWidth.value = withDelay(
+      200,
+      withTiming(incomeRatio, {
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+    expenseBarWidth.value = withDelay(
+      400,
+      withTiming(expenseRatio, {
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [incomeRatio, expenseRatio]);
+
+  const incomeAnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(incomeBarWidth.value, 1)}%`,
+  }));
+  const expenseAnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(expenseBarWidth.value, 1)}%`,
+  }));
 
   return (
-    <AuroraCard
-      gradientBorder={isPositive
-        ? [`${C_SUCCESS}70`, `${C_CYAN}30`, `${C_ACCENT}40`, `${C_SUCCESS}50`]
-        : [`${C_ERROR}70`, `${C_PINK}30`, `${C_ACCENT}40`, `${C_ERROR}50`]}
-      orb1Color={isPositive ? C_SUCCESS : C_ERROR}
-      orb2Color={C_ACCENT}
-      orb3Color={isPositive ? C_CYAN : C_PINK}
-      orb4Color={C_WARNING}
-    >
+    <ChromaCard slideIndex={1}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-
         {/* ── Header ── */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: netColor, marginRight: 7,
-              shadowColor: netColor, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 4 }} />
-            <Text style={{ color: "rgba(148,163,184,0.6)", fontSize: 9, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase" }}>
-              Aktivitas · {props.timeFilter === "all" ? "Semua Data" : "Periode Ini"}
-            </Text>
+            <LinearGradient
+              colors={[t.accent, t.accentDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 10,
+              }}
+            >
+              <Ionicons name="pulse" size={16} color="#1A1100" />
+            </LinearGradient>
+            <View>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 9,
+                  fontWeight: "600",
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                }}
+              >
+                Aktivitas
+              </Text>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.3)",
+                  fontSize: 7,
+                  marginTop: 1,
+                }}
+              >
+                {props.timeFilter === "all" ? "Semua riwayat" : "Periode ini"}
+              </Text>
+            </View>
           </View>
-          <NeonBadge
+          <GlassChip
+            icon={isPositive ? "arrow-up" : "arrow-down"}
             label={isPositive ? "Surplus" : "Defisit"}
             color={netColor}
-            icon={isPositive ? "trending-up" : "trending-down"}
           />
         </View>
 
-        {/* ── Income row ── */}
+        {/* ── Income Bar ── */}
         <View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 6,
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{
-                width: 26, height: 26, borderRadius: 9,
-                backgroundColor: "rgba(34,211,160,0.14)",
-                alignItems: "center", justifyContent: "center", marginRight: 9,
-                borderWidth: 1, borderColor: `${C_SUCCESS}30`,
-              }}>
-                <Ionicons name="arrow-down" size={12} color={C_SUCCESS} />
-              </View>
-              <Text style={{ color: "rgba(203,213,225,0.75)", fontSize: 12, fontWeight: "600" }}>Pemasukan</Text>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: G_SUCCESS,
+                  marginRight: 8,
+                }}
+              />
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: 11,
+                  fontWeight: "500",
+                }}
+              >
+                Pemasukan
+              </Text>
             </View>
-            <Text style={{ color: C_SUCCESS, fontSize: 15, fontWeight: "800",
-              textShadowColor: `${C_SUCCESS}50`, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }}>
-              +{formatCurrency(safeNumber(props.filteredIncome))}
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 15,
+                fontWeight: "700",
+                letterSpacing: -0.3,
+              }}
+            >
+              {formatCurrency(safeNumber(props.filteredIncome))}
             </Text>
           </View>
-          <GlowBar percent={incomeRatio} color={C_SUCCESS} height={3} />
+          <View
+            style={{
+              height: 10,
+              backgroundColor: "rgba(255,255,255,0.06)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <Animated.View
+              style={[
+                {
+                  height: 10,
+                  borderRadius: 6,
+                  backgroundColor: G_SUCCESS,
+                },
+                incomeAnimStyle,
+              ]}
+            />
+          </View>
         </View>
 
-        {/* ── Expense row ── */}
+        {/* ── Expense Bar ── */}
         <View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 6,
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{
-                width: 26, height: 26, borderRadius: 9,
-                backgroundColor: "rgba(255,95,126,0.14)",
-                alignItems: "center", justifyContent: "center", marginRight: 9,
-                borderWidth: 1, borderColor: `${C_ERROR}30`,
-              }}>
-                <Ionicons name="arrow-up" size={12} color={C_ERROR} />
-              </View>
-              <Text style={{ color: "rgba(203,213,225,0.75)", fontSize: 12, fontWeight: "600" }}>Pengeluaran</Text>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: G_ERROR,
+                  marginRight: 8,
+                }}
+              />
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: 11,
+                  fontWeight: "500",
+                }}
+              >
+                Pengeluaran
+              </Text>
             </View>
-            <Text style={{ color: C_ERROR, fontSize: 15, fontWeight: "800",
-              textShadowColor: `${C_ERROR}50`, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 }}>
-              −{formatCurrency(safeNumber(props.filteredExpense))}
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 15,
+                fontWeight: "700",
+                letterSpacing: -0.3,
+              }}
+            >
+              {formatCurrency(safeNumber(props.filteredExpense))}
             </Text>
           </View>
-          <GlowBar percent={expenseRatio} color={C_ERROR} height={3} />
+          <View
+            style={{
+              height: 10,
+              backgroundColor: "rgba(255,255,255,0.06)",
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            <Animated.View
+              style={[
+                {
+                  height: 10,
+                  borderRadius: 6,
+                  backgroundColor: G_ERROR,
+                },
+                expenseAnimStyle,
+              ]}
+            />
+          </View>
         </View>
 
-        {/* ── Net footer ── */}
-        <View style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingTop: 10,
-          borderTopWidth: 1,
-          borderTopColor: "rgba(255,255,255,0.05)",
-        }}>
-          <Text style={{ color: "rgba(148,163,184,0.4)", fontSize: 9, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase" }}>
-            Net Periode
+        {/* ── Net Kas Footer ── */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: `${netColor}15`,
+            borderRadius: 14,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderWidth: 1,
+            borderColor: `${netColor}25`,
+          }}
+        >
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              fontSize: 9,
+              fontWeight: "700",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+            }}
+          >
+            Net Kas
           </Text>
-          <Text style={{
-            color: netColor,
-            fontSize: 18,
-            fontWeight: "900",
-            letterSpacing: -0.5,
-            textShadowColor: `${netColor}60`,
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 12,
-          }}>
+          <Text
+            style={{
+              color: netColor,
+              fontSize: 18,
+              fontWeight: "800",
+              letterSpacing: -0.5,
+            }}
+          >
             {props.filteredPeriodNetto > 0 ? "+" : ""}
             {formatCurrency(safeNumber(props.filteredPeriodNetto))}
           </Text>
         </View>
       </View>
-    </AuroraCard>
+    </ChromaCard>
   );
 };
 
-// ─── Slide 3 — Proyeksi ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────────
+// SLIDE 3 — Proyeksi & Insight (Teal theme)
+// Hero: Circular gauge + glass pills for projection
+// ─────────────────────────────────────────────────────────────────────────────────
 const Slide3 = (props: BalanceCarouselProps) => {
   const projStatus = props.projectionData?.status;
   const statusColor =
-    projStatus === "surplus" ? C_SUCCESS :
-    projStatus === "warning" ? C_WARNING :
-    C_ERROR;
+    projStatus === "surplus"
+      ? G_SUCCESS
+      : projStatus === "warning"
+        ? G_WARNING
+        : G_ERROR;
   const statusLabel =
-    projStatus === "surplus" ? "On Track" :
-    projStatus === "warning" ? "Hati-hati" :
-    "Waspada";
+    projStatus === "surplus"
+      ? "Aman"
+      : projStatus === "warning"
+        ? "Hati-hati"
+        : "Waspada";
+  const statusIcon =
+    projStatus === "surplus"
+      ? "shield-checkmark"
+      : projStatus === "warning"
+        ? "warning"
+        : "alert-circle";
 
   const netColor =
-    props.filteredPeriodNetto > 0 ? C_SUCCESS :
-    props.filteredPeriodNetto < 0 ? C_ERROR :
-    "rgba(148,163,184,0.8)";
-
+    props.filteredPeriodNetto > 0
+      ? G_SUCCESS
+      : props.filteredPeriodNetto < 0
+        ? G_ERROR
+        : G_DIM;
   const projBalColor =
-    props.projectionData?.projectedBalance >= 0 ? C_SUCCESS : C_ERROR;
+    (props.projectionData?.projectedBalance ?? 0) >= 0 ? G_SUCCESS : G_ERROR;
+  const progressPct = Math.max(
+    0,
+    Math.min(safeNumber(props.projectionData?.progress ?? 0), 100),
+  );
+  const t = SLIDE_THEMES[2];
 
-  const progressPct = Math.max(0, Math.min(safeNumber(props.projectionData?.progress ?? 0), 100));
+  // Animated gauge
+  const gaugeValue = useSharedValue(0);
+  useEffect(() => {
+    gaugeValue.value = withDelay(
+      300,
+      withTiming(progressPct, {
+        duration: 1000,
+        easing: Easing.out(Easing.cubic),
+      }),
+    );
+  }, [progressPct]);
+
+  const gaugeAnimStyle = useAnimatedStyle(() => {
+    const clampedWidth = Math.max(gaugeValue.value, 2);
+    return {
+      width: `${clampedWidth}%`,
+    };
+  });
 
   return (
-    <AuroraCard
-      gradientBorder={[`${C_CYAN}60`, `${C_ACCENT}50`, `${statusColor}40`, `${C_CYAN}40`]}
-      orb1Color={C_CYAN}
-      orb2Color={statusColor}
-      orb3Color={C_ACCENT}
-      orb4Color={C_PINK}
-    >
+    <ChromaCard slideIndex={2}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-
         {/* ── Header ── */}
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C_CYAN, marginRight: 7,
-              shadowColor: C_CYAN, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 1, shadowRadius: 4 }} />
-            <Text style={{ color: "rgba(148,163,184,0.6)", fontSize: 9, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase" }}>
-              {props.timeFilter === "all" ? "Ringkasan Saldo" : "Proyeksi Periode"}
-            </Text>
+            <LinearGradient
+              colors={[t.accent, t.accentDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 10,
+              }}
+            >
+              <Ionicons name="compass" size={16} color="#001A14" />
+            </LinearGradient>
+            <View>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 9,
+                  fontWeight: "600",
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                }}
+              >
+                {props.timeFilter === "all" ? "Ringkasan" : "Proyeksi"}
+              </Text>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.3)",
+                  fontSize: 8,
+                  marginTop: 1,
+                }}
+              >
+                Estimasi keuangan
+              </Text>
+            </View>
           </View>
           {props.projectionData && (
-            <NeonBadge
+            <GlassChip
+              icon={statusIcon}
               label={statusLabel}
               color={statusColor}
-              icon={projStatus === "surplus" ? "checkmark-circle" : projStatus === "warning" ? "alert-circle" : "close-circle"}
             />
           )}
         </View>
 
-        {/* ── Hero net cashflow ── */}
+        {/* ── Hero Net Cashflow ── */}
         <View>
-          <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 9, marginBottom: 3, letterSpacing: 1, textTransform: "uppercase" }}>
-            {props.timeFilter === "all" ? "Sisa Saldo" : "Arus Kas Bersih"}
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.35)",
+              fontSize: 10,
+              letterSpacing: 0.8,
+              marginBottom: 2,
+              textTransform: "uppercase",
+            }}
+          >
+            {props.timeFilter === "all" ? "Saldo Netto" : "Arus Kas"}
           </Text>
-          <Text style={{
-            color: netColor,
-            fontSize: 30,
-            fontWeight: "900",
-            letterSpacing: -0.8,
-            textShadowColor: `${netColor}50`,
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 14,
-          }}>
-            {props.filteredPeriodNetto > 0 ? "+" : ""}
-            {formatCurrency(safeNumber(props.filteredPeriodNetto))}
-          </Text>
+          <AnimatedNumber
+            value={`${props.filteredPeriodNetto > 0 ? "+" : ""}${formatCurrency(
+              safeNumber(props.filteredPeriodNetto),
+            )}`}
+            duration={1000}
+            style={{ color: netColor, fontSize: 28, lineHeight: 36 }}
+          />
         </View>
 
-        {/* ── Progress + Projection details ── */}
+        {/* ── Gauge Bar + Detail Pills ── */}
         {props.hasFinancialData && props.projectionData ? (
           <View>
-            {/* Gradient progress track */}
-            <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden", marginBottom: 10 }}>
-              <LinearGradient
-                colors={
-                  projStatus === "surplus" ? [C_SUCCESS, "#34D399"] :
-                  projStatus === "warning" ? [C_WARNING, "#FCD34D"] :
-                  [C_ERROR, "#FB7185"]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ height: 4, borderRadius: 4, width: `${progressPct}%` }}
-              />
+            {/* Animated gauge */}
+            <View style={{ marginBottom: 10 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 5,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.4)",
+                    fontSize: 8,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Periode berjalan
+                </Text>
+                <Text
+                  style={{
+                    color: t.accent,
+                    fontSize: 11,
+                    fontWeight: "700",
+                  }}
+                >
+                  {Math.round(progressPct)}%
+                </Text>
+              </View>
+              <View
+                style={{
+                  height: 6,
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                }}
+              >
+                <Animated.View
+                  style={[
+                    {
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: statusColor,
+                    },
+                    gaugeAnimStyle,
+                  ]}
+                />
+              </View>
             </View>
 
-            {/* Projection row */}
+            {/* Detail pills */}
             {props.projectionData.daysRemaining > 0 && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-                <View>
-                  <Text style={{ color: "rgba(148,163,184,0.5)", fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 2 }}>
-                    Proyeksi {props.projectionData.label}
-                  </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons name="time-outline" size={10} color="rgba(148,163,184,0.35)" style={{ marginRight: 4 }} />
-                    <Text style={{ color: "rgba(148,163,184,0.35)", fontSize: 10 }}>
-                      {props.projectionData.daysRemaining} hari tersisa
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.08)",
+                    padding: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="time-outline"
+                      size={11}
+                      color={t.accent}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.4)",
+                        fontSize: 8,
+                        fontWeight: "600",
+                        letterSpacing: 0.8,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Tersisa
                     </Text>
                   </View>
-                </View>
-
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{
-                    color: projBalColor,
-                    fontSize: 16,
-                    fontWeight: "800",
-                    textShadowColor: `${projBalColor}50`,
-                    textShadowOffset: { width: 0, height: 0 },
-                    textShadowRadius: 8,
-                  }}>
-                    {props.projectionData.projectedBalance >= 0 ? "+" : ""}
-                    {formatCurrency(safeNumber(props.projectionData.projectedBalance))}
+                  <Text
+                    style={{
+                      color: G_TEXT,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {props.projectionData.daysRemaining} hari
                   </Text>
-                  <Text style={{ color: "rgba(148,163,184,0.3)", fontSize: 9 }}>Estimasi akhir periode</Text>
+                </View>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(255,255,255,0.04)",
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.08)",
+                    padding: 12,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="calculator-outline"
+                      size={11}
+                      color={projBalColor}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.4)",
+                        fontSize: 8,
+                        fontWeight: "600",
+                        letterSpacing: 0.8,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Est. Saldo
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      color: projBalColor,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {(props.projectionData.projectedBalance ?? 0) >= 0
+                      ? "+"
+                      : ""}
+                    {formatCurrency(
+                      safeNumber(props.projectionData.projectedBalance),
+                    )}
+                  </Text>
                 </View>
               </View>
             )}
           </View>
         ) : (
-          <View style={{ height: 36 }} />
+          <View style={{ height: 40 }} />
         )}
       </View>
-    </AuroraCard>
+    </ChromaCard>
   );
 };
 
-// ─── CarouselItem ──────────────────────────────────────────────────────────────
+// ─── CarouselItem ────────────────────────────────────────────────────────────────
 const CarouselItem = ({
   index,
   scrollX,
@@ -643,22 +1142,25 @@ const CarouselItem = ({
     const scale = interpolate(
       scrollX.value,
       inputRange,
-      [0.88, 1, 0.88],
-      Extrapolation.CLAMP
+      [0.9, 1, 0.9],
+      Extrapolation.CLAMP,
     );
     const opacity = interpolate(
       scrollX.value,
       inputRange,
       [0.4, 1, 0.4],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const translateY = interpolate(
       scrollX.value,
       inputRange,
-      [8, 0, 8],
-      Extrapolation.CLAMP
+      [15, 0, 15],
+      Extrapolation.CLAMP,
     );
-    return { transform: [{ scale }, { translateY }], opacity };
+    return {
+      transform: [{ scale }, { translateY }],
+      opacity,
+    };
   });
 
   return (
@@ -672,7 +1174,7 @@ const CarouselItem = ({
   );
 };
 
-// ─── PaginationDot — animated pill with glow ──────────────────────────────────
+// ─── PaginationDot — color-coded per slide ───────────────────────────────────────
 const PaginationDot = ({
   index,
   scrollX,
@@ -680,8 +1182,7 @@ const PaginationDot = ({
   index: number;
   scrollX: SharedValue<number>;
 }) => {
-  const SLIDE_COLORS = [C_ACCENT, C_SUCCESS, C_CYAN];
-  const color = SLIDE_COLORS[index] ?? C_ACCENT;
+  const accent = SLIDE_THEMES[index].accent;
 
   const dotStyle = useAnimatedStyle(() => {
     const inputRange = [
@@ -692,30 +1193,31 @@ const PaginationDot = ({
     const width = interpolate(
       scrollX.value,
       inputRange,
-      [5, 22, 5],
-      Extrapolation.CLAMP
+      [6, 28, 6],
+      Extrapolation.CLAMP,
     );
     const opacity = interpolate(
       scrollX.value,
       inputRange,
-      [0.2, 1, 0.2],
-      Extrapolation.CLAMP
+      [0.15, 1, 0.15],
+      Extrapolation.CLAMP,
     );
-    return { width, opacity };
+    const height = interpolate(
+      scrollX.value,
+      inputRange,
+      [6, 6, 6],
+      Extrapolation.CLAMP,
+    );
+    return { width, opacity, height };
   });
 
   return (
     <Animated.View
       style={[
         {
-          height: 5,
           borderRadius: 3,
-          backgroundColor: color,
-          marginHorizontal: 3,
-          shadowColor: color,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.9,
-          shadowRadius: 5,
+          backgroundColor: accent,
+          marginHorizontal: 4,
         },
         dotStyle,
       ]}
@@ -723,7 +1225,7 @@ const PaginationDot = ({
   );
 };
 
-// ─── Main export ───────────────────────────────────────────────────────────────
+// ─── Main export ─────────────────────────────────────────────────────────────────
 export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
   const scrollX = useSharedValue(0);
 
@@ -747,21 +1249,17 @@ export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
         decelerationRate="fast"
         style={{ marginHorizontal: -16 }}
         renderItem={({ index }) => (
-          <CarouselItem
-            index={index}
-            scrollX={scrollX}
-            carouselProps={props}
-          />
+          <CarouselItem index={index} scrollX={scrollX} carouselProps={props} />
         )}
       />
 
-      {/* Pagination — pill dots with per-slide glow color */}
+      {/* Premium pagination dots */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "center",
           alignItems: "center",
-          marginTop: 14,
+          marginTop: 16,
         }}
       >
         {Array.from({ length: SLIDE_COUNT }, (_, i) => (
