@@ -1,6 +1,6 @@
 // File: src/screens/Analytics/AnalyticsScreen.tsx
 import React, { useState, useMemo } from "react";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
@@ -10,6 +10,7 @@ import * as Sharing from "expo-sharing";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
+import ExpenseTrendChart from "../Home/components/ExpenseTrendChart";
 import {
   calculateTransactionAnalytics,
   calculateBudgetAnalytics,
@@ -26,15 +27,15 @@ import {
   calculateOpeningBalance,
   getActiveCycleInfo,
 } from "../../utils/calculations";
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from "../../theme/ThemeContext";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 // â”€â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const CARD_RADIUS  = 20;
+const CARD_RADIUS = 20;
 const INNER_RADIUS = 14;
-const CARD_PAD     = 18;
-const SECTION_GAP  = 20;
+const CARD_PAD = 18;
+const SECTION_GAP = 20;
 
 // â”€â”€â”€ UI Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -43,19 +44,42 @@ const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
 );
 
 const SectionHeader = ({
-  title, linkLabel, onPress,
+  title,
+  linkLabel,
+  onPress,
 }: {
-  title: string; linkLabel?: string; onPress?: () => void;
+  title: string;
+  linkLabel?: string;
+  onPress?: () => void;
 }) => {
   const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-      <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.3, textTransform: "uppercase" }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+      }}
+    >
+      <Text
+        style={{
+          color: colors.gray400,
+          fontSize: 10,
+          fontWeight: "700",
+          letterSpacing: 1.3,
+          textTransform: "uppercase",
+        }}
+      >
         {title}
       </Text>
       {linkLabel && onPress && (
         <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>{linkLabel}</Text>
+          <Text
+            style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}
+          >
+            {linkLabel}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -65,16 +89,47 @@ const SectionHeader = ({
 const ThinBar = ({ progress, color }: { progress: number; color: string }) => {
   const { colors } = useTheme();
   return (
-    <View style={{ height: 5, backgroundColor: `${colors.border}80`, borderRadius: 99, overflow: "hidden" }}>
-      <View style={{ height: 5, borderRadius: 99, width: `${Math.max(0, Math.min(progress * 100, 100))}%`, backgroundColor: color }} />
+    <View
+      style={{
+        height: 5,
+        backgroundColor: `${colors.border}80`,
+        borderRadius: 99,
+        overflow: "hidden",
+      }}
+    >
+      <View
+        style={{
+          height: 5,
+          borderRadius: 99,
+          width: `${Math.max(0, Math.min(progress * 100, 100))}%`,
+          backgroundColor: color,
+        }}
+      />
     </View>
   );
 };
 
-const Card = ({ children, style }: { children: React.ReactNode; style?: object }) => {
+const Card = ({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: object;
+}) => {
   const { colors } = useTheme();
   return (
-    <View style={[{ backgroundColor: colors.surface, borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: `${colors.border}80`, padding: CARD_PAD }, style]}>
+    <View
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderRadius: CARD_RADIUS,
+          borderWidth: 1,
+          borderColor: `${colors.border}80`,
+          padding: CARD_PAD,
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -82,16 +137,33 @@ const Card = ({ children, style }: { children: React.ReactNode; style?: object }
 
 const VDivider = ({ height = 36 }: { height?: number }) => {
   const { colors } = useTheme();
-  return <View style={{ width: 1, height, backgroundColor: `${colors.border}80`, marginHorizontal: 14 }} />;
+  return (
+    <View
+      style={{
+        width: 1,
+        height,
+        backgroundColor: `${colors.border}80`,
+        marginHorizontal: 14,
+      }}
+    />
+  );
 };
 
 // â”€â”€â”€ Tab definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TABS = [
-  { key: "health",     label: "Kesehatan", icon: "heart-outline"      as SafeIconName },
-  { key: "summary",    label: "Ringkasan", icon: "stats-chart-outline" as SafeIconName },
-  { key: "trends",     label: "Tren",      icon: "trending-up-outline" as SafeIconName },
-  { key: "categories", label: "Kategori",  icon: "pricetags-outline"   as SafeIconName },
-  { key: "insights",   label: "Tips",      icon: "bulb-outline"        as SafeIconName },
+  { key: "health", label: "Kesehatan", icon: "heart-outline" as SafeIconName },
+  {
+    key: "summary",
+    label: "Ringkasan",
+    icon: "stats-chart-outline" as SafeIconName,
+  },
+  { key: "trends", label: "Tren", icon: "trending-up-outline" as SafeIconName },
+  {
+    key: "categories",
+    label: "Kategori",
+    icon: "pricetags-outline" as SafeIconName,
+  },
+  { key: "insights", label: "Tips", icon: "bulb-outline" as SafeIconName },
 ];
 
 // â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -100,20 +172,20 @@ const AnalyticsScreen: React.FC = () => {
   const { colors } = useTheme();
   const CARD_BORDER = `${colors.border}80`;
   const BACKGROUND_COLOR = colors.background;
-  const SURFACE_COLOR    = colors.surface;
-  const TEXT_PRIMARY     = colors.textPrimary;
-  const TEXT_SECONDARY   = colors.textSecondary;
-  const ACCENT_COLOR     = colors.accent;
-  const SUCCESS_COLOR    = colors.success;
-  const WARNING_COLOR    = colors.warning;
-  const ERROR_COLOR      = colors.error;
-
-
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const ACCENT_COLOR = colors.accent;
+  const SUCCESS_COLOR = colors.success;
+  const WARNING_COLOR = colors.warning;
+  const ERROR_COLOR = colors.error;
 
   const navigation = useNavigation<any>();
   const { state } = useAppContext();
 
-  const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("month");
+  const [timeRange, setTimeRange] = useState<"week" | "month" | "year">(
+    "month",
+  );
 
   const [activeTab, setActiveTab] = useState<
     "health" | "summary" | "trends" | "categories" | "insights"
@@ -139,27 +211,36 @@ const AnalyticsScreen: React.FC = () => {
     try {
       const analytics = calculateTransactionAnalytics(
         state.transactions || [],
-        timeRange
+        timeRange,
       );
       return {
         ...analytics,
-        totalIncome:             safeNumber(analytics.totalIncome),
-        totalExpense:            safeNumber(analytics.totalExpense),
-        netSavings:              safeNumber(analytics.netSavings),
-        savingsRate:             safeNumber(analytics.savingsRate),
-        avgDailyExpense:         safeNumber(analytics.avgDailyExpense),
-        transactionCount:        analytics.transactionCount || 0,
-        incomeTransactionCount:  analytics.incomeTransactionCount || 0,
+        totalIncome: safeNumber(analytics.totalIncome),
+        totalExpense: safeNumber(analytics.totalExpense),
+        netSavings: safeNumber(analytics.netSavings),
+        savingsRate: safeNumber(analytics.savingsRate),
+        avgDailyExpense: safeNumber(analytics.avgDailyExpense),
+        transactionCount: analytics.transactionCount || 0,
+        incomeTransactionCount: analytics.incomeTransactionCount || 0,
         expenseTransactionCount: analytics.expenseTransactionCount || 0,
-        topCategories:           analytics.topCategories || [],
-        dailyTrends:             analytics.dailyTrends || [],
+        topCategories: analytics.topCategories || [],
+        dailyTrends: analytics.dailyTrends || [],
       };
     } catch (error) {
       return {
-        totalIncome: 0, totalExpense: 0, netSavings: 0, savingsRate: 0,
-        avgDailyExpense: 0, transactionCount: 0, incomeTransactionCount: 0,
-        expenseTransactionCount: 0, topCategories: [], dailyTrends: [],
-        timeRange, startDate: new Date(), endDate: new Date(),
+        totalIncome: 0,
+        totalExpense: 0,
+        netSavings: 0,
+        savingsRate: 0,
+        avgDailyExpense: 0,
+        transactionCount: 0,
+        incomeTransactionCount: 0,
+        expenseTransactionCount: 0,
+        topCategories: [],
+        dailyTrends: [],
+        timeRange,
+        startDate: new Date(),
+        endDate: new Date(),
       };
     }
   }, [state.transactions, timeRange]);
@@ -169,8 +250,13 @@ const AnalyticsScreen: React.FC = () => {
       return calculateBudgetAnalytics(state.budgets || []);
     } catch (error) {
       return {
-        totalBudget: 0, totalSpent: 0, utilizationRate: 0,
-        overBudgetCount: 0, underBudgetCount: 0, budgetsAtRisk: [], hasBudgets: false,
+        totalBudget: 0,
+        totalSpent: 0,
+        utilizationRate: 0,
+        overBudgetCount: 0,
+        underBudgetCount: 0,
+        budgetsAtRisk: [],
+        hasBudgets: false,
       };
     }
   }, [state.budgets]);
@@ -180,8 +266,13 @@ const AnalyticsScreen: React.FC = () => {
       return calculateSavingsAnalytics(state.savings || []);
     } catch (error) {
       return {
-        totalTarget: 0, totalCurrent: 0, overallProgress: 0,
-        completedSavings: 0, activeSavings: 0, nearingCompletion: [], hasSavings: false,
+        totalTarget: 0,
+        totalCurrent: 0,
+        overallProgress: 0,
+        completedSavings: 0,
+        activeSavings: 0,
+        nearingCompletion: [],
+        hasSavings: false,
       };
     }
   }, [state.savings]);
@@ -195,7 +286,7 @@ const AnalyticsScreen: React.FC = () => {
         transactionAnalytics,
         budgetAnalytics,
         savingsAnalytics,
-        totalActiveDebt
+        totalActiveDebt,
       );
     } catch (error) {
       return {
@@ -203,10 +294,10 @@ const AnalyticsScreen: React.FC = () => {
         category: "Belum Ada Data",
         color: colors.gray500,
         factors: {
-          savingsRate:     { score: 0, weight: 0.3,  status: "poor" },
-          budgetAdherence: { score: 0, weight: 0.3,  status: "poor" },
-          expenseControl:  { score: 0, weight: 0.25, status: "poor" },
-          goalProgress:    { score: 0, weight: 0.15, status: "poor" },
+          savingsRate: { score: 0, weight: 0.3, status: "poor" },
+          budgetAdherence: { score: 0, weight: 0.3, status: "poor" },
+          expenseControl: { score: 0, weight: 0.25, status: "poor" },
+          goalProgress: { score: 0, weight: 0.15, status: "poor" },
         },
         recommendations: [
           "Mulai dengan mencatat transaksi pertama Anda",
@@ -222,7 +313,7 @@ const AnalyticsScreen: React.FC = () => {
       return generateFinancialInsights(
         transactionAnalytics,
         budgetAnalytics,
-        savingsAnalytics
+        savingsAnalytics,
       );
     } catch (error) {
       return [
@@ -239,10 +330,10 @@ const AnalyticsScreen: React.FC = () => {
 
   const getScoreColor = (score: number) => {
     if (score === 0) return colors.gray500;
-    if (score >= 80)  return colors.success;
-    if (score >= 60)  return colors.info;
-    if (score >= 40)  return colors.warning;
-    if (score >= 20)  return colors.error;
+    if (score >= 80) return colors.success;
+    if (score >= 60) return colors.info;
+    if (score >= 40) return colors.warning;
+    if (score >= 20) return colors.error;
     return colors.errorDark;
   };
 
@@ -268,30 +359,44 @@ const AnalyticsScreen: React.FC = () => {
             transDate.getMonth() === lastMonth.getMonth() &&
             transDate.getFullYear() === lastMonth.getFullYear()
           );
-        } catch { return false; }
+        } catch {
+          return false;
+        }
       });
       const lastMonthAnalytics = calculateTransactionAnalytics(
         lastMonthTransactions,
-        "month"
+        "month",
       );
-      const safeCurrentIncome      = safeNumber(transactionAnalytics.totalIncome);
-      const safeCurrentExpense     = safeNumber(transactionAnalytics.totalExpense);
-      const safeCurrentSavingsRate = safeNumber(transactionAnalytics.savingsRate);
-      const safeLastIncome         = safeNumber(lastMonthAnalytics.totalIncome);
-      const safeLastExpense        = safeNumber(lastMonthAnalytics.totalExpense);
-      const safeLastSavingsRate    = safeNumber(lastMonthAnalytics.savingsRate);
+      const safeCurrentIncome = safeNumber(transactionAnalytics.totalIncome);
+      const safeCurrentExpense = safeNumber(transactionAnalytics.totalExpense);
+      const safeCurrentSavingsRate = safeNumber(
+        transactionAnalytics.savingsRate,
+      );
+      const safeLastIncome = safeNumber(lastMonthAnalytics.totalIncome);
+      const safeLastExpense = safeNumber(lastMonthAnalytics.totalExpense);
+      const safeLastSavingsRate = safeNumber(lastMonthAnalytics.savingsRate);
       return {
-        current:  { totalIncome: safeCurrentIncome, totalExpense: safeCurrentExpense, savingsRate: safeCurrentSavingsRate },
-        previous: { totalIncome: safeLastIncome,    totalExpense: safeLastExpense,    savingsRate: safeLastSavingsRate },
-        incomeChange:      safeCurrentIncome      - safeLastIncome,
-        expenseChange:     safeCurrentExpense     - safeLastExpense,
+        current: {
+          totalIncome: safeCurrentIncome,
+          totalExpense: safeCurrentExpense,
+          savingsRate: safeCurrentSavingsRate,
+        },
+        previous: {
+          totalIncome: safeLastIncome,
+          totalExpense: safeLastExpense,
+          savingsRate: safeLastSavingsRate,
+        },
+        incomeChange: safeCurrentIncome - safeLastIncome,
+        expenseChange: safeCurrentExpense - safeLastExpense,
         savingsRateChange: safeCurrentSavingsRate - safeLastSavingsRate,
       };
     } catch (error) {
       return {
-        current:  { totalIncome: 0, totalExpense: 0, savingsRate: 0 },
+        current: { totalIncome: 0, totalExpense: 0, savingsRate: 0 },
         previous: { totalIncome: 0, totalExpense: 0, savingsRate: 0 },
-        incomeChange: 0, expenseChange: 0, savingsRateChange: 0,
+        incomeChange: 0,
+        expenseChange: 0,
+        savingsRateChange: 0,
       };
     }
   };
@@ -322,7 +427,7 @@ const AnalyticsScreen: React.FC = () => {
       const openingBalance = calculateOpeningBalance(
         state.transactions,
         startDate,
-        cycleIncomeId
+        cycleIncomeId,
       );
       const totalAvailableCash =
         transactionAnalytics.totalIncome + openingBalance;
@@ -331,7 +436,7 @@ const AnalyticsScreen: React.FC = () => {
         totalAvailableCash,
         transactionAnalytics.totalExpense,
         transactionAnalytics.startDate,
-        transactionAnalytics.endDate
+        transactionAnalytics.endDate,
       );
 
       return {
@@ -342,47 +447,13 @@ const AnalyticsScreen: React.FC = () => {
           projection.projectedBalance > 100000
             ? "safe"
             : projection.projectedBalance > -100000
-            ? "warning"
-            : "danger",
+              ? "warning"
+              : "danger",
       };
     } catch (error) {
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
   }, [transactionAnalytics, state.transactions, timeRange]);
-
-  type BenchmarkItem = {
-    category: string;
-    yourPercentage: number;
-    avgPercentage: number;
-    difference: number;
-    status: "above" | "below" | "normal";
-  };
-
-  const getCategoryBenchmarks = (): BenchmarkItem[] => {
-    try {
-      const averagePercentages: Record<string, number> = {
-        Makanan: 30, Transportasi: 20, Belanja: 15,
-        Hiburan: 10, Tagihan: 15,     Lainnya: 10,
-      };
-      const totalExpense = safeNumber(transactionAnalytics.totalExpense);
-      if (totalExpense <= 0) return [];
-      return (transactionAnalytics.topCategories || []).map(
-        ([category, amount]): BenchmarkItem => {
-          const safeAmount     = safeNumber(amount);
-          const yourPercentage = getSafePercentage(safeAmount, totalExpense);
-          const avgPercentage  = averagePercentages[category] || 15;
-          const difference     = safeNumber(yourPercentage - avgPercentage);
-          const status: "above" | "below" | "normal" =
-            difference > 5 ? "above" : difference < -5 ? "below" : "normal";
-          return { category, yourPercentage, avgPercentage, difference, status };
-        }
-      );
-    } catch (error) {
-      return [];
-    }
-  };
-
-  const categoryBenchmarks = getCategoryBenchmarks();
 
   const handleExport = async () => {
     try {
@@ -419,68 +490,25 @@ Kategori: ${financialHealthScore.category}
   const formatChange = (value: number, isPercent = false) => {
     try {
       const safeValue = safeNumber(value);
-      const absValue  = Math.abs(safeValue);
-      const prefix    = safeValue >= 0 ? "+" : "-";
+      const absValue = Math.abs(safeValue);
+      const prefix = safeValue >= 0 ? "+" : "-";
       if (isPercent) return `${prefix}${absValue.toFixed(1)}%`;
       if (absValue >= 1000000)
         return `${prefix}Rp ${(absValue / 1000000).toFixed(1)}jt`;
       if (absValue >= 1000)
         return `${prefix}Rp ${(absValue / 1000).toFixed(0)}rb`;
       return `${prefix}Rp ${absValue}`;
-    } catch { return "+Rp 0"; }
+    } catch {
+      return "+Rp 0";
+    }
   };
 
-  // â”€â”€ Benchmark item renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const renderBenchmarkItem = (item: BenchmarkItem) => {
-    const statusColor =
-      item.status === "above"
-        ? ERROR_COLOR
-        : item.status === "below"
-        ? SUCCESS_COLOR
-        : colors.info;
-    return (
-      <View key={item.category} style={{ marginBottom: 16 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 7,
-          }}
-        >
-          <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>
-            {item.category}
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ color: TEXT_PRIMARY, fontSize: 12, fontWeight: "600" }}>
-              {item.yourPercentage.toFixed(0)}%
-            </Text>
-            <View
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 3,
-                borderRadius: 20,
-                backgroundColor: `${statusColor}15`,
-                borderWidth: 1,
-                borderColor: `${statusColor}25`,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: "700", color: statusColor }}>
-                {item.status === "above"
-                  ? "↑ Tinggi"
-                  : item.status === "below"
-                  ? "↓ Rendah"
-                  : "Normal"}
-              </Text>
-            </View>
-          </View>
-        </View>
-        <ThinBar progress={item.yourPercentage / 100} color={statusColor} />
-        <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 4 }}>
-          Rata-rata: {item.avgPercentage}%
-        </Text>
-      </View>
-    );
+  const getCategoryIntensityColor = (percentage: number) => {
+    if (percentage >= 50) return ERROR_COLOR;
+    if (percentage >= 35) return "#F97316";
+    if (percentage >= 20) return WARNING_COLOR;
+    if (percentage >= 10) return SUCCESS_COLOR;
+    return colors.info;
   };
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -489,7 +517,6 @@ Kategori: ${financialHealthScore.category}
   if (!hasData) {
     return (
       <View style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-
         {/* â”€â”€ Header (redesigned) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <View
           style={{
@@ -548,7 +575,11 @@ Kategori: ${financialHealthScore.category}
                 marginBottom: 16,
               }}
             >
-              <Ionicons name="analytics-outline" size={36} color={colors.gray500} />
+              <Ionicons
+                name="analytics-outline"
+                size={36}
+                color={colors.gray500}
+              />
             </View>
             <Text
               style={{
@@ -613,7 +644,9 @@ Kategori: ${financialHealthScore.category}
                 >
                   0
                 </Text>
-                <Text style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}>
+                <Text
+                  style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}
+                >
                   /100
                 </Text>
               </View>
@@ -633,15 +666,36 @@ Kategori: ${financialHealthScore.category}
             </Text>
           </View>
 
-          <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: SECTION_GAP }} />
+          <View
+            style={{
+              height: 1,
+              backgroundColor: CARD_BORDER,
+              marginBottom: SECTION_GAP,
+            }}
+          />
 
           {/* Quick start actions */}
           <SectionHeader title="Mulai Dari Sini" />
           <View style={{ flexDirection: "row", gap: 10, marginBottom: 24 }}>
             {[
-              { label: "Transaksi Pertama", icon: "add-circle-outline" as SafeIconName, color: ACCENT_COLOR,    nav: "AddTransaction" },
-              { label: "Buat Anggaran",     icon: "pie-chart-outline"  as SafeIconName, color: colors.purple,  nav: "AddBudget"      },
-              { label: "Target Tabungan",   icon: "wallet-outline"     as SafeIconName, color: colors.pink,    nav: "AddSavings"     },
+              {
+                label: "Transaksi Pertama",
+                icon: "add-circle-outline" as SafeIconName,
+                color: ACCENT_COLOR,
+                nav: "AddTransaction",
+              },
+              {
+                label: "Buat Anggaran",
+                icon: "pie-chart-outline" as SafeIconName,
+                color: colors.purple,
+                nav: "AddBudget",
+              },
+              {
+                label: "Target Tabungan",
+                icon: "wallet-outline" as SafeIconName,
+                color: colors.pink,
+                nav: "AddSavings",
+              },
             ].map((item) => (
               <TouchableOpacity
                 key={item.label}
@@ -685,7 +739,13 @@ Kategori: ${financialHealthScore.category}
             ))}
           </View>
 
-          <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: SECTION_GAP }} />
+          <View
+            style={{
+              height: 1,
+              backgroundColor: CARD_BORDER,
+              marginBottom: SECTION_GAP,
+            }}
+          />
 
           {/* Tips */}
           <SectionHeader title="Tips Untuk Pemula" />
@@ -717,11 +777,24 @@ Kategori: ${financialHealthScore.category}
                     flexShrink: 0,
                   }}
                 >
-                  <Text style={{ color: ACCENT_COLOR, fontSize: 10, fontWeight: "700" }}>
+                  <Text
+                    style={{
+                      color: ACCENT_COLOR,
+                      fontSize: 10,
+                      fontWeight: "700",
+                    }}
+                  >
                     {i + 1}
                   </Text>
                 </View>
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 12, flex: 1, lineHeight: 18 }}>
+                <Text
+                  style={{
+                    color: TEXT_SECONDARY,
+                    fontSize: 12,
+                    flex: 1,
+                    lineHeight: 18,
+                  }}
+                >
                   {tip}
                 </Text>
               </View>
@@ -742,7 +815,9 @@ Kategori: ${financialHealthScore.category}
     return (
       <View>
         {/* Score hero â€” double ring */}
-        <View style={{ alignItems: "center", paddingTop: 24, paddingBottom: 20 }}>
+        <View
+          style={{ alignItems: "center", paddingTop: 24, paddingBottom: 20 }}
+        >
           <View
             style={{
               width: 148,
@@ -778,7 +853,9 @@ Kategori: ${financialHealthScore.category}
               >
                 {overallScore}
               </Text>
-              <Text style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}>
+              <Text
+                style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}
+              >
                 /100
               </Text>
             </View>
@@ -805,18 +882,27 @@ Kategori: ${financialHealthScore.category}
           const totalActiveDebt = (state.debts || [])
             .filter((d) => d.type === "borrowed" && d.status !== "paid")
             .reduce((sum, d) => sum + safeNumber(d.remaining), 0);
-          const totalIncome  = safeNumber(transactionAnalytics.totalIncome);
+          const totalIncome = safeNumber(transactionAnalytics.totalIncome);
           const totalExpense = safeNumber(transactionAnalytics.totalExpense);
 
-          const debtRatio      = totalIncome > 0 ? (totalActiveDebt / totalIncome) * 100 : 0;
-          const expenseRatio   = totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
-          const effectiveRatio = totalIncome > 0
-            ? ((totalExpense + totalActiveDebt) / totalIncome) * 100
-            : 0;
+          const debtRatio =
+            totalIncome > 0 ? (totalActiveDebt / totalIncome) * 100 : 0;
+          const expenseRatio =
+            totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
+          const effectiveRatio =
+            totalIncome > 0
+              ? ((totalExpense + totalActiveDebt) / totalIncome) * 100
+              : 0;
 
           return (
             <Card style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
                 <View
                   style={{
                     width: 32,
@@ -828,27 +914,87 @@ Kategori: ${financialHealthScore.category}
                     marginRight: 10,
                   }}
                 >
-                  <Ionicons name="pie-chart-outline" size={15} color={ERROR_COLOR} />
+                  <Ionicons
+                    name="pie-chart-outline"
+                    size={15}
+                    color={ERROR_COLOR}
+                  />
                 </View>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", letterSpacing: 0.4 }}>
+                <Text
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 13,
+                    fontWeight: "700",
+                    letterSpacing: 0.4,
+                  }}
+                >
                   PENGELUARAN & HUTANG
                 </Text>
               </View>
 
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>Pengeluaran</Text>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 12, fontWeight: "600" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    color: TEXT_SECONDARY,
+                    fontSize: 12,
+                    fontWeight: "500",
+                  }}
+                >
+                  Pengeluaran
+                </Text>
+                <Text
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 12,
+                    fontWeight: "600",
+                  }}
+                >
                   {totalIncome > 0 ? expenseRatio.toFixed(1) : 0}% dari aset
                 </Text>
               </View>
               <ThinBar
                 progress={Math.min(expenseRatio / 100, 1)}
-                color={expenseRatio > 60 ? ERROR_COLOR : expenseRatio > 40 ? WARNING_COLOR : SUCCESS_COLOR}
+                color={
+                  expenseRatio > 60
+                    ? ERROR_COLOR
+                    : expenseRatio > 40
+                      ? WARNING_COLOR
+                      : SUCCESS_COLOR
+                }
               />
 
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6, marginTop: 16 }}>
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>Sisa Hutang Aktif</Text>
-                <Text style={{ color: debtRatio > 0 ? ERROR_COLOR : SUCCESS_COLOR, fontSize: 12, fontWeight: "600" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  marginTop: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    color: TEXT_SECONDARY,
+                    fontSize: 12,
+                    fontWeight: "500",
+                  }}
+                >
+                  Sisa Hutang Aktif
+                </Text>
+                <Text
+                  style={{
+                    color: debtRatio > 0 ? ERROR_COLOR : SUCCESS_COLOR,
+                    fontSize: 12,
+                    fontWeight: "600",
+                  }}
+                >
                   {totalIncome > 0 ? debtRatio.toFixed(1) : 0}% dari aset
                 </Text>
               </View>
@@ -868,12 +1014,23 @@ Kategori: ${financialHealthScore.category}
                   borderTopColor: CARD_BORDER,
                 }}
               >
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>
+                <Text
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
                   Total Beban Keuangan
                 </Text>
                 <Text
                   style={{
-                    color: effectiveRatio >= 80 ? ERROR_COLOR : effectiveRatio >= 60 ? WARNING_COLOR : SUCCESS_COLOR,
+                    color:
+                      effectiveRatio >= 80
+                        ? ERROR_COLOR
+                        : effectiveRatio >= 60
+                          ? WARNING_COLOR
+                          : SUCCESS_COLOR,
                     fontSize: 15,
                     fontWeight: "800",
                   }}
@@ -881,7 +1038,9 @@ Kategori: ${financialHealthScore.category}
                   {effectiveRatio.toFixed(1)}%
                 </Text>
               </View>
-              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 5 }}>
+              <Text
+                style={{ color: colors.gray400, fontSize: 10, marginTop: 5 }}
+              >
                 Aman jika total beban berada di bawah 60%
               </Text>
             </Card>
@@ -915,9 +1074,20 @@ Kategori: ${financialHealthScore.category}
                       flexShrink: 0,
                     }}
                   >
-                    <Ionicons name="checkmark" size={11} color={SUCCESS_COLOR} />
+                    <Ionicons
+                      name="checkmark"
+                      size={11}
+                      color={SUCCESS_COLOR}
+                    />
                   </View>
-                  <Text style={{ color: TEXT_SECONDARY, fontSize: 12, flex: 1, lineHeight: 18 }}>
+                  <Text
+                    style={{
+                      color: TEXT_SECONDARY,
+                      fontSize: 12,
+                      flex: 1,
+                      lineHeight: 18,
+                    }}
+                  >
                     {rec}
                   </Text>
                 </View>
@@ -930,12 +1100,12 @@ Kategori: ${financialHealthScore.category}
         <SectionHeader title="Keterangan Skor" />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {[
-            { range: "0",      label: "Belum Ada Data",  color: colors.gray500   },
-            { range: "80-100", label: "Sangat Sehat",    color: SUCCESS_COLOR    },
-            { range: "60-79",  label: "Sehat",           color: colors.info      },
-            { range: "40-59",  label: "Cukup",           color: WARNING_COLOR    },
-            { range: "20-39",  label: "Perlu Perbaikan", color: ERROR_COLOR      },
-            { range: "1-19",   label: "Kritis",          color: colors.errorDark },
+            { range: "0", label: "Belum Ada Data", color: colors.gray500 },
+            { range: "80-100", label: "Sangat Sehat", color: SUCCESS_COLOR },
+            { range: "60-79", label: "Sehat", color: colors.info },
+            { range: "40-59", label: "Cukup", color: WARNING_COLOR },
+            { range: "20-39", label: "Perlu Perbaikan", color: ERROR_COLOR },
+            { range: "1-19", label: "Kritis", color: colors.errorDark },
           ].map((item) => (
             <View
               key={item.range}
@@ -974,7 +1144,6 @@ Kategori: ${financialHealthScore.category}
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-
       {/* â”€â”€ Fixed Header (redesigned) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <View
         style={{
@@ -1041,7 +1210,9 @@ Kategori: ${financialHealthScore.category}
             activeOpacity={0.7}
           >
             <Ionicons name="share-outline" size={13} color={ACCENT_COLOR} />
-            <Text style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}>
+            <Text
+              style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}
+            >
               Ekspor
             </Text>
           </TouchableOpacity>
@@ -1059,9 +1230,9 @@ Kategori: ${financialHealthScore.category}
           }}
         >
           {[
-            { key: "week",  label: "Minggu" },
-            { key: "month", label: "Bulan"  },
-            { key: "year",  label: "Tahun"  },
+            { key: "week", label: "Minggu" },
+            { key: "month", label: "Bulan" },
+            { key: "year", label: "Tahun" },
           ].map((tab) => {
             const isActive = timeRange === tab.key;
             return (
@@ -1071,7 +1242,9 @@ Kategori: ${financialHealthScore.category}
                   flex: 1,
                   paddingVertical: 8,
                   borderRadius: 9,
-                  backgroundColor: isActive ? `${ACCENT_COLOR}22` : "transparent",
+                  backgroundColor: isActive
+                    ? `${ACCENT_COLOR}22`
+                    : "transparent",
                   alignItems: "center",
                 }}
                 onPress={() => setTimeRange(tab.key as any)}
@@ -1176,19 +1349,50 @@ Kategori: ${financialHealthScore.category}
             <Card style={{ marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: SUCCESS_COLOR, marginRight: 5 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: SUCCESS_COLOR,
+                        marginRight: 5,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.gray400,
+                        fontSize: 9,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.8,
+                      }}
+                    >
                       Pemasukan
                     </Text>
                   </View>
-                  <Text style={{ color: SUCCESS_COLOR, fontSize: 18, fontWeight: "700", marginBottom: 3 }}>
+                  <Text
+                    style={{
+                      color: SUCCESS_COLOR,
+                      fontSize: 18,
+                      fontWeight: "700",
+                      marginBottom: 3,
+                    }}
+                  >
                     {formatCurrency(transactionAnalytics.totalIncome)}
                   </Text>
                   <Text
                     style={{
                       fontSize: 11,
-                      color: comparativeData.incomeChange >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                      color:
+                        comparativeData.incomeChange >= 0
+                          ? SUCCESS_COLOR
+                          : ERROR_COLOR,
                     }}
                   >
                     {formatChange(comparativeData.incomeChange)} vs bln lalu
@@ -1198,19 +1402,50 @@ Kategori: ${financialHealthScore.category}
                 <VDivider height={52} />
 
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ERROR_COLOR, marginRight: 5 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: ERROR_COLOR,
+                        marginRight: 5,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        color: colors.gray400,
+                        fontSize: 9,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.8,
+                      }}
+                    >
                       Pengeluaran
                     </Text>
                   </View>
-                  <Text style={{ color: ERROR_COLOR, fontSize: 18, fontWeight: "700", marginBottom: 3 }}>
+                  <Text
+                    style={{
+                      color: ERROR_COLOR,
+                      fontSize: 18,
+                      fontWeight: "700",
+                      marginBottom: 3,
+                    }}
+                  >
                     {formatCurrency(transactionAnalytics.totalExpense)}
                   </Text>
                   <Text
                     style={{
                       fontSize: 11,
-                      color: comparativeData.expenseChange >= 0 ? ERROR_COLOR : SUCCESS_COLOR,
+                      color:
+                        comparativeData.expenseChange >= 0
+                          ? ERROR_COLOR
+                          : SUCCESS_COLOR,
                     }}
                   >
                     {formatChange(comparativeData.expenseChange)} vs bln lalu
@@ -1221,26 +1456,65 @@ Kategori: ${financialHealthScore.category}
 
             {/* Savings rate */}
             <Card style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>Rasio Tabungan</Text>
-                <Text style={{ color: ACCENT_COLOR, fontSize: 15, fontWeight: "700" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: TEXT_SECONDARY,
+                    fontSize: 12,
+                    fontWeight: "500",
+                  }}
+                >
+                  Rasio Tabungan
+                </Text>
+                <Text
+                  style={{
+                    color: ACCENT_COLOR,
+                    fontSize: 15,
+                    fontWeight: "700",
+                  }}
+                >
                   {transactionAnalytics.savingsRate.toFixed(1)}%
                 </Text>
               </View>
               <ThinBar
-                progress={Math.max(0, Math.min(safeNumber(transactionAnalytics.savingsRate) / 100, 1))}
+                progress={Math.max(
+                  0,
+                  Math.min(
+                    safeNumber(transactionAnalytics.savingsRate) / 100,
+                    1,
+                  ),
+                )}
                 color={
                   transactionAnalytics.savingsRate >= 20
                     ? SUCCESS_COLOR
                     : transactionAnalytics.savingsRate >= 10
-                    ? WARNING_COLOR
-                    : ERROR_COLOR
+                      ? WARNING_COLOR
+                      : ERROR_COLOR
                 }
               />
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-                <Text style={{ color: colors.gray400, fontSize: 10 }}>0% (Defisit)</Text>
-                <Text style={{ color: colors.gray400, fontSize: 10 }}>20% (Sehat)</Text>
-                <Text style={{ color: colors.gray400, fontSize: 10 }}>100%</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 6,
+                }}
+              >
+                <Text style={{ color: colors.gray400, fontSize: 10 }}>
+                  0% (Defisit)
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 10 }}>
+                  20% (Sehat)
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 10 }}>
+                  100%
+                </Text>
               </View>
             </Card>
 
@@ -1249,13 +1523,26 @@ Kategori: ${financialHealthScore.category}
               <>
                 <SectionHeader title="Proyeksi Akhir Bulan" />
                 <Card style={{ marginBottom: 16 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <View>
-                      <Text style={{ color: colors.gray400, fontSize: 11, marginBottom: 4 }}>
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 11,
+                          marginBottom: 4,
+                        }}
+                      >
                         {cashFlowForecast.daysRemaining} hari lagi
                       </Text>
                       <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>
-                        Rata-rata {formatCurrency(cashFlowForecast.dailyAvg)}/hari
+                        Rata-rata {formatCurrency(cashFlowForecast.dailyAvg)}
+                        /hari
                       </Text>
                     </View>
                     <Text
@@ -1266,8 +1553,8 @@ Kategori: ${financialHealthScore.category}
                           cashFlowForecast.status === "safe"
                             ? SUCCESS_COLOR
                             : cashFlowForecast.status === "warning"
-                            ? WARNING_COLOR
-                            : ERROR_COLOR,
+                              ? WARNING_COLOR
+                              : ERROR_COLOR,
                       }}
                     >
                       {formatCurrency(cashFlowForecast.forecast)}
@@ -1294,35 +1581,109 @@ Kategori: ${financialHealthScore.category}
             >
               {/* Transaksi */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
+                <Text
+                  style={{
+                    color: colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    fontWeight: "600",
+                    marginBottom: 5,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
                   Transaksi
                 </Text>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 17, fontWeight: "700", textAlign: "center" }}>
+                <Text
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 17,
+                    fontWeight: "700",
+                    textAlign: "center",
+                  }}
+                >
                   {transactionAnalytics.transactionCount}
                 </Text>
               </View>
 
-              <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
+              <View
+                style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }}
+              />
 
               {/* Anggaran */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
+                <Text
+                  style={{
+                    color: colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    fontWeight: "600",
+                    marginBottom: 5,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
                   Anggaran
                 </Text>
-                <Text style={{ color: budgetAnalytics.hasBudgets ? (budgetAnalytics.overBudgetCount > 0 ? ERROR_COLOR : SUCCESS_COLOR) : TEXT_PRIMARY, fontSize: 17, fontWeight: "700", textAlign: "center" }}>
-                  {budgetAnalytics.hasBudgets ? (budgetAnalytics.overBudgetCount > 0 ? `${budgetAnalytics.overBudgetCount} ⚠️` : `${budgetAnalytics.underBudgetCount} `) : "0"}
+                <Text
+                  style={{
+                    color: budgetAnalytics.hasBudgets
+                      ? budgetAnalytics.overBudgetCount > 0
+                        ? ERROR_COLOR
+                        : SUCCESS_COLOR
+                      : TEXT_PRIMARY,
+                    fontSize: 17,
+                    fontWeight: "700",
+                    textAlign: "center",
+                  }}
+                >
+                  {budgetAnalytics.hasBudgets
+                    ? budgetAnalytics.overBudgetCount > 0
+                      ? `${budgetAnalytics.overBudgetCount} ⚠️`
+                      : `${budgetAnalytics.underBudgetCount} `
+                    : "0"}
                 </Text>
               </View>
 
-              <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
+              <View
+                style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }}
+              />
 
               {/* Tabungan */}
               <View style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, fontWeight: "600", marginBottom: 5, textAlign: "center" }} numberOfLines={1}>
+                <Text
+                  style={{
+                    color: colors.gray400,
+                    fontSize: 9,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.8,
+                    fontWeight: "600",
+                    marginBottom: 5,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
                   Tabungan
                 </Text>
-                <Text style={{ color: !savingsAnalytics.hasSavings ? TEXT_PRIMARY : (savingsAnalytics.overallProgress >= 100 ? SUCCESS_COLOR : (savingsAnalytics.overallProgress >= 50 ? WARNING_COLOR : TEXT_PRIMARY)), fontSize: 17, fontWeight: "700", textAlign: "center" }}>
-                  {savingsAnalytics.hasSavings ? `${savingsAnalytics.completedSavings}/${savingsAnalytics.activeSavings + savingsAnalytics.completedSavings}` : "0"}
+                <Text
+                  style={{
+                    color: !savingsAnalytics.hasSavings
+                      ? TEXT_PRIMARY
+                      : savingsAnalytics.overallProgress >= 100
+                        ? SUCCESS_COLOR
+                        : savingsAnalytics.overallProgress >= 50
+                          ? WARNING_COLOR
+                          : TEXT_PRIMARY,
+                    fontSize: 17,
+                    fontWeight: "700",
+                    textAlign: "center",
+                  }}
+                >
+                  {savingsAnalytics.hasSavings
+                    ? `${savingsAnalytics.completedSavings}/${savingsAnalytics.activeSavings + savingsAnalytics.completedSavings}`
+                    : "0"}
                 </Text>
               </View>
             </View>
@@ -1336,66 +1697,173 @@ Kategori: ${financialHealthScore.category}
                   onPress={() => navigation.navigate("Savings")}
                 />
                 <Card style={{ marginBottom: 16 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>Total Tabungan</Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: TEXT_SECONDARY,
+                        fontSize: 12,
+                        fontWeight: "500",
+                      }}
+                    >
+                      Total Tabungan
+                    </Text>
                     <Text style={{ color: colors.gray400, fontSize: 11 }}>
-                      {formatCurrency(savingsAnalytics.totalCurrent)} / {formatCurrency(savingsAnalytics.totalTarget)}
+                      {formatCurrency(savingsAnalytics.totalCurrent)} /{" "}
+                      {formatCurrency(savingsAnalytics.totalTarget)}
                     </Text>
                   </View>
                   <ThinBar
-                    progress={Math.max(0, Math.min(safeNumber(savingsAnalytics.overallProgress) / 100, 1))}
+                    progress={Math.max(
+                      0,
+                      Math.min(
+                        safeNumber(savingsAnalytics.overallProgress) / 100,
+                        1,
+                      ),
+                    )}
                     color={
                       savingsAnalytics.overallProgress >= 100
                         ? SUCCESS_COLOR
                         : savingsAnalytics.overallProgress >= 75
-                        ? colors.info
-                        : savingsAnalytics.overallProgress >= 50
-                        ? WARNING_COLOR
-                        : ACCENT_COLOR
+                          ? colors.info
+                          : savingsAnalytics.overallProgress >= 50
+                            ? WARNING_COLOR
+                            : ACCENT_COLOR
                     }
                   />
-                  <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 5 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 10,
+                      marginTop: 5,
+                    }}
+                  >
                     {savingsAnalytics.overallProgress.toFixed(1)}% tercapai
                   </Text>
 
-                  <View style={{ height: 1, backgroundColor: CARD_BORDER, marginVertical: 14 }} />
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: CARD_BORDER,
+                      marginVertical: 14,
+                    }}
+                  />
 
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     {[
-                      { label: "Selesai", value: savingsAnalytics.completedSavings,               color: SUCCESS_COLOR  },
-                      { label: "Aktif",   value: savingsAnalytics.activeSavings,                  color: ACCENT_COLOR   },
-                      { label: "Hampir",  value: savingsAnalytics.nearingCompletion?.length || 0, color: WARNING_COLOR  },
+                      {
+                        label: "Selesai",
+                        value: savingsAnalytics.completedSavings,
+                        color: SUCCESS_COLOR,
+                      },
+                      {
+                        label: "Aktif",
+                        value: savingsAnalytics.activeSavings,
+                        color: ACCENT_COLOR,
+                      },
+                      {
+                        label: "Hampir",
+                        value: savingsAnalytics.nearingCompletion?.length || 0,
+                        color: WARNING_COLOR,
+                      },
                     ].map((item, i) => (
                       <React.Fragment key={item.label}>
                         <View style={{ flex: 1, alignItems: "center" }}>
-                          <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>
+                          <Text
+                            style={{
+                              color: colors.gray400,
+                              fontSize: 9,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.8,
+                              marginBottom: 4,
+                            }}
+                          >
                             {item.label}
                           </Text>
-                          <Text style={{ color: item.color, fontSize: 19, fontWeight: "700" }}>
+                          <Text
+                            style={{
+                              color: item.color,
+                              fontSize: 19,
+                              fontWeight: "700",
+                            }}
+                          >
                             {item.value}
                           </Text>
                         </View>
-                        {i < 2 && <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER }} />}
+                        {i < 2 && (
+                          <View
+                            style={{
+                              width: 1,
+                              height: 32,
+                              backgroundColor: CARD_BORDER,
+                            }}
+                          />
+                        )}
                       </React.Fragment>
                     ))}
                   </View>
 
-                  {savingsAnalytics.nearingCompletion && savingsAnalytics.nearingCompletion.length > 0 && (
-                    <View style={{ marginTop: 14 }}>
-                      <View style={{ height: 1, backgroundColor: CARD_BORDER, marginBottom: 12 }} />
-                      <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>
-                        Hampir Tercapai
-                      </Text>
-                      {savingsAnalytics.nearingCompletion.slice(0, 2).map((saving, index) => (
-                        <View key={index} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                          <Text style={{ color: TEXT_SECONDARY, fontSize: 12 }}>{saving.name}</Text>
-                          <Text style={{ color: WARNING_COLOR, fontSize: 12, fontWeight: "600" }}>
-                            {((saving.current / saving.target) * 100).toFixed(0)}%
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
+                  {savingsAnalytics.nearingCompletion &&
+                    savingsAnalytics.nearingCompletion.length > 0 && (
+                      <View style={{ marginTop: 14 }}>
+                        <View
+                          style={{
+                            height: 1,
+                            backgroundColor: CARD_BORDER,
+                            marginBottom: 12,
+                          }}
+                        />
+                        <Text
+                          style={{
+                            color: colors.gray400,
+                            fontSize: 9,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.8,
+                            marginBottom: 10,
+                          }}
+                        >
+                          Hampir Tercapai
+                        </Text>
+                        {savingsAnalytics.nearingCompletion
+                          .slice(0, 2)
+                          .map((saving, index) => (
+                            <View
+                              key={index}
+                              style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: 4,
+                              }}
+                            >
+                              <Text
+                                style={{ color: TEXT_SECONDARY, fontSize: 12 }}
+                              >
+                                {saving.name}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: WARNING_COLOR,
+                                  fontSize: 12,
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {(
+                                  (saving.current / saving.target) *
+                                  100
+                                ).toFixed(0)}
+                                %
+                              </Text>
+                            </View>
+                          ))}
+                      </View>
+                    )}
                 </Card>
               </>
             )}
@@ -1409,23 +1877,51 @@ Kategori: ${financialHealthScore.category}
                   onPress={() => navigation.navigate("Budget")}
                 />
                 <Card>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>Total Anggaran</Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: TEXT_SECONDARY,
+                        fontSize: 12,
+                        fontWeight: "500",
+                      }}
+                    >
+                      Total Anggaran
+                    </Text>
                     <Text style={{ color: colors.gray400, fontSize: 11 }}>
-                      {formatCurrency(budgetAnalytics.totalSpent)} / {formatCurrency(budgetAnalytics.totalBudget)}
+                      {formatCurrency(budgetAnalytics.totalSpent)} /{" "}
+                      {formatCurrency(budgetAnalytics.totalBudget)}
                     </Text>
                   </View>
                   <ThinBar
-                    progress={Math.max(0, Math.min(safeNumber(budgetAnalytics.utilizationRate) / 100, 1))}
+                    progress={Math.max(
+                      0,
+                      Math.min(
+                        safeNumber(budgetAnalytics.utilizationRate) / 100,
+                        1,
+                      ),
+                    )}
                     color={
                       budgetAnalytics.utilizationRate <= 80
                         ? SUCCESS_COLOR
                         : budgetAnalytics.utilizationRate <= 100
-                        ? WARNING_COLOR
-                        : ERROR_COLOR
+                          ? WARNING_COLOR
+                          : ERROR_COLOR
                     }
                   />
-                  <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 5 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 10,
+                      marginTop: 5,
+                    }}
+                  >
                     {budgetAnalytics.utilizationRate.toFixed(1)}% terpakai
                   </Text>
                 </Card>
@@ -1440,78 +1936,142 @@ Kategori: ${financialHealthScore.category}
         {activeTab === "trends" && (
           <>
             <SectionHeader title={`Tren ${timeRange}`} />
-            <Card style={{ marginBottom: 16 }}>
-              {[
-                {
-                  label: "Pengeluaran", change: comparativeData.expenseChange,
-                  current: safeNumber(transactionAnalytics.totalExpense),
-                  max: safeNumber(transactionAnalytics.totalIncome) * 1.5 || 1,
-                  color: ERROR_COLOR, upLabel: "Naik", downLabel: "Turun", upGood: false,
-                },
-                {
-                  label: "Pemasukan", change: comparativeData.incomeChange,
-                  current: safeNumber(transactionAnalytics.totalIncome),
-                  max: safeNumber(comparativeData.previous.totalIncome) * 1.3 || 1,
-                  color: SUCCESS_COLOR, upLabel: "Naik", downLabel: "Turun", upGood: true,
-                },
-                {
-                  label: "Rasio Tabungan", change: comparativeData.savingsRateChange,
-                  current: safeNumber(transactionAnalytics.savingsRate) / 100, max: 1,
-                  color: ACCENT_COLOR, upLabel: "Membaik", downLabel: "Memburuk", upGood: true,
-                },
-              ].map((item, i, arr) => (
-                <View key={item.label} style={{ marginBottom: i < arr.length - 1 ? 18 : 0 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
-                    <Text style={{ color: TEXT_SECONDARY, fontSize: 12, fontWeight: "500" }}>{item.label}</Text>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        fontWeight: "600",
-                        color:
-                          item.change >= 0
-                            ? item.upGood ? SUCCESS_COLOR : ERROR_COLOR
-                            : item.upGood ? ERROR_COLOR : SUCCESS_COLOR,
-                      }}
-                    >
-                      {item.change >= 0 ? item.upLabel : item.downLabel}{" "}
-                      {formatChange(Math.abs(item.change))}
-                    </Text>
-                  </View>
-                  <ThinBar progress={Math.max(0, Math.min(item.current / (item.max || 1), 1))} color={item.color} />
+            <ExpenseTrendChart transactions={state.transactions} />
+
+            {/* Daily average + comparison card */}
+            <SectionHeader title="Rata-rata Harian" />
+            <Card>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 5,
+                    }}
+                  >
+                    Pengeluaran/hari
+                  </Text>
+                  <Text
+                    style={{
+                      color: ERROR_COLOR,
+                      fontSize: 17,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {formatCurrency(transactionAnalytics.avgDailyExpense)}
+                  </Text>
                 </View>
-              ))}
+                <VDivider height={40} />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 5,
+                    }}
+                  >
+                    vs Rata-rata
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "700",
+                      color:
+                        transactionAnalytics.avgDailyExpense > 100000
+                          ? ERROR_COLOR
+                          : SUCCESS_COLOR,
+                    }}
+                  >
+                    {transactionAnalytics.avgDailyExpense > 100000
+                      ? "↑ Tinggi"
+                      : "↓ Hemat"}
+                  </Text>
+                </View>
+              </View>
             </Card>
 
             {/* Savings comparison */}
-            <Card style={{ marginBottom: 16 }}>
+            <SectionHeader title="Perbandingan Rasio Tabungan" />
+            <Card>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 5,
+                    }}
+                  >
                     Bulan Lalu
                   </Text>
-                  <Text style={{ color: TEXT_SECONDARY, fontSize: 16, fontWeight: "700" }}>
-                    {safeNumber(comparativeData.previous.savingsRate).toFixed(1)}%
+                  <Text
+                    style={{
+                      color: TEXT_SECONDARY,
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {safeNumber(comparativeData.previous.savingsRate).toFixed(
+                      1,
+                    )}
+                    %
                   </Text>
                 </View>
-                <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
+                <View
+                  style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }}
+                />
                 <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 5,
+                    }}
+                  >
                     Sekarang
                   </Text>
-                  <Text style={{ color: ACCENT_COLOR, fontSize: 16, fontWeight: "700" }}>
+                  <Text
+                    style={{
+                      color: ACCENT_COLOR,
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
                     {safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
                   </Text>
                 </View>
-                <View style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }} />
+                <View
+                  style={{ width: 1, height: 36, backgroundColor: CARD_BORDER }}
+                />
                 <View style={{ flex: 1, alignItems: "center" }}>
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                      marginBottom: 5,
+                    }}
+                  >
                     Perubahan
                   </Text>
                   <Text
                     style={{
                       fontSize: 15,
                       fontWeight: "700",
-                      color: comparativeData.savingsRateChange >= 0 ? SUCCESS_COLOR : ERROR_COLOR,
+                      color:
+                        comparativeData.savingsRateChange >= 0
+                          ? SUCCESS_COLOR
+                          : ERROR_COLOR,
                     }}
                   >
                     {formatChange(comparativeData.savingsRateChange, true)}
@@ -1519,97 +2079,207 @@ Kategori: ${financialHealthScore.category}
                 </View>
               </View>
             </Card>
-
-            {/* Daily average */}
-            <SectionHeader title="Rata-rata Harian" />
-            <Card>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
-                    Pengeluaran/hari
-                  </Text>
-                  <Text style={{ color: ERROR_COLOR, fontSize: 17, fontWeight: "700" }}>
-                    {formatCurrency(transactionAnalytics.avgDailyExpense)}
-                  </Text>
-                </View>
-                <VDivider height={40} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 5 }}>
-                    vs Rata-rata*
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "700",
-                      color: transactionAnalytics.avgDailyExpense > 100000 ? ERROR_COLOR : SUCCESS_COLOR,
-                    }}
-                  >
-                    {transactionAnalytics.avgDailyExpense > 100000 ? "↑ Tinggi" : "↓ Hemat"}
-                  </Text>
-                </View>
-              </View>
-              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 12 }}>
-                *Berdasarkan data pengguna di kota besar
-              </Text>
-            </Card>
           </>
         )}
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            CATEGORIES TAB
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* CATEGORIES TAB — redesigned with clearer info */}
         {activeTab === "categories" && (
           <>
-            <SectionHeader title="Analisis Kategori" />
+            <SectionHeader title="Analisis Pengeluaran per Kategori" />
 
             {transactionAnalytics.topCategories.length > 0 ? (
               <>
                 <Card style={{ marginBottom: 16 }}>
-                  {categoryBenchmarks.slice(0, 5).map(renderBenchmarkItem)}
-                </Card>
-
-                {transactionAnalytics.topCategories[0] &&
-                  safeNumber(transactionAnalytics.topCategories[0][1]) >
-                    safeNumber(transactionAnalytics.totalExpense) * 0.4 && (
+                  {/* Summary header */}
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "flex-start",
-                      padding: 14,
-                      borderRadius: INNER_RADIUS,
-                      backgroundColor: `${ERROR_COLOR}0C`,
-                      borderWidth: 1,
-                      borderColor: `${ERROR_COLOR}20`,
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 16,
                     }}
                   >
-                    <View
+                    <Text
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 10,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: `${ERROR_COLOR}18`,
-                        marginRight: 12,
-                        flexShrink: 0,
+                        color: colors.gray400,
+                        fontSize: 9,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.8,
                       }}
                     >
-                      <Ionicons name="warning-outline" size={14} color={ERROR_COLOR} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: ERROR_COLOR, fontSize: 12, fontWeight: "600", marginBottom: 3 }}>
-                        Konsentrasi Pengeluaran Tinggi
+                      Kategori
+                    </Text>
+                    <View style={{ flexDirection: "row", gap: 16 }}>
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 9,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.8,
+                        }}
+                      >
+                        Jumlah
                       </Text>
-                      <Text style={{ color: TEXT_SECONDARY, fontSize: 12, lineHeight: 18 }}>
-                        {transactionAnalytics.topCategories[0][0]} menghabiskan{" "}
-                        {getSafePercentage(
-                          transactionAnalytics.topCategories[0][1],
-                          transactionAnalytics.totalExpense
-                        ).toFixed(0)}% dari total pengeluaran
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 9,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.8,
+                          width: 36,
+                          textAlign: "right",
+                        }}
+                      >
+                        %
                       </Text>
                     </View>
                   </View>
-                )}
+
+                  {transactionAnalytics.topCategories.map(
+                    ([category, amount]: [string, number], index: number) => {
+                      const pct = getSafePercentage(
+                        amount,
+                        transactionAnalytics.totalExpense,
+                      );
+                      const barColor = getCategoryIntensityColor(pct);
+                      return (
+                        <View
+                          key={category}
+                          style={{
+                            marginBottom:
+                              index <
+                              transactionAnalytics.topCategories.length - 1
+                                ? 14
+                                : 0,
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              marginBottom: 5,
+                            }}
+                          >
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                flex: 1,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: TEXT_PRIMARY,
+                                  fontSize: 12,
+                                  fontWeight: "600",
+                                }}
+                                numberOfLines={1}
+                              >
+                                {category}
+                              </Text>
+                            </View>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 12,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: TEXT_PRIMARY,
+                                  fontSize: 12,
+                                  fontWeight: "700",
+                                  minWidth: 80,
+                                  textAlign: "right",
+                                }}
+                              >
+                                {formatCurrency(amount)}
+                              </Text>
+                              <Text
+                                style={{
+                                  color: barColor,
+                                  fontSize: 11,
+                                  fontWeight: "700",
+                                  width: 36,
+                                  textAlign: "right",
+                                }}
+                              >
+                                {pct.toFixed(0)}%
+                              </Text>
+                            </View>
+                          </View>
+                          <ThinBar progress={pct / 100} color={barColor} />
+                        </View>
+                      );
+                    },
+                  )}
+                </Card>
+
+                {/* Concentration warning */}
+                {transactionAnalytics.topCategories[0] &&
+                  safeNumber(transactionAnalytics.topCategories[0][1]) >
+                    safeNumber(transactionAnalytics.totalExpense) * 0.4 && (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        padding: 14,
+                        borderRadius: INNER_RADIUS,
+                        backgroundColor: `${ERROR_COLOR}0C`,
+                        borderWidth: 1,
+                        borderColor: `${ERROR_COLOR}20`,
+                        marginBottom: 16,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 10,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: `${ERROR_COLOR}18`,
+                          marginRight: 12,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Ionicons
+                          name="warning-outline"
+                          size={14}
+                          color={ERROR_COLOR}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            color: ERROR_COLOR,
+                            fontSize: 12,
+                            fontWeight: "600",
+                            marginBottom: 3,
+                          }}
+                        >
+                          Konsentrasi Pengeluaran Tinggi
+                        </Text>
+                        <Text
+                          style={{
+                            color: TEXT_SECONDARY,
+                            fontSize: 12,
+                            lineHeight: 18,
+                          }}
+                        >
+                          {transactionAnalytics.topCategories[0][0]}{" "}
+                          menghabiskan{" "}
+                          {getSafePercentage(
+                            transactionAnalytics.topCategories[0][1],
+                            transactionAnalytics.totalExpense,
+                          ).toFixed(0)}
+                          % dari total pengeluaran
+                        </Text>
+                      </View>
+                    </View>
+                  )}
               </>
             ) : (
               <View
@@ -1633,18 +2303,41 @@ Kategori: ${financialHealthScore.category}
                     marginBottom: 12,
                   }}
                 >
-                  <Ionicons name="pricetags-outline" size={24} color={colors.gray400} />
+                  <Ionicons
+                    name="pricetags-outline"
+                    size={24}
+                    color={colors.gray400}
+                  />
                 </View>
-                <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600", marginBottom: 5 }}>
+                <Text
+                  style={{
+                    color: TEXT_PRIMARY,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    marginBottom: 5,
+                  }}
+                >
                   Belum ada data kategori
                 </Text>
-                <Text style={{ color: colors.gray400, fontSize: 12, textAlign: "center" }}>
+                <Text
+                  style={{
+                    color: colors.gray400,
+                    fontSize: 12,
+                    textAlign: "center",
+                  }}
+                >
                   Mulai catat transaksi untuk melihat analisis kategori
                 </Text>
               </View>
             )}
           </>
         )}
+
+        {/* CATEGORIES TAB — redesigned with clearer info */}
+
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+            CATEGORIES TAB
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             INSIGHTS TAB
@@ -1660,8 +2353,8 @@ Kategori: ${financialHealthScore.category}
                       insight.type === "success"
                         ? SUCCESS_COLOR
                         : insight.type === "warning"
-                        ? ERROR_COLOR
-                        : colors.info;
+                          ? ERROR_COLOR
+                          : colors.info;
                     return (
                       <View
                         key={index}
@@ -1689,13 +2382,30 @@ Kategori: ${financialHealthScore.category}
                             flexShrink: 0,
                           }}
                         >
-                          <Ionicons name={getSafeIcon(insight.icon)} size={15} color={insightColor} />
+                          <Ionicons
+                            name={getSafeIcon(insight.icon)}
+                            size={15}
+                            color={insightColor}
+                          />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ color: insightColor, fontSize: 12, fontWeight: "700", marginBottom: 3 }}>
+                          <Text
+                            style={{
+                              color: insightColor,
+                              fontSize: 12,
+                              fontWeight: "700",
+                              marginBottom: 3,
+                            }}
+                          >
                             {insight.title}
                           </Text>
-                          <Text style={{ color: TEXT_SECONDARY, fontSize: 12, lineHeight: 18 }}>
+                          <Text
+                            style={{
+                              color: TEXT_SECONDARY,
+                              fontSize: 12,
+                              lineHeight: 18,
+                            }}
+                          >
                             {insight.message}
                           </Text>
                         </View>
@@ -1710,22 +2420,32 @@ Kategori: ${financialHealthScore.category}
             <Card>
               {[
                 {
-                  num: 1, color: ACCENT_COLOR,
+                  num: 1,
+                  color: ACCENT_COLOR,
                   title: "Review Mingguan",
                   desc: "Luangkan 10 menit setiap Minggu malam untuk review pengeluaran minggu ini",
                 },
                 {
-                  num: 2, color: SUCCESS_COLOR,
+                  num: 2,
+                  color: SUCCESS_COLOR,
                   title: "Auto-Saving",
                   desc: "Set up auto-transfer 10% gaji ke rekening tabungan setiap tanggal gajian",
                 },
                 {
-                  num: 3, color: WARNING_COLOR,
+                  num: 3,
+                  color: WARNING_COLOR,
                   title: "Cash-Only Weekend",
                   desc: "Coba metode cash-only untuk pengeluaran weekend, terbukti kurangi impulse buying 30%",
                 },
               ].map((tip, i) => (
-                <View key={tip.num} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: i < 2 ? 16 : 0 }}>
+                <View
+                  key={tip.num}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    marginBottom: i < 2 ? 16 : 0,
+                  }}
+                >
                   <View
                     style={{
                       width: 32,
@@ -1739,15 +2459,34 @@ Kategori: ${financialHealthScore.category}
                       flexShrink: 0,
                     }}
                   >
-                    <Text style={{ color: tip.color, fontSize: 12, fontWeight: "700" }}>
+                    <Text
+                      style={{
+                        color: tip.color,
+                        fontSize: 12,
+                        fontWeight: "700",
+                      }}
+                    >
                       {tip.num}
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", marginBottom: 4 }}>
+                    <Text
+                      style={{
+                        color: TEXT_PRIMARY,
+                        fontSize: 13,
+                        fontWeight: "600",
+                        marginBottom: 4,
+                      }}
+                    >
                       {tip.title}
                     </Text>
-                    <Text style={{ color: TEXT_SECONDARY, fontSize: 12, lineHeight: 18 }}>
+                    <Text
+                      style={{
+                        color: TEXT_SECONDARY,
+                        fontSize: 12,
+                        lineHeight: 18,
+                      }}
+                    >
                       {tip.desc}
                     </Text>
                   </View>
@@ -1756,7 +2495,6 @@ Kategori: ${financialHealthScore.category}
             </Card>
           </>
         )}
-
       </ScrollView>
     </SafeAreaView>
   );

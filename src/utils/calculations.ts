@@ -17,7 +17,6 @@ export const safeNumber = (num: any): number => {
     const parsed = Number(num);
     return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
   } catch (error) {
-
     return 0;
   }
 };
@@ -42,7 +41,6 @@ export const calculateTotals = (transactions: Transaction[] = []) => {
 
     return { totalIncome, totalExpense, balance };
   } catch (error) {
-
     return { totalIncome: 0, totalExpense: 0, balance: 0 };
   }
 };
@@ -57,7 +55,6 @@ export const calculateBudgetProgress = (budget: Budget) => {
     const percentage = (safeSpent / safeLimit) * 100;
     return Math.min(Math.max(0, percentage), 100);
   } catch (error) {
-
     return 0;
   }
 };
@@ -72,7 +69,6 @@ export const calculateSavingsProgress = (savings: Savings) => {
     const percentage = (safeCurrent / safeTarget) * 100;
     return Math.min(Math.max(0, percentage), 100);
   } catch (error) {
-
     return 0;
   }
 };
@@ -86,7 +82,6 @@ export const formatCurrency = (amount: number): string => {
       maximumFractionDigits: 0,
     }).format(safeNumber(amount));
   } catch (error) {
-
     return "Rp 0";
   }
 };
@@ -136,7 +131,6 @@ export const formatResetDate = (dateString?: string): string => {
       month: "short",
     });
   } catch (error) {
-
     return dateString || "Tanggal tidak valid";
   }
 };
@@ -153,7 +147,6 @@ export const getSafePercentage = (part: number, total: number): number => {
     const result = isNaN(percentage) ? 0 : percentage;
     return Math.max(0, Math.min(result, 100));
   } catch (error) {
-
     return 0;
   }
 };
@@ -163,7 +156,6 @@ export const formatNumber = (num: number): string => {
   try {
     return safeNumber(num).toLocaleString("id-ID");
   } catch (error) {
-
     return "0";
   }
 };
@@ -179,7 +171,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
   let cycleIncomeId: string | undefined = undefined;
 
   for (let i = 0; i < transactions.length; i++) {
-    if (transactions[i].cyclePeriod) {
+    if (transactions[i].type === "income" && transactions[i].cyclePeriod) {
       const tDate = new Date(transactions[i].date);
       const time = tDate.getTime();
       if (time <= now.getTime() && time > latestTime) {
@@ -197,7 +189,7 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
 
     const nowTime = now.getTime();
     const startTime = originalStartDate.getTime();
-    
+
     // Hitung berapa kali siklus telah lewat
     let cyclesPassed = 0;
     if (nowTime >= startTime) {
@@ -207,22 +199,36 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
     }
 
     const startDate = new Date(originalStartDate);
-    startDate.setDate(originalStartDate.getDate() + (cyclesPassed * activePeriod));
+    startDate.setDate(
+      originalStartDate.getDate() + cyclesPassed * activePeriod,
+    );
 
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + activePeriod - 1);
     endDate.setHours(23, 59, 59, 999);
 
-    let label = activePeriod === 7 ? "Periode 7 Hari" : activePeriod === 30 ? "Periode 30 Hari" : `Periode ${activePeriod} Hari`;
+    let label =
+      activePeriod === 7
+        ? "Periode 7 Hari"
+        : activePeriod === 30
+          ? "Periode 30 Hari"
+          : `Periode ${activePeriod} Hari`;
 
-    return { hasCycle: true, period: activePeriod, startDate, endDate, label, cycleIncomeId };
+    return {
+      hasCycle: true,
+      period: activePeriod,
+      startDate,
+      endDate,
+      label,
+      cycleIncomeId,
+    };
   }
   return null;
 };
 
 export const filterTransactionsByTime = (
   transactions: Transaction[],
-  timeFilter: TimeFilter
+  timeFilter: TimeFilter,
 ): Transaction[] => {
   if (timeFilter === "all" || !transactions?.length) return transactions;
 
@@ -236,7 +242,7 @@ export const filterTransactionsByTime = (
 
   if (timeFilter === "weekly") {
     const cycle = getActiveCycleInfo(transactions);
-    
+
     if (cycle) {
       startOfWeek = cycle.startDate;
       endOfWeek = cycle.endDate;
@@ -253,8 +259,8 @@ export const filterTransactionsByTime = (
     }
   }
 
-  const cycleIncome = cycleIncomeId 
-    ? transactions.find(t => t.id === cycleIncomeId) 
+  const cycleIncome = cycleIncomeId
+    ? transactions.find((t) => t.id === cycleIncomeId)
     : null;
 
   return transactions.filter((t) => {
@@ -278,7 +284,11 @@ export const filterTransactionsByTime = (
         const dNormalized = new Date(d);
         dNormalized.setHours(0, 0, 0, 0);
 
-        if (cycleIncome && dNormalized.getTime() === startOfWeek.getTime() && t.id !== cycleIncomeId) {
+        if (
+          cycleIncome &&
+          dNormalized.getTime() === startOfWeek.getTime() &&
+          t.id !== cycleIncomeId
+        ) {
           // Jika transaksi ini dicatat SEBELUM income pembuka siklus, jangan masukkan ke filter ini
           // (Karena akan dianggap sebagai bagian dari Saldo Awal/Bawaan)
           if (t.createdAt < cycleIncome.createdAt) return false;
@@ -302,7 +312,7 @@ export const calculateProjection = (
   totalExpense: number,
   startDate: Date,
   endDate: Date,
-  currentDate: Date = new Date()
+  currentDate: Date = new Date(),
 ) => {
   try {
     const start = new Date(startDate);
@@ -314,11 +324,21 @@ export const calculateProjection = (
     const now = new Date(currentDate);
 
     // Total hari dalam periode ini
-    const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    const totalDays = Math.max(
+      1,
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+    );
 
     // Hari yang sudah berjalan (minimal 1 agar tidak pembagian nol)
     // Use floor + 1 untuk calendar days: hari pertama = 1, bukan 0
-    const daysPassed = Math.max(1, Math.min(totalDays, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1));
+    const daysPassed = Math.max(
+      1,
+      Math.min(
+        totalDays,
+        Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+          1,
+      ),
+    );
 
     // Sisa hari
     const daysRemaining = Math.max(0, totalDays - daysPassed);
@@ -330,7 +350,8 @@ export const calculateProjection = (
     const dailyAvgExpense = safePositiveNumber(totalExpense) / daysPassed;
 
     // Estimasi total pengeluaran sampai akhir periode
-    const projectedExpense = safePositiveNumber(totalExpense) + (dailyAvgExpense * daysRemaining);
+    const projectedExpense =
+      safePositiveNumber(totalExpense) + dailyAvgExpense * daysRemaining;
 
     // Estimasi saldo akhir
     const projectedBalance = safeNumber(totalIncome) - projectedExpense;
@@ -346,11 +367,10 @@ export const calculateProjection = (
         projectedBalance >= 0
           ? ("surplus" as const)
           : projectedBalance > -1000000
-          ? ("warning" as const)
-          : ("deficit" as const),
+            ? ("warning" as const)
+            : ("deficit" as const),
     };
   } catch (error) {
-
     return {
       daysPassed: 1,
       daysRemaining: 0,
@@ -370,14 +390,14 @@ export const calculateProjection = (
 export const calculateOpeningBalance = (
   transactions: Transaction[],
   startDate: Date,
-  cycleIncomeId?: string
+  cycleIncomeId?: string,
 ) => {
   try {
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
-    const cycleIncome = cycleIncomeId 
-      ? transactions.find(t => t.id === cycleIncomeId) 
+    const cycleIncome = cycleIncomeId
+      ? transactions.find((t) => t.id === cycleIncomeId)
       : null;
 
     return transactions.reduce((sum, t) => {
@@ -386,20 +406,29 @@ export const calculateOpeningBalance = (
 
       // 1. Jika tanggal transaksi mutlak sebelum startDate
       if (tDate < start) {
-        return sum + (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount));
+        return (
+          sum +
+          (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))
+        );
       }
 
       // 2. Jika tanggal SAMA, tapi dicatat SEBELUM income pembuka siklus
-      if (cycleIncome && tDate.getTime() === start.getTime() && t.id !== cycleIncomeId) {
+      if (
+        cycleIncome &&
+        tDate.getTime() === start.getTime() &&
+        t.id !== cycleIncomeId
+      ) {
         if (t.createdAt < cycleIncome.createdAt) {
-          return sum + (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount));
+          return (
+            sum +
+            (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))
+          );
         }
       }
 
       return sum;
     }, 0);
   } catch (error) {
-
     return 0;
   }
 };

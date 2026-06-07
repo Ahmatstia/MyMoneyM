@@ -11,39 +11,51 @@ import {
   safeNumber,
   safePositiveNumber,
 } from "../../../utils/calculations";
-import { calculateTransactionAnalytics, calculateFinancialHealthScore } from "../../../utils/analytics";
+import {
+  calculateTransactionAnalytics,
+  calculateFinancialHealthScore,
+} from "../../../utils/analytics";
 import { Colors } from "../../../theme/theme";
-import { DEFAULT_CATEGORIES, CategoryItem } from "../../../components/CategoryPickerModal";
+import {
+  DEFAULT_CATEGORIES,
+  CategoryItem,
+} from "../../../components/CategoryPickerModal";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation: any) => {
-  const activeCycle = useMemo(
-    () => {
-      const cycle = getActiveCycleInfo(state.transactions);
+export const useHomeData = (
+  state: AppState,
+  timeFilter: TimeFilter,
+  navigation: any,
+) => {
+  const activeCycle = useMemo(() => {
+    const cycle = getActiveCycleInfo(state.transactions);
 
-      // FIX-004: Validate single cycle anchor
-      if (cycle && state.transactions.length > 0) {
-        const activeCycles = state.transactions.filter(
-          t => t.cyclePeriod && new Date(t.date).getTime() <= new Date().getTime()
+    // FIX-004: Validate single cycle anchor
+    if (cycle && state.transactions.length > 0) {
+      const activeCycles = state.transactions.filter(
+        (t) =>
+          t.type === "income" &&
+          t.cyclePeriod &&
+          new Date(t.date).getTime() <= new Date().getTime(),
+      );
+      if (activeCycles.length > 1) {
+        console.warn(
+          "⚠️ MULTIPLE CYCLE INCOMES DETECTED:",
+          activeCycles
+            .map((t) => `${t.date} (${t.cyclePeriod} days)`)
+            .join(", "),
+          "→ Using latest anchor. Consider consolidating to single cycle income.",
         );
-        if (activeCycles.length > 1) {
-          console.warn(
-            "⚠️ MULTIPLE CYCLE INCOMES DETECTED:",
-            activeCycles.map(t => `${t.date} (${t.cyclePeriod} days)`).join(", "),
-            "→ Using latest anchor. Consider consolidating to single cycle income."
-          );
-        }
       }
+    }
 
-      return cycle;
-    },
-    [state.transactions]
-  );
+    return cycle;
+  }, [state.transactions]);
 
   const filteredTransactions = useMemo(
     () => filterTransactionsByTime(state.transactions, timeFilter),
-    [state.transactions, timeFilter]
+    [state.transactions, timeFilter],
   );
 
   const {
@@ -52,7 +64,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     balance: filteredPeriodNetto,
   } = useMemo(
     () => calculateTotals(filteredTransactions),
-    [filteredTransactions]
+    [filteredTransactions],
   );
 
   const openingBalance = useMemo(() => {
@@ -81,13 +93,13 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     return calculateOpeningBalance(
       state.transactions,
       startDate,
-      cycleIncomeId
+      cycleIncomeId,
     );
   }, [state.transactions, timeFilter]);
 
   const filteredBalance = useMemo(
     () => openingBalance + filteredPeriodNetto,
-    [openingBalance, filteredPeriodNetto]
+    [openingBalance, filteredPeriodNetto],
   );
 
   const hasFinancialData = useMemo(() => {
@@ -117,7 +129,10 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         expenseTransactionCount: 0,
       };
     }
-    const analytics = calculateTransactionAnalytics(state.transactions, "month");
+    const analytics = calculateTransactionAnalytics(
+      state.transactions,
+      "month",
+    );
     return {
       ...analytics,
       totalIncome: safeNumber(analytics.totalIncome),
@@ -152,36 +167,36 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         hasBudgets: state.budgets.length > 0,
         totalBudget: state.budgets.reduce(
           (sum, b) => sum + safePositiveNumber(b.limit),
-          0
+          0,
         ),
         totalSpent: state.budgets.reduce(
           (sum, b) => sum + safePositiveNumber(b.spent),
-          0
+          0,
         ),
         utilizationRate:
           state.budgets.reduce(
             (sum, b) => sum + safePositiveNumber(b.limit),
-            0
+            0,
           ) > 0
             ? (state.budgets.reduce(
                 (sum, b) => sum + safePositiveNumber(b.spent),
-                0
+                0,
               ) /
                 state.budgets.reduce(
                   (sum, b) => sum + safePositiveNumber(b.limit),
-                  0
+                  0,
                 )) *
               100
             : 0,
         overBudgetCount: state.budgets.filter(
-          (b) => safePositiveNumber(b.spent) > safePositiveNumber(b.limit)
+          (b) => safePositiveNumber(b.spent) > safePositiveNumber(b.limit),
         ).length,
         underBudgetCount: state.budgets.filter(
-          (b) => safePositiveNumber(b.spent) <= safePositiveNumber(b.limit)
+          (b) => safePositiveNumber(b.spent) <= safePositiveNumber(b.limit),
         ).length,
         budgetsAtRisk: state.budgets.filter(
           (b) =>
-            safePositiveNumber(b.spent) > safePositiveNumber(b.limit) * 0.8
+            safePositiveNumber(b.spent) > safePositiveNumber(b.limit) * 0.8,
         ),
       };
 
@@ -189,34 +204,32 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         hasSavings: state.savings.length > 0,
         totalTarget: state.savings.reduce(
           (sum, s) => sum + safePositiveNumber(s.target),
-          0
+          0,
         ),
         totalCurrent: state.savings.reduce(
           (sum, s) => sum + safePositiveNumber(s.current),
-          0
+          0,
         ),
         overallProgress:
           state.savings.reduce(
             (sum, s) => sum + safePositiveNumber(s.target),
-            0
+            0,
           ) > 0
             ? (state.savings.reduce(
                 (sum, s) => sum + safePositiveNumber(s.current),
-                0
+                0,
               ) /
                 state.savings.reduce(
                   (sum, s) => sum + safePositiveNumber(s.target),
-                  0
+                  0,
                 )) *
               100
             : 0,
         completedSavings: state.savings.filter(
-          (s) =>
-            safePositiveNumber(s.current) >= safePositiveNumber(s.target)
+          (s) => safePositiveNumber(s.current) >= safePositiveNumber(s.target),
         ).length,
         activeSavings: state.savings.filter(
-          (s) =>
-            safePositiveNumber(s.current) < safePositiveNumber(s.target)
+          (s) => safePositiveNumber(s.current) < safePositiveNumber(s.target),
         ).length,
         nearingCompletion: state.savings.filter((s) => {
           const target = safePositiveNumber(s.target);
@@ -237,10 +250,9 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         } as any,
         budgetAnalytics,
         savingsAnalytics,
-        totalActiveDebt
+        totalActiveDebt,
       );
     } catch (error) {
-
       return {
         overallScore: 50,
         category: "Cukup",
@@ -269,12 +281,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         ],
       };
     }
-  }, [
-    state.budgets,
-    state.savings,
-    transactionAnalytics,
-    hasFinancialData,
-  ]);
+  }, [state.budgets, state.savings, transactionAnalytics, hasFinancialData]);
 
   const getPersonalizedGreeting = () => {
     const hour = new Date().getHours();
@@ -287,7 +294,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     if (state.userProfile?.name) {
       return `${greeting}, ${state.userProfile.name} 👋`;
     }
-    
+
     return `${greeting} 👋`;
   };
 
@@ -312,9 +319,9 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
       insights.push({
         type: "warning",
         title: "Rasio Tabungan Rendah",
-        message: `Hanya ${safeNumber(
-          transactionAnalytics.savingsRate
-        ).toFixed(1)}% dari pemasukan disimpan`,
+        message: `Hanya ${safeNumber(transactionAnalytics.savingsRate).toFixed(
+          1,
+        )}% dari pemasukan disimpan`,
         icon: "trending-down-outline" as SafeIconName,
         color: Colors.error,
         action: "Tingkatkan ke 20%",
@@ -325,7 +332,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         type: "success",
         title: "Rasio Tabungan Baik!",
         message: `${safeNumber(transactionAnalytics.savingsRate).toFixed(
-          1
+          1,
         )}% pemasukan berhasil disimpan`,
         icon: "trending-up-outline" as SafeIconName,
         color: Colors.success,
@@ -339,16 +346,14 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
       const safeTopAmount = safeNumber(topAmount);
       const safeTotalExpense = safeNumber(transactionAnalytics.totalExpense);
       const percentage =
-        safeTotalExpense > 0
-          ? (safeTopAmount / safeTotalExpense) * 100
-          : 0;
+        safeTotalExpense > 0 ? (safeTopAmount / safeTotalExpense) * 100 : 0;
 
       if (percentage > 40) {
         insights.push({
           type: "warning",
           title: "Konsentrasi Pengeluaran Tinggi",
           message: `${topCategory} menghabiskan ${safeNumber(
-            percentage
+            percentage,
           ).toFixed(0)}% dari total pengeluaran`,
           icon: "pie-chart-outline" as SafeIconName,
           color: Colors.warning,
@@ -361,7 +366,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
 
     if (state.budgets.length > 0) {
       const overBudgetCount = state.budgets.filter(
-        (b) => safeNumber(b.spent) > safeNumber(b.limit)
+        (b) => safeNumber(b.spent) > safeNumber(b.limit),
       ).length;
       if (overBudgetCount > 0) {
         insights.push({
@@ -407,8 +412,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         icon: "heart-outline" as SafeIconName,
         color: Colors.error,
         action: "Lihat Detail",
-        onPress: () =>
-          navigation.navigate("Analytics", { tab: "health" }),
+        onPress: () => navigation.navigate("Analytics", { tab: "health" }),
       });
     }
 
@@ -435,7 +439,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
       state.budgets,
       state.savings,
       financialHealthScore,
-    ]
+    ],
   );
 
   const getDynamicQuickActions = () => {
@@ -480,7 +484,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
 
   const dynamicQuickActions = useMemo(
     () => getDynamicQuickActions(),
-    [navigation]
+    [navigation],
   );
 
   const projectionData = useMemo(() => {
@@ -521,7 +525,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         filteredExpense,
         startDate,
         endDate,
-        now
+        now,
       ),
       label,
     };
@@ -601,8 +605,8 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
           safeDailySpend >= 1000000
             ? `${(safeDailySpend / 1000000).toFixed(1)}jt`
             : safeDailySpend >= 1000
-            ? `${(safeDailySpend / 1000).toFixed(0)}rb`
-            : safeDailySpend.toFixed(0),
+              ? `${(safeDailySpend / 1000).toFixed(0)}rb`
+              : safeDailySpend.toFixed(0),
         unit: timeFilter === "all" ? "IDR" : "/hari",
         trend: filteredBalance > 0 ? "↑" : "↓",
         color: filteredBalance > 0 ? Colors.success : Colors.warning,
@@ -614,8 +618,8 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
           avgDaily >= 1000000
             ? `${(avgDaily / 1000000).toFixed(1)}jt`
             : avgDaily >= 1000
-            ? `${(avgDaily / 1000).toFixed(0)}rb`
-            : avgDaily.toString(),
+              ? `${(avgDaily / 1000).toFixed(0)}rb`
+              : avgDaily.toString(),
         unit: "/hari",
         trend: avgDaily < 100000 ? "↓" : "↑",
         trendLabel: avgDaily < 100000 ? "Hemat" : "Tinggi",
@@ -625,19 +629,16 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
         id: "transactions_count",
         label: "Transaksi",
         value: currentTransactionCount.toString(),
-        unit:
-          timeFilter === "all"
-            ? "total"
-            : "periode",
+        unit: timeFilter === "all" ? "total" : "periode",
         trend: currentTransactionCount > 10 ? "↑" : "↓",
         trendLabel:
           timeFilter === "all"
             ? "Selama ini"
             : timeFilter === "weekly"
-            ? "Periode ini"
-            : timeFilter === "monthly"
-            ? "Bulan ini"
-            : "Tahun ini",
+              ? "Periode ini"
+              : timeFilter === "monthly"
+                ? "Bulan ini"
+                : "Tahun ini",
         color: Colors.accent,
       },
     ];
@@ -651,7 +652,7 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
       projectionData,
       filteredTransactions,
       timeFilter,
-    ]
+    ],
   );
 
   const getCurrentDate = () => {
@@ -677,14 +678,24 @@ export const useHomeData = (state: AppState, timeFilter: TimeFilter, navigation:
     const all: CategoryItem[] = [
       ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
-        id: c.id, name: c.name, icon: c.icon, color: c.color,
-        isCustom: true as const, customId: c.id,
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        color: c.color,
+        isCustom: true as const,
+        customId: c.id,
       })),
     ];
     const found = all.find((c) => c.name === categoryName);
-    return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: Colors.gray400 };
+    return (
+      found || {
+        id: "unknown",
+        name: categoryName,
+        icon: "receipt-outline",
+        color: Colors.gray400,
+      }
+    );
   };
-
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return Colors.success;

@@ -1,20 +1,31 @@
 // File: src/utils/analytics.ts (DIPERBAIKI - fix savings analytics)
 import { Transaction, Budget, Savings } from "../types";
 import { getMonthRange, getWeekRange, getYearRange } from "./formatters";
-import { safeNumber, getSafePercentage, filterTransactionsByTime, getActiveCycleInfo } from "./calculations";
+import {
+  safeNumber,
+  getSafePercentage,
+  filterTransactionsByTime,
+  getActiveCycleInfo,
+} from "./calculations";
 
 // ==================== SAFE ANALYTICS FUNCTIONS ====================
 
 // Calculate analytics data for transactions with safe defaults
 export const calculateTransactionAnalytics = (
   transactions: Transaction[] = [],
-  timeRange: "week" | "month" | "year" = "month"
+  timeRange: "week" | "month" | "year" = "month",
 ) => {
   try {
     // Filter transactions by date range / cycle using the shared utility
     const filteredTransactions = filterTransactionsByTime(
       transactions,
-      timeRange === "week" ? "weekly" : timeRange === "month" ? "monthly" : timeRange === "year" ? "yearly" : "all"
+      timeRange === "week"
+        ? "weekly"
+        : timeRange === "month"
+          ? "monthly"
+          : timeRange === "year"
+            ? "yearly"
+            : "all",
     );
 
     // Tetap ambil startDate dan endDate statis untuk fallback metadata
@@ -26,20 +37,20 @@ export const calculateTransactionAnalytics = (
         // For simplicity we will just generate static dates for display bounds
         // or re-use the util ranges
         if (timeRange === "week") {
-            const cycle = getActiveCycleInfo(transactions);
-            if(cycle) {
-                startDate = cycle.startDate;
-                endDate = cycle.endDate;
-            } else {
-                startDate = getWeekRange().start;
-                endDate = getWeekRange().end;
-            }
+          const cycle = getActiveCycleInfo(transactions);
+          if (cycle) {
+            startDate = cycle.startDate;
+            endDate = cycle.endDate;
+          } else {
+            startDate = getWeekRange().start;
+            endDate = getWeekRange().end;
+          }
         } else if (timeRange === "month") {
-            startDate = getMonthRange().start;
-            endDate = getMonthRange().end;
+          startDate = getMonthRange().start;
+          endDate = getMonthRange().end;
         } else if (timeRange === "year") {
-            startDate = getYearRange().start;
-            endDate = getYearRange().end;
+          startDate = getYearRange().start;
+          endDate = getYearRange().end;
         }
       }
     } catch {}
@@ -64,7 +75,7 @@ export const calculateTransactionAnalytics = (
       const dateStr = date.toISOString().split("T")[0];
 
       const dayTransactions = filteredTransactions.filter(
-        (t) => t.date === dateStr
+        (t) => t.date === dateStr,
       );
 
       const dayIncome = dayTransactions
@@ -93,17 +104,17 @@ export const calculateTransactionAnalytics = (
         }
       });
 
-    // Sort categories by spending
-    const topCategories = Object.entries(categorySpending)
-      .sort((a, b) => safeNumber(b[1]) - safeNumber(a[1]))
-      .slice(0, 5);
+    // Sort all used categories by spending
+    const topCategories = Object.entries(categorySpending).sort(
+      (a, b) => safeNumber(b[1]) - safeNumber(a[1]),
+    );
 
     // Calculate average daily spending
     const daysInRange = Math.max(
       1,
       Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-      )
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ),
     );
     const avgDailyExpense = totalExpense / daysInRange;
 
@@ -120,14 +131,13 @@ export const calculateTransactionAnalytics = (
       avgDailyExpense: safeNumber(avgDailyExpense),
       transactionCount: filteredTransactions.length,
       incomeTransactionCount: filteredTransactions.filter(
-        (t) => t.type === "income"
+        (t) => t.type === "income",
       ).length,
       expenseTransactionCount: filteredTransactions.filter(
-        (t) => t.type === "expense"
+        (t) => t.type === "expense",
       ).length,
     };
   } catch (error) {
-
     // Return safe defaults
     const now = new Date();
     return {
@@ -151,10 +161,8 @@ export const calculateTransactionAnalytics = (
 // PERBAIKAN: Calculate budget utilization analytics - FIXED
 export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
   try {
-
     // Jika budgets adalah array kosong atau null/undefined
     if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
-
       return {
         totalBudget: 0,
         totalSpent: 0,
@@ -174,31 +182,28 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
         typeof b.limit === "number" &&
         typeof b.spent === "number" &&
         !isNaN(b.limit) &&
-        !isNaN(b.spent)
+        !isNaN(b.spent),
     );
-
 
     const totalBudget = validBudgets.reduce(
       (sum, b) => sum + safeNumber(b.limit),
-      0
+      0,
     );
 
     const totalSpent = validBudgets.reduce(
       (sum, b) => sum + safeNumber(b.spent),
-      0
+      0,
     );
-
-    
 
     const utilizationRate =
       totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
     const overBudgetCount = validBudgets.filter(
-      (b) => safeNumber(b.spent) > safeNumber(b.limit)
+      (b) => safeNumber(b.spent) > safeNumber(b.limit),
     ).length;
 
     const underBudgetCount = validBudgets.filter(
-      (b) => safeNumber(b.spent) <= safeNumber(b.limit)
+      (b) => safeNumber(b.spent) <= safeNumber(b.limit),
     ).length;
 
     const budgetsAtRisk = validBudgets
@@ -229,7 +234,6 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
       hasBudgets: validBudgets.length > 0,
     };
   } catch (error) {
-
     return {
       totalBudget: 0,
       totalSpent: 0,
@@ -245,10 +249,8 @@ export const calculateBudgetAnalytics = (budgets: Budget[] = []) => {
 // PERBAIKAN BESAR: Calculate savings progress analytics - FIXED
 export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
   try {
-
     // Jika savings adalah array kosong atau null/undefined
     if (!savings || !Array.isArray(savings) || savings.length === 0) {
-
       return {
         totalTarget: 0,
         totalCurrent: 0,
@@ -268,31 +270,28 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
         typeof s.target === "number" &&
         typeof s.current === "number" &&
         !isNaN(s.target) &&
-        !isNaN(s.current)
+        !isNaN(s.current),
     );
-
 
     const totalTarget = validSavings.reduce(
       (sum, s) => sum + safeNumber(s.target),
-      0
+      0,
     );
 
     const totalCurrent = validSavings.reduce(
       (sum, s) => sum + safeNumber(s.current),
-      0
+      0,
     );
-
-    
 
     const overallProgress =
       totalTarget > 0 ? (totalCurrent / totalTarget) * 100 : 0;
 
     const completedSavings = validSavings.filter(
-      (s) => safeNumber(s.current) >= safeNumber(s.target)
+      (s) => safeNumber(s.current) >= safeNumber(s.target),
     ).length;
 
     const activeSavings = validSavings.filter(
-      (s) => safeNumber(s.current) < safeNumber(s.target)
+      (s) => safeNumber(s.current) < safeNumber(s.target),
     ).length;
 
     const nearingCompletion = validSavings
@@ -323,7 +322,6 @@ export const calculateSavingsAnalytics = (savings: Savings[] = []) => {
       hasSavings: validSavings.length > 0, // PERBAIKAN: Tambah flag
     };
   } catch (error) {
-
     return {
       totalTarget: 0,
       totalCurrent: 0,
@@ -373,7 +371,7 @@ export const calculateFinancialHealthScore = (
   transactionAnalytics: ReturnType<typeof calculateTransactionAnalytics>,
   budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>,
   savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>,
-  totalActiveDebt: number = 0   // NEW: Total sisa hutang aktif (borrowed)
+  totalActiveDebt: number = 0, // NEW: Total sisa hutang aktif (borrowed)
 ): FinancialHealthScore => {
   try {
     const hasTransactions = transactionAnalytics.transactionCount > 0;
@@ -387,8 +385,16 @@ export const calculateFinancialHealthScore = (
         color: "#64748B",
         factors: {
           savingsRate: { score: 0, weight: 0, status: "poor" as FactorStatus },
-          budgetAdherence: { score: 0, weight: 0, status: "poor" as FactorStatus },
-          expenseControl: { score: 0, weight: 1, status: "poor" as FactorStatus },
+          budgetAdherence: {
+            score: 0,
+            weight: 0,
+            status: "poor" as FactorStatus,
+          },
+          expenseControl: {
+            score: 0,
+            weight: 1,
+            status: "poor" as FactorStatus,
+          },
           goalProgress: { score: 0, weight: 0, status: "poor" as FactorStatus },
         },
         recommendations: [
@@ -403,14 +409,22 @@ export const calculateFinancialHealthScore = (
         category: "Kritis",
         color: "#DC2626",
         factors: {
-           savingsRate: { score: 0, weight: 0, status: "poor" as FactorStatus },
-           budgetAdherence: { score: 0, weight: 0, status: "poor" as FactorStatus },
-           expenseControl: { score: 20, weight: 1, status: "poor" as FactorStatus },
-           goalProgress: { score: 0, weight: 0, status: "poor" as FactorStatus },
+          savingsRate: { score: 0, weight: 0, status: "poor" as FactorStatus },
+          budgetAdherence: {
+            score: 0,
+            weight: 0,
+            status: "poor" as FactorStatus,
+          },
+          expenseControl: {
+            score: 20,
+            weight: 1,
+            status: "poor" as FactorStatus,
+          },
+          goalProgress: { score: 0, weight: 0, status: "poor" as FactorStatus },
         },
         recommendations: [
           "Tidak ada pemasukan tercatat, tapi ada pengeluaran.",
-          "Tambahkan pemasukan rutin Anda untuk melihat skor akurat."
+          "Tambahkan pemasukan rutin Anda untuk melihat skor akurat.",
         ],
       };
     }
@@ -433,7 +447,11 @@ export const calculateFinancialHealthScore = (
       recommendations = [
         "Bagus sekali! Pengeluaran Anda berada di bawah 40%.",
         "Anda menyisihkan porsi tabungan yang sangat sehat.",
-        ...(safeDebt > 0 ? ["💳 Anda masih punya hutang aktif — pertahankan cicilan agar tetap di zona aman."] : []),
+        ...(safeDebt > 0
+          ? [
+              "💳 Anda masih punya hutang aktif — pertahankan cicilan agar tetap di zona aman.",
+            ]
+          : []),
       ];
     } else if (expenseRatio <= 0.6) {
       score = 80;
@@ -443,7 +461,11 @@ export const calculateFinancialHealthScore = (
       recommendations = [
         "Keuangan Anda dalam kondisi sehat.",
         "Anda berhasil menjaga pengeluaran pada takaran normal.",
-        ...(safeDebt > 0 ? ["💳 Hutang Anda sudah diperhitungkan dalam beban ini. Prioritaskan pelunasan."] : []),
+        ...(safeDebt > 0
+          ? [
+              "💳 Hutang Anda sudah diperhitungkan dalam beban ini. Prioritaskan pelunasan.",
+            ]
+          : []),
       ];
     } else if (expenseRatio <= 0.7) {
       score = 60;
@@ -453,7 +475,11 @@ export const calculateFinancialHealthScore = (
       recommendations = [
         "Pengeluaran Anda mulai mendekati batas tinggi.",
         "Lebih waspada terhadap belanja-belanja kecil minggu ini.",
-        ...(safeDebt > 0 ? ["💳 Hutang ikut menekan skor Anda! Kurangi hutang untuk memperbaiki kesehatan keuangan."] : []),
+        ...(safeDebt > 0
+          ? [
+              "💳 Hutang ikut menekan skor Anda! Kurangi hutang untuk memperbaiki kesehatan keuangan.",
+            ]
+          : []),
       ];
     } else if (expenseRatio < 0.8) {
       score = 40;
@@ -463,7 +489,11 @@ export const calculateFinancialHealthScore = (
       recommendations = [
         "Warning! Pengeluaran + hutang Anda memakan mayoritas pemasukan.",
         "Stop pengeluaran tersier, fokus hanya untuk makan dan darurat.",
-        ...(safeDebt > 0 ? ["💳 Segera cicil hutang aktif untuk menurunkan beban keuangan Anda."] : []),
+        ...(safeDebt > 0
+          ? [
+              "💳 Segera cicil hutang aktif untuk menurunkan beban keuangan Anda.",
+            ]
+          : []),
       ];
     } else {
       score = 20;
@@ -472,10 +502,14 @@ export const calculateFinancialHealthScore = (
       status = "poor";
       recommendations = [
         safeDebt > 0
-          ? `GAWAT! Pengeluaran + sisa hutang (${(safeDebt/1000).toFixed(0)}rb) mencapai 80%+ dari pemasukan!`
+          ? `GAWAT! Pengeluaran + sisa hutang (${(safeDebt / 1000).toFixed(0)}rb) mencapai 80%+ dari pemasukan!`
           : "GAWAT! Pengeluaran Anda mencapai 80% atau lebih dari pemasukan.",
         "Anda berada di ambang kesulitan finansial. Hentikan pengeluaran yang tidak penting secepatnya!",
-        ...(safeDebt > 0 ? ["💳 Hutang Anda adalah kontributor utama skor kritis ini. Lunasi sesegera mungkin!"] : []),
+        ...(safeDebt > 0
+          ? [
+              "💳 Hutang Anda adalah kontributor utama skor kritis ini. Lunasi sesegera mungkin!",
+            ]
+          : []),
       ];
     }
 
@@ -492,7 +526,6 @@ export const calculateFinancialHealthScore = (
       recommendations,
     };
   } catch (error) {
-
     return {
       overallScore: 0,
       category: "Belum Ada Data",
@@ -531,7 +564,7 @@ const calculateSavingsRateScore = (savingsRate: number) => {
 };
 
 const calculateBudgetAdherenceScore = (
-  budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>
+  budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>,
 ) => {
   // Jika tidak ada anggaran sama sekali
   if (!budgetAnalytics.hasBudgets) {
@@ -575,7 +608,7 @@ const calculateBudgetAdherenceScore = (
 
 const calculateExpenseControlScore = (
   totalIncome: number,
-  totalExpense: number
+  totalExpense: number,
 ) => {
   // Perbaikan: Jika tidak ada data sama sekali
   if (totalIncome === 0 && totalExpense === 0) {
@@ -606,13 +639,10 @@ const calculateExpenseControlScore = (
 
 // PERBAIKAN BESAR: Goal Progress Score - FIXED
 const calculateGoalProgressScore = (
-  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
+  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>,
 ) => {
-  
-
   // Jika tidak ada tabungan sama sekali
   if (!savingsAnalytics.hasSavings) {
-
     return { score: 0, weight: 0.15, status: "poor" as FactorStatus };
   }
 
@@ -653,7 +683,6 @@ const calculateGoalProgressScore = (
     score = 0;
     status = "poor";
   }
-
 
   return { score, weight: 0.15, status };
 };
@@ -706,11 +735,11 @@ const generateRecommendations = (factors: {
       factors.budgetAdherenceScore.score < 40
     ) {
       recommendations.push(
-        "Tinjau ulang anggaran yang melebihi limit dan sesuaikan pengeluaran"
+        "Tinjau ulang anggaran yang melebihi limit dan sesuaikan pengeluaran",
       );
     } else if (factors.budgetAdherenceScore.status === "warning") {
       recommendations.push(
-        "Monitor anggaran yang mendekati limit untuk menghindari kelebihan"
+        "Monitor anggaran yang mendekati limit untuk menghindari kelebihan",
       );
     }
   } else {
@@ -723,11 +752,11 @@ const generateRecommendations = (factors: {
     factors.savingsRateScore.score < 40
   ) {
     recommendations.push(
-      "Tingkatkan rasio tabungan minimal 10% dari pemasukan"
+      "Tingkatkan rasio tabungan minimal 10% dari pemasukan",
     );
   } else if (factors.savingsRateScore.status === "warning") {
     recommendations.push(
-      "Targetkan rasio tabungan 20% untuk kesehatan keuangan optimal"
+      "Targetkan rasio tabungan 20% untuk kesehatan keuangan optimal",
     );
   }
 
@@ -737,11 +766,11 @@ const generateRecommendations = (factors: {
     factors.expenseControlScore.score < 40
   ) {
     recommendations.push(
-      "Kurangi pengeluaran yang tidak penting, fokus pada kebutuhan utama"
+      "Kurangi pengeluaran yang tidak penting, fokus pada kebutuhan utama",
     );
   } else if (factors.expenseControlScore.status === "warning") {
     recommendations.push(
-      "Analisis pengeluaran kategori terbesar untuk efisiensi"
+      "Analisis pengeluaran kategori terbesar untuk efisiensi",
     );
   }
 
@@ -752,17 +781,17 @@ const generateRecommendations = (factors: {
       factors.goalProgressScore.score < 40
     ) {
       recommendations.push(
-        "Tingkatkan kontribusi tabungan untuk mencapai target lebih cepat"
+        "Tingkatkan kontribusi tabungan untuk mencapai target lebih cepat",
       );
     } else if (factors.goalProgressScore.status === "warning") {
       recommendations.push(
-        "Pertahankan konsistensi menabung untuk mencapai target"
+        "Pertahankan konsistensi menabung untuk mencapai target",
       );
     }
   } else {
     // Jika tidak ada tabungan sama sekali
     recommendations.push(
-      "Mulai buat target tabungan untuk tujuan finansial Anda"
+      "Mulai buat target tabungan untuk tujuan finansial Anda",
     );
   }
 
@@ -770,7 +799,7 @@ const generateRecommendations = (factors: {
   if (recommendations.length === 0) {
     recommendations.push(
       "Pertahankan kebiasaan keuangan sehat Anda",
-      "Review laporan keuangan secara berkala"
+      "Review laporan keuangan secara berkala",
     );
   }
 
@@ -783,12 +812,10 @@ const generateRecommendations = (factors: {
 export const generateFinancialInsights = (
   transactionAnalytics: ReturnType<typeof calculateTransactionAnalytics>,
   budgetAnalytics: ReturnType<typeof calculateBudgetAnalytics>,
-  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>
+  savingsAnalytics: ReturnType<typeof calculateSavingsAnalytics>,
 ) => {
   try {
     const insights = [];
-
-    
 
     // Check if no data
     if (
@@ -888,7 +915,7 @@ export const generateFinancialInsights = (
           type: "success",
           title: "Progress Tabungan Sangat Baik",
           message: `Anda telah mencapai ${overallProgress.toFixed(
-            1
+            1,
           )}% dari total target tabungan.`,
           icon: "trophy",
           color: "#10B981",
@@ -898,7 +925,7 @@ export const generateFinancialInsights = (
           type: "info",
           title: "Progress Tabungan Baik",
           message: `Anda telah mencapai ${overallProgress.toFixed(
-            1
+            1,
           )}% dari total target tabungan.`,
           icon: "trending-up",
           color: "#3B82F6",
@@ -908,7 +935,7 @@ export const generateFinancialInsights = (
           type: "info",
           title: "Mulai Menabung",
           message: `Anda telah memulai dengan ${overallProgress.toFixed(
-            1
+            1,
           )}% dari target tabungan.`,
           icon: "trending-up",
           color: "#3B82F6",
@@ -938,7 +965,6 @@ export const generateFinancialInsights = (
 
     return insights.slice(0, 3);
   } catch (error) {
-
     return [
       {
         type: "info",
