@@ -28,18 +28,21 @@ const { DarkTheme } = adaptNavigationTheme({
 
 // ─── AppContent: Wrapper di dalam ThemeProvider agar bisa pakai useTheme ─────
 const AppContent = () => {
-  const { globalLoading, isLoading: isAppLoading } = useAppContext();
+  const { globalLoading } = useAppContext();
   const { colors } = useTheme();
 
-  // Hide native splash screen once app data is loaded
-  const [appReady, setAppReady] = React.useState(false);
-
+  // Hide native splash screen immediately on first render, jangan nunggu data
+  const splashHidden = React.useRef(false);
   useEffect(() => {
-    if (!isAppLoading && !appReady) {
-      setAppReady(true);
-      SplashScreen.hideAsync().catch(() => {});
+    if (!splashHidden.current) {
+      splashHidden.current = true;
+      // Small delay agar native splash sempat terlihat, lalu langsung hide
+      const timer = setTimeout(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [isAppLoading]);
+  }, []);
 
   // Buat tema React Native Paper yang reaktif terhadap tema aktif
   const CustomDarkTheme = {
