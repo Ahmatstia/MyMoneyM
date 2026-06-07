@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
-import React, { useEffect } from "react";
-import { StatusBar } from "react-native";
+import React, { useEffect, useCallback } from "react";
+import { StatusBar, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider, MD3DarkTheme } from "react-native-paper";
@@ -13,9 +13,13 @@ import { Colors } from "./src/theme/theme";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
 import { adaptNavigationTheme } from "react-native-paper";
 import { CustomAlertProvider } from "./src/components/Alert/CustomAlertProvider";
 import GlobalLoading from "./src/components/Loading/GlobalLoading";
+
+// Prevent native splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // Adaptasi tema navigasi dengan React Native Paper
 const { DarkTheme } = adaptNavigationTheme({
@@ -24,42 +28,52 @@ const { DarkTheme } = adaptNavigationTheme({
 
 // ─── AppContent: Wrapper di dalam ThemeProvider agar bisa pakai useTheme ─────
 const AppContent = () => {
-  const { globalLoading } = useAppContext();
+  const { globalLoading, isLoading: isAppLoading } = useAppContext();
   const { colors } = useTheme();
+
+  // Hide native splash screen once app data is loaded
+  const [appReady, setAppReady] = React.useState(false);
+
+  useEffect(() => {
+    if (!isAppLoading && !appReady) {
+      setAppReady(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isAppLoading]);
 
   // Buat tema React Native Paper yang reaktif terhadap tema aktif
   const CustomDarkTheme = {
     ...MD3DarkTheme,
     colors: {
       ...MD3DarkTheme.colors,
-      primary:              colors.accent,
-      primaryContainer:     colors.surfaceLight,
-      secondary:            colors.info,
-      secondaryContainer:   colors.surface,
-      tertiary:             colors.warning,
-      tertiaryContainer:    colors.surface,
-      surface:              colors.surface,
-      surfaceVariant:       colors.surfaceLight,
-      background:           colors.background,
-      error:                colors.error,
-      errorContainer:       colors.error + "20",
-      onPrimary:            colors.textPrimary,
-      onPrimaryContainer:   colors.textPrimary,
-      onSecondary:          colors.textPrimary,
+      primary: colors.accent,
+      primaryContainer: colors.surfaceLight,
+      secondary: colors.info,
+      secondaryContainer: colors.surface,
+      tertiary: colors.warning,
+      tertiaryContainer: colors.surface,
+      surface: colors.surface,
+      surfaceVariant: colors.surfaceLight,
+      background: colors.background,
+      error: colors.error,
+      errorContainer: colors.error + "20",
+      onPrimary: colors.textPrimary,
+      onPrimaryContainer: colors.textPrimary,
+      onSecondary: colors.textPrimary,
       onSecondaryContainer: colors.textPrimary,
-      onSurface:            colors.textPrimary,
-      onSurfaceVariant:     colors.textSecondary,
-      onBackground:         colors.textPrimary,
-      outline:              colors.border,
-      outlineVariant:       colors.borderLight,
-      inverseSurface:       colors.textPrimary,
-      inverseOnSurface:     colors.primary,
-      inversePrimary:       colors.accent,
-      shadow:               colors.primaryDark,
-      scrim:                colors.primaryDark + "CC",
-      surfaceDisabled:      colors.surface + "80",
-      onSurfaceDisabled:    colors.textTertiary + "80",
-      backdrop:             colors.primaryDark + "CC",
+      onSurface: colors.textPrimary,
+      onSurfaceVariant: colors.textSecondary,
+      onBackground: colors.textPrimary,
+      outline: colors.border,
+      outlineVariant: colors.borderLight,
+      inverseSurface: colors.textPrimary,
+      inverseOnSurface: colors.primary,
+      inversePrimary: colors.accent,
+      shadow: colors.primaryDark,
+      scrim: colors.primaryDark + "CC",
+      surfaceDisabled: colors.surface + "80",
+      onSurfaceDisabled: colors.textTertiary + "80",
+      backdrop: colors.primaryDark + "CC",
       elevation: {
         level0: "transparent",
         level1: colors.surface,
@@ -76,7 +90,9 @@ const AppContent = () => {
     <PaperProvider theme={CustomDarkTheme}>
       <StatusBar
         backgroundColor={colors.background}
-        barStyle={colors.background === "#F8FAFC" ? "dark-content" : "light-content"}
+        barStyle={
+          colors.background === "#F8FAFC" ? "dark-content" : "light-content"
+        }
         translucent={false}
       />
       <AppNavigator />
@@ -94,7 +110,7 @@ export default function App() {
     const subscription = Notifications.addNotificationReceivedListener(
       (_notification) => {
         // Handle notification foreground receipt
-      }
+      },
     );
 
     const responseSubscription =
