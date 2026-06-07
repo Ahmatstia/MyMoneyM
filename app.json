@@ -16,7 +16,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.princcesrachel.mymoney",
+      "bundleIdentifier": "com.lexanova.mymoney",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "MyMoney membutuhkan izin notifikasi untuk mengirim pengingat budget, tabungan, dan transaksi.",
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "package": "com.princcesrachel.mymoney",
+      "package": "com.lexanova.mymoney",
       "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",

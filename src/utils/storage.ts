@@ -12,6 +12,7 @@ import {
   CustomCategory,
 } from "../types";
 import { calculateTotals } from "./calculations";
+import { normalizeCheckIns } from "./dailyCheckIn";
 
 // ======================================================
 // SIMPLE STORAGE KEYS - SINGLE USER
@@ -27,7 +28,11 @@ const STORAGE_KEYS = {
 const validateSubTransaction = (obj: any): SubTransaction | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
-    if (typeof obj.id !== "string" || typeof obj.name !== "string" || typeof obj.amount !== "number") {
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.name !== "string" ||
+      typeof obj.amount !== "number"
+    ) {
       return null;
     }
     return {
@@ -55,10 +60,14 @@ const validateTransaction = (obj: any): Transaction | null => {
       return null;
     }
 
-    const subTransactions: SubTransaction[] | undefined = Array.isArray(obj.subTransactions)
+    const subTransactions: SubTransaction[] | undefined = Array.isArray(
+      obj.subTransactions,
+    )
       ? (obj.subTransactions
           .map((s: any) => validateSubTransaction(s))
-          .filter((s: SubTransaction | null): s is SubTransaction => s !== null) as SubTransaction[])
+          .filter(
+            (s: SubTransaction | null): s is SubTransaction => s !== null,
+          ) as SubTransaction[])
       : undefined;
 
     return {
@@ -69,11 +78,14 @@ const validateTransaction = (obj: any): Transaction | null => {
       description: obj.description || "",
       date: obj.date || new Date().toISOString().split("T")[0],
       createdAt: obj.createdAt || new Date().toISOString(),
-      cyclePeriod: typeof obj.cyclePeriod === "number" ? obj.cyclePeriod : undefined,
-      subTransactions: subTransactions && subTransactions.length > 0 ? subTransactions : undefined,
+      cyclePeriod:
+        typeof obj.cyclePeriod === "number" ? obj.cyclePeriod : undefined,
+      subTransactions:
+        subTransactions && subTransactions.length > 0
+          ? subTransactions
+          : undefined,
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -86,7 +98,7 @@ const validateBudget = (obj: any): Budget | null => {
       typeof obj.category !== "string" ||
       typeof obj.limit !== "number" ||
       !["monthly", "weekly", "yearly", "custom"].includes(
-        obj.period || "monthly"
+        obj.period || "monthly",
       )
     ) {
       return null;
@@ -133,7 +145,6 @@ const validateBudget = (obj: any): Budget | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -161,7 +172,6 @@ const validateSavings = (obj: any): Savings | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -174,7 +184,7 @@ const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
       typeof obj.savingsId !== "string" ||
       typeof obj.amount !== "number" ||
       !["deposit", "withdrawal", "initial", "adjustment"].includes(
-        obj.type || "deposit"
+        obj.type || "deposit",
       )
     ) {
       return null;
@@ -191,7 +201,6 @@ const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -227,7 +236,7 @@ const validateNote = (obj: any): Note | null => {
         ? obj.mood
         : undefined,
       financialImpact: ["positive", "neutral", "negative"].includes(
-        obj.financialImpact
+        obj.financialImpact,
       )
         ? obj.financialImpact
         : undefined,
@@ -249,7 +258,6 @@ const validateNote = (obj: any): Note | null => {
       updatedAt: obj.updatedAt || new Date().toISOString(),
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -269,9 +277,14 @@ const validateDebt = (obj: any): Debt | null => {
       id: obj.id,
       name: obj.name,
       amount: Math.max(0, obj.amount || 0),
-      remaining: Math.max(0, typeof obj.remaining === "number" ? obj.remaining : (obj.amount || 0)),
+      remaining: Math.max(
+        0,
+        typeof obj.remaining === "number" ? obj.remaining : obj.amount || 0,
+      ),
       type: obj.type || "borrowed",
-      status: ["active", "partial", "paid"].includes(obj.status) ? obj.status : "active",
+      status: ["active", "partial", "paid"].includes(obj.status)
+        ? obj.status
+        : "active",
       category: obj.category || "Lainnya",
       description: obj.description || "",
       dueDate: obj.dueDate,
@@ -279,7 +292,6 @@ const validateDebt = (obj: any): Debt | null => {
       updatedAt: obj.updatedAt,
     };
   } catch (error) {
-
     return null;
   }
 };
@@ -329,7 +341,6 @@ const isValidDateString = (dateStr: string): boolean => {
 // ======================================================
 const migrateOldData = async (): Promise<AppState | null> => {
   try {
-
     // Cek semua versi key lama
     const OLD_KEYS = [
       "@mymoney_app_data_v4",
@@ -350,12 +361,11 @@ const migrateOldData = async (): Promise<AppState | null> => {
 
         const jsonValue = await AsyncStorage.getItem(key);
         if (jsonValue) {
-
           const oldData = JSON.parse(jsonValue);
 
           // Extract hanya data financial, buang user data
           const transactions: Transaction[] = Array.isArray(
-            oldData.transactions
+            oldData.transactions,
           )
             ? oldData.transactions
                 .map((t: any) => validateTransaction(t))
@@ -375,13 +385,13 @@ const migrateOldData = async (): Promise<AppState | null> => {
             : [];
 
           const savingsTransactions: SavingsTransaction[] = Array.isArray(
-            oldData.savingsTransactions
+            oldData.savingsTransactions,
           )
             ? oldData.savingsTransactions
                 .map((st: any) => validateSavingsTransaction(st))
                 .filter(
                   (st: SavingsTransaction | null): st is SavingsTransaction =>
-                    st !== null
+                    st !== null,
                 )
             : [];
 
@@ -402,6 +412,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
             notes,
             debts: [],
             customCategories: [],
+            dailyCheckIns: [],
             userProfile: { name: "MyMoney" },
             ...totals,
           };
@@ -409,27 +420,22 @@ const migrateOldData = async (): Promise<AppState | null> => {
           // Simpan sebagai data baru
           await AsyncStorage.setItem(
             STORAGE_KEYS.APP_DATA,
-            JSON.stringify(migratedData)
+            JSON.stringify(migratedData),
           );
 
           // Hapus data lama
           await AsyncStorage.removeItem(key);
 
-
           break;
         }
-      } catch (e) {
-
-      }
+      } catch (e) {}
     }
 
     if (!migratedData) {
-
     }
 
     return migratedData;
   } catch (error) {
-
     return null;
   }
 };
@@ -440,7 +446,6 @@ const migrateOldData = async (): Promise<AppState | null> => {
 export const storageService = {
   async saveData(data: AppState): Promise<void> {
     try {
-
       // Validasi dan cleanup data
       const validatedTransactions: Transaction[] = data.transactions
         ? data.transactions
@@ -466,7 +471,7 @@ export const storageService = {
               .map((st) => validateSavingsTransaction(st))
               .filter(
                 (st: SavingsTransaction | null): st is SavingsTransaction =>
-                  st !== null
+                  st !== null,
               )
           : [];
 
@@ -486,7 +491,9 @@ export const storageService = {
       const validatedCustomCategories: CustomCategory[] = data.customCategories
         ? data.customCategories
             .map((c: any) => validateCustomCategory(c))
-            .filter((c: CustomCategory | null): c is CustomCategory => c !== null)
+            .filter(
+              (c: CustomCategory | null): c is CustomCategory => c !== null,
+            )
         : [];
 
       const totals = calculateTotals(validatedTransactions);
@@ -499,35 +506,32 @@ export const storageService = {
         notes: validatedNotes,
         debts: validatedDebts,
         customCategories: validatedCustomCategories,
+        dailyCheckIns: normalizeCheckIns(data.dailyCheckIns),
         userProfile: data.userProfile,
         ...totals,
       };
 
       await AsyncStorage.setItem(
         STORAGE_KEYS.APP_DATA,
-        JSON.stringify(appData)
+        JSON.stringify(appData),
       );
-      
     } catch (error) {
-
       throw error;
     }
   },
 
   async loadData(): Promise<AppState> {
     try {
-
       // Cek migration flag
       const isMigrated = await AsyncStorage.getItem(
-        STORAGE_KEYS.MIGRATION_FLAG
+        STORAGE_KEYS.MIGRATION_FLAG,
       );
 
       if (isMigrated !== "true") {
-
         const migratedData = await migrateOldData();
         if (migratedData) {
           await AsyncStorage.setItem(STORAGE_KEYS.MIGRATION_FLAG, "true");
-          
+
           return migratedData;
         }
         // Set flag meski tidak ada data lama
@@ -538,7 +542,6 @@ export const storageService = {
       const appDataJson = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA);
 
       if (!appDataJson) {
-
         return {
           transactions: [],
           budgets: [],
@@ -547,6 +550,7 @@ export const storageService = {
           notes: [],
           debts: [],
           customCategories: [],
+          dailyCheckIns: [],
           userProfile: { name: "MyMoney" },
           totalIncome: 0,
           totalExpense: 0,
@@ -576,13 +580,13 @@ export const storageService = {
         : [];
 
       const savingsTransactions: SavingsTransaction[] = Array.isArray(
-        parsedData.savingsTransactions
+        parsedData.savingsTransactions,
       )
         ? parsedData.savingsTransactions
             .map((st: any) => validateSavingsTransaction(st))
             .filter(
               (st: SavingsTransaction | null): st is SavingsTransaction =>
-                st !== null
+                st !== null,
             )
         : [];
 
@@ -599,11 +603,16 @@ export const storageService = {
             .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
-      const customCategories: CustomCategory[] = Array.isArray(parsedData.customCategories)
+      const customCategories: CustomCategory[] = Array.isArray(
+        parsedData.customCategories,
+      )
         ? parsedData.customCategories
             .map((c: any) => validateCustomCategory(c))
-            .filter((c: CustomCategory | null): c is CustomCategory => c !== null)
+            .filter(
+              (c: CustomCategory | null): c is CustomCategory => c !== null,
+            )
         : [];
+      const dailyCheckIns = normalizeCheckIns(parsedData.dailyCheckIns);
 
       const totals = calculateTotals(transactions);
 
@@ -615,14 +624,13 @@ export const storageService = {
         notes,
         debts,
         customCategories,
+        dailyCheckIns,
         userProfile: parsedData.userProfile || { name: "MyMoney" },
         ...totals,
       };
 
-      
       return appData;
     } catch (error) {
-
       return {
         transactions: [],
         budgets: [],
@@ -631,6 +639,7 @@ export const storageService = {
         notes: [],
         debts: [],
         customCategories: [],
+        dailyCheckIns: [],
         userProfile: { name: "MyMoney" },
         totalIncome: 0,
         totalExpense: 0,
@@ -641,7 +650,6 @@ export const storageService = {
 
   async clearData(): Promise<void> {
     try {
-
       await Promise.all([
         AsyncStorage.removeItem(STORAGE_KEYS.APP_DATA),
         AsyncStorage.removeItem(STORAGE_KEYS.MIGRATION_FLAG),
@@ -651,21 +659,17 @@ export const storageService = {
       // Hapus juga semua key lama untuk kebersihan
       const allKeys = await AsyncStorage.getAllKeys();
       const myMoneyKeys = allKeys.filter(
-        (key) => key.startsWith("@mymoney") || key.startsWith("mymoney")
+        (key) => key.startsWith("@mymoney") || key.startsWith("mymoney"),
       );
 
       await Promise.all(myMoneyKeys.map((key) => AsyncStorage.removeItem(key)));
-
-
     } catch (error) {
-
       throw error;
     }
   },
 
   async debugStorage(): Promise<void> {
     try {
-
       const allKeys = await AsyncStorage.getAllKeys();
 
       const appDataJson = await AsyncStorage.getItem(STORAGE_KEYS.APP_DATA);
@@ -673,23 +677,14 @@ export const storageService = {
       if (appDataJson) {
         const appData = JSON.parse(appDataJson);
 
-
-
-
-         // NEW
+        // NEW
 
         if (appData.transactions?.length > 0) {
-          
         }
 
         if (appData.notes?.length > 0) {
-          
         }
       }
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   },
 };

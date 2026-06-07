@@ -35,6 +35,7 @@ import { id } from "date-fns/locale";
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
 import { formatCurrency } from "../../utils/calculations";
+import { calculateDailyCheckInStreak } from "../../utils/dailyCheckIn";
 
 const { width } = Dimensions.get("window");
 
@@ -562,24 +563,8 @@ const ProfileScreen: React.FC = () => {
       thisMonthTx.map((t) => format(new Date(t.date), "yyyy-MM-dd")),
     );
 
-    // ── Streak: hitung dari SEMUA transaksi sepanjang waktu, mundur dari hari ini
-    const allDaysWithTx = new Set(
-      state.transactions.map((t) => format(new Date(t.date), "yyyy-MM-dd")),
-    );
-    let streak = 0;
-    let cursor = new Date();
-    // Kalau hari ini belum ada tx, mulai cek dari kemarin
-    const todayKey = format(cursor, "yyyy-MM-dd");
-    if (!allDaysWithTx.has(todayKey)) {
-      cursor = new Date(cursor.getTime() - 86400000);
-    }
-    while (true) {
-      const key = format(cursor, "yyyy-MM-dd");
-      if (allDaysWithTx.has(key)) {
-        streak++;
-        cursor = new Date(cursor.getTime() - 86400000);
-      } else break;
-    }
+    // ── Streak: hitung dari dailyCheckIns (buka aplikasi, bukan transaksi)
+    const streak = calculateDailyCheckInStreak(state.dailyCheckIns || []);
 
     // ── Health score
     const consistency = Math.min((activeDaysSet.size / 20) * 40, 40);

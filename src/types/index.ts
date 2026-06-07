@@ -1,20 +1,20 @@
 export type TransactionType = "income" | "expense";
 
 export interface CustomCategory {
-  id: string;          // Unique ID, e.g. "cat_abc123"
-  name: string;        // Display name, e.g. "Vape"
-  icon: string;        // Ionicons key, e.g. "flame-outline"
-  color: string;       // Hex color, e.g. "#F59E0B"
-  isCustom: true;      // Always true, to distinguish from built-ins
-  createdAt: string;   // ISO string
+  id: string; // Unique ID, e.g. "cat_abc123"
+  name: string; // Display name, e.g. "Vape"
+  icon: string; // Ionicons key, e.g. "flame-outline"
+  color: string; // Hex color, e.g. "#F59E0B"
+  isCustom: true; // Always true, to distinguish from built-ins
+  createdAt: string; // ISO string
 }
 
 export interface SubTransaction {
   id: string;
-  name: string;        // Item name, e.g. "Kopi Susu", "Nasi Goreng"
-  amount: number;      // Price of this item
-  qty: number;         // Quantity, default 1
-  note?: string;       // Optional note
+  name: string; // Item name, e.g. "Kopi Susu", "Nasi Goreng"
+  amount: number; // Price of this item
+  qty: number; // Quantity, default 1
+  note?: string; // Optional note
 }
 
 export interface Transaction {
@@ -23,9 +23,9 @@ export interface Transaction {
   type: TransactionType;
   category: string;
   description: string;
-  date: string;           // Format: YYYY-MM-DD
-  createdAt: string;      // ISO string
-  cyclePeriod?: number;   // Days for income cycle (7, 30, etc)
+  date: string; // Format: YYYY-MM-DD
+  createdAt: string; // ISO string
+  cyclePeriod?: number; // Days for income cycle (7, 30, etc)
   subTransactions?: SubTransaction[]; // Optional: itemized cart items
 }
 
@@ -60,13 +60,13 @@ export type DebtStatus = "active" | "partial" | "paid";
 
 export interface Debt {
   id: string;
-  name: string;          // Nama pemberi hutang / peminjam
-  amount: number;        // Jumlah total hutang
-  remaining: number;     // Sisa hutang
+  name: string; // Nama pemberi hutang / peminjam
+  amount: number; // Jumlah total hutang
+  remaining: number; // Sisa hutang
   type: DebtType;
-  category: string;      // Contoh: Kebutuhan, Darurat, Konsumtif
+  category: string; // Contoh: Kebutuhan, Darurat, Konsumtif
   description: string;
-  dueDate?: string;      // Tanggal jatuh tempo (YYYY-MM-DD)
+  dueDate?: string; // Tanggal jatuh tempo (YYYY-MM-DD)
   status: DebtStatus;
   createdAt: string;
   updatedAt?: string;
@@ -111,8 +111,8 @@ export interface Note {
 
 export interface UserProfile {
   name: string;
-  avatar?: string;      // URI gambar profil
-  coverImage?: string;  // URI gambar latar belakang (sidebar)
+  avatar?: string; // URI gambar profil
+  coverImage?: string; // URI gambar latar belakang (sidebar)
 }
 
 export interface AppState {
@@ -125,6 +125,7 @@ export interface AppState {
   debts: Debt[];
   userProfile: UserProfile;
   customCategories: CustomCategory[]; // NEW: User-defined categories
+  dailyCheckIns: string[]; // Daily app-open check-in dates (YYYY-MM-DD, Jakarta timezone)
 
   // Calculated totals
   totalIncome: number;
@@ -174,11 +175,11 @@ export type RootStackParamList = {
   Notes: undefined;
   NoteForm: { noteId?: string };
   NoteDetail: { noteId: string };
-  Debt: undefined;       // NEW
+  Debt: undefined; // NEW
   AddDebt: {
     editMode?: boolean;
     debtData?: Debt;
-  };                     // NEW
+  }; // NEW
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;

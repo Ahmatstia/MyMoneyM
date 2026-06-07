@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import { AppState as RNAppState } from "react-native";
 import {
   AppState,
   Transaction,
@@ -18,6 +19,7 @@ import {
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
+import { getJakartaDateKey } from "../utils/dailyCheckIn";
 import {
   generateTransactionId,
   generateBudgetId,
@@ -32,7 +34,7 @@ import {
   validateSavings,
   validateTransaction,
   validateSavingsTransaction,
-  updateBudgetsFromTransactions
+  updateBudgetsFromTransactions,
 } from "../utils/validators";
 
 interface AppContextType {
@@ -46,14 +48,14 @@ interface AppContextType {
 
   // 🔹 TRANSACTIONS
   addTransaction: (
-    transaction: Omit<Transaction, "id" | "createdAt">
+    transaction: Omit<Transaction, "id" | "createdAt">,
   ) => Promise<void>;
   editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
   // 🔹 BUDGETS
   addBudget: (
-    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
+    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">,
   ) => Promise<void>;
   editBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
@@ -69,27 +71,34 @@ interface AppContextType {
       amount: number;
       date: string;
       note?: string;
-    }
+    },
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
   // 🔹 NOTES
   addNote: (
-    note: Omit<Note, "id" | "createdAt" | "updatedAt">
+    note: Omit<Note, "id" | "createdAt" | "updatedAt">,
   ) => Promise<void>;
   editNote: (id: string, updates: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   getNote: (id: string) => Note | undefined;
 
   // 🔹 DEBTS
-  addDebt: (debt: Omit<Debt, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  addDebt: (
+    debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
   editDebt: (id: string, updates: Partial<Debt>) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
   payDebt: (id: string, amount: number) => Promise<void>;
 
   // 🔹 CUSTOM CATEGORIES
-  addCustomCategory: (category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">) => Promise<void>;
-  editCustomCategory: (id: string, updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>) => Promise<void>;
+  addCustomCategory: (
+    category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">,
+  ) => Promise<void>;
+  editCustomCategory: (
+    id: string,
+    updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>,
+  ) => Promise<void>;
   deleteCustomCategory: (id: string) => Promise<void>;
 
   // 🔹 NOTIFICATIONS
@@ -112,6 +121,7 @@ const defaultAppState: AppState = {
   notes: [],
   debts: [],
   customCategories: [],
+  dailyCheckIns: [],
   userProfile: {
     name: "MyMoney",
   },
@@ -125,7 +135,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [isLoading, setIsLoading] = useState(true);
-  const [globalLoading, setGlobalLoadingState] = useState<{visible: boolean, message?: string}>({ visible: false });
+  const [globalLoading, setGlobalLoadingState] = useState<{
+    visible: boolean;
+    message?: string;
+  }>({ visible: false });
   const isMounted = useRef(true);
 
   const setLoading = (visible: boolean, message?: string) => {
@@ -134,12 +147,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ========== LOAD INITIAL DATA ==========
   useEffect(() => {
-
     loadInitialData();
 
     return () => {
       isMounted.current = false;
-
     };
   }, []);
 
@@ -147,7 +158,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!isMounted.current) return;
 
     try {
-
       const appData = await storageService.loadData();
 
       // Pastikan semua properti ada termasuk notes
@@ -161,9 +171,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       // Migrasi Nama Default Otomatis (Hapus paksa nama lama yang tersimpan)
-      const currentName = completeAppData.userProfile.name?.trim().toLowerCase();
-      const oldDefaults = ["pengguna mymoney", "sobat cuan", "pengguna", "my money"];
-      
+      const currentName = completeAppData.userProfile.name
+        ?.trim()
+        .toLowerCase();
+      const oldDefaults = [
+        "pengguna mymoney",
+        "sobat cuan",
+        "pengguna",
+        "my money",
+      ];
+
       if (!currentName || oldDefaults.includes(currentName)) {
         completeAppData.userProfile.name = "MyMoney";
       }
@@ -172,14 +189,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setState(completeAppData);
       }
     } catch (error) {
-
       if (isMounted.current) {
         setState(defaultAppState);
       }
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
-
       }
     }
   };
@@ -201,9 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           // and checks immediate alerts ONCE on app startup
           await notificationService.initialize(state);
         }
-      } catch (error) {
-
-      }
+      } catch (error) {}
     };
 
     setupNotifications();
@@ -211,11 +224,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // Check notifications every 5 minutes when app is active
-    const interval = setInterval(async () => {
-      if (!isLoading) {
-        await triggerNotificationCheck();
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    const interval = setInterval(
+      async () => {
+        if (!isLoading) {
+          await triggerNotificationCheck();
+        }
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
 
     return () => clearInterval(interval);
   }, [isLoading]);
@@ -235,9 +251,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted.current) {
         setState(completeAppData);
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const clearAllData = async () => {
@@ -246,9 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       if (isMounted.current) {
         setState(defaultAppState);
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const debugStorage = async () => {
@@ -259,9 +271,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await notificationService.checkImmediateAlerts(state);
   };
 
+  // ========== DAILY CHECK-IN ==========
+  const checkInToday = async () => {
+    const todayKey = getJakartaDateKey();
+    // Only save if today is not already checked in
+    if (!state.dailyCheckIns || !state.dailyCheckIns.includes(todayKey)) {
+      const updatedCheckIns = [...(state.dailyCheckIns || []), todayKey];
+      const newState: AppState = {
+        ...state,
+        dailyCheckIns: updatedCheckIns,
+      };
+      setState(newState);
+      await storageService.saveData(newState);
+    }
+  };
+
+  // Listen for app foreground events to trigger daily check-in
+  useEffect(() => {
+    if (isLoading) return;
+
+    const subscription = RNAppState.addEventListener(
+      "change",
+      (nextAppState) => {
+        if (nextAppState === "active") {
+          checkInToday();
+        }
+      },
+    );
+
+    // Also check immediately on mount
+    checkInToday();
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isLoading, state.dailyCheckIns]);
+
   // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
-    transaction: Omit<Transaction, "id" | "createdAt">
+    transaction: Omit<Transaction, "id" | "createdAt">,
   ) => {
     const newTransaction: Transaction = {
       ...transaction,
@@ -269,12 +317,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: new Date().toISOString(),
     };
 
-
     const updatedTransactions = [newTransaction, ...state.transactions];
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
     );
 
     const newState: AppState = {
@@ -300,19 +347,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         data: { type: "NEW_TRANSACTION", transactionId: newTransaction.id },
       });
     }
-
-
   };
 
   const editTransaction = async (id: string, updates: Partial<Transaction>) => {
     const updatedTransactions = state.transactions.map((t) =>
-      t.id === id ? { ...t, ...updates } : t
+      t.id === id ? { ...t, ...updates } : t,
     );
 
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
     );
 
     const newState: AppState = {
@@ -328,10 +373,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteTransaction = async (id: string) => {
-
     const transactionToDelete = state.transactions.find((t) => t.id === id);
     if (!transactionToDelete) {
-
       return;
     }
 
@@ -339,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
     );
 
     const newState: AppState = {
@@ -352,13 +395,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
-
-    
   };
 
   // ========== BUDGETS FUNCTIONS ==========
   const addBudget = async (
-    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">
+    budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">,
   ) => {
     const newBudget: Budget = {
       ...budget,
@@ -386,7 +427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await notificationService.sendNotification({
       title: "📊 Budget Baru",
       body: `Budget ${budget.category} Rp ${budget.limit.toLocaleString(
-        "id-ID"
+        "id-ID",
       )} dibuat`,
       data: { type: "NEW_BUDGET", budgetId: newBudget.id },
     });
@@ -394,12 +435,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const editBudget = async (id: string, updates: Partial<Budget>) => {
     const updatedBudgets = state.budgets.map((b) =>
-      b.id === id ? { ...b, ...updates } : b
+      b.id === id ? { ...b, ...updates } : b,
     );
 
     const recalculated = updateBudgetsFromTransactions(
       state.transactions,
-      updatedBudgets
+      updatedBudgets,
     );
 
     const newState: AppState = {
@@ -470,7 +511,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const editSavings = async (id: string, updates: Partial<Savings>) => {
     const updatedSavings = state.savings.map((s) =>
-      s.id === id ? { ...s, ...updates } : s
+      s.id === id ? { ...s, ...updates } : s,
     );
 
     const newState: AppState = {
@@ -488,7 +529,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       ...state,
       savings: state.savings.filter((s) => s.id !== id),
       savingsTransactions: state.savingsTransactions.filter(
-        (st) => st.savingsId !== id
+        (st) => st.savingsId !== id,
       ),
     };
 
@@ -504,7 +545,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       amount: number;
       date: string;
       note?: string;
-    }
+    },
   ) => {
     const saving = state.savings.find((s) => s.id === savingsId);
     if (!saving) throw new Error("Tabungan tidak ditemukan");
@@ -522,7 +563,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         : previousBalance - amount;
 
     const updatedSavings = state.savings.map((s) =>
-      s.id === savingsId ? { ...s, current: newBalance } : s
+      s.id === savingsId ? { ...s, current: newBalance } : s,
     );
 
     const newTransaction: SavingsTransaction = {
@@ -556,9 +597,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ========== NOTES FUNCTIONS ==========
   const addNote = async (
-    note: Omit<Note, "id" | "createdAt" | "updatedAt">
+    note: Omit<Note, "id" | "createdAt" | "updatedAt">,
   ) => {
-
     const newNote: Note = validateNote({
       ...note,
       id: generateId(),
@@ -583,15 +623,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }" disimpan`,
       data: { type: "NEW_NOTE", noteId: newNote.id },
     });
-
-
   };
 
   const editNote = async (id: string, updates: Partial<Note>) => {
-
     const noteToUpdate = state.notes.find((n) => n.id === id);
     if (!noteToUpdate) {
-
       return;
     }
 
@@ -602,7 +638,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     const updatedNotes = state.notes.map((n) =>
-      n.id === id ? updatedNote : n
+      n.id === id ? updatedNote : n,
     );
 
     const newState: AppState = {
@@ -613,12 +649,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
-
-
   };
 
   const deleteNote = async (id: string) => {
-
     const updatedNotes = state.notes.filter((n) => n.id !== id);
     const newState: AppState = {
       ...state,
@@ -628,8 +661,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
-
-
   };
 
   const getNote = (id: string): Note | undefined => {
@@ -637,7 +668,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ========== DEBTS FUNCTIONS ==========
-  const addDebt = async (debt: Omit<Debt, "id" | "createdAt" | "updatedAt">) => {
+  const addDebt = async (
+    debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
+  ) => {
     const newDebt: Debt = {
       ...debt,
       id: generateId(),
@@ -656,7 +689,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const editDebt = async (id: string, updates: Partial<Debt>) => {
     const updatedDebts = state.debts.map((d) =>
-      d.id === id ? { ...d, ...updates, updatedAt: new Date().toISOString() } : d
+      d.id === id
+        ? { ...d, ...updates, updatedAt: new Date().toISOString() }
+        : d,
     );
     const newState: AppState = { ...state, debts: updatedDebts };
     setState(newState);
@@ -678,7 +713,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const newRemaining = Math.max(0, debt.remaining - amount);
     const newStatus: Debt["status"] =
-      newRemaining === 0 ? "paid" : newRemaining < debt.amount ? "partial" : "active";
+      newRemaining === 0
+        ? "paid"
+        : newRemaining < debt.amount
+          ? "partial"
+          : "active";
 
     // 1. Perbarui daftar hutang
     const updatedDebts = state.debts.map((d) =>
@@ -689,7 +728,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             status: newStatus,
             updatedAt: new Date().toISOString(),
           }
-        : d
+        : d,
     );
 
     // 2. Buat transaksi otomatis
@@ -713,7 +752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const totals = calculateTotals(updatedTransactions);
     const updatedBudgets = updateBudgetsFromTransactions(
       updatedTransactions,
-      state.budgets
+      state.budgets,
     );
 
     const newState: AppState = {
@@ -741,7 +780,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ========== CUSTOM CATEGORIES FUNCTIONS ==========
   const addCustomCategory = async (
-    category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">
+    category: Omit<CustomCategory, "id" | "createdAt" | "isCustom">,
   ) => {
     const newCategory: CustomCategory = {
       ...category,
@@ -759,10 +798,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const editCustomCategory = async (
     id: string,
-    updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>
+    updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>,
   ) => {
     const updated = state.customCategories.map((c) =>
-      c.id === id ? { ...c, ...updates } : c
+      c.id === id ? { ...c, ...updates } : c,
     );
     const newState: AppState = { ...state, customCategories: updated };
     setState(newState);
@@ -775,10 +814,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Smart delete: migrate existing transactions that used this category to 'Lainnya'
     const updatedTransactions = state.transactions.map((t) =>
-      t.category === categoryToDelete.name ? { ...t, category: "Lainnya" } : t
+      t.category === categoryToDelete.name ? { ...t, category: "Lainnya" } : t,
     );
     const updatedBudgets = state.budgets.map((b) =>
-      b.category === categoryToDelete.name ? { ...b, category: "Lainnya" } : b
+      b.category === categoryToDelete.name ? { ...b, category: "Lainnya" } : b,
     );
 
     const newState: AppState = {
