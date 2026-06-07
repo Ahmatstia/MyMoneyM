@@ -40,24 +40,24 @@ const { width } = Dimensions.get("window");
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const C = {
-  bg:          "#080C14",
-  surface:     "#0E1521",
-  card:        "#111827",
-  border:      "rgba(255,255,255,0.06)",
-  borderAccent:"rgba(34,211,238,0.25)",
-  cyan:        "#22D3EE",
-  cyanDim:     "rgba(34,211,238,0.12)",
-  gold:        "#F59E0B",
-  goldDim:     "rgba(245,158,11,0.12)",
-  emerald:     "#10B981",
-  emeraldDim:  "rgba(16,185,129,0.12)",
-  rose:        "#F43F5E",
-  roseDim:     "rgba(244,63,94,0.12)",
-  violet:      "#8B5CF6",
-  violetDim:   "rgba(139,92,246,0.12)",
-  text1:       "#F8FAFC",
-  text2:       "#94A3B8",
-  text3:       "#475569",
+  bg: "#080C14",
+  surface: "#0E1521",
+  card: "#111827",
+  border: "rgba(255,255,255,0.06)",
+  borderAccent: "rgba(34,211,238,0.25)",
+  cyan: "#22D3EE",
+  cyanDim: "rgba(34,211,238,0.12)",
+  gold: "#F59E0B",
+  goldDim: "rgba(245,158,11,0.12)",
+  emerald: "#10B981",
+  emeraldDim: "rgba(16,185,129,0.12)",
+  rose: "#F43F5E",
+  roseDim: "rgba(244,63,94,0.12)",
+  violet: "#8B5CF6",
+  violetDim: "rgba(139,92,246,0.12)",
+  text1: "#F8FAFC",
+  text2: "#94A3B8",
+  text3: "#475569",
 };
 
 // ─── ACHIEVEMENT TYPE ─────────────────────────────────────────────────────────
@@ -73,12 +73,48 @@ type Achievement = {
 
 // Template definitions (unlocked computed dynamically in component)
 const ACHIEVEMENT_DEFS = [
-  { id: "first_steps",  icon: "footsteps",   color: C.cyan,    label: "First Steps",    desc: "Transaksi pertama" },
-  { id: "week_warrior", icon: "flame",        color: C.gold,    label: "Week Warrior",   desc: "7 hari berturut-turut" },
-  { id: "century",      icon: "trophy",       color: C.violet,  label: "The Century",    desc: "100 transaksi" },
-  { id: "savings_king", icon: "diamond",      color: C.emerald, label: "Savings King",   desc: "Punya tabungan aktif" },
-  { id: "night_owl",    icon: "moon",         color: C.rose,    label: "Night Owl",      desc: "Catat lewat jam 11 PM" },
-  { id: "diversified",  icon: "grid",         color: C.violet,  label: "Diversified",   desc: "5+ kategori berbeda" },
+  {
+    id: "first_steps",
+    icon: "footsteps",
+    color: C.cyan,
+    label: "First Steps",
+    desc: "Transaksi pertama",
+  },
+  {
+    id: "week_warrior",
+    icon: "flame",
+    color: C.gold,
+    label: "Week Warrior",
+    desc: "7 hari berturut-turut",
+  },
+  {
+    id: "century",
+    icon: "trophy",
+    color: C.violet,
+    label: "The Century",
+    desc: "100 transaksi",
+  },
+  {
+    id: "savings_king",
+    icon: "diamond",
+    color: C.emerald,
+    label: "Savings King",
+    desc: "Punya tabungan aktif",
+  },
+  {
+    id: "night_owl",
+    icon: "moon",
+    color: C.rose,
+    label: "Night Owl",
+    desc: "Catat lewat jam 11 PM",
+  },
+  {
+    id: "diversified",
+    icon: "grid",
+    color: C.violet,
+    label: "Diversified",
+    desc: "5+ kategori berbeda",
+  },
 ];
 
 // ─── REUSABLE ATOMS ──────────────────────────────────────────────────────────
@@ -130,7 +166,8 @@ const HealthRing = ({ score }: { score: number }) => {
   const r = 24;
   const circ = 2 * Math.PI * r;
   const color = score >= 75 ? C.emerald : score >= 50 ? C.gold : C.rose;
-  const label = score >= 75 ? "Sangat Baik" : score >= 50 ? "Cukup Baik" : "Perhatian";
+  const label =
+    score >= 75 ? "Sangat Baik" : score >= 50 ? "Cukup Baik" : "Perhatian";
 
   return (
     <View style={tw`items-center justify-center`}>
@@ -158,7 +195,9 @@ const HealthRing = ({ score }: { score: number }) => {
         />
         {/* Center content */}
         <View style={tw`items-center`}>
-          <Text style={[tw`text-sm font-black`, { color: C.text1 }]}>{score}</Text>
+          <Text style={[tw`text-sm font-black`, { color: C.text1 }]}>
+            {score}
+          </Text>
         </View>
       </View>
       <Text style={[tw`text-[9px] font-bold mt-1.5`, { color }]}>{label}</Text>
@@ -179,18 +218,19 @@ const StreakBadge = ({ streak }: { streak: number }) => (
       <Text style={tw`text-lg`}>🔥</Text>
     </LinearGradient>
     <Text style={[tw`text-sm font-black`, { color: C.gold }]}>{streak}</Text>
-    <Text style={[tw`text-[8px] font-bold uppercase tracking-wider`, { color: C.text3 }]}>
+    <Text
+      style={[
+        tw`text-[8px] font-bold uppercase tracking-wider`,
+        { color: C.text3 },
+      ]}
+    >
       Day Streak
     </Text>
   </View>
 );
 
 // ─── ACHIEVEMENT CARD ────────────────────────────────────────────────────────
-const AchievementCard = ({
-  achievement,
-}: {
-  achievement: Achievement;
-}) => (
+const AchievementCard = ({ achievement }: { achievement: Achievement }) => (
   <View
     style={[
       tw`w-28 mr-2.5 rounded-2xl p-3 items-center`,
@@ -199,9 +239,7 @@ const AchievementCard = ({
           ? `${achievement.color}18`
           : "rgba(255,255,255,0.03)",
         borderWidth: 1,
-        borderColor: achievement.unlocked
-          ? `${achievement.color}35`
-          : C.border,
+        borderColor: achievement.unlocked ? `${achievement.color}35` : C.border,
       },
     ]}
   >
@@ -256,7 +294,12 @@ const AchievementCard = ({
       >
         <View
           style={[
-            { height: 2.5, borderRadius: 99, backgroundColor: achievement.color, width: `${achievement.progress}%` },
+            {
+              height: 2.5,
+              borderRadius: 99,
+              backgroundColor: achievement.color,
+              width: `${achievement.progress}%`,
+            },
           ]}
         />
       </View>
@@ -297,8 +340,18 @@ const QuickStat = ({
       <Ionicons name={icon as any} size={14} color={color} />
     </View>
     <View style={tw`flex-1`}>
-      <Text style={[tw`text-sm font-black`, { color: C.text1 }]} numberOfLines={1}>{value}</Text>
-      <Text style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]} numberOfLines={1}>{label}</Text>
+      <Text
+        style={[tw`text-sm font-black`, { color: C.text1 }]}
+        numberOfLines={1}
+      >
+        {value}
+      </Text>
+      <Text
+        style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
     </View>
   </View>
 );
@@ -317,25 +370,32 @@ const MonthlyPulseCard = ({
     totalTx === 0
       ? { emoji: "🌙", label: "Bulan Tenang", color: C.violet }
       : totalTx < 10
-      ? { emoji: "🌱", label: "Sedang Tumbuh", color: C.emerald }
-      : totalTx < 30
-      ? { emoji: "⚡", label: "Aktif Banget", color: C.cyan }
-      : { emoji: "🚀", label: "Mode Hyper", color: C.gold };
+        ? { emoji: "🌱", label: "Sedang Tumbuh", color: C.emerald }
+        : totalTx < 30
+          ? { emoji: "⚡", label: "Aktif Banget", color: C.cyan }
+          : { emoji: "🚀", label: "Mode Hyper", color: C.gold };
 
   return (
     <View
       style={[
         tw`rounded-2xl p-3.5 flex-row items-center`,
-        { 
-          backgroundColor: `${vibe.color}10`, 
-          borderWidth: 1, 
-          borderColor: `${vibe.color}30` 
+        {
+          backgroundColor: `${vibe.color}10`,
+          borderWidth: 1,
+          borderColor: `${vibe.color}30`,
         },
       ]}
     >
-      <View style={tw`flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3 mr-3`}>
+      <View
+        style={tw`flex-1 border-r border-[rgba(255,255,255,0.06)] pr-3 mr-3`}
+      >
         <View style={tw`flex-row items-center justify-between mb-1.5`}>
-          <Text style={[tw`text-[8px] font-black uppercase tracking-widest`, { color: C.text3 }]}>
+          <Text
+            style={[
+              tw`text-[8px] font-black uppercase tracking-widest`,
+              { color: C.text3 },
+            ]}
+          >
             {format(new Date(), "MMM yyyy", { locale: id })}
           </Text>
         </View>
@@ -350,15 +410,26 @@ const MonthlyPulseCard = ({
       <View style={tw`flex-1 flex-row flex-wrap gap-y-2`}>
         <View style={tw`w-1/2`}>
           <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Transaksi</Text>
-          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>{totalTx}</Text>
+          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>
+            {totalTx}
+          </Text>
         </View>
         <View style={tw`w-1/2`}>
           <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Hari Aktif</Text>
-          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>{activeDays}</Text>
+          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]}>
+            {activeDays}
+          </Text>
         </View>
         <View style={tw`w-full`}>
-          <Text style={[tw`text-[8px]`, { color: C.text3 }]}>Kategori Teratas</Text>
-          <Text style={[tw`text-xs font-bold`, { color: C.text1 }]} numberOfLines={1}>{topCategory || "—"}</Text>
+          <Text style={[tw`text-[8px]`, { color: C.text3 }]}>
+            Kategori Teratas
+          </Text>
+          <Text
+            style={[tw`text-xs font-bold`, { color: C.text1 }]}
+            numberOfLines={1}
+          >
+            {topCategory || "—"}
+          </Text>
         </View>
       </View>
     </View>
@@ -431,7 +502,10 @@ const ProfileScreen: React.FC = () => {
   if (!userProfile) {
     return (
       <View
-        style={[tw`flex-1 items-center justify-center`, { backgroundColor: C.bg }]}
+        style={[
+          tw`flex-1 items-center justify-center`,
+          { backgroundColor: C.bg },
+        ]}
       >
         <Text style={[tw`text-sm font-bold`, { color: C.text2 }]}>
           Memuat Profil…
@@ -480,17 +554,17 @@ const ProfileScreen: React.FC = () => {
   const uiData = useMemo(() => {
     const now = new Date();
     const thisMonthTx = state.transactions.filter((t) =>
-      isSameMonth(new Date(t.date), now)
+      isSameMonth(new Date(t.date), now),
     );
 
     // Active days this month
     const activeDaysSet = new Set(
-      thisMonthTx.map((t) => format(new Date(t.date), "yyyy-MM-dd"))
+      thisMonthTx.map((t) => format(new Date(t.date), "yyyy-MM-dd")),
     );
 
     // ── Streak: hitung dari SEMUA transaksi sepanjang waktu, mundur dari hari ini
     const allDaysWithTx = new Set(
-      state.transactions.map((t) => format(new Date(t.date), "yyyy-MM-dd"))
+      state.transactions.map((t) => format(new Date(t.date), "yyyy-MM-dd")),
     );
     let streak = 0;
     let cursor = new Date();
@@ -530,7 +604,10 @@ const ProfileScreen: React.FC = () => {
       .reduce((s, t) => s + t.amount, 0);
     const savingsRatio =
       monthIncome > 0
-        ? Math.max(0, Math.round(((monthIncome - monthExpense) / monthIncome) * 100))
+        ? Math.max(
+            0,
+            Math.round(((monthIncome - monthExpense) / monthIncome) * 100),
+          )
         : 0;
 
     // ── Top expense category bulan ini
@@ -552,7 +629,7 @@ const ProfileScreen: React.FC = () => {
 
     // ── Diversified: >= 5 kategori berbeda bulan ini
     const uniqueCategories = new Set(
-      thisMonthTx.map((t: any) => t.category).filter(Boolean)
+      thisMonthTx.map((t: any) => t.category).filter(Boolean),
     );
 
     // ── Achievements logic
@@ -570,7 +647,10 @@ const ProfileScreen: React.FC = () => {
           break;
         case "century":
           unlocked = state.transactions.length >= 100;
-          progress = Math.min(100, Math.round((state.transactions.length / 100) * 100));
+          progress = Math.min(
+            100,
+            Math.round((state.transactions.length / 100) * 100),
+          );
           break;
         case "savings_king":
           unlocked = state.savings.length > 0;
@@ -580,7 +660,10 @@ const ProfileScreen: React.FC = () => {
           break;
         case "diversified":
           unlocked = uniqueCategories.size >= 5;
-          progress = Math.min(100, Math.round((uniqueCategories.size / 5) * 100));
+          progress = Math.min(
+            100,
+            Math.round((uniqueCategories.size / 5) * 100),
+          );
           break;
       }
 
@@ -690,8 +773,14 @@ const ProfileScreen: React.FC = () => {
                   },
                 ]}
               >
-                <Ionicons name="camera" size={12} color="rgba(255,255,255,0.7)" />
-                <Text style={tw`text-white/70 text-[9px] font-bold`}>Edit Cover</Text>
+                <Ionicons
+                  name="camera"
+                  size={12}
+                  color="rgba(255,255,255,0.7)"
+                />
+                <Text style={tw`text-white/70 text-[9px] font-bold`}>
+                  Edit Cover
+                </Text>
               </TouchableOpacity>
             </View>
           </ImageBackground>
@@ -777,13 +866,11 @@ const ProfileScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-
           </View>
         </View>
 
         {/* ── CONTENT AREA ───────────────────────────────────────────── */}
         <View style={tw`px-5`}>
-
           {/* ── HEALTH SCORE + STREAK ROW ─────────────────────────────── */}
           <SectionLabel title="Ikhtisar" icon="pulse" />
           <View
@@ -831,7 +918,10 @@ const ProfileScreen: React.FC = () => {
                   {uiData.savingsRatio}%
                 </Text>
                 <Text
-                  style={[tw`text-[8px] font-bold uppercase tracking-wider`, { color: C.text3 }]}
+                  style={[
+                    tw`text-[8px] font-bold uppercase tracking-wider`,
+                    { color: C.text3 },
+                  ]}
                 >
                   Rasio %
                 </Text>
@@ -846,7 +936,9 @@ const ProfileScreen: React.FC = () => {
               ]}
             >
               <Ionicons name="information-circle" size={12} color={C.text3} />
-              <Text style={[tw`text-[9px] flex-1 leading-3`, { color: C.text3 }]}>
+              <Text
+                style={[tw`text-[9px] flex-1 leading-3`, { color: C.text3 }]}
+              >
                 Skor dari konsistensi · Rasio tabungan = (In - Out) ÷ In
               </Text>
             </View>
@@ -905,11 +997,19 @@ const ProfileScreen: React.FC = () => {
               </TouchableOpacity>
 
               <View style={tw`items-center`}>
-                <Text style={[tw`text-sm font-black capitalize`, { color: C.text1 }]}>
+                <Text
+                  style={[
+                    tw`text-sm font-black capitalize`,
+                    { color: C.text1 },
+                  ]}
+                >
                   {format(currentMonth, "MMMM yyyy", { locale: id })}
                 </Text>
                 <Text
-                  style={[tw`text-[8px] font-bold uppercase tracking-widest mt-0.5`, { color: C.text3 }]}
+                  style={[
+                    tw`text-[8px] font-bold uppercase tracking-widest mt-0.5`,
+                    { color: C.text3 },
+                  ]}
                 >
                   {monthTotalActivity} entri
                 </Text>
@@ -931,7 +1031,10 @@ const ProfileScreen: React.FC = () => {
               {["S", "S", "R", "K", "J", "S", "M"].map((d, i) => (
                 <View key={i} style={tw`w-6 items-center`}>
                   <Text
-                    style={[tw`text-[8px] font-extrabold uppercase`, { color: C.text3 }]}
+                    style={[
+                      tw`text-[8px] font-extrabold uppercase`,
+                      { color: C.text3 },
+                    ]}
                   >
                     {d}
                   </Text>
@@ -949,7 +1052,10 @@ const ProfileScreen: React.FC = () => {
                   rows.push(week);
                 }
                 return rows.map((week, wIdx) => (
-                  <View key={wIdx} style={tw`flex-row justify-center gap-1.5 mb-1.5`}>
+                  <View
+                    key={wIdx}
+                    style={tw`flex-row justify-center gap-1.5 mb-1.5`}
+                  >
                     {week.map((day, dIdx) => {
                       const isT = day && isToday(day.date);
                       return (
@@ -975,8 +1081,8 @@ const ProfileScreen: React.FC = () => {
                                     day.count >= 4
                                       ? "#080C14"
                                       : isT
-                                      ? C.cyan
-                                      : C.text3,
+                                        ? C.cyan
+                                        : C.text3,
                                 },
                               ]}
                             >
@@ -1013,11 +1119,21 @@ const ProfileScreen: React.FC = () => {
 
           {/* ── FOOTER ─────────────────────────────────────────────────── */}
           <View style={tw`items-center mt-10 mb-2`}>
-            <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
+            <Text
+              style={[
+                tw`text-[9px] font-bold uppercase tracking-widest`,
+                { color: C.text3 },
+              ]}
+            >
               MyMoney
             </Text>
-            <Text style={[tw`text-[9px] font-bold uppercase tracking-widest`, { color: C.text3 }]}>
-              Version 1.0.5
+            <Text
+              style={[
+                tw`text-[9px] font-bold uppercase tracking-widest`,
+                { color: C.text3 },
+              ]}
+            >
+              Version 1.0.6
             </Text>
           </View>
         </View>
@@ -1066,7 +1182,12 @@ const ProfileScreen: React.FC = () => {
                 },
               ]}
             >
-              <Text style={[tw`text-[9px] font-black uppercase tracking-widest mb-1.5`, { color: C.cyan }]}>
+              <Text
+                style={[
+                  tw`text-[9px] font-black uppercase tracking-widest mb-1.5`,
+                  { color: C.cyan },
+                ]}
+              >
                 Nama
               </Text>
               <TextInput
