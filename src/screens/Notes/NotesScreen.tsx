@@ -98,6 +98,8 @@ const NotesScreen = ({ navigation }: any) => {
           borderColor: colorTheme.border,
           padding: 16,
           marginBottom: COLUMN_GAP,
+          borderLeftWidth: 3,
+          borderLeftColor: colorTheme.text,
         }}
       >
         {/* Accent dot + title */}

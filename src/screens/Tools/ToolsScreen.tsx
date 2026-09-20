@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, Modal, Alert,
+  TextInput, Modal, Alert, KeyboardAvoidingView, Platform, Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -83,7 +83,7 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
 }) => {
   // Custom flexibility
   const [customBalance, setCustomBalance] = useState(String(balance));
-  const [days, setDays]       = useState(String(daysLeftInMonth()));
+  const [days, setDays]       = useState("");
   const [reserve, setReserve] = useState("");
 
   // Reset & sync every time modal opens
@@ -95,21 +95,33 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
 
   const handleRefresh = () => {
     setCustomBalance(String(balance));
-    setDays(String(daysLeftInMonth()));
+    setDays("");
     setReserve("");
   };
 
-  const currentBal  = safeNumber(Number(customBalance));
-  const safeBalance = Math.max(0, currentBal - totalDebt - safeNumber(Number(reserve)));
-  const numDays     = Math.max(1, Number(days) || 1);
-  const perDay      = safeBalance / numDays;
-  const perWeek     = perDay * 7;
+  const remainingDays = daysLeftInMonth();
+  const currentBal    = safeNumber(Number(customBalance));
+  const safeBalance   = Math.max(0, currentBal - totalDebt - safeNumber(Number(reserve)));
+  const numDays       = days ? Math.max(1, Number(days)) : remainingDays;
+  const perDay        = safeBalance / numDays;
+  const perWeek       = perDay * 7;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.88)" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, backgroundColor: "rgba(2,6,23,0.88)" }}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => {
+            Keyboard.dismiss();
+            onClose();
+          }}
+        />
         <View style={{ backgroundColor: SURF, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: PAD, paddingBottom: 36, borderTopWidth: 1, borderTopColor: BORDER, maxHeight: "90%" }}>
+          padding: PAD, paddingBottom: 24, borderTopWidth: 1, borderTopColor: BORDER, maxHeight: "88%" }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${ACCENT}18`,
               alignItems: "center", justifyContent: "center", marginRight: 12 }}>
@@ -129,15 +141,19 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
             <Label text="Dana yang Tersedia (Bisa Diubah)" />
             <InputBox value={customBalance} onChange={setCustomBalance} placeholder="Saldo saat ini" />
 
             <Label text="Reservasi / Keperluan Wajib" />
             <InputBox value={reserve} onChange={setReserve} placeholder="Misal: tagihan, dll" />
 
-            <Label text="Jumlah Hari" />
-            <InputBox value={days} onChange={setDays} placeholder="Sisa hari bulan ini" isCurrency={false} />
+            <Label text={`Jumlah Hari (Default: ${remainingDays} Hari)`} />
+            <InputBox value={days} onChange={setDays} placeholder={`Sisa ${remainingDays} hari`} isCurrency={false} />
 
             <View style={{ backgroundColor: `${ACCENT}10`, borderRadius: 16, padding: 16,
               borderWidth: 1, borderColor: `${ACCENT}20`, marginTop: 4 }}>
@@ -172,7 +188,7 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
             </View>
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -194,9 +210,20 @@ const SalaryCalc = ({ visible, onClose }: { visible: boolean; onClose: () => voi
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.88)" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, backgroundColor: "rgba(2,6,23,0.88)" }}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => {
+            Keyboard.dismiss();
+            onClose();
+          }}
+        />
         <View style={{ backgroundColor: SURF, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: PAD, paddingBottom: 36, borderTopWidth: 1, borderTopColor: BORDER }}>
+          padding: PAD, paddingBottom: 24, borderTopWidth: 1, borderTopColor: BORDER, maxHeight: "88%" }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${Colors.success}18`,
               alignItems: "center", justifyContent: "center", marginRight: 12 }}>
@@ -216,39 +243,45 @@ const SalaryCalc = ({ visible, onClose }: { visible: boolean; onClose: () => voi
             </TouchableOpacity>
           </View>
 
-          <Label text="Gaji Utama" />
-          <InputBox value={salary} onChange={setSalary} placeholder="Nominal gaji" />
-          <Label text="Penghasilan Tambahan (opsional)" />
-          <InputBox value={extra} onChange={setExtra} placeholder="Freelance, bonus, dll" />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
+            <Label text="Gaji Utama" />
+            <InputBox value={salary} onChange={setSalary} placeholder="Nominal gaji" />
+            <Label text="Penghasilan Tambahan (opsional)" />
+            <InputBox value={extra} onChange={setExtra} placeholder="Freelance, bonus, dll" />
 
-          <View style={{ backgroundColor: `${Colors.success}10`, borderRadius: 16, padding: 16,
-            borderWidth: 1, borderColor: `${Colors.success}20` }}>
-            <Text style={{ color: Colors.gray400, fontSize: 10, fontWeight: "700",
-              textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-              Total: {fmt(total)}
-            </Text>
-            {[
-              { pct: "50%", label: "🏠 Kebutuhan Pokok", sub: "Makan, kos, listrik, transportasi", val: needs, c: Colors.info },
-              { pct: "30%", label: "🎮 Keinginan", sub: "Nongkrong, hiburan, belanja", val: wants, c: Colors.warning },
-              { pct: "20%", label: "🏦 Tabungan & Investasi", sub: "Dana darurat, tabungan, hutang", val: savings, c: Colors.success },
-            ].map((row) => (
-              <View key={row.pct} style={{ backgroundColor: `${row.c}12`, borderRadius: 12, padding: 12,
-                marginBottom: 8, borderWidth: 1, borderColor: `${row.c}20` }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <View>
-                    <Text style={{ color: TP, fontSize: 13, fontWeight: "700" }}>{row.label}</Text>
-                    <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}>{row.sub}</Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={{ color: row.c, fontSize: 15, fontWeight: "800" }}>{fmt(row.val)}</Text>
-                    <Text style={{ color: Colors.gray500, fontSize: 10 }}>{row.pct}</Text>
+            <View style={{ backgroundColor: `${Colors.success}10`, borderRadius: 16, padding: 16,
+              borderWidth: 1, borderColor: `${Colors.success}20` }}>
+              <Text style={{ color: Colors.gray400, fontSize: 10, fontWeight: "700",
+                textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                Total: {fmt(total)}
+              </Text>
+              {[
+                { pct: "50%", label: "🏠 Kebutuhan Pokok", sub: "Makan, kos, listrik, transportasi", val: needs, c: Colors.info },
+                { pct: "30%", label: "🎮 Keinginan", sub: "Nongkrong, hiburan, belanja", val: wants, c: Colors.warning },
+                { pct: "20%", label: "🏦 Tabungan & Investasi", sub: "Dana darurat, tabungan, hutang", val: savings, c: Colors.success },
+              ].map((row) => (
+                <View key={row.pct} style={{ backgroundColor: `${row.c}12`, borderRadius: 12, padding: 12,
+                  marginBottom: 8, borderWidth: 1, borderColor: `${row.c}20` }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View>
+                      <Text style={{ color: TP, fontSize: 13, fontWeight: "700" }}>{row.label}</Text>
+                      <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}>{row.sub}</Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={{ color: row.c, fontSize: 15, fontWeight: "800" }}>{fmt(row.val)}</Text>
+                      <Text style={{ color: Colors.gray500, fontSize: 10 }}>{row.pct}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -262,7 +295,7 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
   
   // Custom flexibility
   const [customBalance, setCustomBalance] = useState(String(balance));
-  const [customDays, setCustomDays]       = useState(String(daysLeftInMonth()));
+  const [customDays, setCustomDays]       = useState("");
 
   // Reset & sync every time modal opens
   React.useEffect(() => {
@@ -273,14 +306,15 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
 
   const handleRefresh = () => {
     setCustomBalance(String(balance));
-    setCustomDays(String(daysLeftInMonth()));
+    setCustomDays("");
     setPrice("");
     setLabel("");
   };
 
+  const remainingDays = daysLeftInMonth();
   const itemPrice    = safeNumber(Number(price));
   const currentBal   = safeNumber(Number(customBalance));
-  const numDays      = Math.max(1, Number(customDays) || 1);
+  const numDays      = customDays ? Math.max(1, Number(customDays)) : remainingDays;
   const afterBuy     = currentBal - itemPrice;
   const dailyAfter   = numDays > 0 ? afterBuy / numDays : 0;
   const canBuy       = afterBuy >= 0 && dailyAfter >= 30000;
@@ -289,9 +323,20 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.88)" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, backgroundColor: "rgba(2,6,23,0.88)" }}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => {
+            Keyboard.dismiss();
+            onClose();
+          }}
+        />
         <View style={{ backgroundColor: SURF, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          padding: PAD, paddingBottom: 36, borderTopWidth: 1, borderTopColor: BORDER, maxHeight: "90%" }}>
+          padding: PAD, paddingBottom: 24, borderTopWidth: 1, borderTopColor: BORDER, maxHeight: "88%" }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
             <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${Colors.warning}18`,
               alignItems: "center", justifyContent: "center", marginRight: 12 }}>
@@ -311,7 +356,11 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 40 }}
+          >
             <Label text="Dana yang Tersedia (Bisa Diubah)" />
             <InputBox value={customBalance} onChange={setCustomBalance} placeholder="Saldo saat ini" />
 
@@ -329,8 +378,8 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
                 />
               </View>
               <View style={{ flex: 0.9 }}>
-                <Label text="Untuk Berapa Hari?" />
-                <InputBox value={customDays} onChange={setCustomDays} placeholder="Hari" isCurrency={false} />
+                <Label text={`Hari (Default: ${remainingDays})`} />
+                <InputBox value={customDays} onChange={setCustomDays} placeholder={String(remainingDays)} isCurrency={false} />
               </View>
             </View>
 
@@ -365,7 +414,7 @@ const BuyOrWaitCalc = ({ visible, onClose, balance, avgExpense }: {
             )}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -386,6 +435,11 @@ const RunwayCalc = ({ visible, onClose, balance, avgExpense }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.88)" }}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={onClose}
+        />
         <View style={{ backgroundColor: SURF, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           padding: PAD, paddingBottom: 36, borderTopWidth: 1, borderTopColor: BORDER }}>
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
@@ -543,6 +597,11 @@ const BasicCalc = ({ visible, onClose }: { visible: boolean; onClose: () => void
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.88)" }}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={onClose}
+        />
         <View style={{ backgroundColor: SURF, borderTopLeftRadius: 28, borderTopRightRadius: 28,
           padding: PAD, paddingBottom: 36, borderTopWidth: 1, borderTopColor: BORDER }}>
           
@@ -702,6 +761,7 @@ const ToolsScreen: React.FC = () => {
                 width: "100%",
                 backgroundColor: SURF, borderRadius: 24,
                 borderWidth: 1, borderColor: BORDER,
+                borderLeftWidth: 3, borderLeftColor: tool.color,
                 padding: 16,
                 flexDirection: "row", alignItems: "center"
               }}

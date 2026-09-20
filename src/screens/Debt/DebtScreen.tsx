@@ -611,6 +611,14 @@ const DebtScreen: React.FC = () => {
                     borderColor: cardBorderColor,
                     padding: CARD_PAD,
                     marginBottom: 12,
+                    borderLeftWidth: 3,
+                    borderLeftColor: isPaid
+                      ? colors.success
+                      : debt.type === "lent"
+                      ? colors.success
+                      : isOverdue
+                      ? colors.error
+                      : colors.warning,
                   }}
                 >
                   {/* ── Row 1: Icon · Name · Category · Status badge ──── */}

@@ -448,6 +448,8 @@ const SavingsDetailScreen: React.FC = () => {
             overflow: "hidden",
             borderWidth: 1,
             borderColor: CARD_BORDER,
+            borderLeftWidth: 3,
+            borderLeftColor: activeColor,
             marginBottom: 16,
           }}
           imageStyle={{ opacity: saving.imageCover ? 1 : 0.2 }}

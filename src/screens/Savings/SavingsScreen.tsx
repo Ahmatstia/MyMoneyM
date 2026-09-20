@@ -486,6 +486,12 @@ const SavingsScreen: React.FC = () => {
                     overflow: "hidden",
                     borderWidth: 1,
                     borderColor: CARD_BORDER,
+                    borderLeftWidth: 3,
+                    borderLeftColor: isCompleted
+                      ? SUCCESS_COLOR
+                      : progress >= 50
+                      ? SUCCESS_COLOR
+                      : ACCENT_COLOR,
                   }}
                 >
                   <ImageBackground

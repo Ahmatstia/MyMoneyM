@@ -4,6 +4,7 @@ import {
   View,
   Text,
   ScrollView,
+  SectionList,
   TouchableOpacity,
   TextInput,
   Alert,
@@ -11,6 +12,7 @@ import {
   Dimensions,
   Modal,
   Animated,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -103,7 +105,7 @@ const TransactionsScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery]         = useState("");
   const [filterType, setFilterType]           = useState<"all" | "income" | "expense">("all");
-  const [dateFilter, setDateFilter]           = useState<"all" | "week" | "month" | "custom">("all");
+  const [dateFilter, setDateFilter]           = useState<"all" | "today" | "week" | "month" | "custom">("month");
   const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
   const [customEndDate, setCustomEndDate]     = useState<Date>(new Date());
   const [showCalendar, setShowCalendar]       = useState<"start" | "end" | null>(null);
@@ -161,6 +163,10 @@ const TransactionsScreen: React.FC = () => {
       let startDate = new Date();
 
       switch (dateFilter) {
+        case "today":
+          startDate = new Date();
+          startDate.setHours(0, 0, 0, 0);
+          break;
         case "week":
           startDate.setDate(now.getDate() - 6);
           startDate.setHours(0, 0, 0, 0);
@@ -178,11 +184,9 @@ const TransactionsScreen: React.FC = () => {
             filtered = filtered.filter((t) => {
               try {
                 const transDate = new Date(t.date);
-                transDate.setHours(0, 0, 0, 0);
                 return transDate >= start && transDate <= end;
               } catch { return false; }
             });
-            return filtered;
           }
           break;
       }
@@ -191,7 +195,6 @@ const TransactionsScreen: React.FC = () => {
         filtered = filtered.filter((t) => {
           try {
             const transDate = new Date(t.date);
-            transDate.setHours(0, 0, 0, 0);
             return transDate >= startDate && transDate <= now;
           } catch { return false; }
         });
@@ -219,7 +222,13 @@ const TransactionsScreen: React.FC = () => {
     });
   }, [state.transactions, filterType, dateFilter, searchQuery, customStartDate, customEndDate]);
 
-  const groupedByDay = useMemo(() => {
+  interface TransactionSection {
+    title: string;
+    dayNet: number;
+    data: Transaction[];
+  }
+
+  const sections = useMemo<TransactionSection[]>(() => {
     const groups: { [key: string]: Transaction[] } = {};
     filteredTransactions.forEach((transaction) => {
       try {
@@ -234,7 +243,17 @@ const TransactionsScreen: React.FC = () => {
 
       }
     });
-    return groups;
+
+    return Object.entries(groups).map(([day, transactions]) => {
+      const dayIncome  = transactions.filter((t) => t.type === "income") .reduce((s, t) => s + safeNumber(t.amount), 0);
+      const dayExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
+      const dayNet     = dayIncome - dayExpense;
+      return {
+        title: day,
+        dayNet,
+        data: transactions,
+      };
+    });
   }, [filteredTransactions]);
 
   const totals = useMemo(() => {
@@ -298,6 +317,7 @@ const TransactionsScreen: React.FC = () => {
 
   const getDateFilterLabel = () => {
     switch (dateFilter) {
+      case "today": return "Hari Ini";
       case "week":  return "7 Hari";
       case "month": return "Bulan Ini";
       case "custom":
@@ -338,7 +358,7 @@ const TransactionsScreen: React.FC = () => {
   };
 
   const resetDateFilter = () => {
-    setDateFilter("all");
+    setDateFilter("month");
     const today = new Date();
     setCustomStartDate(today);
     setCustomEndDate(today);
@@ -367,7 +387,7 @@ const TransactionsScreen: React.FC = () => {
   };
 
   const hasActiveFilter =
-    searchQuery || filterType !== "all" || dateFilter !== "all";
+    Boolean(searchQuery || filterType !== "all" || dateFilter !== "month");
 
   // ── Swipe actions ─────────────────────────────────────────────────────────
   const renderRightActions = (transaction: Transaction) => (
@@ -601,13 +621,75 @@ const TransactionsScreen: React.FC = () => {
             );
           })}
         </View>
+
+        {/* Quick Date Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingTop: 10 }}
+        >
+          {[
+            { key: "today",  label: "Hari Ini", icon: "today-outline" },
+            { key: "week",   label: "7 Hari",   icon: "time-outline" },
+            { key: "month",  label: "Bulan Ini", icon: "calendar-outline" },
+            { key: "custom", label: "Rentang 📅", icon: "calendar" },
+            { key: "all",    label: "Semua",    icon: "infinite-outline" },
+          ].map((chip) => {
+            const isActive = dateFilter === chip.key;
+            return (
+              <TouchableOpacity
+                key={chip.key}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  backgroundColor: isActive ? `${colors.accent}22` : colors.surface,
+                  borderWidth: 1,
+                  borderColor: isActive ? colors.accent : CARD_BORDER,
+                }}
+                onPress={() => {
+                  if (chip.key === "custom") {
+                    setShowFilterModal(true);
+                  } else {
+                    setDateFilter(chip.key as any);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={chip.icon as any}
+                  size={12}
+                  color={isActive ? colors.accent : colors.gray400}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: isActive ? "700" : "500",
+                    color: isActive ? colors.accent : colors.gray400,
+                  }}
+                >
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
-      {/* ── Main scroll ──────────────────────────────────────────────────── */}
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
+      {/* ── Virtualized SectionList ───────────────────────────────────────── */}
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={false}
+        initialNumToRender={15}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === "android"}
         contentContainerStyle={{ paddingBottom: 110 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -616,220 +698,285 @@ const TransactionsScreen: React.FC = () => {
             tintColor={colors.accent}
           />
         }
-      >
-        {/* ── Transactions grouped by day ─────────────────────────────── */}
-        <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
-          {Object.entries(groupedByDay).length > 0 ? (
-            <View>
-              {Object.entries(groupedByDay).map(([day, transactions], groupIndex) => {
-                const dayIncome  = transactions.filter((t) => t.type === "income") .reduce((s, t) => s + safeNumber(t.amount), 0);
-                const dayExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
-                const dayNet     = dayIncome - dayExpense;
+        ListHeaderComponent={
+          <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
+            {/* ── Summary Card ─────────────────────────────────────────── */}
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: 16,
+                marginBottom: 4,
+                borderLeftWidth: 3,
+                borderLeftColor: totals.balance >= 0 ? colors.success : colors.error,
+              }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
+                  Ringkasan Transaksi ({getDateFilterLabel()})
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "600" }}>
+                  {filteredTransactions.length} transaksi
+                </Text>
+              </View>
 
-                return (
-                  <View
-                    key={day}
-                    style={{ marginBottom: 14 }}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                {/* Income */}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Pemasukan
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                    +{formatCurrency(totals.totalIncome)}
+                  </Text>
+                </View>
+
+                <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER, marginHorizontal: 10 }} />
+
+                {/* Expense */}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Pengeluaran
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.error, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                    -{formatCurrency(totals.totalExpense)}
+                  </Text>
+                </View>
+
+                <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER, marginHorizontal: 10 }} />
+
+                {/* Net */}
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Selisih
+                    </Text>
+                  </View>
+                  <Text style={{ color: totals.balance >= 0 ? colors.textPrimary : colors.warning, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                    {totals.balance >= 0 ? "+" : ""}{formatCurrency(totals.balance)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        }
+        renderSectionHeader={({ section: { title, dayNet } }) => (
+          <View style={{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 6 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: 2,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 0.3,
+                }}
+              >
+                {title}
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: 9,
+                  paddingVertical: 3,
+                  borderRadius: 20,
+                  backgroundColor:
+                    dayNet >= 0
+                      ? `${colors.success}15`
+                      : `${colors.error}15`,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: dayNet >= 0 ? colors.success : colors.error,
+                  }}
+                >
+                  {dayNet >= 0 ? "+" : ""}
+                  {formatCurrency(dayNet)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+        renderItem={({ item: transaction, index, section }) => {
+          const isFirst = index === 0;
+          const isLast = index === section.data.length - 1;
+          const categoryInfo = resolveCategory(transaction.category);
+          const isIncome = transaction.type === "income";
+
+          return (
+            <View style={{ paddingHorizontal: 18 }}>
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderTopLeftRadius: isFirst ? CARD_RADIUS : 0,
+                  borderTopRightRadius: isFirst ? CARD_RADIUS : 0,
+                  borderBottomLeftRadius: isLast ? CARD_RADIUS : 0,
+                  borderBottomRightRadius: isLast ? CARD_RADIUS : 0,
+                  borderWidth: 1,
+                  borderTopWidth: isFirst ? 1 : 0,
+                  borderBottomWidth: isLast ? 1 : 1,
+                  borderColor: CARD_BORDER,
+                  borderLeftWidth: 3,
+                  borderLeftColor: isIncome ? colors.success : colors.error,
+                  overflow: "hidden",
+                }}
+              >
+                <Swipeable
+                  key={transaction.id}
+                  ref={(ref) => {
+                    if (ref) {
+                      swipeableRefs.current[transaction.id] = ref;
+                    } else {
+                      delete swipeableRefs.current[transaction.id];
+                    }
+                  }}
+                  renderRightActions={() =>
+                    renderRightActions(transaction)
+                  }
+                  friction={2}
+                  containerStyle={{
+                    backgroundColor: colors.surface,
+                  }}
+                  onSwipeableWillOpen={() => {
+                    Object.keys(swipeableRefs.current).forEach(
+                      (id) => {
+                        if (
+                          id !== transaction.id &&
+                          swipeableRefs.current[id]
+                        ) {
+                          try {
+                            swipeableRefs.current[id]?.close();
+                          } catch { }
+                        }
+                      }
+                    );
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 13,
+                      paddingHorizontal: 16,
+                      backgroundColor: colors.surface,
+                    }}
+                    activeOpacity={0.6}
+                    onPress={() => handleEdit(transaction)}
+                    onLongPress={() =>
+                      handleDelete(transaction.id)
+                    }
+                    delayLongPress={500}
                   >
-                    {/* Day header */}
+                    {/* Category icon */}
                     <View
                       style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
+                        width: 40,
+                        height: 40,
+                        borderRadius: 13,
                         alignItems: "center",
-                        marginBottom: 8,
-                        paddingHorizontal: 2,
+                        justifyContent: "center",
+                        marginRight: 13,
+                        flexShrink: 0,
+                        backgroundColor: `${categoryInfo.color}15`,
                       }}
                     >
+                      <Ionicons
+                        name={resolveCategory(transaction.category).icon as any}
+                        size={17}
+                        color={resolveCategory(transaction.category).color}
+                      />
+                    </View>
+
+                    {/* Info */}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          color: colors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: "500",
+                          marginBottom: 2,
+                        }}
+                      >
+                        {transaction.category}
+                      </Text>
                       <Text
                         style={{
                           color: colors.gray400,
                           fontSize: 11,
-                          fontWeight: "700",
-                          letterSpacing: 0.3,
                         }}
+                        numberOfLines={1}
                       >
-                        {day}
+                        {transaction.description || "—"} ·{" "}
+                        {formatDisplayDate(transaction.date)} ·{" "}
+                        {new Date(transaction.createdAt).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </Text>
-                      <View
-                        style={{
-                          paddingHorizontal: 9,
-                          paddingVertical: 3,
-                          borderRadius: 20,
-                          backgroundColor:
-                            dayNet >= 0
-                              ? `${colors.success}15`
-                              : `${colors.error}15`,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "700",
-                            color: dayNet >= 0 ? colors.success : colors.error,
-                          }}
-                        >
-                          {dayNet >= 0 ? "+" : ""}
-                          {formatCurrency(dayNet)}
-                        </Text>
-                      </View>
+                      {transaction.subTransactions && transaction.subTransactions.length > 0 && (
+                        <View style={{
+                          flexDirection: "row", alignItems: "center",
+                          backgroundColor: `${colors.accent}15`,
+                          borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
+                          alignSelf: "flex-start", marginTop: 4,
+                        }}>
+                          <Ionicons name="cart-outline" size={10} color={colors.accent} style={{ marginRight: 3 }} />
+                          <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
+                            {transaction.subTransactions.length} item
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
-                    {/* Transaction card */}
+                    {/* Amount */}
                     <View
                       style={{
-                        backgroundColor: colors.surface,
-                        borderRadius: CARD_RADIUS,
-                        borderWidth: 1,
-                        borderColor: CARD_BORDER,
-                        overflow: "hidden",
+                        alignItems: "flex-end",
+                        marginLeft: 8,
+                        justifyContent: "center"
                       }}
                     >
-                      {transactions.map((transaction, index) => (
-                        <Swipeable
-                          key={transaction.id}
-                          ref={(ref) => {
-                            if (ref) {
-                              swipeableRefs.current[transaction.id] = ref;
-                            } else {
-                              delete swipeableRefs.current[transaction.id];
-                            }
-                          }}
-                          renderRightActions={() =>
-                            renderRightActions(transaction)
-                          }
-                          friction={2}
-                          containerStyle={{
-                            backgroundColor: colors.surface,
-                          }}
-                          onSwipeableWillOpen={() => {
-                            Object.keys(swipeableRefs.current).forEach(
-                              (id) => {
-                                if (
-                                  id !== transaction.id &&
-                                  swipeableRefs.current[id]
-                                ) {
-                                  try {
-                                    swipeableRefs.current[id]?.close();
-                                  } catch { }
-                                }
-                              }
-                            );
-                          }}
-                        >
-                          <TouchableOpacity
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              paddingVertical: 13,
-                              paddingHorizontal: 16,
-                              backgroundColor: colors.surface,
-                              borderBottomWidth:
-                                index < transactions.length - 1 ? 1 : 0,
-                              borderBottomColor: CARD_BORDER,
-                            }}
-                            activeOpacity={0.6}
-                            onPress={() => handleEdit(transaction)}
-                            onLongPress={() =>
-                              handleDelete(transaction.id)
-                            }
-                            delayLongPress={500}
-                          >
-                              {/* Category icon */}
-                              <View
-                                style={{
-                                  width: 40,
-                                  height: 40,
-                                  borderRadius: 13,
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginRight: 13,
-                                  flexShrink: 0,
-                                  backgroundColor: `${resolveCategory(transaction.category).color}15`,
-                                }}
-                              >
-                                <Ionicons
-                                  name={resolveCategory(transaction.category).icon as any}
-                                  size={17}
-                                  color={resolveCategory(transaction.category).color}
-                                />
-                              </View>
-
-                            {/* Info */}
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={{
-                                  color: colors.textPrimary,
-                                  fontSize: 13,
-                                  fontWeight: "500",
-                                  marginBottom: 2,
-                                }}
-                              >
-                                {transaction.category}
-                              </Text>
-                              <Text
-                                style={{
-                                  color: colors.gray400,
-                                  fontSize: 11,
-                                }}
-                                numberOfLines={1}
-                              >
-                                {transaction.description || "—"} ·{" "}
-                                {formatDisplayDate(transaction.date)} ·{" "}
-                                {new Date(transaction.createdAt).toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </Text>
-                              {transaction.subTransactions && transaction.subTransactions.length > 0 && (
-                                <View style={{
-                                  flexDirection: "row", alignItems: "center",
-                                  backgroundColor: `${colors.accent}15`,
-                                  borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
-                                  alignSelf: "flex-start", marginTop: 4,
-                                }}>
-                                  <Ionicons name="cart-outline" size={10} color={colors.accent} style={{ marginRight: 3 }} />
-                                  <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
-                                    {transaction.subTransactions.length} item
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-
-                            {/* Amount */}
-                            <View
-                              style={{
-                                alignItems: "flex-end",
-                                marginLeft: 8,
-                                justifyContent: "center"
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontSize: 13,
-                                  fontWeight: "700",
-                                  color:
-                                    transaction.type === "income"
-                                      ? colors.success
-                                      : colors.error,
-                                }}
-                              >
-                                {transaction.type === "income" ? "+" : "−"}
-                                {formatCurrency(
-                                  safeNumber(transaction.amount)
-                                )}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        </Swipeable>
-                      ))}
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "700",
+                          color:
+                            transaction.type === "income"
+                              ? colors.success
+                              : colors.error,
+                        }}
+                      >
+                        {transaction.type === "income" ? "+" : "−"}
+                        {formatCurrency(
+                          safeNumber(transaction.amount)
+                        )}
+                      </Text>
                     </View>
-                  </View>
-                );
-              })}
+                  </TouchableOpacity>
+                </Swipeable>
+              </View>
             </View>
-          ) : (
-            /* ── Empty state ───────────────────────────────────────────── */
+          );
+        }}
+        ListEmptyComponent={
+          <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
             <View
               style={{
                 alignItems: "center",
@@ -883,7 +1030,7 @@ const TransactionsScreen: React.FC = () => {
                 }}
               >
                 {hasActiveFilter
-                  ? "Coba kata kunci lain atau hapus filter yang aktif"
+                  ? "Coba kata kunci lain atau pilih filter periode berbeda"
                   : "Mulai catat transaksi pertama Anda"}
               </Text>
 
@@ -948,14 +1095,14 @@ const TransactionsScreen: React.FC = () => {
                       fontWeight: "500",
                     }}
                   >
-                    Hapus Semua Filter
+                    Reset Filter ke Bulan Ini
                   </Text>
                 </TouchableOpacity>
               )}
             </View>
-          )}
-        </View>
-      </ScrollView>
+          </View>
+        }
+      />
 
       {/* ── FAB ─────────────────────────────────────────────────────────── */}
       <Animated.View
@@ -1085,10 +1232,11 @@ const TransactionsScreen: React.FC = () => {
               }}
             >
               {[
-                { key: "all",    label: "Semua Waktu" },
+                { key: "today",  label: "Hari Ini" },
                 { key: "week",   label: "7 Hari Terakhir" },
                 { key: "month",  label: "Bulan Ini" },
                 { key: "custom", label: "Tanggal Kustom" },
+                { key: "all",    label: "Semua Waktu" },
               ].map((option) => {
                 const isActive = dateFilter === option.key;
                 return (
