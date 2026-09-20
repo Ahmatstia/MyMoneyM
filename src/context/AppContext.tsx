@@ -41,6 +41,7 @@ import {
   processRecurringTransactions,
   calculateInitialRunDate,
 } from "../utils/recurring";
+import { isImageFileExisting } from "../utils/imageStorage";
 
 interface AppContextType {
   state: AppState;
@@ -210,6 +211,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!currentName || oldDefaults.includes(currentName)) {
         completeAppData.userProfile.name = "MyMoney";
+      }
+
+      // Bersihkan URI gambar profil jika filenya sudah terhapus oleh OS di cache lama
+      if (
+        completeAppData.userProfile.avatar &&
+        !isImageFileExisting(completeAppData.userProfile.avatar)
+      ) {
+        completeAppData.userProfile.avatar = undefined;
+      }
+      if (
+        completeAppData.userProfile.coverImage &&
+        !isImageFileExisting(completeAppData.userProfile.coverImage)
+      ) {
+        completeAppData.userProfile.coverImage = undefined;
       }
 
       // Check & process any due recurring transactions upon startup

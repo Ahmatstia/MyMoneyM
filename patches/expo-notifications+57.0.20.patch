@@ -1,5 +1,5 @@
 diff --git a/node_modules/expo-notifications/build/DevicePushTokenAutoRegistration.fx.js b/node_modules/expo-notifications/build/DevicePushTokenAutoRegistration.fx.js
-index 85cd97c..898fd24 100644
+index 85cd97c..edf9531 100644
 --- a/node_modules/expo-notifications/build/DevicePushTokenAutoRegistration.fx.js
 +++ b/node_modules/expo-notifications/build/DevicePushTokenAutoRegistration.fx.js
 @@ -1,4 +1,5 @@
@@ -17,6 +17,16 @@ index 85cd97c..898fd24 100644
      // A global scope (to get all the updates) device push token
      // subscription, never cleared.
      addPushTokenListener(async (token) => {
+@@ -103,7 +104,7 @@ if (ServerRegistrationModule.getRegistrationInfoAsync) {
+         console.error('[expo-notifications] Error reading persisted server registration info: ', e);
+     });
+ }
+-else {
++else if (!isRunningInExpoGo()) {
+     console.warn(`[expo-notifications] Error encountered while fetching auto-registration state, new tokens will not be automatically registered on server.`, new UnavailabilityError('ServerRegistrationModule', 'getRegistrationInfoAsync'));
+ }
+ //# sourceMappingURL=DevicePushTokenAutoRegistration.fx.js.map
+\ No newline at end of file
 diff --git a/node_modules/expo-notifications/build/PushTokenManager.native.js b/node_modules/expo-notifications/build/PushTokenManager.native.js
 index 27bd573..d810717 100644
 --- a/node_modules/expo-notifications/build/PushTokenManager.native.js
@@ -97,6 +107,23 @@ index 644a8bb..b9ece29 100644
 +export default nativeModule;
  //# sourceMappingURL=TopicSubscriptionModule.android.js.map
 \ No newline at end of file
+diff --git a/node_modules/expo-notifications/build/index.js b/node_modules/expo-notifications/build/index.js
+index 3167134..f4e82cb 100644
+--- a/node_modules/expo-notifications/build/index.js
++++ b/node_modules/expo-notifications/build/index.js
+@@ -2,11 +2,7 @@ import { isRunningInExpoGo } from 'expo';
+ function areWeTestingWithJest() {
+     return process.env.JEST_WORKER_ID !== undefined || process.env.NODE_ENV?.toLowerCase() === 'test';
+ }
+-if (isRunningInExpoGo() && !areWeTestingWithJest()) {
+-    const message = '`expo-notifications` functionality is not fully supported in Expo Go:\n' +
+-        'We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.';
+-    console.warn(message);
+-}
++// Expo Go limitation warning suppressed because MyMoney only uses local notifications
+ export { getDevicePushTokenAsync } from './getDevicePushTokenAsync';
+ export { unregisterForNotificationsAsync } from './unregisterForNotificationsAsync';
+ export { getExpoPushTokenAsync } from './getExpoPushTokenAsync';
 diff --git a/node_modules/expo-notifications/build/warnOfExpoGoPushUsage.js b/node_modules/expo-notifications/build/warnOfExpoGoPushUsage.js
 index 8260405..61c4cfe 100644
 --- a/node_modules/expo-notifications/build/warnOfExpoGoPushUsage.js
@@ -114,7 +141,7 @@ index 8260405..61c4cfe 100644
              console.warn(message);
          }
 diff --git a/node_modules/expo-notifications/src/DevicePushTokenAutoRegistration.fx.ts b/node_modules/expo-notifications/src/DevicePushTokenAutoRegistration.fx.ts
-index 4150532..f4eb303 100644
+index 4150532..a7481ef 100644
 --- a/node_modules/expo-notifications/src/DevicePushTokenAutoRegistration.fx.ts
 +++ b/node_modules/expo-notifications/src/DevicePushTokenAutoRegistration.fx.ts
 @@ -1,4 +1,5 @@
@@ -132,6 +159,33 @@ index 4150532..f4eb303 100644
    // A global scope (to get all the updates) device push token
    // subscription, never cleared.
    addPushTokenListener(async (token) => {
+@@ -136,7 +137,7 @@ if (ServerRegistrationModule.getRegistrationInfoAsync) {
+       console.error('[expo-notifications] Error reading persisted server registration info: ', e);
+     }
+   );
+-} else {
++} else if (!isRunningInExpoGo()) {
+   console.warn(
+     `[expo-notifications] Error encountered while fetching auto-registration state, new tokens will not be automatically registered on server.`,
+     new UnavailabilityError('ServerRegistrationModule', 'getRegistrationInfoAsync')
+diff --git a/node_modules/expo-notifications/src/index.ts b/node_modules/expo-notifications/src/index.ts
+index a93caaa..f50efa5 100644
+--- a/node_modules/expo-notifications/src/index.ts
++++ b/node_modules/expo-notifications/src/index.ts
+@@ -4,12 +4,7 @@ function areWeTestingWithJest() {
+   return process.env.JEST_WORKER_ID !== undefined || process.env.NODE_ENV?.toLowerCase() === 'test';
+ }
+ 
+-if (isRunningInExpoGo() && !areWeTestingWithJest()) {
+-  const message =
+-    '`expo-notifications` functionality is not fully supported in Expo Go:\n' +
+-    'We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.';
+-  console.warn(message);
+-}
++// Expo Go limitation warning suppressed because MyMoney only uses local notifications
+ 
+ export { getDevicePushTokenAsync } from './getDevicePushTokenAsync';
+ export { unregisterForNotificationsAsync } from './unregisterForNotificationsAsync';
 diff --git a/node_modules/expo-notifications/src/warnOfExpoGoPushUsage.ts b/node_modules/expo-notifications/src/warnOfExpoGoPushUsage.ts
 index c6883b3..039d60d 100644
 --- a/node_modules/expo-notifications/src/warnOfExpoGoPushUsage.ts
@@ -147,3 +201,15 @@ index c6883b3..039d60d 100644
        didWarn = true;
        console.warn(message);
      }
+diff --git a/node_modules/expo-notifications/tsconfig.json b/node_modules/expo-notifications/tsconfig.json
+index f068839..de13b91 100644
+--- a/node_modules/expo-notifications/tsconfig.json
++++ b/node_modules/expo-notifications/tsconfig.json
+@@ -1,6 +1,6 @@
+ // @generated by expo-module-scripts
+ {
+-  "extends": "expo-module-scripts/tsconfig.base",
++  "extends": "expo/tsconfig.base",
+   "compilerOptions": {
+     "rootDir": "./src",
+     "outDir": "./build"

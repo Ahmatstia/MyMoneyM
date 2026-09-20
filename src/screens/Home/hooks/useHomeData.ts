@@ -31,25 +31,7 @@ export const useHomeData = (
   const activeCycle = useMemo(() => {
     const cycle = getActiveCycleInfo(state.transactions);
 
-    // FIX-004: Validate single cycle anchor
-    if (cycle && state.transactions.length > 0) {
-      const activeCycles = state.transactions.filter(
-        (t) =>
-          t.type === "income" &&
-          t.cyclePeriod &&
-          new Date(t.date).getTime() <= new Date().getTime(),
-      );
-      if (activeCycles.length > 1) {
-        console.warn(
-          "⚠️ MULTIPLE CYCLE INCOMES DETECTED:",
-          activeCycles
-            .map((t) => `${t.date} (${t.cyclePeriod} days)`)
-            .join(", "),
-          "→ Using latest anchor. Consider consolidating to single cycle income.",
-        );
-      }
-    }
-
+    // Cycle calculation automatically anchors to the latest cycle income via getActiveCycleInfo
     return cycle;
   }, [state.transactions]);
 

@@ -98,6 +98,17 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const { colors } = useTheme();
   const { userProfile } = state;
 
+  const [avatarError, setAvatarError] = useState(false);
+  const [coverError, setCoverError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [userProfile?.avatar]);
+
+  useEffect(() => {
+    setCoverError(false);
+  }, [userProfile?.coverImage]);
+
   if (!userProfile) return null;
 
   const menuItems = [
@@ -191,10 +202,11 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         >
           <ImageBackground
             source={
-              userProfile.coverImage
+              userProfile.coverImage && !coverError
                 ? { uri: userProfile.coverImage }
                 : require("../../assets/bg.png")
             }
+            onError={() => setCoverError(true)}
             style={{
               paddingTop: 56,
               paddingBottom: 32,
@@ -217,10 +229,11 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                   overflow: "hidden",
                 }}
               >
-                {userProfile.avatar ? (
+                {userProfile.avatar && !avatarError ? (
                   <Image
                     source={{ uri: userProfile.avatar }}
                     style={{ width: "100%", height: "100%" }}
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <Ionicons name="person" size={32} color={colors.accent} />

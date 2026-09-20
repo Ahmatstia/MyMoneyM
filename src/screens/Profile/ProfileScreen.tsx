@@ -37,6 +37,7 @@ import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency } from "../../utils/calculations";
 import { calculateDailyCheckInStreak } from "../../utils/dailyCheckIn";
+import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorage";
 
 const { width } = Dimensions.get("window");
 
@@ -572,20 +573,86 @@ const ProfileScreen: React.FC = () => {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
+  const [avatarError, setAvatarError] = useState(false);
+  const [coverError, setCoverError] = useState(false);
+
   const pickImage = async (type: "avatar" | "cover") => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: type === "avatar" ? [1, 1] : [16, 9],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      if (type === "avatar") {
-        await updateUserProfile({ avatar: uri });
-      } else {
-        await updateUserProfile({ coverImage: uri });
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "Izin Akses Ditolak",
+          "Aplikasi membutuhkan izin akses galeri untuk memilih foto profil atau cover.",
+        );
+        return;
       }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: type === "avatar" ? [1, 1] : [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const rawUri = result.assets[0].uri;
+        // Simpan secara permanen ke direktori dokumen lokal agar tidak terhapus saat aplikasi ditutup
+        const permanentUri = await persistImageAsync(rawUri, type);
+
+        const oldUri =
+          type === "avatar" ? userProfile.avatar : userProfile.coverImage;
+        if (oldUri && oldUri !== permanentUri) {
+          await deleteImageFileAsync(oldUri);
+        }
+
+        if (type === "avatar") {
+          setAvatarError(false);
+          await updateUserProfile({ avatar: permanentUri });
+        } else {
+          setCoverError(false);
+          await updateUserProfile({ coverImage: permanentUri });
+        }
+      }
+    } catch (error) {
+      console.error("Gagal memilih gambar:", error);
+      Alert.alert("Gagal", "Terjadi kesalahan saat memproses gambar.");
+    }
+  };
+
+  const handleImageAction = (type: "avatar" | "cover") => {
+    const hasPhoto =
+      type === "avatar" ? !!userProfile.avatar : !!userProfile.coverImage;
+    if (hasPhoto) {
+      Alert.alert(
+        type === "avatar" ? "Foto Profil" : "Foto Cover",
+        "Pilih tindakan:",
+        [
+          { text: "Batal", style: "cancel" },
+          {
+            text: "Hapus Foto",
+            style: "destructive",
+            onPress: async () => {
+              const oldUri =
+                type === "avatar" ? userProfile.avatar : userProfile.coverImage;
+              await deleteImageFileAsync(oldUri);
+              if (type === "avatar") {
+                setAvatarError(false);
+                await updateUserProfile({ avatar: undefined });
+              } else {
+                setCoverError(false);
+                await updateUserProfile({ coverImage: undefined });
+              }
+            },
+          },
+          {
+            text: "Ganti Foto",
+            onPress: () => pickImage(type),
+          },
+        ],
+      );
+    } else {
+      pickImage(type);
     }
   };
 
@@ -779,10 +846,11 @@ const ProfileScreen: React.FC = () => {
         <View>
           <ImageBackground
             source={
-              userProfile.coverImage
+              userProfile.coverImage && !coverError
                 ? { uri: userProfile.coverImage }
                 : require("../../../assets/bg.png")
             }
+            onError={() => setCoverError(true)}
             style={tw`h-56 justify-end`}
             imageStyle={{ opacity: 1 }}
           >
@@ -795,7 +863,7 @@ const ProfileScreen: React.FC = () => {
             {/* Cover edit button */}
             <View style={tw`absolute top-4 right-4`}>
               <TouchableOpacity
-                onPress={() => pickImage("cover")}
+                onPress={() => handleImageAction("cover")}
                 style={[
                   tw`flex-row items-center gap-1 px-2.5 py-1.5 rounded-full`,
                   {
@@ -840,10 +908,11 @@ const ProfileScreen: React.FC = () => {
                     colors={[`${C.cyan}40`, `${C.violet}30`]}
                     style={tw`absolute inset-0`}
                   />
-                  {userProfile.avatar ? (
+                  {userProfile.avatar && !avatarError ? (
                     <Image
                       source={{ uri: userProfile.avatar }}
                       style={tw`w-full h-full`}
+                      onError={() => setAvatarError(true)}
                     />
                   ) : (
                     <View style={tw`flex-1 items-center justify-center`}>
@@ -853,7 +922,7 @@ const ProfileScreen: React.FC = () => {
                 </View>
                 {/* Camera button */}
                 <TouchableOpacity
-                  onPress={() => pickImage("avatar")}
+                  onPress={() => handleImageAction("avatar")}
                   style={[
                     tw`absolute -bottom-1 -right-1 w-6 h-6 rounded-lg items-center justify-center`,
                     {

@@ -19,6 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
+import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorage";
 import {
   formatCurrency,
   safeNumber,
@@ -178,7 +179,12 @@ const AddSavingsScreen: React.FC = () => {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setImageCover(result.assets[0].uri);
+        const rawUri = result.assets[0].uri;
+        const permanentUri = await persistImageAsync(rawUri, "savings");
+        if (imageCover && imageCover !== permanentUri) {
+          await deleteImageFileAsync(imageCover);
+        }
+        setImageCover(permanentUri);
       }
     } catch (error) {
       Alert.alert("Error", "Gagal membuka galeri");
