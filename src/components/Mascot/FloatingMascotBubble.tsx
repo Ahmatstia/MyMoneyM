@@ -8,11 +8,12 @@ import {
   Easing,
   PanResponder,
   Dimensions,
+  Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
 
 import { useGamification } from "../../context/GamificationContext";
 import { useAppContext } from "../../context/AppContext";
@@ -39,10 +40,19 @@ const DEFAULT_Y = 80;
 const STORAGE_KEY_POS_X = "@mymoney_mascot_pos_x";
 const STORAGE_KEY_POS_Y = "@mymoney_mascot_pos_y";
 const STORAGE_KEY_MINIMIZED = "@mymoney_mascot_minimized";
+export const STORAGE_KEY_MASCOT_HIDDEN = "@mymoney_mascot_hidden";
+
+// In-memory session dismissal flag (resets automatically whenever app restarts)
+let sessionDismissed = false;
+
+export const resetSessionDismissed = () => {
+  sessionDismissed = false;
+};
 
 export const FloatingMascotBubble: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
   const { state: appState } = useAppContext();
   const { state: game, progress, claimableMilestones } = useGamification();
 
@@ -52,6 +62,7 @@ export const FloatingMascotBubble: React.FC = () => {
 
   const [isOnLeftSide, setIsOnLeftSide] = useState(true);
   const [isTucked, setIsTucked] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [activeMood, setActiveMood] = useState<CatMood>("happy");
   const [shortSpeech, setShortSpeech] = useState<string | null>(null);
 
@@ -59,21 +70,28 @@ export const FloatingMascotBubble: React.FC = () => {
   const floatAnim = useRef(new Animated.Value(0)).current;
   const speechOpacity = useRef(new Animated.Value(0)).current;
   const tuckAnim = useRef(new Animated.Value(0)).current; // 0 = normal, 1 = tucked into border
+  const dismissScale = useRef(new Animated.Value(1)).current;
+  const dismissOpacity = useRef(new Animated.Value(1)).current;
 
   const tierTheme = useMemo(
     () => getTierTheme(progress.borderTier),
     [progress.borderTier]
   );
 
-  // ─── 1. Load Saved Position & Tucked State ──────────────────────────────────
+  // ─── 1. Load Saved Position & Tucked & Hidden State ────────────────────────
   useEffect(() => {
     const loadState = async () => {
       try {
-        const [savedX, savedY, savedMin] = await Promise.all([
+        const [savedX, savedY, savedMin, savedHidden] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEY_POS_X),
           AsyncStorage.getItem(STORAGE_KEY_POS_Y),
           AsyncStorage.getItem(STORAGE_KEY_MINIMIZED),
+          AsyncStorage.getItem(STORAGE_KEY_MASCOT_HIDDEN),
         ]);
+
+        if (savedHidden === "true" || sessionDismissed) {
+          setIsHidden(true);
+        }
 
         let x = DEFAULT_X;
         let y = DEFAULT_Y;
@@ -100,6 +118,22 @@ export const FloatingMascotBubble: React.FC = () => {
 
     loadState();
   }, []);
+
+  // Sync when screen is focused (in case toggled from Settings)
+  useEffect(() => {
+    if (isFocused) {
+      AsyncStorage.getItem(STORAGE_KEY_MASCOT_HIDDEN).then((val) => {
+        const permanentlyHidden = val === "true";
+        if (permanentlyHidden) {
+          setIsHidden(true);
+        } else if (!sessionDismissed) {
+          setIsHidden(false);
+          dismissScale.setValue(1);
+          dismissOpacity.setValue(1);
+        }
+      });
+    }
+  }, [isFocused]);
 
   // ─── 2. Idle Float Animation ────────────────────────────────────────────────
   useEffect(() => {
@@ -171,6 +205,38 @@ export const FloatingMascotBubble: React.FC = () => {
     } else {
       navigation.navigate("MoniScreen");
     }
+  };
+
+  const handleDismiss = () => {
+    Alert.alert(
+      "Sembunyikan Moni?",
+      "Moni akan disembunyikan untuk sesi ini dan akan muncul kembali saat aplikasi dibuka lagi.",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Sembunyikan",
+          style: "destructive",
+          onPress: () => {
+            Animated.parallel([
+              Animated.timing(dismissScale, {
+                toValue: 0,
+                duration: 220,
+                easing: Easing.back(1.2),
+                useNativeDriver: false,
+              }),
+              Animated.timing(dismissOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: false,
+              }),
+            ]).start(() => {
+              sessionDismissed = true;
+              setIsHidden(true);
+            });
+          },
+        },
+      ]
+    );
   };
 
   // ─── 5. PanResponder for Free Dragging with Edge Snapping ───────────────────
@@ -245,16 +311,20 @@ export const FloatingMascotBubble: React.FC = () => {
     outputRange: [0, isOnLeftSide ? -TUCK_DISTANCE : TUCK_DISTANCE],
   });
 
+  if (isHidden) return null;
+
   return (
     <Animated.View
       style={[
         styles.floatingContainer,
         {
+          opacity: dismissOpacity,
           transform: [
             { translateX: pan.x },
             { translateY: pan.y },
             { translateX: tuckOffset },
             { translateY: floatAnim },
+            { scale: dismissScale },
           ],
         },
       ]}
@@ -296,56 +366,77 @@ export const FloatingMascotBubble: React.FC = () => {
           { flexDirection: isOnLeftSide ? "row" : "row-reverse" },
         ]}
       >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleCatPress}
-          style={[
-            styles.bubbleTouchable,
-            {
-              borderColor: tierTheme.primary,
-              backgroundColor: colors.surface,
-              shadowColor: tierTheme.primary,
-            },
-          ]}
-        >
-          {/* Glowing Tier Ring */}
-          <LinearGradient
-            colors={tierTheme.gradient}
-            style={styles.gradientRing}
+        <View style={styles.bubbleWrapper}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleCatPress}
+            style={[
+              styles.bubbleTouchable,
+              {
+                borderColor: tierTheme.primary,
+                backgroundColor: colors.surface,
+                shadowColor: tierTheme.primary,
+              },
+            ]}
           >
-            <View
-              style={[
-                styles.innerCircle,
-                { backgroundColor: colors.surface },
-              ]}
-            >
-              <CatMascotSvg
-                mood={activeMood}
-                accessory={game.equippedAccessory}
-                size={44}
-              />
-            </View>
-          </LinearGradient>
-
-          {/* Mini Level Badge */}
-          <View style={styles.levelPillWrapper}>
+            {/* Glowing Tier Ring */}
             <LinearGradient
               colors={tierTheme.gradient}
-              style={styles.levelPill}
+              style={styles.gradientRing}
             >
-              <Text style={styles.levelPillText}>Lv.{progress.level}</Text>
+              <View
+                style={[
+                  styles.innerCircle,
+                  { backgroundColor: colors.surface },
+                ]}
+              >
+                <CatMascotSvg
+                  mood={activeMood}
+                  accessory={game.equippedAccessory}
+                  size={44}
+                />
+              </View>
             </LinearGradient>
-          </View>
 
-          {/* Unclaimed Red Dot Badge */}
-          {claimableMilestones.length > 0 && (
-            <View style={styles.claimDot}>
-              <Text style={styles.claimDotText}>
-                {claimableMilestones.length}
-              </Text>
+            {/* Mini Level Badge */}
+            <View style={styles.levelPillWrapper}>
+              <LinearGradient
+                colors={tierTheme.gradient}
+                style={styles.levelPill}
+              >
+                <Text style={styles.levelPillText}>Lv.{progress.level}</Text>
+              </LinearGradient>
             </View>
+
+            {/* Unclaimed Red Dot Badge */}
+            {claimableMilestones.length > 0 && (
+              <View style={styles.claimDot}>
+                <Text style={styles.claimDotText}>
+                  {claimableMilestones.length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Mini 'X' Close Button (Sibling to avoid touch responder conflict) */}
+          {!isTucked && (
+            <TouchableOpacity
+              onPress={handleDismiss}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+              activeOpacity={0.7}
+              style={[
+                styles.closeBtn,
+                isOnLeftSide ? styles.closeBtnInwardLeft : styles.closeBtnInwardRight,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderLight,
+                },
+              ]}
+            >
+              <Ionicons name="close" size={12} color={colors.textSecondary} />
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
 
         {/* ─── Quick Tuck Button (Chevron tab) ────────────────────────── */}
         <TouchableOpacity
@@ -513,5 +604,30 @@ const styles = StyleSheet.create({
   },
   tuckTabLeft: {
     marginRight: TAB_GAP,
+  },
+  bubbleWrapper: {
+    position: "relative",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: -10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 3,
+    zIndex: 20,
+  },
+  closeBtnInwardLeft: {
+    right: -4,
+  },
+  closeBtnInwardRight: {
+    left: -4,
   },
 });

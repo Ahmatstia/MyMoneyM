@@ -29,6 +29,10 @@ import { storageService } from "../../utils/storage";
 import { exportAllCsv } from "../../utils/csvExport";
 import { useTheme } from "../../theme/ThemeContext";
 import { THEMES, ThemeId } from "../../theme/theme";
+import {
+  STORAGE_KEY_MASCOT_HIDDEN,
+  resetSessionDismissed,
+} from "../../components/Mascot/FloatingMascotBubble";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -636,6 +640,7 @@ const SettingsScreen = () => {
     "appearance" | "notifications" | "data"
   >("appearance");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isMoniVisible, setIsMoniVisible] = useState(true);
   const [timePickerConfig, setTimePickerConfig] = useState<{
     visible: boolean;
     type: "morning" | "evening" | "quietStart" | "quietEnd" | null;
@@ -654,9 +659,25 @@ const SettingsScreen = () => {
       setNotificationSettings(savedNotifSettings);
       const savedAppSettings = await AsyncStorage.getItem(APP_SETTINGS_KEY);
       if (savedAppSettings) setAppSettings(JSON.parse(savedAppSettings));
+      const savedMoniHidden = await AsyncStorage.getItem(STORAGE_KEY_MASCOT_HIDDEN);
+      if (savedMoniHidden !== null) {
+        setIsMoniVisible(savedMoniHidden !== "true");
+      }
     } catch (error) {
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleMoniVisible = async (val: boolean) => {
+    setIsMoniVisible(val);
+    if (val) {
+      resetSessionDismissed();
+    }
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_MASCOT_HIDDEN, val ? "false" : "true");
+    } catch (e) {
+      console.warn("Failed to toggle mascot visibility:", e);
     }
   };
 
@@ -1108,6 +1129,58 @@ const SettingsScreen = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "appearance" && (
           <>
+            <SectionHeader title="Maskot Finansial" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: CARD_PAD,
+                marginBottom: 20,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Text style={{ fontSize: 22 }}>🐱</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: "700",
+                      marginBottom: 2,
+                    }}
+                  >
+                    Maskot Moni di Beranda
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                    Tampilkan widget interaktif Moni melayang di layar beranda
+                  </Text>
+                </View>
+                <Switch
+                  value={isMoniVisible}
+                  onValueChange={toggleMoniVisible}
+                  trackColor={{
+                    false: colors.surfaceLight,
+                    true: colors.accent,
+                  }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+
             <SectionHeader title="Tema Aplikasi" />
             <View style={{ marginBottom: 24 }}>
               {Object.entries(THEMES).map(([id, themeData], index) => {
