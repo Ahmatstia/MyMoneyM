@@ -16,6 +16,7 @@ import {
   Debt,
   UserProfile,
   CustomCategory,
+  RecurringTransaction,
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
@@ -36,6 +37,10 @@ import {
   validateSavingsTransaction,
   updateBudgetsFromTransactions,
 } from "../utils/validators";
+import {
+  processRecurringTransactions,
+  calculateInitialRunDate,
+} from "../utils/recurring";
 
 interface AppContextType {
   state: AppState;
@@ -101,6 +106,20 @@ interface AppContextType {
   ) => Promise<void>;
   deleteCustomCategory: (id: string) => Promise<void>;
 
+  // 🔹 RECURRING TRANSACTIONS
+  addRecurringTransaction: (
+    recurring: Omit<RecurringTransaction, "id" | "createdAt" | "nextRunDate"> & {
+      nextRunDate?: string;
+    },
+  ) => Promise<void>;
+  editRecurringTransaction: (
+    id: string,
+    updates: Partial<RecurringTransaction>,
+  ) => Promise<void>;
+  deleteRecurringTransaction: (id: string) => Promise<void>;
+  toggleRecurringTransaction: (id: string) => Promise<void>;
+  processRecurringNow: () => Promise<void>;
+
   // 🔹 NOTIFICATIONS
   triggerNotificationCheck: () => Promise<void>;
 
@@ -120,6 +139,7 @@ const defaultAppState: AppState = {
   savingsTransactions: [],
   notes: [],
   debts: [],
+  recurringTransactions: [],
   customCategories: [],
   dailyCheckIns: [],
   userProfile: {
@@ -166,12 +186,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const appData = await storageService.loadData();
 
-      // Pastikan semua properti ada termasuk notes
+      // Pastikan semua properti ada termasuk notes dan recurring
       let completeAppData: AppState = {
         ...defaultAppState,
         ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        recurringTransactions: appData.recurringTransactions || [],
         customCategories: appData.customCategories || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
@@ -189,6 +210,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!currentName || oldDefaults.includes(currentName)) {
         completeAppData.userProfile.name = "MyMoney";
+      }
+
+      // Check & process any due recurring transactions upon startup
+      const recurringResult = processRecurringTransactions(completeAppData);
+      if (recurringResult.executedCount > 0) {
+        const updatedBudgets = updateBudgetsFromTransactions(
+          recurringResult.updatedState.transactions,
+          recurringResult.updatedState.budgets,
+        );
+        recurringResult.updatedState.budgets = updatedBudgets;
+        completeAppData = recurringResult.updatedState;
+        await storageService.saveData(completeAppData);
       }
 
       if (isMounted.current) {
@@ -251,6 +284,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         ...appData,
         notes: appData.notes || [],
         debts: appData.debts || [],
+        recurringTransactions: appData.recurringTransactions || [],
         customCategories: appData.customCategories || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
@@ -279,7 +313,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await notificationService.checkImmediateAlerts(stateRef.current);
   };
 
-  // ========== DAILY CHECK-IN ==========
+  // ========== DAILY CHECK-IN & RECURRING LISTENERS ==========
   // RISK-002 FIX: Use functional setState so we always read the freshest
   // dailyCheckIns — prevents double check-in from stale closure reads.
   const checkInToday = async () => {
@@ -304,7 +338,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Listen for app foreground events to trigger daily check-in
+  const processRecurringNow = async () => {
+    const currentState = stateRef.current;
+    const { updatedState, executedCount } = processRecurringTransactions(currentState);
+    if (executedCount > 0) {
+      const updatedBudgets = updateBudgetsFromTransactions(
+        updatedState.transactions,
+        updatedState.budgets,
+      );
+      const finalState = {
+        ...updatedState,
+        budgets: updatedBudgets,
+      };
+      if (isMounted.current) {
+        setState(finalState);
+      }
+      await storageService.saveData(finalState);
+      await notificationService.updateNotifications(finalState);
+      await notificationService.sendNotification({
+        title: "⚡ Transaksi Rutin Diproses",
+        body: `${executedCount} transaksi otomatis telah berhasil dicatat.`,
+        data: { type: "RECURRING_PROCESSED" },
+      });
+    }
+  };
+
+  // Listen for app foreground events to trigger daily check-in and recurring processing
   useEffect(() => {
     if (isLoading) return;
 
@@ -313,12 +372,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       (nextAppState) => {
         if (nextAppState === "active") {
           checkInToday();
+          processRecurringNow();
         }
       },
     );
 
     // Check immediately when loading completes (once)
     checkInToday();
+    processRecurringNow();
 
     return () => {
       subscription.remove();
@@ -850,6 +911,156 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await storageService.saveData(newState);
   };
 
+  // ========== RECURRING TRANSACTIONS FUNCTIONS ==========
+  const addRecurringTransaction = async (
+    recurring: Omit<RecurringTransaction, "id" | "createdAt" | "nextRunDate"> & {
+      nextRunDate?: string;
+    },
+  ) => {
+    const nextRun =
+      recurring.nextRunDate ||
+      calculateInitialRunDate(
+        recurring.frequency,
+        recurring.startDate,
+        recurring.dayOfWeek,
+        recurring.dayOfMonth,
+      );
+
+    const newRecurring: RecurringTransaction = {
+      ...recurring,
+      id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      nextRunDate: nextRun,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedList = [...(state.recurringTransactions || []), newRecurring];
+    const tempState: AppState = {
+      ...state,
+      recurringTransactions: updatedList,
+    };
+
+    // Auto-check immediately in case startDate/nextRunDate <= today
+    const { updatedState, executedCount } = processRecurringTransactions(tempState);
+    if (executedCount > 0) {
+      const updatedBudgets = updateBudgetsFromTransactions(
+        updatedState.transactions,
+        updatedState.budgets,
+      );
+      const finalState = {
+        ...updatedState,
+        budgets: updatedBudgets,
+      };
+      setState(finalState);
+      await storageService.saveData(finalState);
+      await notificationService.updateNotifications(finalState);
+    } else {
+      setState(tempState);
+      await storageService.saveData(tempState);
+    }
+  };
+
+  const editRecurringTransaction = async (
+    id: string,
+    updates: Partial<RecurringTransaction>,
+  ) => {
+    const existing = (state.recurringTransactions || []).find((r) => r.id === id);
+    if (!existing) return;
+
+    let nextRun = updates.nextRunDate || existing.nextRunDate;
+    if (
+      (updates.frequency && updates.frequency !== existing.frequency) ||
+      (updates.startDate && updates.startDate !== existing.startDate) ||
+      updates.dayOfWeek !== undefined ||
+      updates.dayOfMonth !== undefined ||
+      updates.intervalDays !== undefined
+    ) {
+      const targetFrequency = updates.frequency || existing.frequency;
+      const targetStartDate = updates.startDate || existing.startDate;
+      const targetDayOfWeek =
+        updates.dayOfWeek !== undefined ? updates.dayOfWeek : existing.dayOfWeek;
+      const targetDayOfMonth =
+        updates.dayOfMonth !== undefined ? updates.dayOfMonth : existing.dayOfMonth;
+      nextRun = calculateInitialRunDate(
+        targetFrequency,
+        targetStartDate,
+        targetDayOfWeek,
+        targetDayOfMonth,
+      );
+    }
+
+    const updated = (state.recurringTransactions || []).map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            ...updates,
+            nextRunDate: nextRun,
+            updatedAt: new Date().toISOString(),
+          }
+        : r,
+    );
+
+    const tempState: AppState = { ...state, recurringTransactions: updated };
+    const { updatedState, executedCount } = processRecurringTransactions(tempState);
+    if (executedCount > 0) {
+      const updatedBudgets = updateBudgetsFromTransactions(
+        updatedState.transactions,
+        updatedState.budgets,
+      );
+      const finalState = {
+        ...updatedState,
+        budgets: updatedBudgets,
+      };
+      setState(finalState);
+      await storageService.saveData(finalState);
+      await notificationService.updateNotifications(finalState);
+    } else {
+      setState(tempState);
+      await storageService.saveData(tempState);
+    }
+  };
+
+  const deleteRecurringTransaction = async (id: string) => {
+    const updated = (state.recurringTransactions || []).filter((r) => r.id !== id);
+    const newState: AppState = { ...state, recurringTransactions: updated };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const toggleRecurringTransaction = async (id: string) => {
+    const existing = (state.recurringTransactions || []).find((r) => r.id === id);
+    if (!existing) return;
+
+    const willBeActive = !existing.isActive;
+    let nextRun = existing.nextRunDate;
+
+    if (willBeActive) {
+      const todayStr = getJakartaDateKey();
+      if (nextRun < todayStr) {
+        nextRun = calculateInitialRunDate(
+          existing.frequency,
+          todayStr,
+          existing.dayOfWeek,
+          existing.dayOfMonth,
+        );
+      }
+    }
+
+    const updated = (state.recurringTransactions || []).map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            isActive: willBeActive,
+            nextRunDate: nextRun,
+            updatedAt: new Date().toISOString(),
+          }
+        : r,
+    );
+
+    const newState: AppState = { ...state, recurringTransactions: updated };
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
   // ========== PROVIDER VALUE ==========
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     setState((prevState) => {
@@ -891,6 +1102,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addCustomCategory,
     editCustomCategory,
     deleteCustomCategory,
+
+    addRecurringTransaction,
+    editRecurringTransaction,
+    deleteRecurringTransaction,
+    toggleRecurringTransaction,
+    processRecurringNow,
 
     updateUserProfile,
 

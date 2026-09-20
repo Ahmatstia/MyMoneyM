@@ -5,6 +5,7 @@ import {
   TextInput, Modal, Alert, KeyboardAvoidingView, Platform, Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
@@ -663,6 +664,7 @@ const BasicCalc = ({ visible, onClose }: { visible: boolean; onClose: () => void
 // MAIN SCREEN
 // ═════════════════════════════════════════════════════════════════════════════
 const ToolsScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { state } = useAppContext();
 
   const [modal, setModal] = useState<
@@ -691,6 +693,15 @@ const ToolsScreen: React.FC = () => {
   }, [state.transactions]);
 
   const tools = [
+    {
+      id: "recurring",
+      icon: "repeat-outline" as const,
+      color: Colors.accent,
+      title: "Transaksi Rutin",
+      desc: "Atur pemasukan rutin & pengeluaran tagihan berulang agar otomatis tercatat.",
+      tag: "Otomatis",
+      onPress: () => navigation.navigate("RecurringTransactions"),
+    },
     {
       id: "daily",
       icon: "shield-checkmark-outline" as const,
@@ -755,7 +766,7 @@ const ToolsScreen: React.FC = () => {
           {tools.map(tool => (
             <TouchableOpacity
               key={tool.id}
-              onPress={() => setModal(tool.id as any)}
+              onPress={() => (tool as any).onPress ? (tool as any).onPress() : setModal(tool.id as any)}
               activeOpacity={0.7}
               style={{
                 width: "100%",

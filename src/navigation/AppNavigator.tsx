@@ -52,6 +52,7 @@ import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
 import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 import ToolsScreen from "../screens/Tools/ToolsScreen";
+import RecurringTransactionsScreen from "../screens/Recurring/RecurringTransactionsScreen";
 
 // Types
 type StackParamList = {
@@ -69,6 +70,7 @@ type StackParamList = {
   ManageCategories: undefined;
   Debt: undefined;
   Tools: undefined;
+  RecurringTransactions: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -142,6 +144,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       label: "Hutang",
       icon: "card-outline" as const,
       color: colors.error,
+    },
+    {
+      name: "RecurringTransactions",
+      label: "Transaksi Rutin",
+      icon: "repeat-outline" as const,
+      color: colors.accent,
     },
     {
       name: "Tools",
@@ -552,6 +560,11 @@ const MainStackNavigator = () => {
         name="Tools"
         component={ToolsScreen}
         options={{ title: "Alat Cerdas" }}
+      />
+      <MainStack.Screen
+        name="RecurringTransactions"
+        component={RecurringTransactionsScreen}
+        options={{ headerShown: false }}
       />
     </MainStack.Navigator>
   );

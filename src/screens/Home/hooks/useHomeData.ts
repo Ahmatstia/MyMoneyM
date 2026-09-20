@@ -77,7 +77,7 @@ export const useHomeData = (
 
     if (timeFilter === "weekly") {
       const cycle = getActiveCycleInfo(state.transactions);
-      if (cycle) {
+      if (cycle && cycle.period <= 14) {
         startDate = cycle.startDate;
         cycleIncomeId = cycle.cycleIncomeId;
       } else {
@@ -85,7 +85,13 @@ export const useHomeData = (
         startDate.setDate(now.getDate() - currentDay + 1);
       }
     } else if (timeFilter === "monthly") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      const cycle = getActiveCycleInfo(state.transactions);
+      if (cycle && cycle.period > 14) {
+        startDate = cycle.startDate;
+        cycleIncomeId = cycle.cycleIncomeId;
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
     } else if (timeFilter === "yearly") {
       startDate = new Date(now.getFullYear(), 0, 1);
     }
@@ -496,7 +502,7 @@ export const useHomeData = (
     let label = "akhir bulan";
 
     if (timeFilter === "weekly") {
-      if (activeCycle) {
+      if (activeCycle && activeCycle.period <= 14) {
         startDate = activeCycle.startDate;
         endDate = activeCycle.endDate;
         label = "akhir periode";
@@ -509,6 +515,17 @@ export const useHomeData = (
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
         label = "akhir minggu";
+      }
+    } else if (timeFilter === "monthly") {
+      if (activeCycle && activeCycle.period > 14) {
+        startDate = activeCycle.startDate;
+        endDate = activeCycle.endDate;
+        label = "akhir periode";
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+        label = "akhir bulan";
       }
     } else if (timeFilter === "yearly") {
       startDate = new Date(now.getFullYear(), 0, 1);
@@ -588,11 +605,31 @@ export const useHomeData = (
       ];
     }
 
-    const daysRemaining = projectionData?.daysRemaining || 1;
+    const totalBudgetLimit = state.budgets.reduce(
+      (sum, b) => sum + safeNumber(b.limit),
+      0,
+    );
+    const totalBudgetSpent = state.budgets.reduce(
+      (sum, b) => sum + safeNumber(b.spent),
+      0,
+    );
+    const hasBudgets = state.budgets.length > 0;
+    const remainingBudget = Math.max(0, totalBudgetLimit - totalBudgetSpent);
+
+    const daysRemaining = Math.max(
+      1,
+      safeNumber(projectionData?.daysRemaining) || 1,
+    );
+
+    // Unified daily safe limit synchronized with Slide 3 in Carousel:
+    // If budget exists -> remainingBudget / daysRemaining
+    // If no budget -> total liquid wallet balance / daysRemaining
     const safeDailySpend =
       timeFilter === "all"
-        ? filteredBalance
-        : Math.max(0, filteredBalance / Math.max(1, daysRemaining));
+        ? Math.max(0, safeNumber(state.balance))
+        : hasBudgets
+          ? Math.max(0, Math.round(remainingBudget / daysRemaining))
+          : Math.max(0, Math.round(safeNumber(state.balance) / daysRemaining));
 
     const avgDaily = projectionData?.dailyAvgExpense || 0;
     const currentTransactionCount = filteredTransactions.length;
@@ -600,16 +637,21 @@ export const useHomeData = (
     return [
       {
         id: "safe_spend",
-        label: timeFilter === "all" ? "Aset Bersih" : "Batas Uang",
+        label:
+          timeFilter === "all"
+            ? "Saldo Kas"
+            : hasBudgets
+              ? "Batas Anggaran"
+              : "Batas Uang",
         value:
           safeDailySpend >= 1000000
             ? `${(safeDailySpend / 1000000).toFixed(1)}jt`
             : safeDailySpend >= 1000
               ? `${(safeDailySpend / 1000).toFixed(0)}rb`
               : safeDailySpend.toFixed(0),
-        unit: timeFilter === "all" ? "IDR" : "/hari",
-        trend: filteredBalance > 0 ? "↑" : "↓",
-        color: filteredBalance > 0 ? Colors.success : Colors.warning,
+        unit: timeFilter === "all" ? "total" : "/hari",
+        trend: safeDailySpend > 0 ? "↑" : "↓",
+        color: safeDailySpend > 0 ? Colors.success : Colors.warning,
       },
       {
         id: "daily_avg",
@@ -649,6 +691,8 @@ export const useHomeData = (
     [
       hasFinancialData,
       state.transactions,
+      state.budgets,
+      state.balance,
       projectionData,
       filteredTransactions,
       timeFilter,

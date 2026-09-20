@@ -236,14 +236,17 @@ export const filterTransactionsByTime = (
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  // Pre-calculate weekly bounds / cycle info
+  // Pre-calculate weekly & monthly bounds / cycle info
   let startOfWeek: Date, endOfWeek: Date;
   let cycleIncomeId: string | undefined;
 
-  if (timeFilter === "weekly") {
-    const cycle = getActiveCycleInfo(transactions);
+  let startOfMonth: Date | undefined, endOfMonth: Date | undefined;
+  let monthlyCycleIncomeId: string | undefined;
 
-    if (cycle) {
+  const cycle = getActiveCycleInfo(transactions);
+
+  if (timeFilter === "weekly") {
+    if (cycle && cycle.period <= 14) {
       startOfWeek = cycle.startDate;
       endOfWeek = cycle.endDate;
       cycleIncomeId = cycle.cycleIncomeId;
@@ -257,10 +260,19 @@ export const filterTransactionsByTime = (
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
     }
+  } else if (timeFilter === "monthly") {
+    if (cycle && cycle.period > 14) {
+      startOfMonth = cycle.startDate;
+      endOfMonth = cycle.endDate;
+      monthlyCycleIncomeId = cycle.cycleIncomeId;
+    }
   }
 
   const cycleIncome = cycleIncomeId
     ? transactions.find((t) => t.id === cycleIncomeId)
+    : null;
+  const monthlyCycleIncome = monthlyCycleIncomeId
+    ? transactions.find((t) => t.id === monthlyCycleIncomeId)
     : null;
 
   return transactions.filter((t) => {
@@ -273,6 +285,20 @@ export const filterTransactionsByTime = (
       }
 
       if (timeFilter === "monthly") {
+        if (startOfMonth && endOfMonth) {
+          if (d < startOfMonth || d > endOfMonth) return false;
+          const dNormalized = new Date(d);
+          dNormalized.setHours(0, 0, 0, 0);
+
+          if (
+            monthlyCycleIncome &&
+            dNormalized.getTime() === startOfMonth.getTime() &&
+            t.id !== monthlyCycleIncomeId
+          ) {
+            if (t.createdAt < monthlyCycleIncome.createdAt) return false;
+          }
+          return true;
+        }
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
       }
 

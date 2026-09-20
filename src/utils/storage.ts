@@ -10,6 +10,7 @@ import {
   Note,
   Debt,
   CustomCategory,
+  RecurringTransaction,
 } from "../types";
 import { calculateTotals } from "./calculations";
 import { normalizeCheckIns } from "./dailyCheckIn";
@@ -320,6 +321,55 @@ const validateCustomCategory = (obj: any): CustomCategory | null => {
   }
 };
 
+const validateRecurringTransaction = (obj: any): RecurringTransaction | null => {
+  if (!obj || typeof obj !== "object") return null;
+  try {
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.amount !== "number" ||
+      !["income", "expense"].includes(obj.type) ||
+      typeof obj.category !== "string" ||
+      !["weekly", "monthly", "custom_days"].includes(obj.frequency) ||
+      typeof obj.startDate !== "string" ||
+      typeof obj.nextRunDate !== "string"
+    ) {
+      return null;
+    }
+    return {
+      id: obj.id,
+      name: typeof obj.name === "string" && obj.name.trim().length > 0 ? obj.name.trim() : "Transaksi Berulang",
+      amount: Math.max(0, obj.amount),
+      type: obj.type,
+      category: obj.category,
+      description: obj.description || "",
+      frequency: obj.frequency,
+      intervalDays:
+        typeof obj.intervalDays === "number" ? obj.intervalDays : undefined,
+      dayOfWeek:
+        typeof obj.dayOfWeek === "number" ? obj.dayOfWeek : undefined,
+      dayOfMonth:
+        typeof obj.dayOfMonth === "number" ? obj.dayOfMonth : undefined,
+      startDate: obj.startDate,
+      nextRunDate: obj.nextRunDate,
+      lastRunDate:
+        typeof obj.lastRunDate === "string" ? obj.lastRunDate : undefined,
+      isActive: typeof obj.isActive === "boolean" ? obj.isActive : true,
+      autoStartNewCycle:
+        typeof obj.autoStartNewCycle === "boolean"
+          ? obj.autoStartNewCycle
+          : undefined,
+      cyclePeriodDays:
+        typeof obj.cyclePeriodDays === "number"
+          ? obj.cyclePeriodDays
+          : undefined,
+      createdAt: obj.createdAt || new Date().toISOString(),
+      updatedAt: obj.updatedAt || undefined,
+    };
+  } catch {
+    return null;
+  }
+};
+
 // ======================================================
 
 // HELPER FUNCTIONS
@@ -413,6 +463,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
             debts: [],
             customCategories: [],
             dailyCheckIns: [],
+            recurringTransactions: [],
             userProfile: { name: "MyMoney" },
             ...totals,
           };
@@ -496,6 +547,16 @@ export const storageService = {
             )
         : [];
 
+      const validatedRecurringTransactions: RecurringTransaction[] =
+        data.recurringTransactions
+          ? data.recurringTransactions
+              .map((r: any) => validateRecurringTransaction(r))
+              .filter(
+                (r: RecurringTransaction | null): r is RecurringTransaction =>
+                  r !== null,
+              )
+          : [];
+
       const totals = calculateTotals(validatedTransactions);
 
       const appData: AppState = {
@@ -505,6 +566,7 @@ export const storageService = {
         savingsTransactions: validatedSavingsTransactions,
         notes: validatedNotes,
         debts: validatedDebts,
+        recurringTransactions: validatedRecurringTransactions,
         customCategories: validatedCustomCategories,
         dailyCheckIns: normalizeCheckIns(data.dailyCheckIns),
         userProfile: data.userProfile,
@@ -549,6 +611,7 @@ export const storageService = {
           savingsTransactions: [],
           notes: [],
           debts: [],
+          recurringTransactions: [],
           customCategories: [],
           dailyCheckIns: [],
           userProfile: { name: "MyMoney" },
@@ -603,6 +666,17 @@ export const storageService = {
             .filter((d: Debt | null): d is Debt => d !== null)
         : [];
 
+      const recurringTransactions: RecurringTransaction[] = Array.isArray(
+        parsedData.recurringTransactions,
+      )
+        ? parsedData.recurringTransactions
+            .map((r: any) => validateRecurringTransaction(r))
+            .filter(
+              (r: RecurringTransaction | null): r is RecurringTransaction =>
+                r !== null,
+            )
+        : [];
+
       const customCategories: CustomCategory[] = Array.isArray(
         parsedData.customCategories,
       )
@@ -623,6 +697,7 @@ export const storageService = {
         savingsTransactions,
         notes,
         debts,
+        recurringTransactions,
         customCategories,
         dailyCheckIns,
         userProfile: parsedData.userProfile || { name: "MyMoney" },
@@ -638,6 +713,7 @@ export const storageService = {
         savingsTransactions: [],
         notes: [],
         debts: [],
+        recurringTransactions: [],
         customCategories: [],
         dailyCheckIns: [],
         userProfile: { name: "MyMoney" },

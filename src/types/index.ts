@@ -115,6 +115,29 @@ export interface UserProfile {
   coverImage?: string; // URI gambar latar belakang (sidebar)
 }
 
+export type RecurringFrequency = "weekly" | "monthly" | "custom_days";
+
+export interface RecurringTransaction {
+  id: string;
+  name: string; // e.g. "Gaji Kantor", "Uang Saku", "Kost"
+  amount: number;
+  type: TransactionType; // "income" | "expense"
+  category: string;
+  frequency: RecurringFrequency;
+  intervalDays?: number; // if custom_days (e.g. every 7, 10, 14 days)
+  dayOfWeek?: number; // 1 (Mon) - 7 (Sun) if weekly
+  dayOfMonth?: number; // 1 - 31 if monthly
+  startDate: string; // YYYY-MM-DD
+  nextRunDate: string; // YYYY-MM-DD
+  lastRunDate?: string; // YYYY-MM-DD
+  autoStartNewCycle?: boolean; // Khusus pemasukan: otomatis pasang cyclePeriod
+  cyclePeriodDays?: number; // Durasi siklus (7, 30, atau custom)
+  description?: string;
+  isActive: boolean; // pause or resume
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface AppState {
   // Financial data
   transactions: Transaction[];
@@ -123,6 +146,7 @@ export interface AppState {
   savingsTransactions: SavingsTransaction[];
   notes: Note[];
   debts: Debt[];
+  recurringTransactions: RecurringTransaction[]; // NEW: Recurring / scheduled transactions
   userProfile: UserProfile;
   customCategories: CustomCategory[]; // NEW: User-defined categories
   dailyCheckIns: string[]; // Daily app-open check-in dates (YYYY-MM-DD, Jakarta timezone)
@@ -195,6 +219,7 @@ export type RootStackParamList = {
   SavingsHistory: { savingsId: string };
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   ManageCategories: undefined;
+  RecurringTransactions: undefined; // NEW: Transaksi Berulang
 };
 
 declare global {

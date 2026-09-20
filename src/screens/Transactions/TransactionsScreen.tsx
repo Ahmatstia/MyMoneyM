@@ -472,49 +472,83 @@ const TransactionsScreen: React.FC = () => {
           >
             Transaksi
           </Text>
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: 12,
-              paddingVertical: 7,
-              borderRadius: 20,
-              backgroundColor: dateFilter !== "all"
-                ? `${colors.accent}18`
-                : colors.surface,
-              borderWidth: 1,
-              borderColor: dateFilter !== "all"
-                ? `${colors.accent}30`
-                : "transparent",
-            }}
-            onPress={() => setShowFilterModal(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="calendar-outline"
-              size={13}
-              color={dateFilter !== "all" ? colors.accent : colors.gray400}
-            />
-            <Text
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
               style={{
-                fontSize: 11,
-                fontWeight: dateFilter !== "all" ? "700" : "500",
-                color: dateFilter !== "all" ? colors.accent : colors.gray400,
-                marginLeft: 5,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 11,
+                paddingVertical: 7,
+                borderRadius: 20,
+                backgroundColor: `${colors.accent}15`,
+                borderWidth: 1,
+                borderColor: `${colors.accent}30`,
+                marginRight: 8,
               }}
+              onPress={() => navigation.navigate("RecurringTransactions")}
+              activeOpacity={0.7}
             >
-              {getDateFilterLabel()}
-            </Text>
-            {dateFilter !== "all" && (
-              <TouchableOpacity
-                onPress={resetDateFilter}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={{ marginLeft: 5 }}
+              <Ionicons
+                name="repeat-outline"
+                size={13}
+                color={colors.accent}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: colors.accent,
+                }}
               >
-                <Ionicons name="close" size={11} color={colors.accent} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
+                Rutin
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderRadius: 20,
+                backgroundColor: dateFilter !== "all"
+                  ? `${colors.accent}18`
+                  : colors.surface,
+                borderWidth: 1,
+                borderColor: dateFilter !== "all"
+                  ? `${colors.accent}30`
+                  : "transparent",
+              }}
+              onPress={() => setShowFilterModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={13}
+                color={dateFilter !== "all" ? colors.accent : colors.gray400}
+              />
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: dateFilter !== "all" ? "700" : "500",
+                  color: dateFilter !== "all" ? colors.accent : colors.gray400,
+                  marginLeft: 5,
+                }}
+              >
+                {getDateFilterLabel()}
+              </Text>
+              {dateFilter !== "all" && (
+                <TouchableOpacity
+                  onPress={resetDateFilter}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{ marginLeft: 5 }}
+                >
+                  <Ionicons name="close" size={11} color={colors.accent} />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search bar */}
