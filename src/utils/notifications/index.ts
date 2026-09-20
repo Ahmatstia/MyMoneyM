@@ -11,6 +11,11 @@ import {
   checkNotesReminders,
   generateDailySummary,
 } from "./triggers";
+import {
+  calculateTotals,
+  getActiveCycleInfo,
+  formatCurrency,
+} from "../calculations";
 
 // Key untuk menyimpan settings
 const NOTIFICATION_SETTINGS_KEY = "@mymoney_notification_settings";
@@ -45,6 +50,7 @@ const DEFAULT_SETTINGS = {
   notesReminders: true,
   weeklyReports: true,
   financialTips: true,
+  quickActionsWidget: true,
   enabled: true,
   advanced: {
     customSchedule: {
@@ -282,7 +288,7 @@ export class NotificationService {
         return false;
       }
 
-      // Setup Android channel
+      // Setup Android channels
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("default", {
           name: "Default",
@@ -293,6 +299,38 @@ export class NotificationService {
           enableVibrate: true,
           showBadge: true,
         });
+
+        // Channel khusus widget cepat: LOW importance agar silent saat data diupdate
+        await Notifications.setNotificationChannelAsync("quick_widget", {
+          name: "Widget Cepat Layar Atas",
+          description: "Status jatah belanja harian & akses catat transaksi cepat",
+          importance: Notifications.AndroidImportance.LOW,
+          enableVibrate: false,
+          showBadge: false,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        });
+      }
+
+      // Daftarkan kategori aksi cepat (tombol aksi di bawah notifikasi)
+      try {
+        await Notifications.setNotificationCategoryAsync("quick_widget_actions", [
+          {
+            identifier: "ACTION_ADD_EXPENSE",
+            buttonTitle: "➖ Pengeluaran",
+            options: {
+              opensAppToForeground: true,
+            },
+          },
+          {
+            identifier: "ACTION_ADD_INCOME",
+            buttonTitle: "➕ Pemasukan",
+            options: {
+              opensAppToForeground: true,
+            },
+          },
+        ]);
+      } catch (catErr) {
+        console.warn("Gagal mendaftarkan kategori notifikasi:", catErr);
       }
 
       return true;
@@ -321,6 +359,9 @@ export class NotificationService {
 
         // Check for immediate alerts
         await this.checkImmediateAlerts(appState);
+
+        // Update quick action widget in status bar
+        await this.updateQuickActionWidget(appState);
       }
 
 
@@ -704,6 +745,8 @@ export class NotificationService {
   // and by cooldown-protected sendNotification() in mutation functions
   async updateNotifications(appState: AppState): Promise<void> {
     try {
+      // Update quick action widget in status bar
+      await this.updateQuickActionWidget(appState);
       // Update evening summaries if needed (handles multiple per-day schedules)
       const settings = await this.loadSettings();
       if (
@@ -787,6 +830,8 @@ export class NotificationService {
         oldSettings.dailyReminders !== safeNewSettings.dailyReminders ||
         oldSettings.budgetAlerts !== safeNewSettings.budgetAlerts ||
         oldSettings.financialTips !== safeNewSettings.financialTips ||
+        (oldSettings as any).quickActionsWidget !==
+          (safeNewSettings as any).quickActionsWidget ||
         JSON.stringify(oldSettings.advanced?.customSchedule) !==
           JSON.stringify(safeNewSettings.advanced?.customSchedule) ||
         JSON.stringify(oldSettings.advanced?.activeDays) !==
@@ -795,11 +840,90 @@ export class NotificationService {
         if (appState) {
           await this.reinitializeNotifications(appState);
         }
+      } else if (appState) {
+        await this.updateQuickActionWidget(appState);
       }
-
-
     } catch (error) {
 
+    }
+  }
+
+  // Update atau hapus widget notifikasi layar atas (Quick Action Notification Tray)
+  async updateQuickActionWidget(appState: AppState): Promise<void> {
+    try {
+      const settings = await this.loadSettings();
+
+      // Jika notifikasi dimatikan atau widget dinonaktifkan di pengaturan:
+      if (!settings.enabled || (settings as any).quickActionsWidget === false) {
+        await Notifications.dismissNotificationAsync("MYMONEY_QUICK_WIDGET").catch(() => {});
+        return;
+      }
+
+      const activeCycle = getActiveCycleInfo(appState.transactions);
+      const totals = calculateTotals(appState.transactions);
+
+      let title = "";
+      let body = "";
+
+      if (activeCycle) {
+        const now = new Date();
+        const end = new Date(activeCycle.endDate);
+        const msDiff = end.getTime() - now.getTime();
+        const daysRemaining = Math.max(0, Math.ceil(msDiff / (1000 * 60 * 60 * 24)));
+
+        // Hitung pengeluaran dalam siklus ini
+        const cycleExpenses = appState.transactions
+          .filter((t) => {
+            const tDate = new Date(t.date);
+            return (
+              t.type === "expense" &&
+              tDate >= activeCycle.startDate &&
+              tDate <= activeCycle.endDate
+            );
+          })
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+        // Cari income pembuka siklus
+        const cycleIncome = activeCycle.cycleIncomeId
+          ? appState.transactions.find((t) => t.id === activeCycle.cycleIncomeId)
+          : null;
+        const cycleIncomeAmount = cycleIncome
+          ? Number(cycleIncome.amount) || 0
+          : totals.totalIncome;
+
+        const remainingCycleBalance = cycleIncomeAmount - cycleExpenses;
+        const safeDays = Math.max(1, daysRemaining);
+        const dailyPacing = Math.max(0, Math.round(remainingCycleBalance / safeDays));
+
+        const pacingText = formatCurrency(dailyPacing);
+        const balanceText = formatCurrency(totals.balance);
+
+        title = `Jatah Belanja Aman: ${pacingText}/hari`;
+        body = `Sisa ${daysRemaining} hari siklus • Saldo: ${balanceText}`;
+      } else {
+        const balanceText = formatCurrency(totals.balance);
+        const expenseText = formatCurrency(totals.totalExpense);
+        title = `MyMoney • Saldo Kas: ${balanceText}`;
+        body = `Total Pengeluaran: ${expenseText} • Ketuk untuk catat`;
+      }
+
+      await Notifications.scheduleNotificationAsync({
+        identifier: "MYMONEY_QUICK_WIDGET",
+        content: {
+          title,
+          body,
+          categoryIdentifier: "quick_widget_actions",
+          sticky: true,
+          autoDismiss: false,
+          data: {
+            type: "quick_widget",
+          },
+          ...(Platform.OS === "android" ? { channelId: "quick_widget" } : {}),
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.warn("Gagal memperbarui widget notifikasi cepat:", error);
     }
   }
 }

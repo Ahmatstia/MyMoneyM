@@ -146,9 +146,18 @@ const AddTransactionScreen: React.FC = () => {
         setSubItems(transactionData.subTransactions);
         setShowSubItems(true);
       }
+    } else if (params.type) {
+      setType(params.type);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally empty — run once on mount
+
+  // ── Param type sync (ketika dibuka dari notifikasi aksi cepat) ─────────────
+  useEffect(() => {
+    if (!isEditMode && params.type) {
+      setType(params.type);
+    }
+  }, [params.type, isEditMode]);
 
   // ── Navigation header — re-run when loading or edit mode changes ──────────
   useEffect(() => {

@@ -61,6 +61,7 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
   notesReminders: true,
   weeklyReports: true,
   financialTips: true,
+  quickActionsWidget: true,
   enabled: true,
   advanced: {
     customSchedule: {
@@ -1343,11 +1344,18 @@ const SettingsScreen = () => {
             >
               {[
                 {
+                  key: "quickActionsWidget",
+                  label: "Widget Layar Atas (Cepat)",
+                  desc: "Tampilkan jatah harian & tombol catat di bar status",
+                  icon: "flash-outline" as const,
+                  color: colors.accent,
+                },
+                {
                   key: "dailyReminders",
                   label: "Pengingat Harian",
                   desc: "Alert rutin di pagi & malam",
                   icon: "alarm-outline" as const,
-                  color: colors.accent,
+                  color: colors.info,
                 },
                 {
                   key: "budgetAlerts",

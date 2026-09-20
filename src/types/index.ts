@@ -211,6 +211,7 @@ export type RootStackParamList = {
   AddTransaction: {
     editMode?: boolean;
     transactionData?: Transaction;
+    type?: TransactionType;
   };
   AddBudget: {
     editMode?: boolean;

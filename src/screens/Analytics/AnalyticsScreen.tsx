@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import tw from "twrnc";
+import MonthlyReportModal from "./components/MonthlyReportModal";
 
 import { useAppContext } from "../../context/AppContext";
 import ExpenseTrendChart from "../Home/components/ExpenseTrendChart";
@@ -192,6 +193,7 @@ const AnalyticsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "health" | "summary" | "trends" | "categories" | "insights"
   >("health");
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
   // Sinkronisasi tab saat navigasi dikirimkan dengan parameter tab spesifik (e.g. dari Beranda Smart Insights)
   useEffect(() => {
@@ -464,36 +466,8 @@ const AnalyticsScreen: React.FC = () => {
     }
   }, [transactionAnalytics, state.transactions, timeRange]);
 
-  const handleExport = async () => {
-    try {
-      const summary = `
-ðŸ“Š LAPORAN KEUANGAN - ${getCurrentMonth()}
-
-PEMASUKAN: ${formatCurrency(transactionAnalytics.totalIncome)}
-PENGELUARAN: ${formatCurrency(transactionAnalytics.totalExpense)}
-TABUNGAN BERSIH: ${formatCurrency(transactionAnalytics.netSavings)}
-RASIO TABUNGAN: ${safeNumber(transactionAnalytics.savingsRate).toFixed(1)}%
-
-ðŸ“ˆ SKOR KESEHATAN KEUANGAN: ${financialHealthScore.overallScore}/100
-Kategori: ${financialHealthScore.category}
-
-ðŸ’° TABUNGAN: ${formatCurrency(savingsAnalytics.totalCurrent)} / ${formatCurrency(savingsAnalytics.totalTarget)} (${savingsAnalytics.overallProgress.toFixed(1)}%)
-
-ðŸ’¡ INSIGHT: ${insights[0]?.message || "Keuangan dalam kondisi stabil"}
-
-#MyMoney #KeuanganSehat
-      `.trim();
-
-      const filename = `laporan-${new Date().toISOString().slice(0, 10)}.txt`;
-      const file = new File(Paths.join(Paths.document, filename));
-      await file.write(summary);
-      await Sharing.shareAsync(file.uri, {
-        mimeType: "text/plain",
-        dialogTitle: "Bagikan Laporan Keuangan",
-      });
-    } catch (error) {
-      Alert.alert("Error", "Gagal mengekspor laporan");
-    }
+  const handleExport = () => {
+    setIsReportModalVisible(true);
   };
 
   const formatChange = (value: number, isPercent = false) => {
@@ -1201,7 +1175,7 @@ Kategori: ${financialHealthScore.category}
             </Text>
           </View>
 
-          {/* Export â€” pill button dengan label */}
+          {/* Export / Rapor — pill button dengan label */}
           <TouchableOpacity
             style={{
               flexDirection: "row",
@@ -1218,11 +1192,11 @@ Kategori: ${financialHealthScore.category}
             onPress={handleExport}
             activeOpacity={0.7}
           >
-            <Ionicons name="share-outline" size={13} color={ACCENT_COLOR} />
+            <Ionicons name="document-text-outline" size={14} color={ACCENT_COLOR} />
             <Text
               style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}
             >
-              Ekspor
+              Rapor Bulanan
             </Text>
           </TouchableOpacity>
         </View>
@@ -2505,6 +2479,12 @@ Kategori: ${financialHealthScore.category}
           </>
         )}
       </ScrollView>
+
+      {/* Monthly Financial Report Modal (Estetik & PDF) */}
+      <MonthlyReportModal
+        visible={isReportModalVisible}
+        onClose={() => setIsReportModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };

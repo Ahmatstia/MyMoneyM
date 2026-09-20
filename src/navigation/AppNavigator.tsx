@@ -4,6 +4,7 @@ import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
 } from "@react-navigation/native";
+import { navigationRef } from "./navigationRef";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
   createDrawerNavigator,
@@ -683,7 +684,7 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer theme={MyNavigationTheme}>
+    <NavigationContainer ref={navigationRef} theme={MyNavigationTheme}>
       <RootStack.Navigator
         screenOptions={{
           headerShown: false,

@@ -29,27 +29,42 @@ const OnboardingScreen = ({ navigation }: any) => {
   const onboardingData = [
     {
       id: "1",
-      title: "Kelola Keuangan\nLebih Santai",
+      badge: "100% OFFLINE & PRIVAT",
+      title: "Privasi Terjaga,\n100% Milik Anda",
       description:
-        "Pantau arus kas dengan mudah dan menyenangkan tanpa pusing hitung manual.",
+        "Tanpa login akun & bebas iklan mengganggu. Seluruh data keuangan tersimpan aman murni di penyimpanan HP Anda.",
       lottie: require("../../../assets/lottie/Businessman flies up with rocket.json"),
       accent: G_GREEN_PRIMARY,
+      highlights: [
+        "Data murni offline di perangkat Anda",
+        "Kunci keamanan sidik jari & PIN",
+      ],
     },
     {
       id: "2",
-      title: "Analisis Pintar\n& Akurat",
+      badge: "INOVASI SIKLUS GAJIAN",
+      title: "Ketahui Batas Belanja\nAman Harian",
       description:
-        "Dapatkan wawasan mendalam tentang pola pengeluaranmu secara otomatis.",
+        "Sistem membagi sisa uang dengan sisa hari gajian nyata. Anda tahu batas belanja aman hari ini tanpa takut tekor akhir bulan!",
       lottie: require("../../../assets/lottie/Credit Assessment Animated.json"),
-      accent: "#F5A623",
+      accent: "#22D3EE",
+      highlights: [
+        "Pacing harian: tahu jatah aman hari ini",
+        "Siklus fleksibel mingguan atau bulanan",
+      ],
     },
     {
       id: "3",
-      title: "Masa Depan\nTerjamin",
+      badge: "TARGET & KONTROL ANGGARAN",
+      title: "Tabungan Impian &\nKendali Anggaran",
       description:
-        "Rencanakan tabungan dan capai target finansialmu demi masa depan yang lebih mapan.",
+        "Wujudkan target finansial dengan celengan digital dan batasi pos belanja rawan boncos dengan alarm cerdas.",
       lottie: require("../../../assets/lottie/Job Success.json"),
-      accent: "#00D4AA",
+      accent: "#F5A623",
+      highlights: [
+        "Celengan visual dengan foto impian",
+        "Peringatan dini sebelum overbudget",
+      ],
     },
   ];
 
@@ -255,8 +270,77 @@ const OnboardingScreen = ({ navigation }: any) => {
             },
           ]}
         >
+          {/* Badge */}
+          {currentSlide.badge && (
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 4,
+                borderRadius: 20,
+                backgroundColor: `${currentSlide.accent}18`,
+                borderWidth: 1,
+                borderColor: `${currentSlide.accent}40`,
+                marginBottom: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: currentSlide.accent,
+                  fontSize: 10,
+                  fontWeight: "800",
+                  letterSpacing: 1,
+                }}
+              >
+                {currentSlide.badge}
+              </Text>
+            </View>
+          )}
+
           <Text style={styles.title}>{currentSlide.title}</Text>
           <Text style={styles.description}>{currentSlide.description}</Text>
+
+          {/* Quick Highlight Points */}
+          {currentSlide.highlights && (
+            <View
+              style={{
+                marginTop: 14,
+                width: "100%",
+                paddingHorizontal: 14,
+                paddingVertical: 9,
+                borderRadius: 14,
+                backgroundColor: "rgba(255,255,255,0.04)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.07)",
+                gap: 5,
+              }}
+            >
+              {currentSlide.highlights.map((item: string, idx: number) => (
+                <View
+                  key={idx}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={14}
+                    color={currentSlide.accent}
+                  />
+                  <Text
+                    style={{
+                      color: "rgba(255,255,255,0.75)",
+                      fontSize: 11,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </Animated.View>
       </View>
 
@@ -367,11 +451,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   lottieContainer: {
-    width: width * 0.7,
-    height: width * 0.7,
+    width: width * 0.58,
+    height: width * 0.58,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   lottie: {
     width: "100%",
@@ -380,7 +464,7 @@ const styles = StyleSheet.create({
   indicatorContainer: {
     flexDirection: "row",
     gap: 6,
-    marginBottom: 28,
+    marginBottom: 20,
     alignItems: "center",
   },
   indicator: {
@@ -389,22 +473,22 @@ const styles = StyleSheet.create({
   },
   textSection: {
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   title: {
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: 26,
+    lineHeight: 33,
     fontWeight: "800",
     textAlign: "center",
     color: G_TEXT,
-    marginBottom: 12,
+    marginBottom: 8,
     letterSpacing: -0.5,
   },
   description: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: "center",
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(255,255,255,0.6)",
     paddingHorizontal: 4,
   },
   footer: {

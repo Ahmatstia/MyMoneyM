@@ -15,9 +15,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import tw from "twrnc";
 import { LinearGradient } from "expo-linear-gradient";
+import { GuideCenterModal } from "../../components/Tutorial";
+import MonthlyReportModal from "../Analytics/components/MonthlyReportModal";
 import {
   format,
   startOfMonth,
@@ -563,8 +566,11 @@ const ProfileScreen: React.FC = () => {
     );
   }
 
+  const navigation = useNavigation<any>();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isGuideVisible, setIsGuideVisible] = useState(false);
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [tempName, setTempName] = useState(userProfile.name);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -1052,6 +1058,26 @@ const ProfileScreen: React.FC = () => {
             activeDays={uiData.activeDays}
             topCategory={uiData.topCategory}
           />
+          <TouchableOpacity
+            onPress={() => setIsReportModalVisible(true)}
+            activeOpacity={0.8}
+            style={[
+              tw`mt-2.5 py-3 px-4 rounded-2xl flex-row items-center justify-between`,
+              {
+                backgroundColor: `${C.cyan}12`,
+                borderWidth: 1,
+                borderColor: `${C.cyan}30`,
+              },
+            ]}
+          >
+            <View style={tw`flex-row items-center gap-2.5`}>
+              <Ionicons name="document-text-outline" size={16} color={C.cyan} />
+              <Text style={[tw`text-xs font-black`, { color: C.cyan }]}>
+                Buka Rapor Keuangan & Ekspor PDF
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color={C.cyan} />
+          </TouchableOpacity>
 
           {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
           <SectionLabel
@@ -1218,6 +1244,43 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* ── PUSAT PANDUAN & BANTUAN ─────────────────────────────────── */}
+          <View style={tw`mt-6 mb-2`}>
+            <TouchableOpacity
+              onPress={() => setIsGuideVisible(true)}
+              activeOpacity={0.8}
+              style={[
+                tw`rounded-2xl p-4 flex-row items-center justify-between`,
+                {
+                  backgroundColor: C.card,
+                  borderWidth: 1,
+                  borderColor: C.borderAccent,
+                },
+              ]}
+            >
+              <View style={tw`flex-row items-center gap-3.5 flex-1`}>
+                <LinearGradient
+                  colors={[C.cyanDim, "rgba(34,211,238,0.03)"]}
+                  style={[
+                    tw`w-11 h-11 rounded-xl items-center justify-center`,
+                    { borderWidth: 1, borderColor: "rgba(34,211,238,0.25)" },
+                  ]}
+                >
+                  <Ionicons name="book-outline" size={20} color={C.cyan} />
+                </LinearGradient>
+                <View style={tw`flex-1`}>
+                  <Text style={[tw`text-sm font-black`, { color: C.text1 }]}>
+                    Pusat Panduan & Fitur
+                  </Text>
+                  <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
+                    Pelajari siklus gaji, batas harian, & tips MyMoney
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={C.cyan} />
+            </TouchableOpacity>
+          </View>
+
           {/* ── FOOTER ─────────────────────────────────────────────────── */}
           <View style={tw`items-center mt-10 mb-2`}>
             <Text
@@ -1332,6 +1395,19 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* ── PUSAT PANDUAN MODAL ───────────────────────────────────────── */}
+      <GuideCenterModal
+        visible={isGuideVisible}
+        onClose={() => setIsGuideVisible(false)}
+        onNavigateAction={(target) => navigation.navigate(target as any)}
+      />
+
+      {/* ── RAPOR BULANAN & EKSPOR PDF MODAL ─────────────────────────── */}
+      <MonthlyReportModal
+        visible={isReportModalVisible}
+        onClose={() => setIsReportModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };

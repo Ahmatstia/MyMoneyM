@@ -12,6 +12,7 @@ import { AppProvider, useAppContext } from "./src/context/AppContext";
 import { Colors } from "./src/theme/theme";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import AppNavigator from "./src/navigation/AppNavigator";
+import { navigate } from "./src/navigation/navigationRef";
 import * as Notifications from "expo-notifications";
 import * as SplashScreen from "expo-splash-screen";
 import { adaptNavigationTheme } from "react-native-paper";
@@ -118,8 +119,18 @@ export default function App() {
 
     const responseSubscription =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        // Handle navigation based on notification type
-        const _data = response.notification.request.content.data;
+        const actionId = response.actionIdentifier;
+        const data = response.notification.request.content.data;
+
+        if (actionId === "ACTION_ADD_EXPENSE") {
+          navigate("AddTransaction", { type: "expense" });
+        } else if (actionId === "ACTION_ADD_INCOME") {
+          navigate("AddTransaction", { type: "income" });
+        } else if (actionId === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+          if (data?.type === "quick_widget") {
+            navigate("MainDrawer");
+          }
+        }
       });
 
     return () => {

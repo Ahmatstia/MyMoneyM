@@ -35,6 +35,11 @@ import { calculateFinancialHealthScore } from "../../utils/analytics";
 import { useTheme } from '../../theme/ThemeContext';
 import { BalanceCarousel } from "./components/BalanceCarousel";
 import ExpenseTrendChart from "./components/ExpenseTrendChart";
+import {
+  GuideCenterModal,
+  ContextualCycleHint,
+  GuideTopicId,
+} from "../../components/Tutorial";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -154,6 +159,9 @@ const HomeScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("monthly");
+
+  const [guideModalVisible, setGuideModalVisible] = useState(false);
+  const [guideTopic, setGuideTopic] = useState<GuideTopicId>("cycle");
 
   const { activeCycle, filteredTransactions, filteredIncome, filteredExpense, filteredPeriodNetto, openingBalance, filteredBalance, hasFinancialData, transactionAnalytics, financialHealthScore, smartInsights, dynamicQuickActions, projectionData, goalsPreview, quickStats, getCurrentDate, resolveCategory, getPersonalizedGreeting } = useHomeData(state, timeFilter, navigation);
 
@@ -401,101 +409,139 @@ const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Health score chip */}
-          {hasFinancialData ? (
-            <TouchableOpacity
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: `${getScoreColor(
-                  financialHealthScore.overallScore
-                )}14`,
-                borderWidth: 1,
-                borderColor: `${getScoreColor(
-                  financialHealthScore.overallScore
-                )}30`,
-              }}
-              onPress={() =>
-                navigation.navigate("Analytics", { tab: "health" })
-              }
-              activeOpacity={0.7}
-            >
-              <Text
+          {/* Header Action: Health score chip + Panduan/Help button */}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {hasFinancialData ? (
+              <TouchableOpacity
                 style={{
-                  color: getScoreColor(financialHealthScore.overallScore),
-                  fontSize: 16,
-                  fontWeight: "800",
-                  marginRight: 7,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: `${getScoreColor(
+                    financialHealthScore.overallScore
+                  )}14`,
+                  borderWidth: 1,
+                  borderColor: `${getScoreColor(
+                    financialHealthScore.overallScore
+                  )}30`,
                 }}
+                onPress={() =>
+                  navigation.navigate("Analytics", { tab: "health" })
+                }
+                activeOpacity={0.7}
               >
-                {financialHealthScore.overallScore}
-              </Text>
-              <View>
                 <Text
                   style={{
                     color: getScoreColor(financialHealthScore.overallScore),
-                    fontSize: 10,
-                    fontWeight: "700",
+                    fontSize: 16,
+                    fontWeight: "800",
+                    marginRight: 7,
                   }}
                 >
-                  {getScoreDescription(financialHealthScore.overallScore)}
+                  {financialHealthScore.overallScore}
                 </Text>
-                <Text
-                  style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}
-                >
-                  Skor keuangan
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
+                <View>
+                  <Text
+                    style={{
+                      color: getScoreColor(financialHealthScore.overallScore),
+                      fontSize: 10,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {getScoreDescription(financialHealthScore.overallScore)}
+                  </Text>
+                  <Text
+                    style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}
+                  >
+                    Skor keuangan
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: `${colors.accent}14`,
+                  borderWidth: 1,
+                  borderColor: `${colors.accent}30`,
+                }}
+                onPress={() => navigation.navigate("AddTransaction")}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="rocket-outline"
+                  size={13}
+                  color={colors.accent}
+                  style={{ marginRight: 5 }}
+                />
+                <View>
+                  <Text
+                    style={{
+                      color: colors.accent,
+                      fontSize: 10,
+                      fontWeight: "700",
+                    }}
+                  >
+                    Mulai!
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      marginTop: 1,
+                    }}
+                  >
+                    Catat keuangan
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Help / Guide Center Button */}
             <TouchableOpacity
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: `${colors.accent}14`,
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: colors.surface,
                 borderWidth: 1,
-                borderColor: `${colors.accent}30`,
+                borderColor: `${colors.border}80`,
+                alignItems: "center",
+                justifyContent: "center",
               }}
-              onPress={() => navigation.navigate("AddTransaction")}
+              onPress={() => {
+                setGuideTopic("cycle");
+                setGuideModalVisible(true);
+              }}
               activeOpacity={0.7}
+              accessibilityLabel="Panduan Aplikasi"
             >
               <Ionicons
-                name="rocket-outline"
-                size={13}
+                name="help-circle-outline"
+                size={20}
                 color={colors.accent}
-                style={{ marginRight: 5 }}
               />
-              <View>
-                <Text
-                  style={{
-                    color: colors.accent,
-                    fontSize: 10,
-                    fontWeight: "700",
-                  }}
-                >
-                  Mulai!
-                </Text>
-                <Text
-                  style={{
-                    color: colors.gray400,
-                    fontSize: 9,
-                    marginTop: 1,
-                  }}
-                >
-                  Catat keuangan
-                </Text>
-              </View>
             </TouchableOpacity>
-          )}
+          </View>
         </View>
 
         <Spacer size={14} />
+
+        {/* Contextual Cycle Hint (if user hasn't configured a cycle income) */}
+        {!activeCycle && (
+          <ContextualCycleHint
+            onLearnMore={() => {
+              setGuideTopic("cycle");
+              setGuideModalVisible(true);
+            }}
+          />
+        )}
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TIME FILTER â€” segmented control
@@ -1383,6 +1429,13 @@ const HomeScreen: React.FC = () => {
           <Ionicons name="add" size={28} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
+      {/* Visual Guide Center Modal */}
+      <GuideCenterModal
+        visible={guideModalVisible}
+        onClose={() => setGuideModalVisible(false)}
+        initialTopic={guideTopic}
+        onNavigateAction={(target) => navigation.navigate(target as any)}
+      />
     </SafeAreaView>
   );
 };
