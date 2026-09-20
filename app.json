@@ -9,23 +9,15 @@
     "androidStatusBar": {
       "translucent": false
     },
-    "splash": {
-      "image": "./assets/logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#080C14",
-      "dark": {
-        "image": "./assets/logo.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#080C14"
-      }
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lexanova.mymoney",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSUserNotificationsUsageDescription": "MyMoney membutuhkan izin notifikasi untuk mengirim pengingat budget, tabungan, dan transaksi.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -40,9 +32,7 @@
         "SCHEDULE_EXACT_ALARM",
         "USE_EXACT_ALARM",
         "android.permission.DETECT_SCREEN_CAPTURE"
-      ],
-      "enableProguardInReleaseBuilds": false,
-      "enableShrinkResourcesInReleaseBuilds": false
+      ]
     },
     "web": {
       "favicon": "./assets/logo.png"
@@ -58,7 +48,23 @@
           "androidMode": "default"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-build-properties",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#080C14",
+          "dark": {
+            "image": "./assets/logo.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#080C14"
+          }
+        }
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {

@@ -5,7 +5,7 @@ import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { File, Paths } from "expo-file-system/next";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import tw from "twrnc";
 
