@@ -45,18 +45,18 @@ export const checkSavingsProgress = (appState: AppState): any[] => {
 
       const percentage = calculateSavingsProgress(savings);
 
-      // Check milestone percentages (25, 50, 75, 100)
-      const milestones = [25, 50, 75, 100];
+      // Check milestone percentages (100, 75, 50, 25)
+      const milestones = [100, 75, 50, 25];
       for (const milestone of milestones) {
-        // Check if we just crossed this milestone (±2% tolerance)
-        if (percentage >= milestone && percentage < milestone + 2) {
-          if (milestone === 100) {
+        if (milestone === 100) {
+          if (percentage >= 100) {
             alerts.push(NotificationMessages.savingsComplete(savings));
-          } else {
-            alerts.push(
-              NotificationMessages.savingsMilestone(savings, milestone)
-            );
+            break;
           }
+        } else if (percentage >= milestone && percentage < milestone + 5) {
+          alerts.push(
+            NotificationMessages.savingsMilestone(savings, milestone)
+          );
           break; // Only show one alert per savings item
         }
       }

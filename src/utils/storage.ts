@@ -122,7 +122,16 @@ const validateBudget = (obj: any): Budget | null => {
           end.setDate(end.getDate() + 6);
           break;
         case "monthly":
-          end.setDate(end.getDate() + 29);
+          if (start.getDate() === 1) {
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+          } else {
+            const targetMonth = start.getMonth() + 1;
+            const targetYear = start.getFullYear() + Math.floor(targetMonth / 12);
+            const normMonth = targetMonth % 12;
+            const daysInTargetMonth = new Date(targetYear, normMonth + 1, 0).getDate();
+            const targetDay = Math.min(start.getDate() - 1, daysInTargetMonth);
+            end = new Date(targetYear, normMonth, Math.max(1, targetDay));
+          }
           break;
         case "yearly":
           end.setFullYear(end.getFullYear() + 1);

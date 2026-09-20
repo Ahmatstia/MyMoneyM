@@ -145,6 +145,25 @@ const AddDebtScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* Info Hint */}
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: `${ACCENT_COLOR}12`,
+            borderRadius: 12,
+            padding: 12,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: `${ACCENT_COLOR}25`,
+          }}>
+            <Ionicons name="information-circle-outline" size={18} color={ACCENT_COLOR} style={{ marginRight: 8 }} />
+            <Text style={{ flex: 1, color: TEXT_SECONDARY, fontSize: 11, lineHeight: 16 }}>
+              {type === "borrowed"
+                ? "Mencatat kewajiban hutang. Saat Anda melunasi/mencicil nanti, sistem akan otomatis memotong saldo kas."
+                : "Mencatat dana pinjaman ke orang lain. Saat teman melunasi nanti, uang akan otomatis masuk ke saldo kas."}
+            </Text>
+          </View>
+
           {/* Amount Input */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Nominal" />

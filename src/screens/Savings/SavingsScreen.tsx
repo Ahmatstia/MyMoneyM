@@ -22,6 +22,7 @@ import {
 } from "../../utils/calculations";
 import { Savings } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -40,7 +41,6 @@ const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
@@ -52,46 +52,49 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 const ThinBar = ({
   progress,
@@ -122,8 +125,20 @@ const ThinBar = ({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const SavingsScreen: React.FC = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const { state, deleteSavings } = useAppContext();
+
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const TEXT_SECONDARY   = colors.textSecondary;
+  const ACCENT_COLOR     = colors.accent;
+  const SUCCESS_COLOR    = colors.success;
+  const WARNING_COLOR    = colors.warning;
+  const ERROR_COLOR      = colors.error;
+  const CARD_BORDER      = `${colors.border}80`;
+
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [fabScaleAnim] = useState(new Animated.Value(1));
 
@@ -328,6 +343,24 @@ const SavingsScreen: React.FC = () => {
             <ThinBar progress={totalStats.overallProgress} color={utilizationColor} />
           </View>
         )}
+
+        {/* ── Helper Concept Hint ─────────────────────────────────────── */}
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: `${ACCENT_COLOR}10`,
+          borderRadius: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 9,
+          marginBottom: 16,
+          borderWidth: 1,
+          borderColor: `${ACCENT_COLOR}20`,
+        }}>
+          <Ionicons name="bulb-outline" size={14} color={ACCENT_COLOR} style={{ marginRight: 8 }} />
+          <Text style={{ flex: 1, color: TEXT_SECONDARY, fontSize: 11, lineHeight: 16 }}>
+            Tabungan mencatat target impianmu secara mandiri tanpa memotong saldo kas harian secara otomatis.
+          </Text>
+        </View>
 
         {/* ── Filter — segmented control ────────────────────────────────── */}
         <View

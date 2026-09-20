@@ -193,7 +193,11 @@ export type RootStackParamList = {
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
-  Analytics: undefined;
+  Analytics:
+    | {
+        tab?: "health" | "summary" | "trends" | "categories" | "insights";
+      }
+    | undefined;
   Calendar: undefined;
   SavingsDetail: { savingsId: string };
   Notes: undefined;

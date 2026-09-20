@@ -21,27 +21,15 @@ import {
   generateCalendarInsights,
 } from "../../utils/calendarCalculations";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type IconName = keyof typeof Ionicons.glyphMap;
-
-// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-const INFO_COLOR       = Colors.info;
-const PURPLE_COLOR     = Colors.purple || "#8B5CF6";
 
 // ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
@@ -57,46 +45,49 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 const Card = ({
   children,
@@ -104,37 +95,56 @@ const Card = ({
 }: {
   children: React.ReactNode;
   style?: object;
-}) => (
-  <View
-    style={[
-      {
-        backgroundColor: SURFACE_COLOR,
-        borderRadius: CARD_RADIUS,
-        borderWidth: 1,
-        borderColor: CARD_BORDER,
-        padding: CARD_PAD,
-      },
-      style,
-    ]}
-  >
-    {children}
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderRadius: CARD_RADIUS,
+          borderWidth: 1,
+          borderColor: `${colors.border}80`,
+          padding: CARD_PAD,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
-const VDivider = ({ height = 32 }: { height?: number }) => (
-  <View
-    style={{
-      width: 1,
-      height,
-      backgroundColor: CARD_BORDER,
-      marginHorizontal: 14,
-    }}
-  />
-);
+const VDivider = ({ height = 32 }: { height?: number }) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        width: 1,
+        height,
+        backgroundColor: `${colors.border}80`,
+        marginHorizontal: 14,
+      }}
+    />
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const CalendarScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const TEXT_SECONDARY   = colors.textSecondary;
+  const ACCENT_COLOR     = colors.accent;
+  const SUCCESS_COLOR    = colors.success;
+  const WARNING_COLOR    = colors.warning;
+  const ERROR_COLOR      = colors.error;
+  const INFO_COLOR       = colors.info;
+  const PURPLE_COLOR     = colors.purple || "#8B5CF6";
+  const CARD_BORDER      = `${colors.border}80`;
+
   const { state } = useAppContext();
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]

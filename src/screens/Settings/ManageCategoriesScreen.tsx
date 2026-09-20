@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../../context/AppContext";
 import { CustomCategory } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 import { DEFAULT_CATEGORIES } from "../../components/CategoryPickerModal";
 
 const ICON_GROUPS = [
@@ -38,13 +39,6 @@ const COLOR_PALETTE = [
   "#06B6D4","#3B82F6","#6366F1","#8B5CF6",
   "#A855F7","#EC4899","#F43F5E","#94A3B8",
 ];
-
-const BG     = Colors.background;
-const SURF   = Colors.surface;
-const TP     = Colors.textPrimary;
-const TS     = Colors.textSecondary;
-const BORDER = Colors.border;
-const ACCENT = Colors.accent;
 
 // ─── HSV ↔ HEX helpers ────────────────────────────────────────────────────────
 function hsvToHex(h: number, s: number, v: number): string {
@@ -82,6 +76,10 @@ const SliderBar: React.FC<{
   onChange: (v: number) => void;
   label: string;
 }> = ({ value, min, max, gradientColors, onChange, label }) => {
+  const { colors } = useTheme();
+  const TS = colors.textSecondary;
+  const TP = colors.textPrimary;
+
   const barWidth = Dimensions.get("window").width - 80;
   const thumbX = useRef(((value - min) / (max - min)) * barWidth);
 
@@ -140,6 +138,12 @@ const SliderBar: React.FC<{
 
 // ─── Full HSV Color Picker ────────────────────────────────────────────────────
 const HSVColorPicker: React.FC<{ color: string; onChange: (hex: string) => void }> = ({ color, onChange }) => {
+  const { colors } = useTheme();
+  const TS = colors.textSecondary;
+  const TP = colors.textPrimary;
+  const BG = colors.background;
+  const BORDER = `${colors.border}80`;
+
   const safeHex = /^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#8B5CF6";
   const [h, s, v] = hexToHsv(safeHex);
   const [hue, setHue]   = useState(h);
@@ -211,6 +215,14 @@ const HSVColorPicker: React.FC<{ color: string; onChange: (hex: string) => void 
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ManageCategoriesScreen() {
+  const { colors } = useTheme();
+  const BG     = colors.background;
+  const SURF   = colors.surface;
+  const TP     = colors.textPrimary;
+  const TS     = colors.textSecondary;
+  const BORDER = `${colors.border}80`;
+  const ACCENT = colors.accent;
+
   const navigation = useNavigation();
   const { state, addCustomCategory, editCustomCategory, deleteCustomCategory } = useAppContext();
   
@@ -345,9 +357,9 @@ export default function ManageCategoriesScreen() {
               {customCategories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
-                  onPress={() => {}}
+                  onPress={() => handleLongPress(cat)}
                   onLongPress={() => handleLongPress(cat)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.7}
                   style={{
                     width: "20%", alignItems: "center"
                   }}
@@ -356,9 +368,19 @@ export default function ManageCategoriesScreen() {
                     width: 44, height: 44, borderRadius: 14,
                     backgroundColor: SURF,
                     alignItems: "center", justifyContent: "center", marginBottom: 6,
-                    borderWidth: 1, borderColor: BORDER
+                    borderWidth: 1, borderColor: BORDER,
+                    position: "relative",
                   }}>
                     <Ionicons name={cat.icon as any} size={22} color={cat.color} />
+                    <View style={{
+                      position: "absolute", bottom: -2, right: -2,
+                      width: 14, height: 14, borderRadius: 7,
+                      backgroundColor: SURF,
+                      borderWidth: 1, borderColor: BORDER,
+                      alignItems: "center", justifyContent: "center"
+                    }}>
+                      <Ionicons name="pencil" size={8} color={TS} />
+                    </View>
                   </View>
                   <Text style={{ color: TS, fontSize: 9, textAlign: "center" }} numberOfLines={1}>
                     {cat.name}

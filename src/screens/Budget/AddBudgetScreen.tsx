@@ -150,15 +150,25 @@ const AddBudgetScreen: React.FC = () => {
   useEffect(() => {
     if (period !== "custom" && !isEditMode) {
       const start = new Date(startDate);
-      const newEndDate = new Date(start);
+      let newEndDate = new Date(start);
 
       switch (period) {
         case "weekly":
           newEndDate.setDate(newEndDate.getDate() + 6);
           break;
-        case "monthly":
-          newEndDate.setDate(newEndDate.getDate() + 29);
+        case "monthly": {
+          if (start.getDate() === 1) {
+            newEndDate = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+          } else {
+            const targetMonth = start.getMonth() + 1;
+            const targetYear = start.getFullYear() + Math.floor(targetMonth / 12);
+            const normMonth = targetMonth % 12;
+            const daysInTargetMonth = new Date(targetYear, normMonth + 1, 0).getDate();
+            const targetDay = Math.min(start.getDate() - 1, daysInTargetMonth);
+            newEndDate = new Date(targetYear, normMonth, Math.max(1, targetDay));
+          }
           break;
+        }
         case "yearly":
           newEndDate.setFullYear(newEndDate.getFullYear() + 1);
           newEndDate.setDate(newEndDate.getDate() - 1);

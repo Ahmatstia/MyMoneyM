@@ -1,9 +1,9 @@
 // File: src/screens/Analytics/AnalyticsScreen.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { File, Paths } from "expo-file-system/next";
 import * as Sharing from "expo-sharing";
@@ -28,6 +28,7 @@ import {
   getActiveCycleInfo,
 } from "../../utils/calculations";
 import { useTheme } from "../../theme/ThemeContext";
+import { RootStackParamList } from "../../types";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -181,6 +182,7 @@ const AnalyticsScreen: React.FC = () => {
   const ERROR_COLOR = colors.error;
 
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, "Analytics">>();
   const { state } = useAppContext();
 
   const [timeRange, setTimeRange] = useState<"week" | "month" | "year">(
@@ -190,6 +192,13 @@ const AnalyticsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "health" | "summary" | "trends" | "categories" | "insights"
   >("health");
+
+  // Sinkronisasi tab saat navigasi dikirimkan dengan parameter tab spesifik (e.g. dari Beranda Smart Insights)
+  useEffect(() => {
+    if (route.params?.tab) {
+      setActiveTab(route.params.tab);
+    }
+  }, [route.params?.tab]);
 
   // â”€â”€ Semua logika kalkulasi di bawah ini TIDAK DIUBAH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

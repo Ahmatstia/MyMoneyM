@@ -112,6 +112,7 @@ const TransactionsScreen: React.FC = () => {
   const [isRefreshing, setIsRefreshing]       = useState(false);
   const [searchFocused, setSearchFocused]     = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [selectedReceiptTx, setSelectedReceiptTx] = useState<Transaction | null>(null);
 
   const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
   const [fabScaleAnim] = useState(new Animated.Value(1));
@@ -965,17 +966,28 @@ const TransactionsScreen: React.FC = () => {
                         })}
                       </Text>
                       {transaction.subTransactions && transaction.subTransactions.length > 0 && (
-                        <View style={{
-                          flexDirection: "row", alignItems: "center",
-                          backgroundColor: `${colors.accent}15`,
-                          borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
-                          alignSelf: "flex-start", marginTop: 4,
-                        }}>
-                          <Ionicons name="cart-outline" size={10} color={colors.accent} style={{ marginRight: 3 }} />
+                        <TouchableOpacity
+                          onPress={() => setSelectedReceiptTx(transaction)}
+                          activeOpacity={0.7}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: `${colors.accent}18`,
+                            borderRadius: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
+                            alignSelf: "flex-start",
+                            marginTop: 5,
+                            borderWidth: 1,
+                            borderColor: `${colors.accent}30`,
+                          }}
+                        >
+                          <Ionicons name="receipt-outline" size={11} color={colors.accent} style={{ marginRight: 4 }} />
                           <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
-                            {transaction.subTransactions.length} item
+                            Lihat {transaction.subTransactions.length} item struk
                           </Text>
-                        </View>
+                          <Ionicons name="chevron-forward" size={10} color={colors.accent} style={{ marginLeft: 2 }} />
+                        </TouchableOpacity>
                       )}
                     </View>
 
@@ -1569,6 +1581,115 @@ const TransactionsScreen: React.FC = () => {
                 },
               } as any}
             />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Rincian Struk / Item Belanja */}
+      <Modal
+        visible={!!selectedReceiptTx}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedReceiptTx(null)}
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.75)" }}>
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={() => setSelectedReceiptTx(null)}
+          />
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              padding: 20,
+              paddingBottom: 36,
+              borderTopWidth: 1,
+              borderTopColor: CARD_BORDER,
+              maxHeight: "80%",
+            }}
+          >
+            {/* Header Modal */}
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 12,
+                  }}
+                >
+                  <Ionicons name="receipt" size={20} color={colors.accent} />
+                </View>
+                <View>
+                  <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "800" }}>
+                    Rincian Struk Belanja
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 11 }}>
+                    {selectedReceiptTx?.description || selectedReceiptTx?.category} · {selectedReceiptTx ? formatDisplayDate(selectedReceiptTx.date) : ""}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedReceiptTx(null)}>
+                <Ionicons name="close-circle" size={24} color={colors.gray400} />
+              </TouchableOpacity>
+            </View>
+
+            {/* List Item */}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 280, marginBottom: 16 }}>
+              {selectedReceiptTx?.subTransactions?.map((item, index) => (
+                <View
+                  key={item.id || index}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingVertical: 10,
+                    borderBottomWidth: 1,
+                    borderBottomColor: `${colors.border}30`,
+                  }}
+                >
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600" }}>
+                      {item.name}
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 11, marginTop: 2 }}>
+                      {item.qty || 1}x @ {formatCurrency(item.amount)}
+                      {item.note ? ` · ${item.note}` : ""}
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
+                    {formatCurrency(item.amount * (item.qty || 1))}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* Total Footer */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                backgroundColor: `${colors.accent}12`,
+                padding: 14,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: `${colors.accent}25`,
+              }}
+            >
+              <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
+                Total Belanja ({selectedReceiptTx?.subTransactions?.length || 0} item)
+              </Text>
+              <Text style={{ color: colors.accent, fontSize: 16, fontWeight: "800" }}>
+                {formatCurrency(safeNumber(selectedReceiptTx?.amount))}
+              </Text>
+            </View>
           </View>
         </View>
       </Modal>

@@ -34,31 +34,59 @@ import { id } from "date-fns/locale";
 
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency } from "../../utils/calculations";
 import { calculateDailyCheckInStreak } from "../../utils/dailyCheckIn";
 
 const { width } = Dimensions.get("window");
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-const C = {
-  bg: "#080C14",
-  surface: "#0E1521",
-  card: "#111827",
+const DEFAULT_C = {
+  bg: Colors.background,
+  surface: Colors.surface,
+  card: Colors.surfaceLight,
   border: "rgba(255,255,255,0.06)",
   borderAccent: "rgba(34,211,238,0.25)",
-  cyan: "#22D3EE",
+  cyan: Colors.accent,
   cyanDim: "rgba(34,211,238,0.12)",
-  gold: "#F59E0B",
+  gold: Colors.warning,
   goldDim: "rgba(245,158,11,0.12)",
-  emerald: "#10B981",
+  emerald: Colors.success,
   emeraldDim: "rgba(16,185,129,0.12)",
-  rose: "#F43F5E",
+  rose: Colors.error,
   roseDim: "rgba(244,63,94,0.12)",
-  violet: "#8B5CF6",
+  violet: Colors.purple || "#8B5CF6",
   violetDim: "rgba(139,92,246,0.12)",
-  text1: "#F8FAFC",
-  text2: "#94A3B8",
-  text3: "#475569",
+  text1: Colors.textPrimary,
+  text2: Colors.textSecondary,
+  text3: Colors.textTertiary,
+};
+
+const useProfileTokens = () => {
+  const { colors } = useTheme();
+  return useMemo(
+    () => ({
+      bg: colors.background,
+      surface: colors.surface,
+      card: colors.surfaceLight,
+      border: `${colors.border}80`,
+      borderAccent: `${colors.accent}40`,
+      cyan: colors.accent,
+      cyanDim: `${colors.accent}20`,
+      gold: colors.warning,
+      goldDim: `${colors.warning}20`,
+      emerald: colors.success,
+      emeraldDim: `${colors.success}20`,
+      rose: colors.error,
+      roseDim: `${colors.error}20`,
+      violet: colors.purple || "#8B5CF6",
+      violetDim: `${colors.purple || "#8B5CF6"}20`,
+      text1: colors.textPrimary,
+      text2: colors.textSecondary,
+      text3: colors.textTertiary,
+    }),
+    [colors]
+  );
 };
 
 // ─── ACHIEVEMENT TYPE ─────────────────────────────────────────────────────────
@@ -77,42 +105,42 @@ const ACHIEVEMENT_DEFS = [
   {
     id: "first_steps",
     icon: "footsteps",
-    color: C.cyan,
+    color: DEFAULT_C.cyan,
     label: "First Steps",
     desc: "Transaksi pertama",
   },
   {
     id: "week_warrior",
     icon: "flame",
-    color: C.gold,
+    color: DEFAULT_C.gold,
     label: "Week Warrior",
     desc: "7 hari berturut-turut",
   },
   {
     id: "century",
     icon: "trophy",
-    color: C.violet,
+    color: DEFAULT_C.violet,
     label: "The Century",
     desc: "100 transaksi",
   },
   {
     id: "savings_king",
     icon: "diamond",
-    color: C.emerald,
+    color: DEFAULT_C.emerald,
     label: "Savings King",
     desc: "Punya tabungan aktif",
   },
   {
     id: "night_owl",
     icon: "moon",
-    color: C.rose,
+    color: DEFAULT_C.rose,
     label: "Night Owl",
     desc: "Catat lewat jam 11 PM",
   },
   {
     id: "diversified",
     icon: "grid",
-    color: C.violet,
+    color: DEFAULT_C.violet,
     label: "Diversified",
     desc: "5+ kategori berbeda",
   },
@@ -120,9 +148,10 @@ const ACHIEVEMENT_DEFS = [
 
 // ─── REUSABLE ATOMS ──────────────────────────────────────────────────────────
 
-const Divider = () => (
-  <View style={[tw`h-px mx-5 my-0`, { backgroundColor: C.border }]} />
-);
+const Divider = () => {
+  const C = useProfileTokens();
+  return <View style={[tw`h-px mx-5 my-0`, { backgroundColor: C.border }]} />;
+};
 
 const SectionLabel = ({
   title,
@@ -132,38 +161,42 @@ const SectionLabel = ({
   title: string;
   subtitle?: string;
   icon?: string;
-}) => (
-  <View style={tw`flex-row items-center justify-between mb-4 mt-8 px-0.5`}>
-    <View style={tw`flex-row items-center gap-2.5`}>
-      {icon && (
-        <View
+}) => {
+  const C = useProfileTokens();
+  return (
+    <View style={tw`flex-row items-center justify-between mb-4 mt-8 px-0.5`}>
+      <View style={tw`flex-row items-center gap-2.5`}>
+        {icon && (
+          <View
+            style={[
+              tw`w-6 h-6 rounded-lg items-center justify-center`,
+              { backgroundColor: C.cyanDim },
+            ]}
+          >
+            <Ionicons name={icon as any} size={12} color={C.cyan} />
+          </View>
+        )}
+        <Text
           style={[
-            tw`w-6 h-6 rounded-lg items-center justify-center`,
-            { backgroundColor: C.cyanDim },
+            tw`text-xs font-black uppercase tracking-[2.5px]`,
+            { color: C.text2, letterSpacing: 2.5 },
           ]}
         >
-          <Ionicons name={icon as any} size={12} color={C.cyan} />
-        </View>
+          {title}
+        </Text>
+      </View>
+      {subtitle && (
+        <Text style={[tw`text-[10px] font-bold`, { color: C.text3 }]}>
+          {subtitle}
+        </Text>
       )}
-      <Text
-        style={[
-          tw`text-xs font-black uppercase tracking-[2.5px]`,
-          { color: C.text2, letterSpacing: 2.5 },
-        ]}
-      >
-        {title}
-      </Text>
     </View>
-    {subtitle && (
-      <Text style={[tw`text-[10px] font-bold`, { color: C.text3 }]}>
-        {subtitle}
-      </Text>
-    )}
-  </View>
-);
+  );
+};
 
 // ─── HEALTH SCORE RING ───────────────────────────────────────────────────────
 const HealthRing = ({ score }: { score: number }) => {
+  const C = useProfileTokens();
   const r = 24;
   const circ = 2 * Math.PI * r;
   const color = score >= 75 ? C.emerald : score >= 50 ? C.gold : C.rose;
@@ -207,106 +240,112 @@ const HealthRing = ({ score }: { score: number }) => {
 };
 
 // ─── STREAK BADGE ────────────────────────────────────────────────────────────
-const StreakBadge = ({ streak }: { streak: number }) => (
-  <View style={tw`items-center flex-1`}>
-    <LinearGradient
-      colors={["rgba(245,158,11,0.2)", "rgba(245,158,11,0.05)"]}
-      style={[
-        tw`w-10 h-10 rounded-xl items-center justify-center mb-1`,
-        { borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
-      ]}
-    >
-      <Text style={tw`text-lg`}>🔥</Text>
-    </LinearGradient>
-    <Text style={[tw`text-sm font-black`, { color: C.gold }]}>{streak}</Text>
-    <Text
-      style={[
-        tw`text-[8px] font-bold uppercase tracking-wider`,
-        { color: C.text3 },
-      ]}
-    >
-      Day Streak
-    </Text>
-  </View>
-);
+const StreakBadge = ({ streak }: { streak: number }) => {
+  const C = useProfileTokens();
+  return (
+    <View style={tw`items-center flex-1`}>
+      <LinearGradient
+        colors={["rgba(245,158,11,0.2)", "rgba(245,158,11,0.05)"]}
+        style={[
+          tw`w-10 h-10 rounded-xl items-center justify-center mb-1`,
+          { borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
+        ]}
+      >
+        <Text style={tw`text-lg`}>🔥</Text>
+      </LinearGradient>
+      <Text style={[tw`text-sm font-black`, { color: C.gold }]}>{streak}</Text>
+      <Text
+        style={[
+          tw`text-[8px] font-bold uppercase tracking-wider`,
+          { color: C.text3 },
+        ]}
+      >
+        Day Streak
+      </Text>
+    </View>
+  );
+};
 
 // ─── ACHIEVEMENT CARD ────────────────────────────────────────────────────────
-const AchievementCard = ({ achievement }: { achievement: Achievement }) => (
-  <View
-    style={[
-      tw`w-28 mr-2.5 rounded-2xl p-3 items-center`,
-      {
-        backgroundColor: achievement.unlocked
-          ? `${achievement.color}18`
-          : "rgba(255,255,255,0.03)",
-        borderWidth: 1,
-        borderColor: achievement.unlocked ? `${achievement.color}35` : C.border,
-      },
-    ]}
-  >
+const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
+  const C = useProfileTokens();
+  return (
     <View
       style={[
-        tw`w-9 h-9 rounded-xl items-center justify-center mb-2`,
+        tw`w-28 mr-2.5 rounded-2xl p-3 items-center`,
         {
           backgroundColor: achievement.unlocked
-            ? `${achievement.color}25`
-            : "rgba(255,255,255,0.04)",
+            ? `${achievement.color}18`
+            : "rgba(255,255,255,0.03)",
+          borderWidth: 1,
+          borderColor: achievement.unlocked ? `${achievement.color}35` : C.border,
         },
       ]}
     >
-      <Ionicons
-        name={achievement.icon as any}
-        size={16}
-        color={achievement.unlocked ? achievement.color : C.text3}
-      />
-      {!achievement.unlocked && (
+      <View
+        style={[
+          tw`w-9 h-9 rounded-xl items-center justify-center mb-2`,
+          {
+            backgroundColor: achievement.unlocked
+              ? `${achievement.color}25`
+              : "rgba(255,255,255,0.04)",
+          },
+        ]}
+      >
+        <Ionicons
+          name={achievement.icon as any}
+          size={16}
+          color={achievement.unlocked ? achievement.color : C.text3}
+        />
+        {!achievement.unlocked && (
+          <View
+            style={[
+              tw`absolute inset-0 rounded-xl items-center justify-center`,
+              { backgroundColor: "rgba(8,12,20,0.55)" },
+            ]}
+          >
+            <Ionicons name="lock-closed" size={10} color={C.text3} />
+          </View>
+        )}
+      </View>
+      <Text
+        style={[
+          tw`text-[9px] font-black text-center leading-tight`,
+          { color: achievement.unlocked ? C.text1 : C.text3 },
+        ]}
+        numberOfLines={1}
+      >
+        {achievement.label}
+      </Text>
+      <Text
+        style={[tw`text-[7px] text-center mt-0.5`, { color: C.text3 }]}
+        numberOfLines={2}
+      >
+        {achievement.desc}
+      </Text>
+      {/* Progress bar untuk achievement yang punya progress */}
+      {!achievement.unlocked && achievement.progress !== undefined && (
         <View
           style={[
-            tw`absolute inset-0 rounded-xl items-center justify-center`,
-            { backgroundColor: "rgba(8,12,20,0.55)" },
+            tw`w-full mt-1.5 rounded-full overflow-hidden`,
+            { height: 2.5, backgroundColor: "rgba(255,255,255,0.06)" },
           ]}
         >
-          <Ionicons name="lock-closed" size={10} color={C.text3} />
+          <View
+            style={[
+              {
+                height: 2.5,
+                borderRadius: 99,
+                backgroundColor: achievement.color,
+                width: `${achievement.progress}%`,
+              },
+            ]}
+          />
         </View>
       )}
     </View>
-    <Text
-      style={[
-        tw`text-[9px] font-black text-center leading-tight`,
-        { color: achievement.unlocked ? C.text1 : C.text3 },
-      ]}
-      numberOfLines={1}
-    >
-      {achievement.label}
-    </Text>
-    <Text
-      style={[tw`text-[7px] text-center mt-0.5`, { color: C.text3 }]}
-      numberOfLines={2}
-    >
-      {achievement.desc}
-    </Text>
-    {/* Progress bar untuk achievement yang punya progress */}
-    {!achievement.unlocked && achievement.progress !== undefined && (
-      <View
-        style={[
-          tw`w-full mt-1.5 rounded-full overflow-hidden`,
-          { height: 2.5, backgroundColor: "rgba(255,255,255,0.06)" },
-        ]}
-      >
-        <View
-          style={[
-            {
-              height: 2.5,
-              borderRadius: 99,
-              backgroundColor: achievement.color,
-              width: `${achievement.progress}%`,
-            },
-          ]}
-        />
-      </View>
-    )}
-  </View>
-);
+  );
+};
 
 // ─── QUICK STAT CARD ────────────────────────────────────────────────────────
 const QuickStat = ({
@@ -321,41 +360,44 @@ const QuickStat = ({
   icon: string;
   color: string;
   sub?: string;
-}) => (
-  <View
-    style={[
-      tw`flex-1 rounded-[14px] p-3 flex-row items-center`,
-      {
-        backgroundColor: `${color}0E`,
-        borderWidth: 1,
-        borderColor: `${color}25`,
-      },
-    ]}
-  >
+}) => {
+  const C = useProfileTokens();
+  return (
     <View
       style={[
-        tw`w-8 h-8 rounded-lg items-center justify-center mr-2.5`,
-        { backgroundColor: `${color}20` },
+        tw`flex-1 rounded-[14px] p-3 flex-row items-center`,
+        {
+          backgroundColor: `${color}0E`,
+          borderWidth: 1,
+          borderColor: `${color}25`,
+        },
       ]}
     >
-      <Ionicons name={icon as any} size={14} color={color} />
-    </View>
-    <View style={tw`flex-1`}>
-      <Text
-        style={[tw`text-sm font-black`, { color: C.text1 }]}
-        numberOfLines={1}
+      <View
+        style={[
+          tw`w-8 h-8 rounded-lg items-center justify-center mr-2.5`,
+          { backgroundColor: `${color}20` },
+        ]}
       >
-        {value}
-      </Text>
-      <Text
-        style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
+        <Ionicons name={icon as any} size={14} color={color} />
+      </View>
+      <View style={tw`flex-1`}>
+        <Text
+          style={[tw`text-sm font-black`, { color: C.text1 }]}
+          numberOfLines={1}
+        >
+          {value}
+        </Text>
+        <Text
+          style={[tw`text-[8px] mt-0.5`, { color: C.text3 }]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 // ─── MONTHLY PULSE CARD ──────────────────────────────────────────────────────
 const MonthlyPulseCard = ({
@@ -367,6 +409,7 @@ const MonthlyPulseCard = ({
   activeDays: number;
   topCategory: string;
 }) => {
+  const C = useProfileTokens();
   const vibe =
     totalTx === 0
       ? { emoji: "🌙", label: "Bulan Tenang", color: C.violet }
@@ -456,46 +499,50 @@ const SettingsRow = ({
   onPress: () => void;
   danger?: boolean;
   last?: boolean;
-}) => (
-  <>
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={tw`flex-row items-center px-5 py-4`}
-    >
-      <View
-        style={[
-          tw`w-10 h-10 rounded-2xl items-center justify-center mr-4`,
-          { backgroundColor: bgColor },
-        ]}
+}) => {
+  const C = useProfileTokens();
+  return (
+    <>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={tw`flex-row items-center px-5 py-4`}
       >
-        <Ionicons name={icon as any} size={17} color={iconColor} />
-      </View>
-      <View style={tw`flex-1`}>
-        <Text
-          style={[tw`text-sm font-bold`, { color: danger ? C.rose : C.text1 }]}
+        <View
+          style={[
+            tw`w-10 h-10 rounded-2xl items-center justify-center mr-4`,
+            { backgroundColor: bgColor },
+          ]}
         >
-          {title}
-        </Text>
-        <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
-          {subtitle}
-        </Text>
-      </View>
-      <Ionicons
-        name="chevron-forward"
-        size={14}
-        color={danger ? `${C.rose}60` : C.text3}
-      />
-    </TouchableOpacity>
-    {!last && <Divider />}
-  </>
-);
+          <Ionicons name={icon as any} size={17} color={iconColor} />
+        </View>
+        <View style={tw`flex-1`}>
+          <Text
+            style={[tw`text-sm font-bold`, { color: danger ? C.rose : C.text1 }]}
+          >
+            {title}
+          </Text>
+          <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
+            {subtitle}
+          </Text>
+        </View>
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={danger ? `${C.rose}60` : C.text3}
+        />
+      </TouchableOpacity>
+      {!last && <Divider />}
+    </>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 
 const ProfileScreen: React.FC = () => {
+  const C = useProfileTokens();
   const { state, clearAllData, debugStorage, isLoading, updateUserProfile } =
     useAppContext();
   const { userProfile } = state;

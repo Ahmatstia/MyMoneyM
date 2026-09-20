@@ -873,15 +873,43 @@ const SettingsScreen = () => {
 
       setLoading(false);
 
-      // Share file pertama sebagai representasi (atau user bisa memilih)
+      // Opsi berbagi file CSV (All-in-One gabungan atau Transaksi)
       if (csvFiles.length > 0 && (await Sharing.isAvailableAsync())) {
-        const firstFile = csvFiles[0];
-        const fileUri = Paths.join(Paths.document, firstFile.filename);
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "text/csv",
-          dialogTitle: `Ekspor ${exportedCount} File CSV MyMoney`,
-          UTI: "public.comma-separated-values-text",
-        });
+        Alert.alert(
+          "Ekspor CSV Selesai",
+          `${exportedCount} berkas CSV tersimpan di memori lokal. Pilih berkas yang ingin dibagikan:`,
+          [
+            {
+              text: "Semua Data (All-in-One)",
+              onPress: async () => {
+                const target =
+                  csvFiles.find((f) => f.filename === "mymoney_all_in_one.csv") ||
+                  csvFiles[0];
+                const fileUri = Paths.join(Paths.document, target.filename);
+                await Sharing.shareAsync(fileUri, {
+                  mimeType: "text/csv",
+                  dialogTitle: "Bagikan Ekspor Semua Data MyMoney",
+                  UTI: "public.comma-separated-values-text",
+                });
+              },
+            },
+            {
+              text: "Transaksi Saja",
+              onPress: async () => {
+                const target =
+                  csvFiles.find((f) => f.filename === "mymoney_transactions.csv") ||
+                  csvFiles[0];
+                const fileUri = Paths.join(Paths.document, target.filename);
+                await Sharing.shareAsync(fileUri, {
+                  mimeType: "text/csv",
+                  dialogTitle: "Bagikan Riwayat Transaksi CSV",
+                  UTI: "public.comma-separated-values-text",
+                });
+              },
+            },
+            { text: "Tutup", style: "cancel" },
+          ],
+        );
       } else {
         Alert.alert(
           "CSV Siap",

@@ -57,7 +57,55 @@ const NoteDetailScreen: React.FC = () => {
 
   // ── Semua logika di bawah ini TIDAK DIUBAH ────────────────────────────────
 
-  if (!note) return null;
+  if (!note) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: BACKGROUND_COLOR,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <Ionicons name="document-text-outline" size={48} color={Colors.gray500} />
+        <Text
+          style={{
+            color: TEXT_PRIMARY,
+            fontSize: 16,
+            fontWeight: "700",
+            marginTop: 16,
+          }}
+        >
+          Catatan Tidak Ditemukan
+        </Text>
+        <Text
+          style={{
+            color: TEXT_SECONDARY,
+            fontSize: 12,
+            textAlign: "center",
+            marginTop: 6,
+            marginBottom: 20,
+          }}
+        >
+          Catatan ini mungkin telah dihapus.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{
+            backgroundColor: SURFACE_COLOR,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.1)",
+          }}
+        >
+          <Text style={{ color: ACCENT_COLOR, fontWeight: "600" }}>Kembali</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   const typeConfig = TYPE_CONFIG[note.type] || TYPE_CONFIG.general;
 

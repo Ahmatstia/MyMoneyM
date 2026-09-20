@@ -62,7 +62,11 @@ type StackParamList = {
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
-  Analytics: undefined;
+  Analytics:
+    | {
+        tab?: "health" | "summary" | "trends" | "categories" | "insights";
+      }
+    | undefined;
   Calendar: undefined;
   Profile: undefined;
   Notes: undefined;

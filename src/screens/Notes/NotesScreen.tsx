@@ -13,21 +13,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 const { width } = Dimensions.get("window");
 const COLUMN_GAP  = 12;
 const CARD_WIDTH  = (width - 36 - COLUMN_GAP) / 2; // 18px padding each side + gap
 
-// ─── Theme colors (konsisten dengan seluruh app) ──────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const ACCENT_COLOR     = Colors.accent;
-
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const CARD_RADIUS = 20;
 const CARD_PAD    = 20;
-const CARD_BORDER = "rgba(255,255,255,0.06)";
 
 // Warna kartu note (dikurasi, sesuai dark theme)
 const NOTE_COLORS = [
@@ -40,6 +34,13 @@ const NOTE_COLORS = [
 ];
 
 const NotesScreen = ({ navigation }: any) => {
+  const { colors } = useTheme();
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const ACCENT_COLOR     = colors.accent;
+  const CARD_BORDER      = `${colors.border}80`;
+
   const { state }    = useAppContext();
   const { notes }    = state;
   const [search, setSearch]       = useState("");

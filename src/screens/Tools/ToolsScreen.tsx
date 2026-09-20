@@ -9,6 +9,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 
 // ── Design tokens (konsisten dgn seluruh app) ────────────────────────────────
@@ -425,12 +426,13 @@ const RunwayCalc = ({ visible, onClose, balance, avgExpense }: {
   visible: boolean; onClose: () => void; balance: number; avgExpense: number;
 }) => {
   const dailyAvg   = avgExpense / 30;
-  const runwayDays = dailyAvg > 0 ? Math.floor(balance / dailyAvg) : 0;
+  const isDeficit  = balance <= 0;
+  const runwayDays = !isDeficit && dailyAvg > 0 ? Math.max(0, Math.floor(balance / dailyAvg)) : 0;
   const months     = Math.floor(runwayDays / 30);
   const remDays    = runwayDays % 30;
   const idealDE    = avgExpense * 3;
   const idealSingle= avgExpense * 6;
-  const status     = runwayDays >= 90 ? "aman" : runwayDays >= 30 ? "waspada" : "kritis";
+  const status     = isDeficit ? "defisit" : runwayDays >= 90 ? "aman" : runwayDays >= 30 ? "waspada" : "kritis";
   const statusColor= status === "aman" ? Colors.success : status === "waspada" ? Colors.warning : Colors.error;
 
   return (
@@ -454,7 +456,12 @@ const RunwayCalc = ({ visible, onClose, balance, avgExpense }: {
                 Berapa lama kamu bisa bertahan tanpa pemasukan?
               </Text>
             </View>
-            <TouchableOpacity onPress={() => {}} style={{ marginRight: 16 }}>
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert("Tersinkron", "Data nafas hidup dihitung otomatis berdasarkan saldo kas terkini.");
+              }}
+              style={{ marginRight: 16 }}
+            >
               <Ionicons name="refresh" size={24} color={Colors.gray400} />
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose}>
@@ -466,8 +473,8 @@ const RunwayCalc = ({ visible, onClose, balance, avgExpense }: {
             alignItems: "center", marginBottom: 16, borderWidth: 1, borderColor: `${statusColor}25` }}>
             <Text style={{ color: Colors.gray400, fontSize: 11, textTransform: "uppercase",
               letterSpacing: 1, marginBottom: 6 }}>Jika Tidak Ada Pemasukan</Text>
-            <Text style={{ color: statusColor, fontSize: 38, fontWeight: "800" }}>
-              {months > 0 ? `${months} bln ` : ""}{remDays} hari
+            <Text style={{ color: statusColor, fontSize: isDeficit ? 30 : 38, fontWeight: "800" }}>
+              {isDeficit ? "0 Hari (Defisit)" : `${months > 0 ? `${months} bln ` : ""}${remDays} hari`}
             </Text>
             <View style={{ paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20,
               backgroundColor: `${statusColor}20`, marginTop: 8 }}>
@@ -664,8 +671,16 @@ const BasicCalc = ({ visible, onClose }: { visible: boolean; onClose: () => void
 // MAIN SCREEN
 // ═════════════════════════════════════════════════════════════════════════════
 const ToolsScreen: React.FC = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const { state } = useAppContext();
+
+  const BG     = colors.background;
+  const SURF   = colors.surface;
+  const ACCENT = colors.accent;
+  const TP     = colors.textPrimary;
+  const TS     = colors.textSecondary;
+  const BORDER = `${colors.border}80`;
 
   const [modal, setModal] = useState<
     "daily" | "salary" | "buy" | "runway" | "basic" | null
@@ -696,7 +711,7 @@ const ToolsScreen: React.FC = () => {
     {
       id: "recurring",
       icon: "repeat-outline" as const,
-      color: Colors.accent,
+      color: colors.accent,
       title: "Transaksi Rutin",
       desc: "Atur pemasukan rutin & pengeluaran tagihan berulang agar otomatis tercatat.",
       tag: "Otomatis",
@@ -713,7 +728,7 @@ const ToolsScreen: React.FC = () => {
     {
       id: "salary",
       icon: "pie-chart-outline" as const,
-      color: Colors.success,
+      color: colors.success,
       title: "Pecah Gaji 50/30/20",
       desc: "Alokasikan gajimu ke kebutuhan, keinginan, dan tabungan secara otomatis.",
       tag: "Bulanan",

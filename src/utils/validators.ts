@@ -87,7 +87,16 @@ export const validateAndSetupBudget = (budget: any): Budget => {
           end.setDate(end.getDate() + 6);
           break;
         case "monthly":
-          end.setDate(end.getDate() + 29);
+          if (start.getDate() === 1) {
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+          } else {
+            const targetMonth = start.getMonth() + 1;
+            const targetYear = start.getFullYear() + Math.floor(targetMonth / 12);
+            const normMonth = targetMonth % 12;
+            const daysInTargetMonth = new Date(targetYear, normMonth + 1, 0).getDate();
+            const targetDay = Math.min(start.getDate() - 1, daysInTargetMonth);
+            end = new Date(targetYear, normMonth, Math.max(1, targetDay));
+          }
           break;
         case "yearly":
           end.setFullYear(end.getFullYear() + 1);
@@ -260,10 +269,25 @@ export const updateBudgetsFromTransactions = (
               start.setDate(start.getDate() + 7);
               end.setDate(end.getDate() + 7);
               break;
-            case "monthly":
-              start.setMonth(start.getMonth() + 1);
-              end.setMonth(end.getMonth() + 1);
+            case "monthly": {
+              if (start.getDate() === 1) {
+                start = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+                end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+              } else {
+                const curDay = start.getDate();
+                const nextM = start.getMonth() + 1;
+                const nextY = start.getFullYear() + Math.floor(nextM / 12);
+                const normM = nextM % 12;
+                const maxD = new Date(nextY, normM + 1, 0).getDate();
+                start = new Date(nextY, normM, Math.min(curDay, maxD));
+                const endM = start.getMonth() + 1;
+                const endY = start.getFullYear() + Math.floor(endM / 12);
+                const normEndM = endM % 12;
+                const maxEndD = new Date(endY, normEndM + 1, 0).getDate();
+                end = new Date(endY, normEndM, Math.min(curDay - 1, maxEndD));
+              }
               break;
+            }
             case "yearly":
               start.setFullYear(start.getFullYear() + 1);
               end.setFullYear(end.getFullYear() + 1);
