@@ -11,7 +11,7 @@ export const isValidDateString = (dateString: any): boolean => {
 
 export const validateNote = (note: any): Note => {
   try {
-    const validTypes = ["general", "financial", "idea", "reminder", "goal"];
+    const validTypes = ["financial_decision", "expense_reflection", "goal_progress", "investment_idea", "budget_analysis", "general"];
     const validMoods = ["positive", "neutral", "negative", "reflective"];
     const validImpacts = ["positive", "neutral", "negative"];
 

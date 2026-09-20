@@ -140,6 +140,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     message?: string;
   }>({ visible: false });
   const isMounted = useRef(true);
+  // RISK-001 FIX: Keep a fresh reference to state so async callbacks
+  // (e.g. 5-min notification interval) always use current data, not stale closure.
+  const stateRef = useRef<AppState>(state);
+  useEffect(() => {
+    stateRef.current = state;
+  });
 
   const setLoading = (visible: boolean, message?: string) => {
     setGlobalLoadingState({ visible, message });
@@ -268,21 +274,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const triggerNotificationCheck = async () => {
-    await notificationService.checkImmediateAlerts(state);
+    // Use stateRef.current so this always sees the latest state,
+    // not the stale closure captured when the 5-min interval was set up.
+    await notificationService.checkImmediateAlerts(stateRef.current);
   };
 
   // ========== DAILY CHECK-IN ==========
+  // RISK-002 FIX: Use functional setState so we always read the freshest
+  // dailyCheckIns — prevents double check-in from stale closure reads.
   const checkInToday = async () => {
     const todayKey = getJakartaDateKey();
-    // Only save if today is not already checked in
-    if (!state.dailyCheckIns || !state.dailyCheckIns.includes(todayKey)) {
-      const updatedCheckIns = [...(state.dailyCheckIns || []), todayKey];
-      const newState: AppState = {
-        ...state,
-        dailyCheckIns: updatedCheckIns,
-      };
-      setState(newState);
-      await storageService.saveData(newState);
+    let didUpdate = false;
+    let savedState: AppState | null = null;
+
+    setState((prevState) => {
+      if (prevState.dailyCheckIns && prevState.dailyCheckIns.includes(todayKey)) {
+        return prevState; // already checked in — no change
+      }
+      const updatedCheckIns = [...(prevState.dailyCheckIns || []), todayKey];
+      const newState: AppState = { ...prevState, dailyCheckIns: updatedCheckIns };
+      didUpdate = true;
+      savedState = newState;
+      return newState;
+    });
+
+    // Persist only when we actually made a change
+    if (didUpdate && savedState) {
+      await storageService.saveData(savedState);
     }
   };
 
@@ -299,13 +317,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       },
     );
 
-    // Also check immediately on mount
+    // Check immediately when loading completes (once)
     checkInToday();
 
     return () => {
       subscription.remove();
     };
-  }, [isLoading, state.dailyCheckIns]);
+  // Only re-run when isLoading changes (not on every dailyCheckIns update)
+  }, [isLoading]);
 
   // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
@@ -677,6 +696,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       remaining: debt.amount,
       status: "active",
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(), // RISK-004 FIX: set updatedAt on creation for consistent sorting/filtering
     };
 
     const newState: AppState = {

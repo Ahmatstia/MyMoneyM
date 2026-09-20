@@ -9,6 +9,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Text } from "react-native-paper";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,15 +56,14 @@ const AddDebtScreen: React.FC = () => {
   const [description, setDescription] = useState(existingDebt?.description ?? "");
   const [dueDate, setDueDate] = useState(existingDebt?.dueDate ?? "");
   const [isLoading, setIsLoading] = useState(false);
+  // RISK-006 FIX: Use a date picker instead of free-text input
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const validate = () => {
     if (!name.trim()) { Alert.alert("Error", "Nama wajib diisi"); return false; }
     const amt = parseFloat(amount.replace(/\D/g, ""));
     if (!amt || amt <= 0) { Alert.alert("Error", "Nominal hutang wajib diisi"); return false; }
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-      Alert.alert("Error", "Format tanggal: YYYY-MM-DD");
-      return false;
-    }
+    // dueDate is set via date picker so format is always valid — no regex check needed
     return true;
   };
 
@@ -201,16 +201,49 @@ const AddDebtScreen: React.FC = () => {
           {/* Due Date */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Jatuh Tempo (Opsional)" />
-            <TouchableOpacity activeOpacity={1} style={[tw`flex-row items-center px-4 py-3 rounded-xl`, { backgroundColor: SURFACE_COLOR }]}>
-              <TextInput
-                value={dueDate}
-                onChangeText={setDueDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.gray500}
-                style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", padding: 0 }}
+            <View style={tw`flex-row gap-2`}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={[tw`flex-1 flex-row items-center px-4 py-3 rounded-xl`, { backgroundColor: SURFACE_COLOR }]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={16} color={Colors.gray500} style={tw`mr-2`} />
+                <Text style={{ flex: 1, color: dueDate ? TEXT_PRIMARY : Colors.gray500, fontSize: 13, fontWeight: "700" }}>
+                  {dueDate || "Pilih tanggal..."}
+                </Text>
+              </TouchableOpacity>
+              {dueDate ? (
+                <TouchableOpacity
+                  style={[tw`px-3 rounded-xl items-center justify-center`, { backgroundColor: SURFACE_COLOR }]}
+                  onPress={() => setDueDate("")}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="close-circle" size={18} color={Colors.gray500} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            {showDatePicker && (
+              <DateTimePicker
+                value={dueDate ? new Date(dueDate) : new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                minimumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === "ios");
+                  if (event.type === "dismissed") {
+                    setShowDatePicker(false);
+                    return;
+                  }
+                  if (selectedDate) {
+                    const y = selectedDate.getFullYear();
+                    const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+                    const d = String(selectedDate.getDate()).padStart(2, "0");
+                    setDueDate(`${y}-${m}-${d}`);
+                  }
+                  setShowDatePicker(false);
+                }}
               />
-              <Ionicons name="calendar-outline" size={16} color={Colors.gray500} />
-            </TouchableOpacity>
+            )}
           </View>
 
           {/* Description */}

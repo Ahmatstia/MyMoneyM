@@ -374,7 +374,8 @@ const AddBudgetScreen: React.FC = () => {
 
     // Validasi duplikat kategori (kecuali edit mode)
     if (!isEditMode) {
-      const isDuplicate = state.budgets.some((b) => b.category === category);
+      // RISK-005 FIX: Compare case-insensitively to prevent duplicate budgets with different casing
+      const isDuplicate = state.budgets.some((b) => b.category.toLowerCase() === category.toLowerCase());
       if (isDuplicate) {
         Alert.alert("Error", `Kategori "${category}" sudah memiliki anggaran.`);
         return;

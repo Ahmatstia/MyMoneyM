@@ -59,6 +59,15 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [amountError, setAmountError] = useState("");
 
+  // State form — MUST be declared before any early return (Rules of Hooks)
+  const [transactionType, setTransactionType] = useState<
+    "deposit" | "withdrawal"
+  >(type);
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(getCurrentDate());
+  const [note, setNote] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
+
   // Temukan savings berdasarkan ID
   const saving = state.savings?.find((s) => s.id === savingsId);
 
@@ -90,14 +99,6 @@ const AddSavingsTransactionScreen: React.FC = () => {
     );
   }
 
-  // State form
-  const [transactionType, setTransactionType] = useState<
-    "deposit" | "withdrawal"
-  >(type);
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(getCurrentDate());
-  const [note, setNote] = useState("");
-  const [showCalendar, setShowCalendar] = useState(false);
 
   // Update title
   // useEffect(() => {

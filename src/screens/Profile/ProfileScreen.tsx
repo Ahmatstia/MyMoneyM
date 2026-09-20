@@ -1118,7 +1118,7 @@ const ProfileScreen: React.FC = () => {
                 { color: C.text3 },
               ]}
             >
-              Version 1.0.6
+              Version 1.0.7
             </Text>
           </View>
         </View>
