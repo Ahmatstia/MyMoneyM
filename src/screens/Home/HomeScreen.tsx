@@ -562,6 +562,9 @@ const HomeScreen: React.FC = () => {
           filteredPeriodNetto={filteredPeriodNetto}
           projectionData={projectionData}
           openingBalance={openingBalance}
+          filteredTransactions={filteredTransactions}
+          budgets={state.budgets}
+          customCategories={state.customCategories}
         />
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

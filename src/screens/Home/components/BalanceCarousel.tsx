@@ -14,6 +14,8 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { formatCurrency, safeNumber } from "../../../utils/calculations";
+import { Transaction, Budget, CustomCategory } from "../../../types";
+import { DEFAULT_CATEGORIES } from "../../../components/CategoryPickerModal";
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -72,7 +74,37 @@ interface BalanceCarouselProps {
   filteredPeriodNetto: number;
   projectionData: any;
   openingBalance: number;
+  filteredTransactions?: Transaction[];
+  budgets?: Budget[];
+  customCategories?: CustomCategory[];
 }
+
+// ─── Helper: Resolve Category Info ──────────────────────────────────────────────
+const resolveCategoryInfo = (
+  categoryName: string,
+  customCategories?: CustomCategory[]
+): { icon: string; color: string; name: string } => {
+  if (!categoryName) {
+    return { icon: "receipt-outline", color: G_DIM, name: "Lainnya" };
+  }
+  const custom = customCategories?.find(
+    (c) => c.name.toLowerCase() === categoryName.toLowerCase()
+  );
+  if (custom) {
+    return {
+      icon: custom.icon || "pricetag-outline",
+      color: custom.color || G_GOLD,
+      name: custom.name,
+    };
+  }
+  const def = DEFAULT_CATEGORIES.find(
+    (c) => c.name.toLowerCase() === categoryName.toLowerCase()
+  );
+  if (def) {
+    return { icon: def.icon, color: def.color, name: def.name };
+  }
+  return { icon: "receipt-outline", color: G_DIM, name: categoryName };
+};
 
 // ─── Helper: Teks "periode berakhir dalam X hari" ────────────────────────────────
 const getPeriodEndLabel = (
@@ -556,47 +588,63 @@ const Slide1 = (props: BalanceCarouselProps) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 2 — Cash Flow Activity
+// SLIDE 2 — Pengeluaran Terbesar (Top Spending Category)
 // ═════════════════════════════════════════════════════════════════════════════════
 const Slide2 = (props: BalanceCarouselProps) => {
-  const total = props.filteredIncome + props.filteredExpense;
-  const incomeRatio = total > 0 ? (props.filteredIncome / total) * 100 : 0;
-  const expenseRatio = total > 0 ? (props.filteredExpense / total) * 100 : 0;
-  const isPositive = props.filteredPeriodNetto >= 0;
-  const netColor = isPositive ? G_SUCCESS : G_ERROR;
   const t = SLIDE_THEMES[1];
+  const expenses = (props.filteredTransactions || []).filter(
+    (tx) => tx.type === "expense"
+  );
+  const expenseCount = expenses.length;
 
-  const incomeBarWidth = useSharedValue(0);
-  const expenseBarWidth = useSharedValue(0);
+  // Kelompokkan pengeluaran berdasarkan kategori
+  const categoryMap: Record<string, number> = {};
+  expenses.forEach((tx) => {
+    const cat = tx.category || "Lainnya";
+    categoryMap[cat] = (categoryMap[cat] || 0) + safeNumber(tx.amount);
+  });
+
+  const sortedCategories = Object.entries(categoryMap).sort(
+    (a, b) => safeNumber(b[1]) - safeNumber(a[1])
+  );
+
+  const hasExpenses = sortedCategories.length > 0 && props.filteredExpense > 0;
+  const top1 = sortedCategories[0] || ["-", 0];
+  const top1Name = top1[0];
+  const top1Amount = safeNumber(top1[1]);
+  const top1Pct = props.filteredExpense > 0
+    ? Math.min(100, Math.round((top1Amount / props.filteredExpense) * 100))
+    : 0;
+
+  const top2 = sortedCategories[1] || null;
+  const top2Name = top2 ? top2[0] : null;
+  const top2Amount = top2 ? safeNumber(top2[1]) : 0;
+  const top2Pct = top2 && props.filteredExpense > 0
+    ? Math.min(100, Math.round((top2Amount / props.filteredExpense) * 100))
+    : 0;
+
+  const top1Info = resolveCategoryInfo(top1Name, props.customCategories);
+
+  const top1BarWidth = useSharedValue(0);
 
   useEffect(() => {
-    incomeBarWidth.value = withDelay(
+    top1BarWidth.value = withDelay(
       200,
-      withTiming(incomeRatio, {
+      withTiming(hasExpenses ? top1Pct : 0, {
         duration: 800,
         easing: Easing.out(Easing.cubic),
-      }),
+      })
     );
-    expenseBarWidth.value = withDelay(
-      400,
-      withTiming(expenseRatio, {
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
-      }),
-    );
-  }, [incomeRatio, expenseRatio]);
+  }, [hasExpenses, top1Pct]);
 
-  const incomeAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(incomeBarWidth.value, incomeRatio > 0 ? 1 : 0)}%`,
-  }));
-  const expenseAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(expenseBarWidth.value, expenseRatio > 0 ? 1 : 0)}%`,
+  const top1AnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(top1BarWidth.value, hasExpenses ? 3 : 0)}%`,
   }));
 
   return (
     <ChromaCard slideIndex={1}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Header */}
+        {/* Row 1: Header */}
         <View
           style={{
             flexDirection: "row",
@@ -618,7 +666,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                 marginRight: 8,
               }}
             >
-              <Ionicons name="pulse" size={13} color="#1A1100" />
+              <Ionicons name="pie-chart" size={13} color="#1A1100" />
             </LinearGradient>
             <View>
               <Text
@@ -630,7 +678,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   textTransform: "uppercase",
                 }}
               >
-                Aktivitas
+                Pengeluaran Terbesar
               </Text>
               <Text
                 style={{
@@ -639,150 +687,242 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 1,
                 }}
               >
-                Periode ini
+                {hasExpenses ? "Analisis beban belanja" : "Periode ini"}
               </Text>
             </View>
           </View>
           <GlassChip
-            icon={isPositive ? "arrow-up" : "arrow-down"}
-            label={isPositive ? "Surplus" : "Defisit"}
-            color={netColor}
+            icon={hasExpenses ? "flame" : "shield-checkmark"}
+            label={hasExpenses ? `${top1Pct}% Total` : "Terkendali"}
+            color={hasExpenses ? G_GOLD : G_SUCCESS}
+            compact
           />
         </View>
 
-        {/* Income Bar — smaller */}
-        <View style={{ marginBottom: -4 }}>
+        {/* Row 2: Hero Amount & Category */}
+        <View style={{ marginTop: 2 }}>
+          {hasExpenses ? (
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 3,
+                }}
+              >
+                <View
+                  style={{
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 6,
+                    backgroundColor: `${top1Info.color}20`,
+                    marginRight: 6,
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <Ionicons
+                    name={top1Info.icon as any}
+                    size={10}
+                    color={top1Info.color}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={{
+                      color: G_TEXT,
+                      fontSize: 10,
+                      fontWeight: "700",
+                    }}
+                    numberOfLines={1}
+                  >
+                    {top1Info.name}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: 8,
+                    fontWeight: "600",
+                    letterSpacing: 0.5,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Beban Terbesar
+                </Text>
+              </View>
+              <AnimatedNumber
+                value={formatCurrency(top1Amount)}
+                style={{ color: G_TEXT, fontSize: 24, lineHeight: 30 }}
+              />
+            </>
+          ) : (
+            <>
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.4)",
+                  fontSize: 10,
+                  marginBottom: 3,
+                }}
+              >
+                Belum ada pengeluaran di periode ini
+              </Text>
+              <AnimatedNumber
+                value="Rp 0"
+                style={{ color: G_SUCCESS, fontSize: 24, lineHeight: 30 }}
+              />
+            </>
+          )}
+        </View>
+
+        {/* Row 3: Progress bar & breakdown */}
+        {hasExpenses ? (
+          <View style={{ marginTop: 2 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 3,
+              }}
+            >
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.45)",
+                  fontSize: 8,
+                  fontWeight: "600",
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
+                }}
+              >
+                Porsi Pengeluaran
+              </Text>
+              <Text
+                style={{
+                  color: top1Info.color || G_GOLD,
+                  fontSize: 9,
+                  fontWeight: "700",
+                }}
+              >
+                {top1Pct}% dari total
+              </Text>
+            </View>
+            <View
+              style={{
+                height: 5,
+                backgroundColor: "rgba(255,255,255,0.06)",
+                borderRadius: 3,
+                overflow: "hidden",
+              }}
+            >
+              <Animated.View
+                style={[
+                  {
+                    height: 5,
+                    borderRadius: 3,
+                    backgroundColor: top1Info.color || G_GOLD,
+                  },
+                  top1AnimStyle,
+                ]}
+              />
+            </View>
+            {top2 ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: 8,
+                  }}
+                  numberOfLines={1}
+                >
+                  #2 {top2Name}: {formatCurrency(top2Amount)} ({top2Pct}%)
+                </Text>
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.25)",
+                    fontSize: 8,
+                  }}
+                >
+                  {sortedCategories.length} pos belanja
+                </Text>
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.3)",
+                  fontSize: 8,
+                  marginTop: 4,
+                }}
+              >
+                Satu-satunya kategori pengeluaran periode ini
+              </Text>
+            )}
+          </View>
+        ) : (
           <View
             style={{
               flexDirection: "row",
-              justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 3,
+              backgroundColor: "rgba(0,237,100,0.08)",
+              borderRadius: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: G_SUCCESS,
-                  marginRight: 6,
-                }}
-              />
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.6)",
-                  fontSize: 9,
-                  fontWeight: "500",
-                }}
-              >
-                Pemasukan
-              </Text>
-            </View>
-            <Text style={{ color: G_TEXT, fontSize: 12, fontWeight: "700" }}>
-              {formatCurrency(safeNumber(props.filteredIncome))}
+            <Ionicons
+              name="checkmark-circle"
+              size={13}
+              color={G_SUCCESS}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 9,
+                fontWeight: "500",
+              }}
+            >
+              Pengeluaran nihil, kas tetap aman terjaga.
             </Text>
           </View>
-          <View
-            style={{
-              height: 6,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 3,
-              overflow: "hidden",
-            }}
-          >
-            <Animated.View
-              style={[
-                { height: 6, borderRadius: 3, backgroundColor: G_SUCCESS },
-                incomeAnimStyle,
-              ]}
-            />
-          </View>
-        </View>
+        )}
 
-        {/* Expense Bar — smaller */}
-        <View style={{ marginBottom: -4 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 3,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: G_ERROR,
-                  marginRight: 6,
-                }}
-              />
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.6)",
-                  fontSize: 9,
-                  fontWeight: "500",
-                }}
-              >
-                Pengeluaran
-              </Text>
-            </View>
-            <Text style={{ color: G_TEXT, fontSize: 12, fontWeight: "700" }}>
-              {formatCurrency(safeNumber(props.filteredExpense))}
-            </Text>
-          </View>
-          <View
-            style={{
-              height: 6,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 3,
-              overflow: "hidden",
-            }}
-          >
-            <Animated.View
-              style={[
-                { height: 6, borderRadius: 3, backgroundColor: G_ERROR },
-                expenseAnimStyle,
-              ]}
-            />
-          </View>
-        </View>
-
-        {/* Net Kas — no wrapper, just divider line */}
+        {/* Row 4: Footer */}
         <View
           style={{
             paddingTop: 4,
             borderTopWidth: 1,
             borderTopColor: "rgba(255,255,255,0.06)",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <View
+          <Text
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: 8,
             }}
           >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                fontSize: 8,
-                fontWeight: "700",
-                letterSpacing: 1,
-                textTransform: "uppercase",
-              }}
-            >
-              Net Kas
-            </Text>
-            <Text style={{ color: netColor, fontSize: 14, fontWeight: "800" }}>
-              {props.filteredPeriodNetto > 0 ? "+" : ""}
-              {formatCurrency(safeNumber(props.filteredPeriodNetto))}
-            </Text>
-          </View>
+            {expenseCount > 0
+              ? `${expenseCount} transaksi pengeluaran`
+              : "Nol pengeluaran tercatat"}
+          </Text>
+          <Text
+            style={{
+              color: hasExpenses ? G_ERROR : G_SUCCESS,
+              fontSize: 10,
+              fontWeight: "700",
+            }}
+          >
+            Total: {formatCurrency(safeNumber(props.filteredExpense))}
+          </Text>
         </View>
       </View>
     </ChromaCard>
@@ -790,62 +930,86 @@ const Slide2 = (props: BalanceCarouselProps) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 3 — Proyeksi & Insight
+// SLIDE 3 — Kontrol Anggaran & Jatah Belanja Harian (Safe-to-Spend)
 // ═════════════════════════════════════════════════════════════════════════════════
 const Slide3 = (props: BalanceCarouselProps) => {
-  const projStatus = props.projectionData?.status;
-  const statusColor =
-    projStatus === "surplus"
-      ? G_SUCCESS
-      : projStatus === "warning"
-        ? G_WARNING
-        : G_ERROR;
-  const statusLabel =
-    projStatus === "surplus"
-      ? "Aman"
-      : projStatus === "warning"
-        ? "Hati-hati"
-        : "Waspada";
-  const statusIcon =
-    projStatus === "surplus"
-      ? "shield-checkmark"
-      : projStatus === "warning"
-        ? "warning"
-        : "alert-circle";
-
-  const netColor =
-    props.filteredPeriodNetto > 0
-      ? G_SUCCESS
-      : props.filteredPeriodNetto < 0
-        ? G_ERROR
-        : G_DIM;
-  const projBalColor =
-    (props.projectionData?.projectedBalance ?? 0) >= 0 ? G_SUCCESS : G_ERROR;
-  const progressPct = Math.max(
-    0,
-    Math.min(safeNumber(props.projectionData?.progress ?? 0), 100),
-  );
   const t = SLIDE_THEMES[2];
+  const budgets = props.budgets || [];
+  const hasBudgets = budgets.length > 0;
 
-  const gaugeValue = useSharedValue(0);
+  const totalLimit = budgets.reduce(
+    (sum, b) => sum + safeNumber(b.limit),
+    0
+  );
+  const totalSpent = budgets.reduce(
+    (sum, b) => sum + safeNumber(b.spent),
+    0
+  );
+  const remainingBudget = Math.max(0, totalLimit - totalSpent);
+  const isOverbudget = totalLimit > 0 && totalSpent > totalLimit;
+  const burnRatePct = totalLimit > 0
+    ? Math.round((totalSpent / totalLimit) * 100)
+    : 0;
+
+  // Sisa hari menuju reset bulan
+  const daysRemaining = safeNumber(props.projectionData?.daysRemaining) > 0
+    ? safeNumber(props.projectionData?.daysRemaining)
+    : (() => {
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        return Math.max(1, lastDay - now.getDate());
+      })();
+
+  // Jatah aman harian
+  const safeDaily = hasBudgets
+    ? Math.max(0, Math.round(remainingBudget / Math.max(1, daysRemaining)))
+    : Math.max(0, Math.round(safeNumber(props.balance) / Math.max(1, daysRemaining)));
+
+  // Status computation
+  let statusLabel = "Aman";
+  let statusColor = G_SUCCESS;
+  let statusIcon = "shield-checkmark";
+
+  if (hasBudgets) {
+    if (isOverbudget) {
+      statusLabel = "Overbudget";
+      statusColor = G_ERROR;
+      statusIcon = "alert-circle";
+    } else if (burnRatePct >= 80) {
+      statusLabel = "Waspada";
+      statusColor = G_WARNING;
+      statusIcon = "warning";
+    } else {
+      statusLabel = "Aman";
+      statusColor = G_SUCCESS;
+      statusIcon = "shield-checkmark";
+    }
+  } else {
+    statusLabel = "Estimasi Kas";
+    statusColor = "#00D4AA";
+    statusIcon = "compass";
+  }
+
+  const budgetBarWidth = useSharedValue(0);
+
   useEffect(() => {
-    gaugeValue.value = withDelay(
-      300,
-      withTiming(progressPct, {
-        duration: 1000,
+    budgetBarWidth.value = withDelay(
+      200,
+      withTiming(Math.min(100, burnRatePct), {
+        duration: 800,
         easing: Easing.out(Easing.cubic),
-      }),
+      })
     );
-  }, [progressPct]);
+  }, [burnRatePct]);
 
-  const gaugeAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(gaugeValue.value, 2)}%`,
+  const budgetAnimStyle = useAnimatedStyle(() => ({
+    width: `${Math.max(budgetBarWidth.value, hasBudgets && burnRatePct > 0 ? 3 : 0)}%`,
   }));
 
   return (
     <ChromaCard slideIndex={2}>
       <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Header */}
+        {/* Row 1: Header */}
         <View
           style={{
             flexDirection: "row",
@@ -867,7 +1031,11 @@ const Slide3 = (props: BalanceCarouselProps) => {
                 marginRight: 8,
               }}
             >
-              <Ionicons name="compass" size={13} color="#001A14" />
+              <Ionicons
+                name={hasBudgets ? "calculator" : "compass"}
+                size={13}
+                color="#001A14"
+              />
             </LinearGradient>
             <View>
               <Text
@@ -879,7 +1047,7 @@ const Slide3 = (props: BalanceCarouselProps) => {
                   textTransform: "uppercase",
                 }}
               >
-                Proyeksi
+                Kontrol Anggaran
               </Text>
               <Text
                 style={{
@@ -888,43 +1056,72 @@ const Slide3 = (props: BalanceCarouselProps) => {
                   marginTop: 1,
                 }}
               >
-                Estimasi keuangan
+                {hasBudgets ? "Batas Belanja Harian" : "Estimasi Jatah Harian"}
               </Text>
             </View>
           </View>
-          {props.projectionData && (
-            <GlassChip
-              icon={statusIcon}
-              label={statusLabel}
-              color={statusColor}
-            />
-          )}
-        </View>
-
-        {/* Arus Kas value */}
-        <View>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.35)",
-              fontSize: 8,
-              letterSpacing: 0.8,
-              marginBottom: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            Arus Kas
-          </Text>
-          <AnimatedNumber
-            value={`${props.filteredPeriodNetto > 0 ? "+" : ""}${formatCurrency(safeNumber(props.filteredPeriodNetto))}`}
-            style={{ color: netColor, fontSize: 22, lineHeight: 28 }}
+          <GlassChip
+            icon={statusIcon}
+            label={statusLabel}
+            color={statusColor}
+            compact
           />
         </View>
 
-        {/* Gauge + Tersisa/Est. Saldo */}
-        {props.hasFinancialData && props.projectionData ? (
-          <View>
-            {/* Animated gauge — smaller */}
-            <View style={{ marginBottom: 6 }}>
+        {/* Row 2: Hero Amount & Label */}
+        <View style={{ marginTop: 2 }}>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.4)",
+              fontSize: 8,
+              fontWeight: "600",
+              letterSpacing: 0.8,
+              textTransform: "uppercase",
+              marginBottom: 2,
+            }}
+          >
+            {hasBudgets ? "Jatah Aman Belanja / Hari" : "Jatah Kas Aman / Hari"}
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+            <AnimatedNumber
+              value={formatCurrency(safeDaily)}
+              style={{
+                color: isOverbudget ? G_ERROR : G_TEXT,
+                fontSize: 24,
+                lineHeight: 30,
+              }}
+            />
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.4)",
+                fontSize: 10,
+                fontWeight: "600",
+                marginLeft: 4,
+              }}
+            >
+              /hari
+            </Text>
+          </View>
+          <Text
+            style={{
+              color: isOverbudget ? G_ERROR : "rgba(255,255,255,0.35)",
+              fontSize: 9,
+              marginTop: 1,
+            }}
+            numberOfLines={1}
+          >
+            {hasBudgets
+              ? isOverbudget
+                ? `Anggaran overbudget ${formatCurrency(totalSpent - totalLimit)}!`
+                : `Sisa anggaran ${formatCurrency(remainingBudget)}`
+              : `Dihitung dari saldo kas dibagi sisa ${daysRemaining} hari`}
+          </Text>
+        </View>
+
+        {/* Row 3: Progress Bar & Info */}
+        <View style={{ marginTop: 2 }}>
+          {hasBudgets ? (
+            <>
               <View
                 style={{
                   flexDirection: "row",
@@ -935,113 +1132,143 @@ const Slide3 = (props: BalanceCarouselProps) => {
               >
                 <Text
                   style={{
-                    color: "rgba(255,255,255,0.4)",
-                    fontSize: 7,
-                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: 8,
+                    fontWeight: "600",
                     letterSpacing: 0.5,
+                    textTransform: "uppercase",
                   }}
                 >
-                  Periode
+                  Anggaran Terpakai
                 </Text>
                 <Text
-                  style={{ color: t.accent, fontSize: 9, fontWeight: "700" }}
+                  style={{
+                    color: statusColor,
+                    fontSize: 9,
+                    fontWeight: "700",
+                  }}
                 >
-                  {Math.round(progressPct)}%
+                  {burnRatePct}% ({formatCurrency(totalSpent)})
                 </Text>
               </View>
               <View
                 style={{
-                  height: 4,
+                  height: 5,
                   backgroundColor: "rgba(255,255,255,0.06)",
-                  borderRadius: 2,
+                  borderRadius: 3,
                   overflow: "hidden",
                 }}
               >
                 <Animated.View
                   style={[
                     {
-                      height: 4,
-                      borderRadius: 2,
+                      height: 5,
+                      borderRadius: 3,
                       backgroundColor: statusColor,
                     },
-                    gaugeAnimStyle,
+                    budgetAnimStyle,
                   ]}
                 />
               </View>
-            </View>
-
-            {/* Tersisa & Est. Saldo with divider — no wrapper */}
-            {props.projectionData.daysRemaining > 0 && (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: "rgba(255,255,255,0.4)",
-                      fontSize: 7,
-                      fontWeight: "600",
-                      letterSpacing: 0.8,
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Tersisa
-                  </Text>
-                  <Text
-                    style={{
-                      color: G_TEXT,
-                      fontSize: 11,
-                      fontWeight: "700",
-                      textAlign: "center",
-                    }}
-                  >
-                    {props.projectionData.daysRemaining} hari
-                  </Text>
-                </View>
-                <View
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 4,
+                }}
+              >
+                <Text
                   style={{
-                    width: 1,
-                    height: 28,
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                    marginHorizontal: 6,
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: 8,
                   }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: "rgba(255,255,255,0.4)",
-                      fontSize: 7,
-                      fontWeight: "600",
-                      letterSpacing: 0.8,
-                      textTransform: "uppercase",
-                      textAlign: "center",
-                    }}
-                  >
-                    Est. Saldo
-                  </Text>
-                  <Text
-                    style={{
-                      color: projBalColor,
-                      fontSize: 11,
-                      fontWeight: "700",
-                      textAlign: "center",
-                    }}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                  >
-                    {(props.projectionData.projectedBalance ?? 0) >= 0
-                      ? "+"
-                      : ""}
-                    {formatCurrency(
-                      safeNumber(props.projectionData.projectedBalance),
-                    )}
-                  </Text>
-                </View>
+                >
+                  Limit Total: {formatCurrency(totalLimit)}
+                </Text>
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: 8,
+                  }}
+                >
+                  {budgets.length} pos anggaran
+                </Text>
               </View>
-            )}
+            </>
+          ) : (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "rgba(0,212,170,0.08)",
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+              }}
+            >
+              <Ionicons
+                name="bulb"
+                size={13}
+                color="#00D4AA"
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: 9,
+                  fontWeight: "500",
+                  flex: 1,
+                }}
+                numberOfLines={1}
+              >
+                Pasang Anggaran di menu untuk kunci batas belanja bulanan.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Row 4: Footer */}
+        <View
+          style={{
+            paddingTop: 4,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.06)",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="hourglass-outline"
+              size={8}
+              color={daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.3)"}
+              style={{ marginRight: 4 }}
+            />
+            <Text
+              style={{
+                color:
+                  daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.35)",
+                fontSize: 8,
+                fontWeight: daysRemaining <= 3 ? "600" : "400",
+              }}
+            >
+              {daysRemaining === 1
+                ? "Reset bulan besok"
+                : `${daysRemaining} hari menuju reset`}
+            </Text>
           </View>
-        ) : (
-          <View style={{ height: 30 }} />
-        )}
+          <Text
+            style={{
+              color: hasBudgets ? t.accent : G_DIM,
+              fontSize: 9,
+              fontWeight: "600",
+            }}
+          >
+            {hasBudgets ? `${budgets.length} pos anggaran` : "Panduan Kas"}
+          </Text>
+        </View>
       </View>
     </ChromaCard>
   );
