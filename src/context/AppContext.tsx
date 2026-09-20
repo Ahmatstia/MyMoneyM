@@ -20,7 +20,8 @@ import {
 } from "../types";
 import { storageService } from "../utils/storage";
 import { calculateTotals, safeNumber } from "../utils/calculations";
-import { getJakartaDateKey } from "../utils/dailyCheckIn";
+import { getJakartaDateKey, calculateDailyCheckInStreak } from "../utils/dailyCheckIn";
+import { gamificationBus } from "../utils/gamificationBus";
 import {
   generateTransactionId,
   generateBudgetId,
@@ -350,6 +351,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     // Persist only when we actually made a change
     if (didUpdate && savedState) {
       await storageService.saveData(savedState);
+      gamificationBus.award("daily_checkin");
+
+      const streak = calculateDailyCheckInStreak(
+        (savedState as AppState).dailyCheckIns || []
+      );
+      if (streak === 7) {
+        gamificationBus.award("streak_7");
+      } else if (streak === 30) {
+        gamificationBus.award("streak_30");
+      }
     }
   };
 
@@ -428,6 +439,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    gamificationBus.award("transaction");
 
     // Send notifications
     await notificationService.updateNotifications(newState);
@@ -516,6 +528,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    gamificationBus.award("budget_created");
 
     // Send notification
     await notificationService.updateNotifications(newState);
@@ -592,6 +605,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
+    gamificationBus.award("savings_created");
 
     // Send notification
     await notificationService.updateNotifications(newState);
@@ -682,6 +696,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
+
+    if (transaction.type === "deposit") {
+      gamificationBus.award("savings_deposit");
+      if (
+        saving.target > 0 &&
+        newBalance >= saving.target &&
+        previousBalance < saving.target
+      ) {
+        gamificationBus.award("savings_completed");
+      }
+    }
   };
 
   const getSavingsTransactions = (savingsId: string): SavingsTransaction[] => {
@@ -781,6 +806,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setState(newState);
     await storageService.saveData(newState);
+    gamificationBus.award("debt_recorded");
   };
 
   const editDebt = async (id: string, updates: Partial<Debt>) => {
@@ -863,6 +889,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
+
+    if (newStatus === "paid") {
+      gamificationBus.award("debt_cleared");
+    }
 
     // Notifikasi jika transaksi besar
     if (amount >= 1000000) {

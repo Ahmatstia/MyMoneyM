@@ -172,7 +172,7 @@ const AddSavingsScreen: React.FC = () => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
@@ -227,13 +227,7 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (event: any, selectedDate?: Date) => {
-    // Pada Android, ketika dialog ditutup (cancel), event.type akan "dismissed"
-    if (event.type === "dismissed") {
-      setShowCalendar(false);
-      return;
-    }
-    
+  const handleDateSelect = (_event: any, selectedDate?: Date) => {
     setShowCalendar(false);
     
     if (selectedDate) {
@@ -995,7 +989,8 @@ const AddSavingsScreen: React.FC = () => {
           mode="date"
           display="default"
           minimumDate={new Date()}
-          onChange={handleDateSelect}
+          onValueChange={handleDateSelect}
+          onDismiss={() => setShowCalendar(false)}
         />
       )}
     </SafeAreaView>

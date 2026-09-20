@@ -2,6 +2,7 @@
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { formatCurrency } from "./calculations";
+import { gamificationBus } from "./gamificationBus";
 
 export interface MonthlyReportCategoryItem {
   category: string;
@@ -324,6 +325,7 @@ export const exportMonthlyReportPdf = async (data: MonthlyReportData): Promise<v
         mimeType: "application/pdf",
         dialogTitle: `Laporan Keuangan MyMoney - ${data.monthName}`,
       });
+      gamificationBus.award("report_exported");
     } else {
       throw new Error("Fitur berbagi tidak didukung pada perangkat ini.");
     }

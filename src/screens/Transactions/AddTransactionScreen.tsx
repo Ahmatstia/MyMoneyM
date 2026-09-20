@@ -235,12 +235,7 @@ const AddTransactionScreen: React.FC = () => {
     }).format(amountNum);
   };
 
-  const handleDateSelect = (event: any, selectedDate?: Date) => {
-    if (event.type === "dismissed") {
-      setShowCalendar(false);
-      return;
-    }
-
+  const handleDateSelect = (_event: any, selectedDate?: Date) => {
     setShowCalendar(false);
 
     if (selectedDate) {
@@ -814,7 +809,8 @@ const AddTransactionScreen: React.FC = () => {
           value={date ? new Date(date) : new Date()}
           mode="date"
           display="default"
-          onChange={handleDateSelect}
+          onValueChange={handleDateSelect}
+          onDismiss={() => setShowCalendar(false)}
         />
       )}
     </SafeAreaView>

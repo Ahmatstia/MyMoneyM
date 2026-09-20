@@ -183,12 +183,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (event: any, selectedDate?: Date) => {
-    if (event.type === "dismissed") {
-      setShowCalendar(false);
-      return;
-    }
-
+  const handleDateSelect = (_event: any, selectedDate?: Date) => {
     setShowCalendar(false);
 
     if (selectedDate) {
@@ -554,7 +549,8 @@ const AddSavingsTransactionScreen: React.FC = () => {
           mode="date"
           display="default"
           maximumDate={new Date()}
-          onChange={handleDateSelect}
+          onValueChange={handleDateSelect}
+          onDismiss={() => setShowCalendar(false)}
         />
       )}
     </SafeAreaView>

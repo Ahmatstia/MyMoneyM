@@ -155,7 +155,7 @@ const CalendarScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDayDetail, setShowDayDetail] = useState<boolean>(false);
 
-  const handleMonthYearChange = (event: any, date?: Date) => {
+  const handleMonthYearChange = (_event: any, date?: Date) => {
     setShowDatePicker(false);
     if (date) {
       const dateString = date.toISOString().split("T")[0];
@@ -296,7 +296,8 @@ const CalendarScreen: React.FC = () => {
             value={new Date(selectedDate)}
             mode="date"
             display="default"
-            onChange={handleMonthYearChange}
+            onValueChange={handleMonthYearChange}
+            onDismiss={() => setShowDatePicker(false)}
           />
         )}
 

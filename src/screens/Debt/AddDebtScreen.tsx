@@ -247,11 +247,9 @@ const AddDebtScreen: React.FC = () => {
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 minimumDate={new Date()}
-                onChange={(event, selectedDate) => {
-                  setShowDatePicker(Platform.OS === "ios");
-                  if (event.type === "dismissed") {
+                onValueChange={(_event, selectedDate) => {
+                  if (Platform.OS === "android") {
                     setShowDatePicker(false);
-                    return;
                   }
                   if (selectedDate) {
                     const y = selectedDate.getFullYear();
@@ -259,8 +257,8 @@ const AddDebtScreen: React.FC = () => {
                     const d = String(selectedDate.getDate()).padStart(2, "0");
                     setDueDate(`${y}-${m}-${d}`);
                   }
-                  setShowDatePicker(false);
                 }}
+                onDismiss={() => setShowDatePicker(false)}
               />
             )}
           </View>

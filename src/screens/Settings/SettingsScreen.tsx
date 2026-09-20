@@ -248,17 +248,22 @@ const TimePickerModal = ({
   });
   const [showPicker, setShowPicker] = useState(false);
 
-  const handleTimeChange = (event: any, time?: Date) => {
+  const handleTimeChange = (_event: any, time?: Date) => {
     if (Platform.OS === "android") setShowPicker(false);
     if (time) {
       setSelectedTime(time);
-      if (Platform.OS === "android" && event.type === "set") {
+      if (Platform.OS === "android") {
         const h = time.getHours().toString().padStart(2, "0");
         const m = time.getMinutes().toString().padStart(2, "0");
         onTimeSelected(`${h}:${m}`);
         onClose();
       }
-    } else if (Platform.OS === "android") {
+    }
+  };
+
+  const handleTimeDismiss = () => {
+    if (Platform.OS === "android") {
+      setShowPicker(false);
       onClose();
     }
   };
@@ -329,7 +334,8 @@ const TimePickerModal = ({
                 value={selectedTime}
                 mode="time"
                 display="spinner"
-                onChange={handleTimeChange}
+                onValueChange={handleTimeChange}
+                onDismiss={handleTimeDismiss}
                 style={{ width: "100%" }}
                 textColor={colors.textPrimary}
                 themeVariant="dark"
@@ -415,7 +421,8 @@ const TimePickerModal = ({
         value={selectedTime}
         mode="time"
         display="default"
-        onChange={handleTimeChange}
+        onValueChange={handleTimeChange}
+        onDismiss={handleTimeDismiss}
         themeVariant="dark"
       />
     );

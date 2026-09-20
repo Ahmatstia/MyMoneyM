@@ -21,6 +21,9 @@ import tw from "twrnc";
 import { LinearGradient } from "expo-linear-gradient";
 import { GuideCenterModal } from "../../components/Tutorial";
 import MonthlyReportModal from "../Analytics/components/MonthlyReportModal";
+import { LevelAvatarBorder } from "../../components/Gamification/LevelAvatarBorder";
+import { MilestoneClaimModal } from "../../components/Gamification/MilestoneClaimModal";
+import { useGamification } from "../../context/GamificationContext";
 import {
   format,
   startOfMonth,
@@ -567,10 +570,12 @@ const ProfileScreen: React.FC = () => {
   }
 
   const navigation = useNavigation<any>();
+  const { progress, claimableMilestones } = useGamification();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isGuideVisible, setIsGuideVisible] = useState(false);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [isMilestoneModalVisible, setIsMilestoneModalVisible] = useState(false);
   const [tempName, setTempName] = useState(userProfile.name);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -595,7 +600,7 @@ const ProfileScreen: React.FC = () => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         aspect: type === "avatar" ? [1, 1] : [16, 9],
         quality: 0.8,
@@ -895,42 +900,22 @@ const ProfileScreen: React.FC = () => {
           <View style={[tw`px-5 pt-0 pb-4`, { backgroundColor: C.bg }]}>
             {/* Avatar row */}
             <View style={tw`flex-row items-end -mt-10 mb-4`}>
-              {/* Avatar */}
+              {/* Avatar with RPG Level Border & Badge */}
               <View style={tw`relative`}>
-                <View
-                  style={[
-                    tw`w-15 h-15 rounded-[24px] overflow-hidden`,
-                    {
-                      borderWidth: 3,
-                      borderColor: C.bg,
-                      shadowColor: C.cyan,
-                      shadowOpacity: 0.3,
-                      shadowRadius: 16,
-                      elevation: 12,
-                    },
-                  ]}
-                >
-                  <LinearGradient
-                    colors={[`${C.cyan}40`, `${C.violet}30`]}
-                    style={tw`absolute inset-0`}
-                  />
-                  {userProfile.avatar && !avatarError ? (
-                    <Image
-                      source={{ uri: userProfile.avatar }}
-                      style={tw`w-full h-full`}
-                      onError={() => setAvatarError(true)}
-                    />
-                  ) : (
-                    <View style={tw`flex-1 items-center justify-center`}>
-                      <Ionicons name="person" size={28} color={C.text3} />
-                    </View>
-                  )}
-                </View>
+                <LevelAvatarBorder
+                  avatarUri={
+                    userProfile.avatar && !avatarError ? userProfile.avatar : null
+                  }
+                  name={userProfile.name}
+                  size={76}
+                  showLevelBadge={true}
+                  onPress={() => handleImageAction("avatar")}
+                />
                 {/* Camera button */}
                 <TouchableOpacity
                   onPress={() => handleImageAction("avatar")}
                   style={[
-                    tw`absolute -bottom-1 -right-1 w-6 h-6 rounded-lg items-center justify-center`,
+                    tw`absolute -bottom-1 -right-1 w-6 h-6 rounded-lg items-center justify-center z-20`,
                     {
                       backgroundColor: C.cyan,
                       borderWidth: 2,
@@ -968,8 +953,12 @@ const ProfileScreen: React.FC = () => {
                     <Ionicons name="pencil" size={10} color={C.text2} />
                   </TouchableOpacity>
                 </View>
-                <Text style={[tw`text-[10px]`, { color: C.text3 }]}>
-                  Anggota sejak 2026
+                <Text style={[tw`text-[11px] font-bold`, { color: C.gold }]}>
+                  {progress.title}
+                </Text>
+                <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
+                  Level {progress.level} • {progress.currentLevelXp.toLocaleString("id-ID")} /{" "}
+                  {progress.xpNeededForNext.toLocaleString("id-ID")} XP
                 </Text>
               </View>
             </View>
@@ -1077,6 +1066,69 @@ const ProfileScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color={C.cyan} />
+          </TouchableOpacity>
+
+          {/* ── MILESTONE CLAIM BANNER ─────────────────────────────────── */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("MoniScreen")}
+            activeOpacity={0.85}
+            style={[
+              tw`mt-4 mb-2 p-4 rounded-2xl flex-row items-center justify-between`,
+              {
+                backgroundColor: C.card,
+                borderWidth: 1.5,
+                borderColor: claimableMilestones.length > 0 ? C.gold : C.border,
+              },
+            ]}
+          >
+            <View style={tw`flex-row items-center gap-3.5 flex-1`}>
+              <LinearGradient
+                colors={
+                  claimableMilestones.length > 0
+                    ? ["#F59E0B", "#D97706"]
+                    : [C.cyanDim, "rgba(34,211,238,0.05)"]
+                }
+                style={[
+                  tw`w-12 h-12 rounded-2xl items-center justify-center`,
+                  {
+                    borderWidth: 1,
+                    borderColor:
+                      claimableMilestones.length > 0
+                        ? "#FDE047"
+                        : "rgba(34,211,238,0.25)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={claimableMilestones.length > 0 ? "gift" : "trophy"}
+                  size={24}
+                  color={claimableMilestones.length > 0 ? "#FFFFFF" : C.cyan}
+                />
+              </LinearGradient>
+              <View style={tw`flex-1`}>
+                <View style={tw`flex-row items-center gap-2`}>
+                  <Text style={[tw`text-sm font-black`, { color: C.text1 }]}>
+                    Pusat Pencapaian & Klaim
+                  </Text>
+                  {claimableMilestones.length > 0 && (
+                    <View
+                      style={[
+                        tw`px-2 py-0.5 rounded-full`,
+                        { backgroundColor: "#EF4444" },
+                      ]}
+                    >
+                      <Text style={tw`text-[10px] font-extrabold text-white`}>
+                        {claimableMilestones.length} KLAIM
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
+                  Klaim aksesoris Moni, border langka & bonus XP game
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={C.gold} />
           </TouchableOpacity>
 
           {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
@@ -1407,6 +1459,12 @@ const ProfileScreen: React.FC = () => {
       <MonthlyReportModal
         visible={isReportModalVisible}
         onClose={() => setIsReportModalVisible(false)}
+      />
+
+      {/* ── GAMIFICATION MILESTONE CLAIM MODAL ───────────────────────── */}
+      <MilestoneClaimModal
+        visible={isMilestoneModalVisible}
+        onClose={() => setIsMilestoneModalVisible(false)}
       />
     </SafeAreaView>
   );

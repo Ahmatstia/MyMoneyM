@@ -9,6 +9,7 @@ import {
   DefaultTheme as NavigationDefaultTheme,
 } from "@react-navigation/native";
 import { AppProvider, useAppContext } from "./src/context/AppContext";
+import { GamificationProvider } from "./src/context/GamificationContext";
 import { Colors } from "./src/theme/theme";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import AppNavigator from "./src/navigation/AppNavigator";
@@ -145,9 +146,11 @@ export default function App() {
         {/* ThemeProvider harus di luar AppProvider agar warna bisa dipakai oleh AppContent */}
         <ThemeProvider>
           <AppProvider>
-            <CustomAlertProvider>
-              <AppContent />
-            </CustomAlertProvider>
+            <GamificationProvider>
+              <CustomAlertProvider>
+                <AppContent />
+              </CustomAlertProvider>
+            </GamificationProvider>
           </AppProvider>
         </ThemeProvider>
       </SafeAreaProvider>

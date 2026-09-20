@@ -40,6 +40,8 @@ import {
   ContextualCycleHint,
   GuideTopicId,
 } from "../../components/Tutorial";
+import { FloatingMascotBubble } from "../../components/Mascot/FloatingMascotBubble";
+import { LevelUpModal } from "../../components/Gamification/LevelUpModal";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -47,7 +49,7 @@ const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
 const SECTION_GAP  = 24;
-// â”€â”€â”€ Komponen UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Komponen UI\ ------------------------------------------------------------
 
 /** Spacer vertikal antar section */
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -150,7 +152,7 @@ const VDivider = ({ height = 32 }: { height?: number }) => {
   );
 };
 
-// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Main component ------------------------------------------------------------
 
 const HomeScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -203,14 +205,14 @@ const HomeScreen: React.FC = () => {
     return "Kritis";
   };
 
-  // â”€â”€ Progress bar color helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Progress bar color helper ------------------------------------------------------------
   const getProgressColor = (status: string | undefined) => {
     if (status === "surplus") return colors.success;
     if (status === "warning") return colors.warning;
     return colors.error;
   };
 
-  // â”€â”€ Skeleton loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Skeleton loading ------------------------------------------------------------
   if (isLoading && !refreshing) {
     const SkeletonBox = ({
       w,
@@ -358,7 +360,7 @@ const HomeScreen: React.FC = () => {
     );
   }
 
-  // â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- RENDER ------------------------------------------------------------
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -375,9 +377,9 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        {/* ============================================================
             HEADER
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        ============================================================ */}
         <View
           style={{
             flexDirection: "row",
@@ -543,9 +545,9 @@ const HomeScreen: React.FC = () => {
           />
         )}
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-            TIME FILTER â€” segmented control
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        {/* ============================================================
+            TIME FILTER - segmented control
+        ============================================================ */}
         <View
           style={{
             flexDirection: "row",
@@ -596,9 +598,9 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        {/* ============================================================
             BALANCE HERO CARD (CAROUSEL)
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        ============================================================ */}
         <BalanceCarousel
           hasFinancialData={hasFinancialData}
           balance={safeNumber(state.balance)}
@@ -613,9 +615,9 @@ const HomeScreen: React.FC = () => {
           customCategories={state.customCategories}
         />
 
-        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        {/* ============================================================
             QUICK ACTIONS
-        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+        ============================================================ */}
         <SectionHeader title="Aksi Cepat" />
         <View
           style={{
@@ -667,15 +669,15 @@ const HomeScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* ══════════════════════════════════════════
+        {/* ============================================================
             EXPENSE TREND CHART
-        ══════════════════════════════════════════ */}
+        ============================================================ */}
         <SectionHeader title="Tren Pengeluaran" />
         <ExpenseTrendChart transactions={state.transactions} />
 
-        {/* ══════════════════════════════════════════════════════════════════════════════
+        {/* ============================================================
             QUICK STATS
-        ══════════════════════════════════════════════════════════════════════════════ */}
+        ============================================================ */}
         <SectionHeader title="Statistik" />
         <View
           style={{
@@ -837,7 +839,7 @@ const HomeScreen: React.FC = () => {
                       {transaction.category}
                     </Text>
                     <Text style={{ color: "rgba(148,163,184,0.6)", fontSize: 11, marginTop: 4 }}>
-                      {transaction.description || "Tidak ada deskripsi"} •{" "}
+                      {transaction.description || "Tidak ada deskripsi"} ={" "}
                       {new Date(transaction.date).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -853,7 +855,7 @@ const HomeScreen: React.FC = () => {
               ))}
           </View>
         ) : state.transactions.length > 0 ? (
-          /* Empty state â€” periode ini kosong */
+          /* Empty state - periode ini kosong */
           <View
             style={{
               paddingVertical: 28,
@@ -937,7 +939,7 @@ const HomeScreen: React.FC = () => {
                 Tambah transaksi pertama
               </Text>
                 <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 10, lineHeight: 16, marginTop: 4 }}>
-                  💡 Catat pemasukan atau pengeluaran • Buat anggaran • Tetapkan tabungan
+                  💡 Catat pemasukan atau pengeluaran = Buat anggaran = Tetapkan tabungan
                 </Text>
             </View>
             <Ionicons
@@ -1029,7 +1031,7 @@ const HomeScreen: React.FC = () => {
                   marginBottom: 20,
                 }}
               >
-                {/* LEFT â€” Budget */}
+                {/* LEFT - Budget */}
                 {state.budgets.length > 0 && (
                   <View
                     style={[
@@ -1132,7 +1134,7 @@ const HomeScreen: React.FC = () => {
                   </View>
                 )}
 
-                {/* RIGHT â€” Goals */}
+                {/* RIGHT - Goals */}
                 {goalsPreview.length > 0 && (
                   <View
                     style={[
@@ -1395,9 +1397,9 @@ const HomeScreen: React.FC = () => {
           )}
       </ScrollView>
 
-      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      {/* ============================================================
           FLOATING ADD BUTTON
-      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
+      ============================================================ */}
       <Animated.View
         style={{
           position: "absolute",
@@ -1436,6 +1438,9 @@ const HomeScreen: React.FC = () => {
         initialTopic={guideTopic}
         onNavigateAction={(target) => navigation.navigate(target as any)}
       />
+      {/* Gamification Floating Mascot in Corner & Level Up Modal */}
+      <LevelUpModal />
+      <FloatingMascotBubble />
     </SafeAreaView>
   );
 };

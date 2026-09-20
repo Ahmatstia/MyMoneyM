@@ -231,12 +231,7 @@ const AddBudgetScreen: React.FC = () => {
   };
 
   // Handle date select
-  const handleDateSelect = (event: any, selectedDate?: Date) => {
-    if (event.type === "dismissed") {
-      setShowCalendar(false);
-      return;
-    }
-
+  const handleDateSelect = (_event: any, selectedDate?: Date) => {
     setShowCalendar(false);
 
     if (selectedDate) {
@@ -929,7 +924,8 @@ const AddBudgetScreen: React.FC = () => {
           value={calendarMode === "start" ? new Date(startDate) : new Date(endDate)}
           mode="date"
           display="default"
-          onChange={handleDateSelect}
+          onValueChange={handleDateSelect}
+          onDismiss={() => setShowCalendar(false)}
         />
       )}
     </SafeAreaView>

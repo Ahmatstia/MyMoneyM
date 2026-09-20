@@ -27,7 +27,9 @@ import tw from "twrnc";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "../context/AppContext";
+import { useGamification } from "../context/GamificationContext";
 import { useTheme } from "../theme/ThemeContext";
+import { LevelAvatarBorder } from "../components/Gamification/LevelAvatarBorder";
 
 // Screens
 import HomeScreen from "../screens/Home/HomeScreen";
@@ -54,12 +56,14 @@ import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 import ToolsScreen from "../screens/Tools/ToolsScreen";
 import RecurringTransactionsScreen from "../screens/Recurring/RecurringTransactionsScreen";
+import MoniScreen from "../screens/Gamification/MoniScreen";
 
 // Types
 type StackParamList = {
   Onboarding: undefined;
   MainDrawer: undefined;
   Home: undefined;
+  MoniScreen: undefined;
   Transactions: undefined;
   Budget: undefined;
   Savings: undefined;
@@ -96,6 +100,7 @@ const { width } = Dimensions.get("window");
 
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const { state } = useAppContext();
+  const { progress } = useGamification();
   const { colors } = useTheme();
   const { userProfile } = state;
 
@@ -174,6 +179,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       color: colors.purple,
     },
     {
+      name: "MoniScreen",
+      label: "Ruang Moni 🐱",
+      icon: "sparkles-outline" as const,
+      color: colors.warning,
+    },
+    {
       name: "Profile",
       label: "Profil Saya",
       icon: "person-outline" as const,
@@ -217,29 +228,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             imageStyle={{ opacity: 0.4 }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 64,
-                  height: 64,
-                  backgroundColor: colors.surface,
-                  borderWidth: 2,
-                  borderColor: colors.accent,
-                  borderRadius: 32,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                {userProfile.avatar && !avatarError ? (
-                  <Image
-                    source={{ uri: userProfile.avatar }}
-                    style={{ width: "100%", height: "100%" }}
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <Ionicons name="person" size={32} color={colors.accent} />
-                )}
-              </View>
+              <LevelAvatarBorder
+                avatarUri={
+                  userProfile.avatar && !avatarError ? userProfile.avatar : null
+                }
+                name={userProfile.name}
+                size={64}
+                showLevelBadge={true}
+              />
               <View style={{ marginLeft: 16, flex: 1 }}>
                 <Text
                   style={{
@@ -258,23 +254,15 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
                     marginTop: 4,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: colors.success,
-                      marginRight: 6,
-                    }}
-                  />
                   <Text
                     style={{
-                      color: colors.textSecondary,
+                      color: colors.accent,
                       fontSize: 12,
-                      fontWeight: "500",
+                      fontWeight: "600",
                     }}
+                    numberOfLines={1}
                   >
-                    Online
+                    {progress.title}
                   </Text>
                 </View>
               </View>
@@ -582,6 +570,11 @@ const MainStackNavigator = () => {
       <MainStack.Screen
         name="RecurringTransactions"
         component={RecurringTransactionsScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="MoniScreen"
+        component={MoniScreen}
         options={{ headerShown: false }}
       />
     </MainStack.Navigator>
