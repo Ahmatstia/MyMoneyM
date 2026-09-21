@@ -37,6 +37,8 @@ export interface Budget {
   period: "custom" | "weekly" | "monthly" | "yearly";
   startDate: string;
   endDate: string;
+  isRecurring?: boolean; // true = auto-renew, false = one-time event
+  cycleDays?: number;    // Custom recurring interval in days (e.g. 10, 14, 15 days)
   lastResetDate?: string; // Format: YYYY-MM-DD
   createdAt: string; // ISO string
 }
@@ -212,6 +214,9 @@ export type RootStackParamList = {
     editMode?: boolean;
     transactionData?: Transaction;
     type?: TransactionType;
+    initialAmount?: number;
+    initialDescription?: string;
+    initialCategory?: string;
   };
   AddBudget: {
     editMode?: boolean;

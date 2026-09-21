@@ -147,22 +147,36 @@ const BudgetScreen: React.FC = () => {
   const fabPressOut = () =>
     Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
-  // ── Semua logika kalkulasi di bawah ini TIDAK DIUBAH ─────────────────────
+  // ── Tanggal hari ini untuk deteksi status selesai ─────────────────────────
+  const today = new Date().toISOString().split("T")[0];
 
   const parseDate = (dateStr: string): Date => {
     try { return new Date(dateStr); }
     catch { return new Date(); }
   };
 
+  // Anggaran sekali pakai yang sudah melewati batas akhir diarsipkan ke completed
+  const isBudgetCompleted = (b: Budget): boolean => {
+    return b.isRecurring === false && today > b.endDate;
+  };
+
+  const activeBudgets = useMemo(() => {
+    return state.budgets.filter((b) => !isBudgetCompleted(b));
+  }, [state.budgets, today]);
+
+  const completedBudgets = useMemo(() => {
+    return state.budgets.filter(isBudgetCompleted);
+  }, [state.budgets, today]);
+
   const summary = useMemo(() => {
-    const totalLimit = state.budgets.reduce((sum, b) => sum + safeNumber(b.limit), 0);
-    const totalSpent = state.budgets.reduce((sum, b) => sum + safeNumber(b.spent), 0);
-    const overBudgets = state.budgets.filter((b) => {
+    const totalLimit = activeBudgets.reduce((sum, b) => sum + safeNumber(b.limit), 0);
+    const totalSpent = activeBudgets.reduce((sum, b) => sum + safeNumber(b.spent), 0);
+    const overBudgets = activeBudgets.filter((b) => {
       const s = safeNumber(b.spent);
       const l = safeNumber(b.limit);
       return l > 0 && s > l;
     }).length;
-    const warningBudgets = state.budgets.filter((b) => {
+    const warningBudgets = activeBudgets.filter((b) => {
       const s = safeNumber(b.spent);
       const l = safeNumber(b.limit);
       if (l <= 0) return false;
@@ -175,12 +189,12 @@ const BudgetScreen: React.FC = () => {
       totalRemaining:  safeNumber(totalLimit - totalSpent),
       overBudgets,
       warningBudgets,
-      safeBudgets:     state.budgets.length - overBudgets - warningBudgets,
+      safeBudgets:     activeBudgets.length - overBudgets - warningBudgets,
     };
-  }, [state.budgets]);
+  }, [activeBudgets]);
 
   const filteredBudgets = useMemo(() => {
-    return state.budgets.filter((b) => {
+    return activeBudgets.filter((b) => {
       const s = safeNumber(b.spent);
       const l = safeNumber(b.limit);
       if (l <= 0) return filter === "all";
@@ -192,7 +206,7 @@ const BudgetScreen: React.FC = () => {
         default:        return true;
       }
     });
-  }, [state.budgets, filter]);
+  }, [activeBudgets, filter]);
 
   const getProgress = (b: Budget): number => {
     const s = safeNumber(b.spent);
@@ -209,7 +223,6 @@ const BudgetScreen: React.FC = () => {
     return colors.success;
   };
 
-
   const getDaysRemaining = (b: Budget): number => {
     const now  = new Date();
     const end  = parseDate(b.endDate);
@@ -225,6 +238,12 @@ const BudgetScreen: React.FC = () => {
   };
 
   const formatPeriod = (b: Budget): string => {
+    if (b.isRecurring === false) {
+      return "Sekali Pakai";
+    }
+    if (b.period === "custom" && b.cycleDays) {
+      return `Tiap ${b.cycleDays} Hari`;
+    }
     const map: Record<string, string> = {
       monthly: "Bulanan",
       weekly:  "Mingguan",
@@ -263,7 +282,7 @@ const BudgetScreen: React.FC = () => {
   };
 
   const filterTabs = [
-    { key: "all",     label: "Semua",     count: state.budgets.length },
+    { key: "all",     label: "Semua",     count: activeBudgets.length },
     { key: "safe",    label: "Aman",      count: summary.safeBudgets },
     { key: "warning", label: "Perhatian", count: summary.warningBudgets },
     { key: "over",    label: "Melebihi",  count: summary.overBudgets },
@@ -281,10 +300,6 @@ const BudgetScreen: React.FC = () => {
       : utilizationRate >= 80
       ? colors.warning
       : colors.success;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
@@ -311,13 +326,13 @@ const BudgetScreen: React.FC = () => {
             <Text
               style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}
             >
-              {state.budgets.length} anggaran aktif
+              {activeBudgets.length} anggaran aktif{completedBudgets.length > 0 ? ` • ${completedBudgets.length} selesai` : ""}
             </Text>
           </View>
         </View>
 
         {/* ── Summary hero card ────────────────────────────────────────── */}
-        {state.budgets.length > 0 && (
+        {activeBudgets.length > 0 && (
           <Card style={{ marginBottom: 20 }}>
             {/* Total limit + bar */}
             <Text
@@ -350,8 +365,11 @@ const BudgetScreen: React.FC = () => {
                 <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
                   <View
                     style={{
-                      width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: colors.accent, marginRight: 5,
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: colors.accent,
+                      marginRight: 5,
                     }}
                   />
                   <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
@@ -597,12 +615,29 @@ const BudgetScreen: React.FC = () => {
                           {/* Period badge */}
                           <View
                             style={{
-                              paddingHorizontal: 7, paddingVertical: 2,
-                              borderRadius: 20, backgroundColor: `${colors.accent}15`,
-                              borderWidth: 1, borderColor: `${colors.accent}25`,
+                              paddingHorizontal: 7,
+                              paddingVertical: 2,
+                              borderRadius: 20,
+                              backgroundColor: budget.isRecurring === false ? `${colors.info}18` : `${colors.accent}15`,
+                              borderWidth: 1,
+                              borderColor: budget.isRecurring === false ? `${colors.info}30` : `${colors.accent}25`,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 3,
                             }}
                           >
-                            <Text style={{ color: colors.accent, fontSize: 9, fontWeight: "600" }}>
+                            <Ionicons
+                              name={budget.isRecurring === false ? "flag-outline" : "sync-outline"}
+                              size={10}
+                              color={budget.isRecurring === false ? colors.info : colors.accent}
+                            />
+                            <Text
+                              style={{
+                                color: budget.isRecurring === false ? colors.info : colors.accent,
+                                fontSize: 9,
+                                fontWeight: "600",
+                              }}
+                            >
                               {formatPeriod(budget)}
                             </Text>
                           </View>
@@ -789,6 +824,119 @@ const BudgetScreen: React.FC = () => {
                       </View>
                     </>
                   )}
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── Riwayat Anggaran Selesai ───────────────────────────────── */}
+        {completedBudgets.length > 0 && (
+          <View style={{ marginTop: 28 }}>
+            <SectionHeader
+              title={`Riwayat Anggaran Selesai (${completedBudgets.length})`}
+            />
+            <Text style={{ color: colors.gray400, fontSize: 11, marginBottom: 12, marginTop: -6 }}>
+              Anggaran sekali pakai yang telah selesai. Data tersimpan rapi sebagai arsip evaluasi Anda.
+            </Text>
+
+            {completedBudgets.map((b) => {
+              const spent = safeNumber(b.spent);
+              const limit = safeNumber(b.limit);
+              const diff = limit - spent;
+              const isSaved = diff >= 0;
+              const progress = limit > 0 ? (spent / limit) * 100 : 0;
+              const statusColor = isSaved ? colors.success : colors.error;
+
+              return (
+                <View
+                  key={b.id}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: CARD_RADIUS,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    padding: 16,
+                    marginBottom: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                        <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "700" }}>
+                          {b.category}
+                        </Text>
+                        <View
+                          style={{
+                            paddingHorizontal: 6,
+                            paddingVertical: 1.5,
+                            borderRadius: 10,
+                            backgroundColor: `${colors.gray400}20`,
+                          }}
+                        >
+                          <Text style={{ color: colors.gray400, fontSize: 9, fontWeight: "700" }}>
+                            SELESAI
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                        {formatDateRange(b)}
+                      </Text>
+                    </View>
+
+                    {/* Result badge */}
+                    <View
+                      style={{
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 12,
+                        backgroundColor: `${statusColor}15`,
+                        borderWidth: 1,
+                        borderColor: `${statusColor}30`,
+                        marginRight: 6,
+                      }}
+                    >
+                      <Text style={{ color: statusColor, fontSize: 10, fontWeight: "700" }}>
+                        {isSaved ? `Hemat ${formatCurrency(diff)}` : `Over ${formatCurrency(Math.abs(diff))}`}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={() => handleDelete(b)}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 8,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: `${colors.error}12`,
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={14} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Progress Bar */}
+                  <View style={{ marginVertical: 6 }}>
+                    <ThinBar progress={progress} color={statusColor} />
+                  </View>
+
+                  {/* Limit vs Spent info */}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                    <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                      Limit: <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>{formatCurrency(limit)}</Text>
+                    </Text>
+                    <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                      Terpakai: <Text style={{ color: statusColor, fontWeight: "700" }}>{formatCurrency(spent)}</Text> ({progress.toFixed(0)}%)
+                    </Text>
+                  </View>
                 </View>
               );
             })}

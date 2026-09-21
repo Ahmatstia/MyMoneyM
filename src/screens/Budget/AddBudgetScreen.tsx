@@ -87,6 +87,25 @@ const AddBudgetScreen: React.FC = () => {
   const [limit, setLimit] = useState(
     budgetData?.limit ? safeNumber(budgetData.limit).toString() : ""
   );
+
+  // Model Anggaran: Berulang (Rutin) vs Sekali Pakai (Event)
+  const [isRecurring, setIsRecurring] = useState<boolean>(
+    budgetData ? budgetData.isRecurring !== false : true
+  );
+
+  const initialRecurringType = (): "monthly" | "weekly" | "custom_days" => {
+    if (!budgetData) return "monthly";
+    if (budgetData.period === "weekly") return "weekly";
+    if (budgetData.period === "custom" && budgetData.cycleDays) return "custom_days";
+    return "monthly";
+  };
+  const [recurringType, setRecurringType] = useState<"monthly" | "weekly" | "custom_days">(
+    initialRecurringType()
+  );
+  const [customDays, setCustomDays] = useState<string>(
+    budgetData?.cycleDays ? String(budgetData.cycleDays) : "10"
+  );
+
   const [period, setPeriod] = useState<
     "custom" | "weekly" | "monthly" | "yearly"
   >(budgetData?.period || "monthly");
@@ -146,38 +165,39 @@ const AddBudgetScreen: React.FC = () => {
     });
   }, [isEditMode, navigation, loading]);
 
-  // Update end date berdasarkan period
+  // Update end date berdasarkan model anggaran & periode
   useEffect(() => {
-    if (period !== "custom" && !isEditMode) {
-      const start = new Date(startDate);
-      let newEndDate = new Date(start);
-
-      switch (period) {
-        case "weekly":
-          newEndDate.setDate(newEndDate.getDate() + 6);
-          break;
-        case "monthly": {
-          if (start.getDate() === 1) {
-            newEndDate = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-          } else {
-            const targetMonth = start.getMonth() + 1;
-            const targetYear = start.getFullYear() + Math.floor(targetMonth / 12);
-            const normMonth = targetMonth % 12;
-            const daysInTargetMonth = new Date(targetYear, normMonth + 1, 0).getDate();
-            const targetDay = Math.min(start.getDate() - 1, daysInTargetMonth);
-            newEndDate = new Date(targetYear, normMonth, Math.max(1, targetDay));
-          }
-          break;
-        }
-        case "yearly":
-          newEndDate.setFullYear(newEndDate.getFullYear() + 1);
-          newEndDate.setDate(newEndDate.getDate() - 1);
-          break;
-      }
-
-      setEndDate(formatDateToYYYYMMDD(newEndDate));
+    if (!isRecurring) {
+      setPeriod("custom");
+      return;
     }
-  }, [period, startDate, isEditMode]);
+
+    const start = new Date(startDate);
+    let newEndDate = new Date(start);
+
+    if (recurringType === "weekly") {
+      setPeriod("weekly");
+      newEndDate.setDate(newEndDate.getDate() + 6);
+    } else if (recurringType === "monthly") {
+      setPeriod("monthly");
+      if (start.getDate() === 1) {
+        newEndDate = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+      } else {
+        const targetMonth = start.getMonth() + 1;
+        const targetYear = start.getFullYear() + Math.floor(targetMonth / 12);
+        const normMonth = targetMonth % 12;
+        const daysInTargetMonth = new Date(targetYear, normMonth + 1, 0).getDate();
+        const targetDay = Math.min(start.getDate() - 1, daysInTargetMonth);
+        newEndDate = new Date(targetYear, normMonth, Math.max(1, targetDay));
+      }
+    } else if (recurringType === "custom_days") {
+      setPeriod("custom");
+      const days = Math.max(1, parseInt(customDays, 10) || 10);
+      newEndDate.setDate(newEndDate.getDate() + (days - 1));
+    }
+
+    setEndDate(formatDateToYYYYMMDD(newEndDate));
+  }, [isRecurring, recurringType, customDays, startDate]);
 
   // Validasi limit
   const validateLimit = (value: string): boolean => {
@@ -401,28 +421,36 @@ const AddBudgetScreen: React.FC = () => {
 
     const limitNum = safeNumber(parseFloat(limit));
 
+    const parsedCustomDays = isRecurring && recurringType === "custom_days"
+      ? Math.max(1, parseInt(customDays, 10) || 10)
+      : undefined;
+
+    const resolvedPeriod: "custom" | "weekly" | "monthly" | "yearly" = isRecurring
+      ? (recurringType === "custom_days" ? "custom" : recurringType)
+      : "custom";
+
     setLoading(true);
     try {
+      const budgetPayload = {
+        category,
+        limit: limitNum,
+        period: resolvedPeriod,
+        startDate,
+        endDate,
+        isRecurring,
+        cycleDays: parsedCustomDays,
+      };
+
       if (isEditMode && budgetData) {
         await editBudget(budgetData.id, {
-          category,
-          limit: limitNum,
-          period,
-          startDate,
-          endDate,
+          ...budgetPayload,
           lastResetDate: budgetData.lastResetDate || budgetData.createdAt,
         });
         Alert.alert("Sukses", "Anggaran berhasil diperbarui", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
       } else {
-        await addBudget({
-          category,
-          limit: limitNum,
-          period,
-          startDate,
-          endDate,
-        });
+        await addBudget(budgetPayload);
         Alert.alert("Sukses", "Anggaran berhasil ditambahkan", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
@@ -571,38 +599,195 @@ const AddBudgetScreen: React.FC = () => {
           />
         </View>
 
-        {/* Period Selection */}
+        {/* Model & Jenis Periode Anggaran */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
-            Jenis Periode
+          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-2 ml-1`, { color: TEXT_SECONDARY }]}>
+            Model Anggaran
           </Text>
-          <View style={tw`flex-row flex-wrap gap-3`}>
-            {[
-              { key: "weekly", label: "Mingguan", days: "7 hari" },
-              { key: "monthly", label: "Bulanan", days: "30 hari" },
-              { key: "yearly", label: "Tahunan", days: "365 hari" },
-              { key: "custom", label: "Custom", days: "Pilih" },
-            ].map((p) => (
-              <TouchableOpacity
-                key={p.key}
-                style={[
-                  tw`flex-1 min-w-[46%] rounded-xl px-3 py-3`,
-                  period === p.key
-                    ? { backgroundColor: ACCENT_COLOR + "15" }
-                    : { backgroundColor: SURFACE_COLOR },
-                ]}
-                onPress={() => setPeriod(p.key as any)}
-                disabled={loading}
-              >
-                <View style={tw`items-center`}>
-                  <Ionicons name="calendar-outline" size={16} color={period === p.key ? ACCENT_COLOR : TEXT_SECONDARY} />
-                  <Text style={[tw`text-xs font-bold mt-1`, period === p.key ? { color: ACCENT_COLOR } : { color: TEXT_SECONDARY }]}>
-                    {p.label}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+          <View style={[tw`flex-row p-1 rounded-2xl mb-3`, { backgroundColor: SURFACE_COLOR }]}>
+            <TouchableOpacity
+              style={[
+                tw`flex-1 flex-row items-center justify-center py-2.5 px-3 rounded-xl gap-2`,
+                isRecurring ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: "transparent" },
+              ]}
+              onPress={() => setIsRecurring(true)}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="sync-outline"
+                size={16}
+                color={isRecurring ? Colors.background : TEXT_SECONDARY}
+              />
+              <View>
+                <Text
+                  style={[
+                    tw`text-xs font-bold`,
+                    { color: isRecurring ? Colors.background : TEXT_PRIMARY },
+                  ]}
+                >
+                  Berulang (Rutin)
+                </Text>
+                <Text
+                  style={[
+                    tw`text-[9px]`,
+                    { color: isRecurring ? `${Colors.background}CC` : TEXT_SECONDARY },
+                  ]}
+                >
+                  Auto-renew tiap siklus
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                tw`flex-1 flex-row items-center justify-center py-2.5 px-3 rounded-xl gap-2`,
+                !isRecurring ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: "transparent" },
+              ]}
+              onPress={() => setIsRecurring(false)}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="flag-outline"
+                size={16}
+                color={!isRecurring ? Colors.background : TEXT_SECONDARY}
+              />
+              <View>
+                <Text
+                  style={[
+                    tw`text-xs font-bold`,
+                    { color: !isRecurring ? Colors.background : TEXT_PRIMARY },
+                  ]}
+                >
+                  Sekali Pakai (Event)
+                </Text>
+                <Text
+                  style={[
+                    tw`text-[9px]`,
+                    { color: !isRecurring ? `${Colors.background}CC` : TEXT_SECONDARY },
+                  ]}
+                >
+                  Liburan, mudik, renovasi
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
+
+          {isRecurring ? (
+            <View>
+              <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+                Siklus Berulang
+              </Text>
+              <View style={tw`flex-row gap-2`}>
+                {[
+                  { key: "monthly", label: "Bulanan", desc: "Tiap bulan" },
+                  { key: "weekly", label: "Mingguan", desc: "7 hari" },
+                  { key: "custom_days", label: "Siklus Kustom", desc: `${customDays || "10"} hari` },
+                ].map((p) => {
+                  const isActive = recurringType === p.key;
+                  return (
+                    <TouchableOpacity
+                      key={p.key}
+                      style={[
+                        tw`flex-1 rounded-xl px-3 py-2.5 items-center`,
+                        isActive
+                          ? { backgroundColor: ACCENT_COLOR + "18", borderWidth: 1, borderColor: ACCENT_COLOR }
+                          : { backgroundColor: SURFACE_COLOR },
+                      ]}
+                      onPress={() => setRecurringType(p.key as any)}
+                      disabled={loading}
+                    >
+                      <Text
+                        style={[
+                          tw`text-xs font-bold`,
+                          isActive ? { color: ACCENT_COLOR } : { color: TEXT_PRIMARY },
+                        ]}
+                      >
+                        {p.label}
+                      </Text>
+                      <Text
+                        style={[
+                          tw`text-[9px] mt-0.5`,
+                          isActive ? { color: ACCENT_COLOR } : { color: TEXT_SECONDARY },
+                        ]}
+                      >
+                        {p.desc}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {recurringType === "custom_days" && (
+                <View style={[tw`mt-3 p-3.5 rounded-xl border`, { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR }]}>
+                  <Text style={[tw`text-[11px] font-bold mb-1.5`, { color: TEXT_PRIMARY }]}>
+                    Ulangi Setiap Berapa Hari?
+                  </Text>
+                  <View style={tw`flex-row items-center gap-2 mb-2.5`}>
+                    <TextInput
+                      style={[
+                        tw`text-base font-bold px-3 py-2 rounded-lg text-center`,
+                        { backgroundColor: Colors.background, color: ACCENT_COLOR, minWidth: 60 },
+                      ]}
+                      value={customDays}
+                      onChangeText={(val) => {
+                        const clean = val.replace(/[^0-9]/g, "");
+                        setCustomDays(clean);
+                      }}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                      placeholder="10"
+                      placeholderTextColor={Colors.textTertiary}
+                    />
+                    <Text style={[tw`text-xs font-medium flex-1`, { color: TEXT_SECONDARY }]}>
+                      hari sekali (auto-reset setiap {customDays || "10"} hari)
+                    </Text>
+                  </View>
+                  <View style={tw`flex-row gap-2`}>
+                    {["7", "10", "14", "15", "30"].map((d) => (
+                      <TouchableOpacity
+                        key={d}
+                        style={[
+                          tw`px-2.5 py-1 rounded-lg`,
+                          customDays === d
+                            ? { backgroundColor: ACCENT_COLOR }
+                            : { backgroundColor: Colors.background },
+                        ]}
+                        onPress={() => setCustomDays(d)}
+                      >
+                        <Text
+                          style={[
+                            tw`text-[10px] font-bold`,
+                            customDays === d ? { color: Colors.background } : { color: TEXT_SECONDARY },
+                          ]}
+                        >
+                          {d} hr
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View
+              style={[
+                tw`p-3.5 rounded-xl flex-row items-start gap-2.5`,
+                { backgroundColor: `${Colors.accent}12`, borderWidth: 1, borderColor: `${Colors.accent}25` },
+              ]}
+            >
+              <Ionicons name="information-circle-outline" size={18} color={ACCENT_COLOR} style={tw`mt-0.5`} />
+              <View style={tw`flex-1`}>
+                <Text style={[tw`text-xs font-bold mb-0.5`, { color: ACCENT_COLOR }]}>
+                  Anggaran Sekali Pakai (Event)
+                </Text>
+                <Text style={[tw`text-[11px] leading-4`, { color: TEXT_SECONDARY }]}>
+                  Berlaku khusus untuk rentang tanggal tertentu. Setelah periode berakhir, anggaran akan berstatus Selesai dan tersimpan di Riwayat Anggaran tanpa direset ulang.
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Quick Limit Suggestions */}
@@ -787,18 +972,18 @@ const AddBudgetScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Date Selection - KONSISTEN DENGAN TRANSAKSI */}
+        {/* Date Selection */}
         <View style={tw`mb-5`}>
           <Text
             style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
           >
-            {period === "custom" ? "Rentang Tanggal" : "Tanggal Mulai"}
+            {isRecurring ? "Jadwal & Periode Siklus" : "Rentang Tanggal Event (Sekali Pakai)"}
           </Text>
 
           {/* Start Date */}
           <View style={tw`mb-3`}>
             <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-              Tanggal Mulai
+              {isRecurring ? "Tanggal Mulai Siklus" : "Tanggal Mulai"}
             </Text>
             <TouchableOpacity
               style={[
@@ -823,11 +1008,11 @@ const AddBudgetScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* End Date (jika custom atau edit mode) */}
-          {(period === "custom" || isEditMode) && (
-            <View>
+          {/* End Date (selalu untuk sekali pakai, atau jika custom / edit) */}
+          {(!isRecurring || isEditMode) && (
+            <View style={tw`mb-3`}>
               <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-                Tanggal Akhir
+                {isRecurring ? "Tanggal Akhir Siklus" : "Tanggal Selesai Event"}
               </Text>
               <TouchableOpacity
                 style={[
@@ -853,17 +1038,24 @@ const AddBudgetScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Total Hari Info */}
+          {/* Total Hari & Info */}
           <View
             style={[
-              tw`mt-3 p-3 rounded-lg`,
-              { backgroundColor: Colors.surfaceLight },
+              tw`mt-1 p-3.5 rounded-xl border`,
+              { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
             ]}
           >
-            <Text style={[tw`text-xs`, { color: TEXT_PRIMARY }]}>
-              <Text style={tw`font-medium`}>Total Periode:</Text>{" "}
-              {calculateTotalDays()} hari ({formatDateForDisplay(startDate)} -{" "}
-              {formatDateForDisplay(endDate)})
+            <View style={tw`flex-row items-center justify-between mb-1`}>
+              <Text style={[tw`text-[11px] font-bold`, { color: TEXT_PRIMARY }]}>
+                {isRecurring ? "🔄 Siklus Periode Aktif" : "🎯 Durasi Event Sekali Pakai"}
+              </Text>
+              <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>
+                {calculateTotalDays()} hari
+              </Text>
+            </View>
+            <Text style={[tw`text-[11px] leading-4`, { color: TEXT_SECONDARY }]}>
+              {formatDateForDisplay(startDate)} s.d. {formatDateForDisplay(endDate)}
+              {isRecurring ? "\n(Otomatis reset siklus berikutnya setelah tanggal akhir)" : "\n(Status akan berubah menjadi 'Selesai' setelah tanggal akhir)"}
             </Text>
           </View>
         </View>

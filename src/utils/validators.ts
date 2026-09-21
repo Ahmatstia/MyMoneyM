@@ -257,8 +257,9 @@ export const updateBudgetsFromTransactions = (
       let startDate = budget.startDate;
       let endDate = budget.endDate;
 
-      // Auto rollover logic if budget period has ended
-      if (today > endDate) {
+      // Auto rollover logic ONLY if budget is recurring (default true)
+      const isRecurring = budget.isRecurring !== false;
+      if (isRecurring && today > endDate) {
         let start = new Date(startDate);
         let end = new Date(endDate);
         
@@ -292,14 +293,19 @@ export const updateBudgetsFromTransactions = (
               start.setFullYear(start.getFullYear() + 1);
               end.setFullYear(end.getFullYear() + 1);
               break;
-            case "custom":
-              // Custom period length in days
-              const origStart = new Date(budget.startDate);
-              const origEnd = new Date(budget.endDate);
-              const diffDays = Math.round((origEnd.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-              start.setDate(start.getDate() + (diffDays > 0 ? diffDays : 30));
-              end.setDate(end.getDate() + (diffDays > 0 ? diffDays : 30));
+            case "custom": {
+              const cycleDays = budget.cycleDays && budget.cycleDays > 0
+                ? budget.cycleDays
+                : (() => {
+                    const origStart = new Date(budget.startDate);
+                    const origEnd = new Date(budget.endDate);
+                    const diffDays = Math.round((origEnd.getTime() - origStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                    return diffDays > 0 ? diffDays : 30;
+                  })();
+              start.setDate(start.getDate() + cycleDays);
+              end.setDate(end.getDate() + cycleDays);
               break;
+            }
             default:
               start.setMonth(start.getMonth() + 1);
               end.setMonth(end.getMonth() + 1);

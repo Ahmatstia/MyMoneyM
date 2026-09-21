@@ -146,8 +146,19 @@ const AddTransactionScreen: React.FC = () => {
         setSubItems(transactionData.subTransactions);
         setShowSubItems(true);
       }
-    } else if (params.type) {
-      setType(params.type);
+    } else {
+      if (params.type) {
+        setType(params.type);
+      }
+      if (params.initialAmount) {
+        setAmount(String(params.initialAmount));
+      }
+      if (params.initialDescription) {
+        setDescription(params.initialDescription);
+      }
+      if (params.initialCategory) {
+        setCategory(params.initialCategory);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally empty — run once on mount
