@@ -151,7 +151,7 @@ const TransactionsScreen: React.FC = () => {
         isCustom: true as const, customId: c.id,
       })),
     ];
-    const found = all.find((c) => c.name === categoryName);
+    const found = all.find((c) => c.name === categoryName || (categoryName === "Gaji" && c.id === "pemasukan"));
     return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: colors.gray400 };
   };
 
@@ -1085,7 +1085,7 @@ const TransactionsScreen: React.FC = () => {
                 }}
               >
                 {hasActiveFilter
-                  ? "Coba kata kunci lain atau pilih filter periode berbeda"
+                  ? "Coba kata kunci lain atau pilih filter waktu berbeda"
                   : "Mulai catat transaksi pertama Anda"}
               </Text>
 

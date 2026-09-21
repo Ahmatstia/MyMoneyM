@@ -121,7 +121,7 @@ export type RecurringFrequency = "weekly" | "monthly" | "custom_days";
 
 export interface RecurringTransaction {
   id: string;
-  name: string; // e.g. "Gaji Kantor", "Uang Saku", "Kost"
+  name: string; // e.g. "Uang Bulanan", "Uang Saku", "Kost"
   amount: number;
   type: TransactionType; // "income" | "expense"
   category: string;
@@ -133,7 +133,7 @@ export interface RecurringTransaction {
   nextRunDate: string; // YYYY-MM-DD
   lastRunDate?: string; // YYYY-MM-DD
   autoStartNewCycle?: boolean; // Khusus pemasukan: otomatis pasang cyclePeriod
-  cyclePeriodDays?: number; // Durasi siklus (7, 30, atau custom)
+  cyclePeriodDays?: number; // Durasi target uang bertahan (7, 30, atau custom)
   description?: string;
   isActive: boolean; // pause or resume
   createdAt: string;
@@ -152,7 +152,7 @@ export interface AppState {
   userProfile: UserProfile;
   customCategories: CustomCategory[]; // NEW: User-defined categories
   dailyCheckIns: string[]; // Daily app-open check-in dates (YYYY-MM-DD, Jakarta timezone)
-  paydayCutoff?: number; // 1 - 31: Awal siklus / tanggal gajian pembukuan (default: 1)
+  paydayCutoff?: number; // 1 - 31: Tanggal awal pembukuan bulanan (default: 1)
 
   // Calculated totals
   totalIncome: number;

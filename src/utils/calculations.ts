@@ -185,8 +185,8 @@ export interface MonthlyCycleRange {
 }
 
 /**
- * Menghitung rentang siklus bulanan berdasarkan tanggal gajian (payday cut-off).
- * Menangani secara akurat kondisi sebelum gajian vs sesudah gajian dan tanggal akhir bulan.
+ * Menghitung rentang pembukuan bulanan berdasarkan tanggal awal pembukuan (payday cut-off).
+ * Menangani secara akurat kondisi sebelum tanggal pembukuan vs sesudah tanggal pembukuan dan tanggal akhir bulan.
  */
 export const getMonthlyCycleRange = (
   paydayCutoff: number = 1,
@@ -216,8 +216,8 @@ export const getMonthlyCycleRange = (
     const currentDay = ref.getDate();
 
     if (currentDay < cutoff) {
-      // Kondisi 1: Hari ini sebelum tanggal gajian (masih dalam siklus bulan sebelumnya)
-      // Contoh: Hari ini 21 Sept, cutoff 25 -> Siklus: 25 Ags s/d 24 Sept. Next payday: 25 Sept.
+      // Kondisi 1: Hari ini sebelum tanggal awal pembukuan (masih dalam pembukuan bulan sebelumnya)
+      // Contoh: Hari ini 21 Sept, cutoff 25 -> Rentang: 25 Ags s/d 24 Sept. Next cutoff: 25 Sept.
       const startYear = ref.getMonth() === 0 ? ref.getFullYear() - 1 : ref.getFullYear();
       const startMonth = ref.getMonth() === 0 ? 11 : ref.getMonth() - 1;
       startDate = getClampedDate(startYear, startMonth, cutoff);
@@ -230,8 +230,8 @@ export const getMonthlyCycleRange = (
       nextPaydayDate = getClampedDate(ref.getFullYear(), ref.getMonth(), cutoff);
       nextPaydayDate.setHours(0, 0, 0, 0);
     } else {
-      // Kondisi 2: Hari ini >= tanggal gajian (sudah gajian, masuk siklus bulan ini)
-      // Contoh: Hari ini 26 Sept, cutoff 25 -> Siklus: 25 Sept s/d 24 Okt. Next payday: 25 Okt.
+      // Kondisi 2: Hari ini >= tanggal awal pembukuan (sudah masuk pembukuan bulan ini)
+      // Contoh: Hari ini 26 Sept, cutoff 25 -> Rentang: 25 Sept s/d 24 Okt. Next cutoff: 25 Okt.
       startDate = getClampedDate(ref.getFullYear(), ref.getMonth(), cutoff);
       startDate.setHours(0, 0, 0, 0);
 
@@ -321,10 +321,10 @@ export const getActiveCycleInfo = (
 
     let label =
       activePeriod === 7
-        ? "Periode 7 Hari"
+        ? "Target 7 Hari"
         : activePeriod === 30
-          ? "Periode 30 Hari"
-          : `Periode ${activePeriod} Hari`;
+          ? "Target 30 Hari"
+          : `Target ${activePeriod} Hari`;
 
     return {
       hasCycle: true,
@@ -345,7 +345,7 @@ export const getActiveCycleInfo = (
       period: cycleRange.totalDays,
       startDate: cycleRange.startDate,
       endDate: cycleRange.endDate,
-      label: `Siklus Gajian (${cycleRange.label})`,
+      label: `Bulan Ini (${cycleRange.label})`,
       cycleIncomeId: undefined,
       isPaydayCycle: true,
     };

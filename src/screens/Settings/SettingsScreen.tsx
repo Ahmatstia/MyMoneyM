@@ -1253,7 +1253,7 @@ const SettingsScreen = () => {
                     </View>
                   </View>
                   <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }} numberOfLines={2}>
-                    Otomatisasi pencatatan gaji berkala, tagihan bulanan, dan langganan rutin
+                    Otomatisasi pencatatan pemasukan berkala, tagihan bulanan, dan langganan rutin
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={colors.gray500} style={{ marginLeft: 8 }} />
@@ -1301,7 +1301,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <SectionHeader title="Siklus & Aturan Pembukuan" />
+            <SectionHeader title="Aturan Pembukuan Bulanan" />
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -1312,7 +1312,7 @@ const SettingsScreen = () => {
                 marginBottom: 24,
               }}
             >
-              {/* Tanggal Cut-off / Gajian */}
+              {/* Tanggal Awal Pembukuan Bulanan */}
               <TouchableOpacity
                 style={{
                   flexDirection: "row",
@@ -1342,10 +1342,10 @@ const SettingsScreen = () => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginBottom: 2 }}>
-                    Awal Siklus / Tanggal Gajian
+                    Awal Pembukuan Bulanan
                   </Text>
                   <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }}>
-                    Acuan perputaran bulan finansial Anda (Tiap tanggal {paydayDate})
+                    Tanggal mulai perhitungan kas bulanan (Tiap tanggal {paydayDate})
                   </Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -2541,7 +2541,7 @@ const SettingsScreen = () => {
         }
       />
 
-      {/* ── Modal Pemilih Tanggal Siklus / Gajian (Interactive Bottom Sheet) ── */}
+      {/* ── Modal Pemilih Tanggal Awal Pembukuan Bulanan (Interactive Bottom Sheet) ── */}
       <Modal
         visible={showPaydayModal}
         transparent
@@ -2598,10 +2598,10 @@ const SettingsScreen = () => {
                 </View>
                 <View>
                   <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "800" }}>
-                    Awal Siklus Pembukuan
+                    Atur Tanggal Awal Pembukuan
                   </Text>
                   <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2 }}>
-                    Tentukan tanggal gajian / awal perputaran bulanan
+                    Pilih tanggal mulai perhitungan bulan baru Anda (Default: Tanggal 1)
                   </Text>
                 </View>
               </View>
@@ -2728,10 +2728,10 @@ const SettingsScreen = () => {
               <Ionicons name="information-circle" size={18} color={colors.info} style={{ marginRight: 10, marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "700", lineHeight: 17 }}>
-                  Simulasi Siklus Finansial:
+                  Simulasi Pembukuan Bulanan:
                 </Text>
                 <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
-                  Siklus 1 bulan Anda akan dihitung dari <Text style={{ color: colors.info, fontWeight: "700" }}>Tanggal {Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1))}</Text> hingga <Text style={{ color: colors.info, fontWeight: "700" }}>{((Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1) === 0 ? "Akhir Bulan" : `Tanggal ${Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1}`)}</Text> bulan berikutnya.
+                  Bulan pembukuan Anda akan dihitung dari <Text style={{ color: colors.info, fontWeight: "700" }}>Tanggal {Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1))}</Text> hingga <Text style={{ color: colors.info, fontWeight: "700" }}>{((Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1) === 0 ? "Akhir Bulan" : `Tanggal ${Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1}`)}</Text> bulan berikutnya. Cocok untuk menyelaraskan jadwal uang saku, jatah belanja, honor, atau pemasukan bulanan Anda.
                 </Text>
               </View>
             </View>
@@ -2754,7 +2754,7 @@ const SettingsScreen = () => {
             >
               <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>
-                Simpan Tanggal Siklus
+                Simpan Tanggal Pembukuan
               </Text>
             </TouchableOpacity>
           </View>

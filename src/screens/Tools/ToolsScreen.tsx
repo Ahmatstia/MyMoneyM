@@ -195,7 +195,7 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
   );
 };
 
-// 2. Pecah Gaji 50/30/20
+// 2. Bagi Anggaran 50/30/20
 const SalaryCalc = ({ visible, onClose }: { visible: boolean; onClose: () => void }) => {
   const [salary, setSalary] = useState("");
   const [extra, setExtra]   = useState("");
@@ -232,9 +232,9 @@ const SalaryCalc = ({ visible, onClose }: { visible: boolean; onClose: () => voi
               <Ionicons name="pie-chart-outline" size={20} color={Colors.success} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: TP, fontSize: 16, fontWeight: "800" }}>Pecah Gaji 50/30/20</Text>
+              <Text style={{ color: TP, fontSize: 16, fontWeight: "800" }}>Bagi Anggaran 50/30/20</Text>
               <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2 }}>
-                Alokasi gaji secara otomatis
+                Alokasi pemasukan otomatis: Kebutuhan, Keinginan, Tabungan
               </Text>
             </View>
             <TouchableOpacity onPress={handleRefresh} style={{ marginRight: 16 }}>
@@ -250,10 +250,10 @@ const SalaryCalc = ({ visible, onClose }: { visible: boolean; onClose: () => voi
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingBottom: 40 }}
           >
-            <Label text="Gaji Utama" />
-            <InputBox value={salary} onChange={setSalary} placeholder="Nominal gaji" />
-            <Label text="Penghasilan Tambahan (opsional)" />
-            <InputBox value={extra} onChange={setExtra} placeholder="Freelance, bonus, dll" />
+            <Label text="Pemasukan Utama" />
+            <InputBox value={salary} onChange={setSalary} placeholder="Nominal uang masuk utama" />
+            <Label text="Pemasukan Tambahan (opsional)" />
+            <InputBox value={extra} onChange={setExtra} placeholder="Freelance, uang saku, bonus, dll" />
 
             <View style={{ backgroundColor: `${Colors.success}10`, borderRadius: 16, padding: 16,
               borderWidth: 1, borderColor: `${Colors.success}20` }}>
@@ -1678,8 +1678,8 @@ const ToolsScreen: React.FC = () => {
       id: "salary",
       icon: "pie-chart-outline" as const,
       color: colors.success,
-      title: "Pecah Gaji 50/30/20",
-      desc: "Alokasikan gajimu ke kebutuhan, keinginan, dan tabungan secara otomatis.",
+      title: "Bagi Anggaran 50/30/20",
+      desc: "Alokasikan uang pemasukan ke kebutuhan, keinginan, dan tabungan secara otomatis.",
       tag: "Bulanan",
     },
     {

@@ -98,7 +98,9 @@ const resolveCategoryInfo = (
     };
   }
   const def = DEFAULT_CATEGORIES.find(
-    (c) => c.name.toLowerCase() === categoryName.toLowerCase()
+    (c) =>
+      c.name.toLowerCase() === categoryName.toLowerCase() ||
+      (categoryName.toLowerCase() === "gaji" && c.id === "pemasukan"),
   );
   if (def) {
     return { icon: def.icon, color: def.color, name: def.name };
@@ -106,7 +108,7 @@ const resolveCategoryInfo = (
   return { icon: "receipt-outline", color: G_DIM, name: categoryName };
 };
 
-// ─── Helper: Teks "periode berakhir dalam X hari" ────────────────────────────────
+// ─── Helper: Teks "sisa X hari lagi" ──────────────────────────────────────────
 const getPeriodEndLabel = (
   timeFilter: string,
   projectionData: any,
@@ -114,36 +116,24 @@ const getPeriodEndLabel = (
   if (!projectionData || timeFilter === "all") return null;
 
   const days = safeNumber(projectionData.daysRemaining);
-  const isCycle =
-    projectionData.label === "gajian berikutnya" ||
-    projectionData.label === "akhir periode";
 
   if (days <= 0) {
-    if (isCycle) return "Siklus berakhir hari ini";
+    if (timeFilter === "weekly") return "Minggu berakhir hari ini";
     if (timeFilter === "monthly") return "Bulan berakhir hari ini";
     if (timeFilter === "yearly") return "Tahun berakhir hari ini";
-    return "Siklus berakhir hari ini";
+    return "Hari terakhir pembukuan";
   }
 
-  if (isCycle) {
-    return days === 1
-      ? "Siklus berakhir besok"
-      : `Siklus berakhir dalam ${days} hari`;
+  if (timeFilter === "weekly") {
+    return days === 1 ? "Sisa 1 hari lagi (Mingguan)" : `Sisa ${days} hari lagi (Mingguan)`;
   }
-
   if (timeFilter === "monthly") {
-    return days === 1
-      ? "Bulan berakhir besok"
-      : `Bulan berakhir dalam ${days} hari`;
+    return days === 1 ? "Sisa 1 hari lagi bulan ini" : `Sisa ${days} hari lagi bulan ini`;
   }
   if (timeFilter === "yearly") {
-    return days === 1
-      ? "Tahun berakhir besok"
-      : `Tahun berakhir dalam ${days} hari`;
+    return days === 1 ? "Sisa 1 hari lagi tahun ini" : `Sisa ${days} hari lagi tahun ini`;
   }
-  return days === 1
-    ? "Siklus berakhir besok"
-    : `Siklus berakhir dalam ${days} hari`;
+  return days === 1 ? "Sisa 1 hari lagi" : `Sisa ${days} hari lagi`;
 };
 
 // ─── PeriodEndBadge ─────────────────────────────────────────────────────────────
@@ -697,7 +687,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 1,
                 }}
               >
-                {hasExpenses ? "Analisis beban belanja" : "Siklus ini"}
+                {hasExpenses ? "Analisis beban belanja" : "Bulan ini"}
               </Text>
             </View>
           </View>
@@ -774,7 +764,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginBottom: 3,
                 }}
               >
-                Belum ada pengeluaran di siklus ini
+                Belum ada pengeluaran bulan ini
               </Text>
               <AnimatedNumber
                 value="Rp 0"
@@ -870,7 +860,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 4,
                 }}
               >
-                Satu-satunya kategori pengeluaran siklus ini
+                Satu-satunya kategori pengeluaran bulan ini
               </Text>
             )}
           </View>

@@ -74,7 +74,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
 
   const categories: { id: GuideCategory; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { id: "all", label: "Semua Fitur", icon: "sparkles-outline" },
-    { id: "home", label: "Beranda & Siklus", icon: "home-outline" },
+    { id: "home", label: "Beranda & Pembukuan", icon: "home-outline" },
     { id: "transactions", label: "Transaksi & Struk", icon: "receipt-outline" },
     { id: "budget_savings", label: "Anggaran & Tabungan", icon: "pie-chart-outline" },
     { id: "recurring_debt", label: "Rutin & Hutang", icon: "repeat-outline" },
@@ -86,46 +86,46 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
   const guideData: FeatureGuideItem[] = useMemo(
     () => [
       // ══════════════════════════════════════════════════════════════════════════
-      // PILAR 1: BERANDA & SIKLUS (PONDASI UTAMA SISTEM)
+      // PILAR 1: BERANDA & PEMBUKUAN (PONDASI UTAMA SISTEM)
       // ══════════════════════════════════════════════════════════════════════════
       {
         id: "payday_cycle",
-        name: "Awal Siklus / Tanggal Gajian",
+        name: "Awal Pembukuan Bulanan",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Pondasi Utama Sistem",
         icon: "calendar-outline",
         color: colors.accent,
-        location: "Pengaturan ➔ Tab Pembukuan ➔ Awal Siklus / Tanggal Gajian",
+        location: "Pengaturan ➔ Tab Pembukuan ➔ Awal Pembukuan Bulanan",
         analogy:
-          "Ibarat mengisi tangki bensin mobil sampai penuh setiap tanggal 25. Anda harus me-reset meteran kilometer perjalanan (odometer) tepat di tanggal 25 saat bensin penuh, BUKAN di tanggal 1 kalender saat bensin sudah terpakai separuh. Jika direset tanggal 1, indikator bensin akan menipu Anda dan mengira mobil baru mulai berjalan padahal tangki bensin sudah kritis!",
+          "Ibarat mengisi tangki bensin kendaraan sampai penuh setiap tanggal 25 (atau tanggal 1). Anda mengatur patokan awal perhitungan tepat saat dana masuk atau saat pembukuan baru dimulai, BUKAN memaksakan selalu di tanggal 1 kalender jika ritme keuangan Anda berbeda. Ini memastikan catatan dan perkiraan sisa uang selalu cocok dengan ritme nyata hidup Anda!",
         summary:
-          "Menentukan tanggal cut-off awal pembukuan bulanan Anda (misal tanggal 25). Menyelaraskan seluruh sistem aplikasi dengan ritme gaji nyata Anda, membebaskan pembukuan dari ilusi tanggal 1 kalender yang menyesatkan.",
+          "Menentukan tanggal awal dimulainya pembukuan bulanan Anda (misal tanggal 25 atau tanggal 1). Menyelaraskan seluruh sistem aplikasi dengan ritme pemasukan riil Anda (uang bulanan, honor, omzet, atau transfer berkala).",
         howItWorks: [
-          "Rentang Pembukuan Unik: Jika Anda menyetel tanggal 25, maka siklus 'Bulan Ini' dihitung dari tanggal 25 bulan lalu hingga tanggal 24 bulan berjalan (contoh: 25 Agustus s/d 24 September).",
-          "Reset Anggaran Otomatis: Kuota anggaran bulanan (makan, bensin, dll) otomatis di-reset saat tanggal 25 tiba bersamaan dengan masuknya gaji baru, bukan di tanggal 1 saat uang lama sudah menipis.",
-          "Sinkronisasi Transaksi Rutin: Jadwal pencatatan gaji bulanan otomatis tersinkronisasi bergeser ke tanggal 25 di latar belakang.",
-          "Kalkulator Batas Harian Cerdas: Menghitung sisa hari mundur menuju tanggal 25 berikutnya sebagai pembagi sisa kas.",
+          "Rentang Pembukuan Bulanan: Jika Anda menyetel tanggal 25, maka rentang 'Bulan Ini' dihitung dari tanggal 25 bulan lalu hingga tanggal 24 bulan berjalan (contoh: 25 Agustus s/d 24 September).",
+          "Reset Anggaran Otomatis: Kuota anggaran bulanan (makan, bensin, dll) otomatis diperbarui saat tanggal awal pembukuan tiba, tepat saat dana baru masuk.",
+          "Sinkronisasi Transaksi Rutin: Jadwal pemasukan berkala otomatis diselaraskan dengan tanggal awal pembukuan Anda.",
+          "Kalkulator Batas Harian Cerdas: Menghitung sisa hari mundur menuju tanggal awal pembukuan berikutnya sebagai pembagi sisa kas.",
           "Penanganan Bulan Pendek: Jika diset tanggal 29, 30, atau 31, sistem otomatis meng-clamp ke akhir bulan jika bulan tersebut lebih pendek (seperti 28/29 Februari) tanpa error.",
         ],
         steps: [
           "Buka menu Pengaturan ➔ Tab Pembukuan.",
-          "Ketuk menu 'Awal Siklus / Tanggal Gajian'.",
-          "Ketik atau pilih tanggal gajian riil Anda (contoh: 25) lalu tekan 'Simpan Tanggal Siklus'.",
-          "Kembali ke Beranda: seluruh ringkasan kas, mutasi bulan ini, dan anggaran seketika berputar mengikuti siklus gajian Anda!",
+          "Ketuk menu 'Awal Pembukuan Bulanan'.",
+          "Pilih tanggal awal pembukuan Anda (contoh: 25 atau 1) lalu tekan 'Simpan Tanggal Pembukuan'.",
+          "Kembali ke Beranda: seluruh ringkasan kas, mutasi bulan ini, dan anggaran seketika teratur mengikuti ritme pembukuan Anda!",
         ],
         impact:
-          "Menghilangkan ilusi 'merasa kaya di tanggal 1 kalender padahal belum gajian' atau 'merasa tekor di tanggal 26 padahal baru gajian kemarin'. Laporan keuangan Anda menjadi 100% akurat sesuai realita hidup.",
+          "Menghilangkan kebingungan antara tanggal kalender umum dengan ritme keluar-masuk uang Anda yang sebenarnya. Laporan keuangan Anda menjadi 100% akurat sesuai realita.",
         proTip:
-          "Jika Anda seorang freelancer dengan jadwal cair proyek berkala atau tanggal gajian kantor berganti, ubah tanggal ini kapan saja tanpa merusak riwayat transaksi masa lalu Anda.",
+          "Baik Anda freelancer, wiraswasta, pelajar, maupun pekerja kantoran, Anda bisa menyetel atau mengubah tanggal ini kapan saja tanpa merusak riwayat transaksi masa lalu.",
         actionTarget: "Home",
-        actionLabel: "Buka Beranda & Lihat Siklus",
+        actionLabel: "Buka Beranda & Cek Pembukuan",
       },
       {
         id: "daily_safe_limit",
         name: "Batas Harian Aman",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Penyelamat Dompet",
         icon: "shield-checkmark-outline",
         color: colors.success,
@@ -133,21 +133,21 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Ibarat ransum makanan saat mendaki gunung. Jika Anda punya 30 bungkus mie untuk 30 hari pendakian, jatah aman Anda adalah 1 bungkus per hari. Jika hari ini Anda berpuasa, besok jatah Anda menjadi 2 bungkus. Tetapi jika di hari pertama Anda pesta menghabiskan 10 bungkus, di akhir bulan Anda dipastikan kelaparan di puncak gunung.",
         summary:
-          "Menghitung batas maksimal pengeluaran harian yang aman secara dinamis berdasarkan sisa kas siklus berjalan dibagi sisa hari menuju gajian berikutnya.",
+          "Menghitung batas maksimal pengeluaran harian yang aman secara dinamis berdasarkan sisa kas bulan ini dibagi sisa hari menuju akhir bulan pembukuan.",
         howItWorks: [
-          "Rumus Dinamis: (Sisa Uang Kas Siklus Aktif) ÷ (Sisa Hari Menuju Awal Siklus Berikutnya).",
+          "Rumus Dinamis: (Sisa Kas Bulan Ini) ÷ (Sisa Hari Menuju Awal Pembukuan Berikutnya).",
           "Dinamika Dua Arah: Jika hari ini belanja di bawah batas aman, sisa jatahnya otomatis memperbesar batas aman hari-hari berikutnya.",
-          "Koreksi Otomatis: Jika hari ini Anda belanja berlebih karena keperluan mendesak, sistem otomatis memperkecil jatah hari esok agar Anda tetap selamat sampai tanggal gajian.",
+          "Koreksi Otomatis: Jika hari ini Anda belanja berlebih karena keperluan mendesak, sistem otomatis memperkecil jatah hari esok agar uang Anda tetap bertahan sampai akhir bulan.",
         ],
         steps: [
           "Buka Beranda setiap pagi dan lihat angka 'Batas Harian Aman'.",
-          "Jadikan angka tersebut sebagai patokan batas maksimal belanja jajan atau makan di luar hari ini.",
+          "Jadikan angka tersebut sebagai patokan batas maksimal belanja harian atau jajan hari ini.",
           "Catat transaksi sesaat setelah berbelanja agar kalkulator langsung memperbarui angka sisa.",
         ],
         impact:
-          "Menghilangkan rasa bersalah saat jajan (spending guilt) karena Anda tahu pasti nominal belanja yang aman dan tidak akan merusak keuangan akhir bulan Anda.",
+          "Menghilangkan rasa bersalah saat berbelanja karena Anda tahu pasti nominal belanja harian yang aman tanpa takut kehabisan uang di akhir bulan.",
         proTip:
-          "Cek angka ini sebelum membuka aplikasi pesan antar makanan online atau checkout keranjang e-commerce!",
+          "Cek angka ini sebelum membuka aplikasi pesan antar makanan online atau checkout keranjang belanja!",
         actionTarget: "Home",
         actionLabel: "Cek Batas Harian di Beranda",
       },
@@ -155,7 +155,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         id: "financial_projection",
         name: "Proyeksi Keuangan",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Radar Peramalan Kas",
         icon: "trending-up-outline",
         color: colors.info,
@@ -163,10 +163,10 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Ibarat radar bahan bakar dan kecepatan di dashboard pesawat terbang. Jika pilot terbang terlalu kencang membakar avtur padahal bandara tujuan masih jauh, radar akan menyalakan lampu kuning/merah: 'Bahan bakar tidak cukup sampai tujuan jika kecepatan jelajah tidak segera dikurangi!'.",
         summary:
-          "Menganalisis laju belanja harian Anda (burn rate) dan memproyeksikan apakah kas Anda akan surplus (hijau), mepet (kuning), atau minus/defisit (merah) saat hari gajian tiba.",
+          "Menganalisis laju belanja harian Anda (burn rate) dan memproyeksikan apakah kas Anda akan surplus (hijau), mepet (kuning), atau minus/defisit (merah) saat akhir bulan pembukuan tiba.",
         howItWorks: [
-          "Menghitung rata-rata pengeluaran harian riil Anda sejak hari pertama siklus aktif.",
-          "Mengalikan laju pengeluaran tersebut dengan sisa hari yang masih harus dilalui sampai tanggal gajian berikutnya.",
+          "Menghitung rata-rata pengeluaran harian riil Anda sejak hari pertama pembukuan bulan berjalan.",
+          "Mengalikan laju pengeluaran tersebut dengan sisa hari yang masih harus dilalui sampai akhir bulan pembukuan.",
           "Membandingkan hasil estimasi dengan kas yang tersedia dan menyajikan sinyal warna status visual.",
         ],
         steps: [
@@ -175,7 +175,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
           "Jika warna kuning atau merah, segera rem pengeluaran non-esensial selama beberapa hari ke depan.",
         ],
         impact:
-          "Memberikan peringatan dini (early warning system) 10-15 hari sebelum uang Anda habis, sehingga Anda punya waktu memulihkan ritme belanja sebelum kas benar-benar nol.",
+          "Memberikan peringatan dini (early warning system) 10-15 hari sebelum uang Anda habis, sehingga Anda punya waktu memulihkan ritme belanja sebelum kas benar-benar menipis.",
         proTip:
           "Bandingkan angka proyeksi saldo akhir dengan target tabungan Anda untuk memastikan rencana masa depan tetap tercapai.",
         actionTarget: "Home",
@@ -183,29 +183,29 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
       },
       {
         id: "balance_summary",
-        name: "Saldo Total & Sisa Siklus",
+        name: "Sisa Kas Bulan Ini vs Saldo Total",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Pemisah Brankas & Dompet",
         icon: "wallet-outline",
         color: colors.purple,
         location: "Layar Beranda (Carousel Kartu Saldo Utama)",
         analogy:
-          "Saldo Total adalah isi seluruh brankas besi di kamar Anda (termasuk dana darurat dan tabungan masa depan). Sedangkan Sisa Siklus adalah uang tunai di saku celana yang boleh Anda belanjakan untuk makan dan hidup sampai tanggal gajian tiba.",
+          "Saldo Total adalah isi seluruh brankas besi di kamar Anda (termasuk tabungan dan cadangan dana). Sedangkan Sisa Kas Bulan Ini adalah uang di dompet belanja yang dialokasikan untuk kebutuhan hidup sehari-hari hingga akhir bulan pembukuan.",
         summary:
-          "Membedakan dengan tegas antara total seluruh kekayaan kas bersih yang Anda miliki dengan jatah uang hidup yang dialokasikan untuk siklus berjalan saat ini.",
+          "Membedakan dengan tegas antara total kekayaan kas bersih yang Anda miliki dengan jatah uang yang dialokasikan untuk operasional bulan berjalan saat ini.",
         howItWorks: [
           "Slide Saldo Total: Akumulasi seluruh pemasukan dikurangi seluruh pengeluaran sejak pertama kali mencatat.",
-          "Slide Sisa Siklus: Pemasukan modal siklus aktif dikurangi belanja siklus aktif.",
-          "Slide Top Spending: Analisis kategori pengeluaran terbesar yang menyedot kas pada siklus aktif.",
+          "Slide Sisa Kas Bulan Ini: Pemasukan bulan berjalan dikurangi belanja bulan berjalan.",
+          "Slide Pengeluaran Terbanyak: Analisis kategori pengeluaran terbesar yang menyerap kas bulan ini.",
         ],
         steps: [
           "Geser kartu saldo utama di Beranda ke kanan atau kiri.",
-          "Gunakan 'Sisa Siklus' untuk mengambil keputusan belanja harian.",
+          "Gunakan 'Sisa Kas Bulan Ini' untuk mengambil keputusan belanja harian.",
           "Gunakan 'Saldo Total' untuk melihat pertumbuhan aset kas bersih Anda.",
         ],
         impact:
-          "Mencegah ilusi kekayaan semu (phantom wealth) di mana seseorang merasa masih punya banyak uang di rekening padahal uang itu adalah tabungan bayar sewa rumah atau dana darurat.",
+          "Mencegah ilusi kekayaan semu (phantom wealth) di mana seseorang merasa masih punya banyak uang di rekening padahal uang itu adalah tabungan bayar sewa atau dana darurat.",
         proTip:
           "Ketuk ikon mata di pojok kartu untuk menyembunyikan nominal saldo saat Anda membuka aplikasi di tempat umum atau transportasi publik.",
         actionTarget: "Home",
@@ -213,56 +213,58 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
       },
       {
         id: "cycle_income_tracking",
-        name: "Siklus Pemasukan Khusus (Hari Bertahan)",
+        name: "Atur Target Uang Bertahan (Alokasi Jatah Harian)",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Alokasi Ransum Kas",
         icon: "infinite-outline",
         color: colors.accent,
-        location: "Formulir Catat Pemasukan ➔ Opsi 'Atur Siklus Pemasukan'",
+        location: "Formulir Catat Pemasukan ➔ Toggle 'Atur Target Uang Bertahan'",
         analogy:
-          "Ibarat menuangkan satu galon air mineral baru ke dispenser kantor. Anda menempelkan label: 'Galon ini untuk minum 14 hari ke depan'. Aplikasi akan mengatur jatah tetesan air harian agar dispenser tidak kosong sebelum hari ke-14.",
+          "Ibarat menuangkan satu galon air mineral baru ke dispenser kantor atau kos. Anda menempelkan label: 'Galon ini untuk minum 14 hari ke depan'. Aplikasi akan menghitung jatah tetesan air harian agar dispenser tidak kosong sebelum hari ke-14.",
         summary:
-          "Fitur khusus saat menerima uang kas masuk (seperti honor proyek freelance, uang saku mingguan, THR) untuk menentukan berapa hari uang tersebut harus bertahan.",
+          "Fitur saat menerima pemasukan (uang bulanan, honor proyek, uang saku mingguan, atau pendapatan jualan) untuk menentukan berapa hari uang tersebut harus bertahan agar sistem membaginya menjadi jatah belanja harian yang aman.",
         howItWorks: [
-          "Saat mencatat pemasukan, aktifkan toggle siklus dan tentukan durasi (misal: 7 hari, 14 hari, atau 30 hari).",
-          "Aplikasi akan membuat siklus kas aktif mandiri yang menjadi acuan perhitungan Batas Harian Aman hingga tanggal akhir durasi.",
+          "Saat mencatat pemasukan, aktifkan toggle 'Atur Target Uang Bertahan' dan tentukan durasi (misal: 7 hari, 14 hari, atau 30 hari).",
+          "Sistem langsung menghitung simulasi jatah belanja harian yang aman selama durasi tersebut.",
+          "Beranda secara otomatis menyesuaikan perhitungan Batas Harian Aman agar dana bertahan optimal hingga hari terakhir.",
         ],
         steps: [
           "Tekan tombol (+) ➔ Pilih Pemasukan.",
           "Masukkan nominal uang (misal: Rp 1.400.000).",
-          "Aktifkan opsi 'Atur Siklus Pemasukan' ➔ Pilih '14 Hari'.",
-          "Simpan transaksi. Beranda otomatis menetapkan jatah belanja aman Rp 100.000/hari untuk 14 hari ke depan.",
+          "Aktifkan opsi 'Atur Target Uang Bertahan' ➔ Pilih '14 Hari (2 Mgg)'.",
+          "Lihat simulasi live: ~Rp 100.000/hari selama 14 hari ke depan.",
+          "Simpan transaksi. Beranda otomatis menjaga jatah belanja harian Anda tetap aman.",
         ],
         impact:
-          "Sangat berdaya guna bagi pekerja lepas (freelancer), mahasiswa dengan uang saku berkala, atau pedagang yang tidak memiliki jadwal gajian bulanan tetap.",
+          "Sangat cocok untuk semua kalangan: pekerja lepas, mahasiswa/pelajar dengan uang saku berkala, ibu rumah tangga pengatur uang belanja, hingga pedagang dan wirausaha.",
         proTip:
-          "Bisa dipadukan dengan siklus bulanan. Jika Anda menerima bonus di tengah bulan, atur durasinya sampai tanggal gajian berikutnya agar bonus tidak langsung habis dalam 2 hari.",
+          "Jika Anda menerima uang saku atau honor tambahan di pertengahan bulan, atur target bertahan sampai tanggal akhir bulan pembukuan agar dana tidak langsung habis.",
         actionTarget: "AddTransaction",
         actionLabel: "Coba Catat Pemasukan",
       },
       {
         id: "time_filters",
-        name: "Filter Waktu (Mingguan, Siklus Ini, Tahun Ini, Semua)",
+        name: "Filter Rentang Waktu (Mingguan, Bulan Ini, Tahun Ini, Semua)",
         category: "home",
-        categoryLabel: "Beranda & Siklus",
+        categoryLabel: "Beranda & Pembukuan",
         tag: "Navigasi Kacamata Kas",
         icon: "options-outline",
         color: colors.accent,
         location: "Layar Beranda & Riwayat Transaksi (Tab Filter)",
         analogy:
-          "Ibarat menggunakan teropong zoom: Anda bisa memperbesar untuk melihat kerikil jalanan hari ini (Mingguan), melihat peta rute perjalanan bulan ini (Siklus), atau naik ke helikopter untuk melihat seluruh benua finansial Anda (Tahunan & Semua).",
+          "Ibarat menggunakan lensa kamera: Anda bisa memperbesar untuk melihat detail hari-hari ini (Mingguan), melihat panorama pembukuan bulan berjalan (Bulan Ini), atau melihat pemandangan luas seluruh tahun finansial Anda (Tahun Ini & Semua).",
         summary:
-          "Segmented control cepat untuk mengubah rentang laporan pembukuan dari skala mingguan, siklus gajian aktif, rekap tahunan, hingga total keseluruhan.",
+          "Pilihan cepat untuk mengubah rentang laporan pembukuan dari skala mingguan, bulan pembukuan aktif, rekap tahunan, hingga total keseluruhan.",
         howItWorks: [
-          "'Mingguan': Memfilter mutasi dari hari Senin sampai Minggu berjalan.",
-          "'Siklus Ini': Memfilter mutasi dari tanggal cut-off gajian Anda sampai H-1 gajian berikutnya.",
-          "'Tahun Ini': Memfilter mutasi dari 1 Januari sampai 31 Desember tahun berjalan.",
-          "'Semua': Menampilkan total seluruh mutasi sepanjang sejarah pembukuan.",
+          "'Mingguan': Memfilter transaksi dari hari Senin sampai Minggu berjalan.",
+          "'Bulan Ini': Memfilter transaksi dalam rentang bulan pembukuan aktif Anda (misal: 25 Ags - 24 Sep atau 1 - 30 Sep).",
+          "'Tahun Ini': Memfilter transaksi dari 1 Januari sampai 31 Desember tahun berjalan.",
+          "'Semua': Menampilkan total seluruh riwayat transaksi sepanjang waktu.",
         ],
         steps: [
           "Ketuk salah satu tab filter di bawah ringkasan kartu Beranda.",
-          "Perhatikan seluruh kartu grafik, total pengeluaran, dan pemasukan langsung menyesuaikan dalam sepersekian detik.",
+          "Perhatikan seluruh kartu grafik, total pengeluaran, dan pemasukan langsung menyesuaikan dalam sekejap.",
         ],
         impact:
           "Memungkinkan Anda melakukan evaluasi operasional jangka pendek (mingguan) maupun evaluasi strategis jangka panjang (tahunan) dalam 1 sentuhan.",
@@ -445,11 +447,11 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Ibarat pagar pembatas di pinggir jalan tol pegunungan yang curam. Batas anggaran menjaga mobil belanja Anda agar tidak meluncur bablas terperosok ke dalam jurang defisit.",
         summary:
-          "Menetapkan batas maksimal plafon pengeluaran untuk kategori pos tertentu (misal: jatah jajan Makanan maksimal Rp 1.500.000 per siklus gajian). Sistem otomatis mengawal progres belanja Anda.",
+          "Menetapkan batas maksimal plafon pengeluaran untuk kategori pos tertentu (misal: jatah jajan Makanan maksimal Rp 1.500.000 per bulan). Sistem otomatis mengawal progres belanja Anda.",
         howItWorks: [
           "Menghitung otomatis persentase pemakaian kuota anggaran setiap kali ada transaksi baru pada kategori terkait.",
           "Bar meteran progres berubah warna: Hijau (Aman < 70%), Kuning (Waspada 70-90%), Merah (Kritis / Overbudget > 100%).",
-          "Siklus Anggaran otomatis tersinkronisasi me-reset kuota tepat di hari Awal Siklus / Tanggal Gajian Anda.",
+          "Periode Anggaran otomatis di-reset tiap bulan mengikuti tanggal Awal Pembukuan Bulanan Anda.",
         ],
         steps: [
           "Buka tab menu 'Anggaran' ➔ Tekan tombol 'Buat Anggaran Baru'.",
@@ -522,7 +524,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         impact:
           "Mengamankan uang dari godaan belanja impulsif karena uang tersebut sudah 'dikurung' di dalam pos tabungan khusus.",
         proTip:
-          "Lakukan transfer setoran tabungan tepat di hari gajian (pay yourself first), bukan menunggu sisa uang di akhir bulan!",
+          "Lakukan transfer setoran tabungan tepat saat menerima pemasukan bulanan (pay yourself first), bukan menunggu sisa uang di akhir bulan!",
         actionTarget: "Savings",
         actionLabel: "Setor Saldo Tabungan",
       },
@@ -540,13 +542,13 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         color: colors.accent,
         location: "Pengaturan ➔ Tab Pembukuan ➔ Transaksi Rutin",
         analogy:
-          "Ibarat memiliki sekretaris pribadi yang hafal mati tanggal jatuh tempo tagihan WiFi, listrik, cicilan motor, sewa kos, dan tanggal gajian Anda. Tepat pada tanggalnya, dia meletakkan lembar kuitansi siap catat di meja Anda.",
+          "Ibarat memiliki sekretaris pribadi yang hafal mati tanggal jatuh tempo tagihan WiFi, listrik, cicilan motor, sewa kos, dan jadwal pemasukan bulanan Anda. Tepat pada tanggalnya, dia meletakkan lembar kuitansi siap catat di meja Anda.",
         summary:
-          "Otomatisasi pengingat dan draf pencatatan transaksi berkala (harian, mingguan, bulanan, atau tahunan) seperti gaji bulanan, sewa kontrakan, atau langganan streaming.",
+          "Otomatisasi pengingat dan draf pencatatan transaksi berkala (harian, mingguan, bulanan, atau tahunan) seperti uang bulanan/uang saku, sewa kontrakan, atau langganan streaming.",
         howItWorks: [
           "Menyimpan jadwal transaksi berulang lengkap dengan nominal, kategori, dan frekuensi tanggal.",
           "Sistem otomatis mengecek tanggal setiap kali aplikasi dibuka. Jika jadwal jatuh tempo tiba, notifikasi pengingat muncul dan transaksi siap dicatat.",
-          "Sinkronisasi Otomatis: Transaksi rutin bertipe Gaji otomatis menyesuaikan tanggal saat Awal Siklus diubah.",
+          "Sinkronisasi Otomatis: Transaksi pemasukan berkala otomatis menyesuaikan tanggal saat Awal Pembukuan Bulanan diperbarui.",
         ],
         steps: [
           "Buka Pengaturan ➔ Tab Pembukuan ➔ 'Transaksi Rutin'.",
@@ -571,7 +573,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         color: colors.error,
         location: "Menu Lainnya / Beranda ➔ Catatan Hutang Piutang",
         analogy:
-          "Ibarat papan tulis buku bon di warung. Saat Anda meminjamkan uang Rp 500.000 ke teman, dompet kas Anda berkurang, tetapi kekayaan Anda tidak hilang karena Anda memegang surat piutang tagihan. Saat teman membayar, kas bertambah tanpa dianggap sebagai gaji baru!",
+          "Ibarat papan tulis buku bon di warung. Saat Anda meminjamkan uang Rp 500.000 ke teman, dompet kas Anda berkurang, tetapi kekayaan Anda tidak hilang karena Anda memegang surat piutang tagihan. Saat teman membayar, kas bertambah tanpa dianggap sebagai pemasukan belanja baru!",
         summary:
           "Mencatat uang yang Anda pinjam dari orang lain (Hutang) atau uang Anda yang dipinjam oleh teman (Piutang) secara terintegrasi dengan saldo kas riil.",
         howItWorks: [
@@ -648,7 +650,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         ],
         steps: [
           "Buka tab menu 'Analisis' di bar bawah.",
-          "Pilih rentang waktu evaluasi (Mingguan, Siklus Ini, atau Tahunan).",
+          "Pilih rentang waktu evaluasi (Mingguan, Bulan Ini, atau Tahunan).",
           "Sentuh irisan diagram donat untuk melihat nominal rinci per kategori pengeluaran.",
         ],
         impact:
@@ -749,7 +751,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         impact:
           "Menjamin keamanan data finansial Anda seumur hidup. Ponsel boleh rusak atau hilang, tetapi catatan keuangan Anda tetap selamat.",
         proTip:
-          "Lakukan backup rutin setiap tanggal gajian setelah seluruh catatan bulanan selesai dirapikan.",
+          "Lakukan backup rutin setiap awal atau akhir bulan pembukuan setelah seluruh catatan bulanan selesai dirapikan.",
         actionTarget: "Settings",
         actionLabel: "Buka Menu Backup",
       },
@@ -797,7 +799,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         summary:
           "Asisten maskot interaktif yang menemani perjalanan finansial Anda di Beranda dengan balon percakapan cerdas, tips hemat harian, dan apresiasi setiap Anda disiplin mencatat uang.",
         howItWorks: [
-          "Menyesuaikan ekspresi dan ucapan berdasarkan sisa hari gajian dan status Batas Harian Aman Anda.",
+          "Menyesuaikan ekspresi dan ucapan berdasarkan sisa hari bulan pembukuan dan status Batas Harian Aman Anda.",
           "Dapat disentuh untuk memunculkan renungan atau motivasi finansial hari ini.",
           "Dapat dinonaktifkan dengan mudah melalui sakelar di menu Tampilan jika Anda menyukai gaya antarmuka ultra-minimalis.",
         ],
@@ -1012,7 +1014,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Cari fitur (misal: siklus, batas harian, struk)..."
+              placeholder="Cari fitur (misal: pembukuan, batas harian, struk)..."
               placeholderTextColor={colors.gray500}
               style={{
                 flex: 1,

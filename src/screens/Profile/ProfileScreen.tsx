@@ -1325,7 +1325,7 @@ const ProfileScreen: React.FC = () => {
                     Pusat Panduan & Fitur
                   </Text>
                   <Text style={[tw`text-[10px] mt-0.5`, { color: C.text3 }]}>
-                    Pelajari siklus gaji, batas harian, & tips MyMoney
+                    Pelajari aturan pembukuan, batas harian aman, & tips MyMoney
                   </Text>
                 </View>
               </View>

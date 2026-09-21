@@ -70,7 +70,7 @@ export const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: "donasi",       name: "Donasi",        icon: "heart-half-outline",          color: "#EF4444" },
   
   // Pemasukan & Keuangan
-  { id: "gaji",         name: "Gaji",          icon: "cash-outline",                color: "#22D3EE" },
+  { id: "pemasukan",    name: "Pemasukan",     icon: "cash-outline",                color: "#22D3EE" },
   { id: "investasi",    name: "Investasi",     icon: "trending-up-outline",         color: "#06B6D4" },
   { id: "tabungan",     name: "Tabungan",      icon: "wallet-outline",              color: "#14B8A6" },
   { id: "hutang",       name: "Hutang",        icon: "card-outline",                color: "#F97316" },

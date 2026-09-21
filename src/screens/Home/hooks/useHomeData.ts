@@ -496,7 +496,7 @@ export const useHomeData = (
       if (activeCycle && activeCycle.period <= 14) {
         startDate = activeCycle.startDate;
         endDate = activeCycle.endDate;
-        label = "akhir periode";
+        label = "akhir target bertahan";
       } else {
         const currentDay = now.getDay() === 0 ? 7 : now.getDay();
         startDate = new Date(now);
@@ -511,14 +511,12 @@ export const useHomeData = (
       if (activeCycle && activeCycle.period > 14) {
         startDate = activeCycle.startDate;
         endDate = activeCycle.endDate;
-        label = (activeCycle as any).isPaydayCycle
-          ? "gajian berikutnya"
-          : "akhir periode";
+        label = "akhir bulan pembukuan";
       } else if (state.paydayCutoff && state.paydayCutoff > 1) {
         const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
         startDate = cycleRange.startDate;
         endDate = cycleRange.endDate;
-        label = "gajian berikutnya";
+        label = "akhir bulan pembukuan";
       } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -670,13 +668,13 @@ export const useHomeData = (
         id: "transactions_count",
         label: "Transaksi",
         value: currentTransactionCount.toString(),
-        unit: timeFilter === "all" ? "total" : "periode",
+        unit: timeFilter === "all" ? "total" : "transaksi",
         trend: currentTransactionCount > 10 ? "↑" : "↓",
         trendLabel:
           timeFilter === "all"
             ? "Selama ini"
             : timeFilter === "weekly"
-              ? "Periode ini"
+              ? "Minggu ini"
               : timeFilter === "monthly"
                 ? "Bulan ini"
                 : "Tahun ini",
@@ -729,7 +727,7 @@ export const useHomeData = (
         customId: c.id,
       })),
     ];
-    const found = all.find((c) => c.name === categoryName);
+    const found = all.find((c) => c.name === categoryName || (categoryName === "Gaji" && c.id === "pemasukan"));
     return (
       found || {
         id: "unknown",

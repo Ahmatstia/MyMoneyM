@@ -651,7 +651,7 @@ const AddBudgetScreen: React.FC = () => {
                     { color: isRecurring ? `${Colors.background}CC` : TEXT_SECONDARY },
                   ]}
                 >
-                  Auto-renew tiap siklus
+                  Auto-reset tiap bulan
                 </Text>
               </View>
             </TouchableOpacity>
@@ -694,13 +694,13 @@ const AddBudgetScreen: React.FC = () => {
           {isRecurring ? (
             <View>
               <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
-                Siklus Berulang
+                Periode Anggaran
               </Text>
               <View style={tw`flex-row gap-2`}>
                 {[
                   { key: "monthly", label: "Bulanan", desc: "Tiap bulan" },
                   { key: "weekly", label: "Mingguan", desc: "7 hari" },
-                  { key: "custom_days", label: "Siklus Kustom", desc: `${customDays || "10"} hari` },
+                  { key: "custom_days", label: "Kustom Hari", desc: `${customDays || "10"} hari` },
                 ].map((p) => {
                   const isActive = recurringType === p.key;
                   return (
@@ -994,13 +994,13 @@ const AddBudgetScreen: React.FC = () => {
           <Text
             style={[tw`text-sm font-medium mb-3`, { color: TEXT_SECONDARY }]}
           >
-            {isRecurring ? "Jadwal & Periode Siklus" : "Rentang Tanggal Event (Sekali Pakai)"}
+            {isRecurring ? "Jadwal & Periode Anggaran" : "Rentang Tanggal Event (Sekali Pakai)"}
           </Text>
 
           {/* Start Date */}
           <View style={tw`mb-3`}>
             <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-              {isRecurring ? "Tanggal Mulai Siklus" : "Tanggal Mulai"}
+              Tanggal Mulai
             </Text>
             <TouchableOpacity
               style={[
@@ -1029,7 +1029,7 @@ const AddBudgetScreen: React.FC = () => {
           {(!isRecurring || isEditMode) && (
             <View style={tw`mb-3`}>
               <Text style={[tw`text-xs mb-2`, { color: TEXT_SECONDARY }]}>
-                {isRecurring ? "Tanggal Akhir Siklus" : "Tanggal Selesai Event"}
+                Tanggal Selesai
               </Text>
               <TouchableOpacity
                 style={[
@@ -1064,7 +1064,7 @@ const AddBudgetScreen: React.FC = () => {
           >
             <View style={tw`flex-row items-center justify-between mb-1`}>
               <Text style={[tw`text-[11px] font-bold`, { color: TEXT_PRIMARY }]}>
-                {isRecurring ? "🔄 Siklus Periode Aktif" : "🎯 Durasi Event Sekali Pakai"}
+                {isRecurring ? "🔄 Periode Anggaran Aktif" : "🎯 Durasi Event Sekali Pakai"}
               </Text>
               <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>
                 {calculateTotalDays()} hari
@@ -1072,7 +1072,7 @@ const AddBudgetScreen: React.FC = () => {
             </View>
             <Text style={[tw`text-[11px] leading-4`, { color: TEXT_SECONDARY }]}>
               {formatDateForDisplay(startDate)} s.d. {formatDateForDisplay(endDate)}
-              {isRecurring ? "\n(Otomatis reset siklus berikutnya setelah tanggal akhir)" : "\n(Status akan berubah menjadi 'Selesai' setelah tanggal akhir)"}
+              {isRecurring ? "\n(Otomatis diperbarui untuk bulan pembukuan berikutnya)" : "\n(Status akan berubah menjadi 'Selesai' setelah tanggal akhir)"}
             </Text>
           </View>
         </View>
@@ -1101,8 +1101,8 @@ const AddBudgetScreen: React.FC = () => {
           </View>
           <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Makanan</Text>: Rp 15-30k/hari</Text>
           <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Transport</Text>: Rp 10-20k/hari</Text>
-          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Hiburan</Text>: 10-20% gaji</Text>
-          <Text style={[tw`text-[11px]`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Tabungan</Text>: Min 20% gaji</Text>
+          <Text style={[tw`text-[11px] mb-1`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Hiburan</Text>: 10-20% pemasukan</Text>
+          <Text style={[tw`text-[11px]`, { color: INFO_COLOR }]}><Text style={tw`font-bold`}>Tabungan</Text>: Min 20% pemasukan</Text>
         </View>
 
         {/* Action Buttons */}

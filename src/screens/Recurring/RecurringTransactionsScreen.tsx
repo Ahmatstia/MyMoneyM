@@ -59,7 +59,7 @@ const RecurringTransactionsScreen: React.FC = () => {
   const [formType, setFormType] = useState<TransactionType>("income");
   const [formName, setFormName] = useState("");
   const [formAmount, setFormAmount] = useState("");
-  const [formCategory, setFormCategory] = useState("Gaji");
+  const [formCategory, setFormCategory] = useState("Uang Bulanan");
   const [formFrequency, setFormFrequency] = useState<RecurringFrequency>("monthly");
   const [formDayOfWeek, setFormDayOfWeek] = useState<number>(1);
   const [formDayOfMonth, setFormDayOfMonth] = useState<number>(25);
@@ -110,7 +110,7 @@ const RecurringTransactionsScreen: React.FC = () => {
   }, [state.customCategories]);
 
   const resolveCategory = (categoryName: string): CategoryItem => {
-    const found = allCategories.find((c) => c.name === categoryName);
+    const found = allCategories.find((c) => c.name === categoryName || (categoryName === "Gaji" && c.id === "pemasukan"));
     return (
       found || {
         id: "unknown",
@@ -132,7 +132,7 @@ const RecurringTransactionsScreen: React.FC = () => {
     setFormType("income");
     setFormName("");
     setFormAmount("");
-    setFormCategory("Gaji");
+    setFormCategory("Uang Bulanan");
     setFormFrequency("monthly");
     setFormDayOfWeek(1);
     setFormDayOfMonth(state.paydayCutoff || 25);
@@ -536,8 +536,8 @@ const RecurringTransactionsScreen: React.FC = () => {
                 maxWidth: 260,
               }}
             >
-              Atur gaji bulanan, uang saku mingguan, atau tagihan agar tidak perlu repot
-              mencatat berulang kali.
+              Atur pemasukan berkala (uang bulanan/uang saku) atau tagihan rutin agar tercatat otomatis
+              tepat waktu tanpa repot.
             </Text>
             <TouchableOpacity
               onPress={handleOpenAdd}
@@ -758,7 +758,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                             flex: 1,
                           }}
                         >
-                          Mulai Periode Baru Otomatis ({item.cyclePeriodDays || 30} Hari)
+                          Target Bertahan Otomatis ({item.cyclePeriodDays || 30} Hari)
                         </Text>
                       </View>
                     )}
@@ -992,7 +992,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                   onPress={() => {
                     setFormType("income");
                     if (formCategory === "Makanan" || formCategory === "Transportasi") {
-                      setFormCategory("Gaji");
+                      setFormCategory("Uang Bulanan");
                     }
                   }}
                   activeOpacity={0.7}
@@ -1018,7 +1018,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                 <TouchableOpacity
                   onPress={() => {
                     setFormType("expense");
-                    if (formCategory === "Gaji" || formCategory === "Investasi") {
+                    if (formCategory === "Uang Bulanan" || formCategory === "Pemasukan Rutin" || formCategory === "Investasi" || formCategory === "Gaji") {
                       setFormCategory("Tagihan");
                     }
                   }}
@@ -1052,7 +1052,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                   value={formName}
                   onChangeText={setFormName}
                   placeholder={
-                    formType === "income" ? "Contoh: Gaji Pokok Kantor" : "Contoh: Tagihan Kost"
+                    formType === "income" ? "Contoh: Uang Bulanan / Honor" : "Contoh: Tagihan Kost"
                   }
                   placeholderTextColor={colors.gray500}
                   style={{
@@ -1105,7 +1105,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     {(formType === "income"
-                      ? ["Gaji", "Investasi", "Tabungan", "Hadiah", "Lainnya"]
+                      ? ["Uang Bulanan", "Pemasukan Rutin", "Investasi", "Tabungan", "Hadiah", "Lainnya"]
                       : ["Tagihan", "Listrik", "Air", "Internet", "Cicilan", "Makanan", "Rumah", "Langganan", "Lainnya"]
                     ).map((catName) => {
                       const isSelected = formCategory === catName;
@@ -1251,7 +1251,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                         }}
                       >
                         <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
-                          Sesuai Gajian (Tgl {state.paydayCutoff})
+                          Awal Pembukuan (Tgl {state.paydayCutoff})
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -1391,7 +1391,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                 </View>
               )}
 
-              {/* Khusus Pemasukan: Siklus Batas Uang Otomatis */}
+              {/* Khusus Pemasukan: Target Uang Bertahan Otomatis */}
               {formType === "income" && (
                 <View
                   style={{
@@ -1412,10 +1412,10 @@ const RecurringTransactionsScreen: React.FC = () => {
                   >
                     <View style={{ flex: 1, marginRight: 12 }}>
                       <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
-                        Mulai Siklus Periode Baru Otomatis
+                        Perbarui Target Uang Bertahan Otomatis
                       </Text>
                       <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 16 }}>
-                        Reset batas uang harian di beranda sesuai durasi gaji/uang saku tanpa perlu manual.
+                        Otomatis perbarui jatah belanja harian di Beranda setiap transaksi ini tercatat.
                       </Text>
                     </View>
                     <Switch
@@ -1432,7 +1432,7 @@ const RecurringTransactionsScreen: React.FC = () => {
                   {formAutoCycle && (
                     <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: `${colors.border}50` }}>
                       <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", marginBottom: 6 }}>
-                        DURASI SIKLUS (HARI)
+                        DURASI UANG BERTAHAN (HARI)
                       </Text>
                       <View style={{ flexDirection: "row", gap: 8 }}>
                         {["7", "14", "30"].map((d) => (

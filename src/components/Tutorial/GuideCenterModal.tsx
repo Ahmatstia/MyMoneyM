@@ -68,13 +68,13 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
   const topics: GuideContent[] = [
     {
       id: "cycle",
-      title: "Siklus Gajian & Batas Belanja",
+      title: "Aturan Pembukuan & Batas Belanja",
       badge: "Fitur Unggulan",
-      icon: "infinite-outline",
+      icon: "shield-checkmark-outline",
       color: colors.accent,
       summary:
-        "Bebaskan diri dari stres akhir bulan. Ketahui jatah belanja aman harian berdasarkan sisa hari gajian nyata Anda.",
-      diagramTitle: "Cara Kerja Kalkulator Siklus:",
+        "Bebaskan diri dari stres akhir bulan. Ketahui jatah belanja aman harian berdasarkan sisa hari bulan pembukuan Anda.",
+      diagramTitle: "Cara Kerja Jatah Belanja Aman:",
       diagramSteps: [
         {
           label: "Pemasukan Masuk",
@@ -96,17 +96,17 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
         },
       ],
       whyItMatters:
-        "Banyak orang tekor bukan karena boros sekali belanja, tapi karena tidak sadar menghabiskan uang terlalu cepat di awal gajian. Dengan fitur Siklus, Anda tahu persis berapa batas belanja maksimal hari ini.",
+        "Banyak orang tekor bukan karena boros sekali belanja, tapi karena tidak sadar menghabiskan uang terlalu cepat di awal bulan. Dengan fitur ini, Anda tahu persis berapa batas belanja maksimal hari ini.",
       steps: [
         {
           number: "1",
           title: "Catat Pemasukan",
           description:
-            "Klik tombol (+) ➔ Pilih Pemasukan (Gaji, Uang Saku, atau Honor).",
+            "Klik tombol (+) ➔ Pilih Pemasukan (uang saku, honor, jatah belanja, atau pemasukan lainnya).",
         },
         {
           number: "2",
-          title: "Aktifkan Siklus (Hari)",
+          title: "Atur Target Uang Bertahan",
           description:
             "Pilih jangka waktu uang ini harus bertahan (misal: 7 hari untuk mingguan, 30 hari untuk bulanan).",
         },
@@ -114,7 +114,7 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
           number: "3",
           title: "Pantau di Beranda",
           description:
-            "Kartu Siklus di Beranda akan langsung memandu jatah belanja harian Anda dan sisa hari menuju gajian.",
+            "Kartu di Beranda akan langsung memandu jatah belanja harian Anda dan sisa hari menuju bulan berikutnya.",
         },
       ],
       proTip:
@@ -129,12 +129,12 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
       icon: "repeat-outline",
       color: colors.purple,
       summary:
-        "Punya gaji tetap mingguan atau bulanan? Biarkan MyMoney mencatatnya secara otomatis tanpa perlu Anda ketik berulang.",
+        "Menerima uang saku, kiriman bulanan, atau pemasukan rutin berkala? Biarkan MyMoney mencatatnya secara otomatis tanpa perlu Anda ketik berulang.",
       diagramTitle: "Alur Pemasukan Rutin:",
       diagramSteps: [
         {
           label: "Atur Jadwal",
-          sublabel: "Pilih tanggal & periode rutin",
+          sublabel: "Pilih tanggal & frekuensi rutin",
           icon: "calendar-outline",
           color: colors.purple,
         },
@@ -146,13 +146,13 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
         },
         {
           label: "Otomatis Tercatat",
-          sublabel: "Saldo & Siklus langsung update",
+          sublabel: "Saldo & Jatah harian langsung update",
           icon: "checkmark-circle-outline",
           color: colors.success,
         },
       ],
       whyItMatters:
-        "Anda tidak perlu mengingat tanggal atau repot mengetik ulang gaji setiap bulan. Aplikasi akan otomatis menambahkan transaksi saat tanggal jatuh tempo tiba.",
+        "Anda tidak perlu mengingat tanggal atau repot mengetik ulang pemasukan setiap bulan. Aplikasi akan otomatis menambahkan transaksi saat tanggal jatuh tempo tiba.",
       steps: [
         {
           number: "1",
@@ -164,13 +164,13 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
           number: "2",
           title: "Buat Pemasukan Rutin",
           description:
-            "Masukkan nama (misal: Gaji Kantor), nominal, dan pilih frekuensi (Mingguan / Bulanan / Kustom hari).",
+            "Masukkan nama (misal: Uang Bulanan / Tagihan), nominal, dan pilih frekuensi (Mingguan / Bulanan / Kustom hari).",
         },
         {
           number: "3",
-          title: "Hubungkan dengan Siklus",
+          title: "Hubungkan dengan Target Bertahan",
           description:
-            "Saat jatuh tempo, pemasukan otomatis masuk ke riwayat dan otomatis menghidupkan siklus baru Anda!",
+            "Saat jatuh tempo, pemasukan otomatis tercatat dan memperbarui jatah belanja harian Anda di Beranda!",
         },
       ],
       proTip:

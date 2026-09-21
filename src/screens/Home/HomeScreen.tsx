@@ -563,10 +563,7 @@ const HomeScreen: React.FC = () => {
             (filter) => {
               const labels: Record<string, string> = {
                 weekly: activeCycle && activeCycle.period <= 14 ? activeCycle.label : "Minggu Ini",
-                monthly:
-                  state.paydayCutoff && state.paydayCutoff > 1
-                    ? `Siklus ${state.paydayCutoff}`
-                    : "Bulan Ini",
+                monthly: "Bulan Ini",
                 yearly: "Tahun Ini",
                 all: "Semua",
               };
@@ -894,7 +891,7 @@ const HomeScreen: React.FC = () => {
                 fontWeight: "500",
               }}
             >
-              Tidak ada transaksi di periode ini
+              Tidak ada transaksi pada filter ini
             </Text>
           </View>
         ) : (

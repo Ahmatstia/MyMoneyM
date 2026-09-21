@@ -2419,7 +2419,7 @@ const AnalyticsScreen: React.FC = () => {
                   num: 2,
                   color: SUCCESS_COLOR,
                   title: "Auto-Saving",
-                  desc: "Set up auto-transfer 10% gaji ke rekening tabungan setiap tanggal gajian",
+                  desc: "Sisihkan minimal 10% pemasukan ke rekening tabungan di awal bulan pembukuan",
                 },
                 {
                   num: 3,

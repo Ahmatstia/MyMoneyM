@@ -899,7 +899,7 @@ export class NotificationService {
         const balanceText = formatCurrency(totals.balance);
 
         title = `Jatah Belanja Aman: ${pacingText}/hari`;
-        body = `Sisa ${daysRemaining} hari siklus • Saldo: ${balanceText}`;
+        body = daysRemaining <= 1 ? `Hari terakhir pembukuan • Saldo: ${balanceText}` : `Sisa ${daysRemaining} hari lagi • Saldo: ${balanceText}`;
       } else {
         const balanceText = formatCurrency(totals.balance);
         const expenseText = formatCurrency(totals.totalExpense);

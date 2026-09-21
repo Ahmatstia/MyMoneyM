@@ -18,7 +18,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { getCurrentDate, safeNumber } from "../../utils/calculations";
+import { getCurrentDate, safeNumber, formatCurrency } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
@@ -65,7 +65,7 @@ const AddTransactionScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [amountError, setAmountError] = useState("");
   const [isCycleActive, setIsCycleActive] = useState(false);
-  const [cyclePreset, setCyclePreset] = useState<"weekly" | "monthly" | "custom">("weekly");
+  const [cyclePreset, setCyclePreset] = useState<"weekly" | "biweekly" | "monthly" | "custom">("monthly");
   const [customDays, setCustomDays] = useState("14");
   // Sub-transaction (itemized cart) state
   const [subItems, setSubItems] = useState<SubTransaction[]>([]);
@@ -283,6 +283,7 @@ const AddTransactionScreen: React.FC = () => {
     let finalCyclePeriod: number | undefined = undefined;
     if (type === "income" && isCycleActive) {
       if (cyclePreset === "weekly") finalCyclePeriod = 7;
+      else if (cyclePreset === "biweekly") finalCyclePeriod = 14;
       else if (cyclePreset === "monthly") finalCyclePeriod = 30;
       else finalCyclePeriod = Math.max(1, safeNumber(parseInt(customDays)) || 7);
     }
@@ -526,7 +527,7 @@ const AddTransactionScreen: React.FC = () => {
 
 
 
-        {/* Start New Cycle Toggle - Only for Income */}
+        {/* Target Uang Bertahan (Jatah Harian) - Only for Income */}
         {type === "income" && (
           <View style={tw`mb-5`}>
             <View
@@ -539,13 +540,13 @@ const AddTransactionScreen: React.FC = () => {
               <View style={tw`flex-row items-center justify-between`}>
                 <View style={tw`flex-1 mr-4`}>
                   <View style={tw`flex-row items-center mb-1`}>
-                    <Ionicons name="sync-outline" size={16} color={ACCENT_COLOR} style={tw`mr-2`} />
+                    <Ionicons name="time-outline" size={16} color={ACCENT_COLOR} style={tw`mr-2`} />
                     <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
-                      Mulai Periode Baru
+                      Atur Target Uang Bertahan
                     </Text>
                   </View>
                   <Text style={[tw`text-xs`, { color: TEXT_SECONDARY }]}>
-                    Jadikan uang ini patokan jatah waktu "Minggu Ini" di layar Utama.
+                    Berapa lama uang ini harus bertahan? Beranda akan membagi uang ini menjadi jatah belanja harian yang aman.
                   </Text>
                 </View>
                 <Switch
@@ -556,10 +557,10 @@ const AddTransactionScreen: React.FC = () => {
                 />
               </View>
 
-              {/* Cycle Options */}
+              {/* Target Bertahan Options */}
               {isCycleActive && (
                 <View style={tw`mt-4 pt-4 border-t border-gray-700`}>
-                  <Text style={[tw`text-xs font-medium mb-3`, { color: TEXT_SECONDARY }]}>DURASI PERIODE:</Text>
+                  <Text style={[tw`text-xs font-medium mb-3`, { color: TEXT_SECONDARY }]}>TARGET BERTAHAN (HARI):</Text>
                   <View style={tw`flex-row gap-2`}>
                     <TouchableOpacity
                       style={[
@@ -568,7 +569,17 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("weekly")}
                     >
-                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 Hari</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 Hari (1 Mgg)</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        tw`flex-1 py-2 items-center rounded-xl border`,
+                        cyclePreset === "biweekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                      ]}
+                      onPress={() => setCyclePreset("biweekly")}
+                    >
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "biweekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>14 Hari (2 Mgg)</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -578,7 +589,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("monthly")}
                     >
-                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 Hari</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 Hari (1 Bln)</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -588,7 +599,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("custom")}
                     >
-                      <Text style={[tw`text-xs font-medium`, { color: cyclePreset === "custom" ? ACCENT_COLOR : TEXT_SECONDARY }]}>Kustom</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "custom" ? ACCENT_COLOR : TEXT_SECONDARY }]}>Kustom</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -606,6 +617,24 @@ const AddTransactionScreen: React.FC = () => {
                       <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>Hari</Text>
                     </View>
                   )}
+
+                  {/* Live Simulation Preview */}
+                  {(() => {
+                    const cleanAmount = safeNumber(parseFloat(amount.replace(/[^0-9.]/g, "")));
+                    const days = cyclePreset === "weekly" ? 7 : cyclePreset === "biweekly" ? 14 : cyclePreset === "monthly" ? 30 : Math.max(1, safeNumber(parseInt(customDays)) || 7);
+                    if (cleanAmount > 0) {
+                      const dailyRate = Math.round(cleanAmount / days);
+                      return (
+                        <View style={[tw`mt-3 p-3 rounded-xl flex-row items-center`, { backgroundColor: ACCENT_COLOR + "12", borderWidth: 1, borderColor: ACCENT_COLOR + "30" }]}>
+                          <Ionicons name="bulb-outline" size={16} color={ACCENT_COLOR} style={tw`mr-2`} />
+                          <Text style={[tw`text-xs flex-1`, { color: TEXT_PRIMARY }]}>
+                            Jatah belanja aman: <Text style={{ color: ACCENT_COLOR, fontWeight: "700" }}>~{formatCurrency(dailyRate)}</Text> per hari selama {days} hari ke depan.
+                          </Text>
+                        </View>
+                      );
+                    }
+                    return null;
+                  })()}
                 </View>
               )}
             </View>

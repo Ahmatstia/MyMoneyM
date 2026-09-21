@@ -67,7 +67,7 @@ export const ContextualCycleHint: React.FC<ContextualCycleHintProps> = ({
                 { color: colors.textPrimary },
               ]}
             >
-              Aktifkan Siklus Gajian Nyata
+              Atur Target Uang Bertahan
             </Text>
             <TouchableOpacity
               onPress={handleDismiss}
@@ -88,9 +88,9 @@ export const ContextualCycleHint: React.FC<ContextualCycleHintProps> = ({
               { color: colors.textSecondary },
             ]}
           >
-            Saat mencatat Pemasukan (gaji/uang saku), aktifkan opsi{" "}
+            Saat mencatat Pemasukan (uang saku, honor, jatah belanja, dll), aktifkan opsi{" "}
             <Text style={[tw`font-bold`, { color: colors.accent }]}>
-              Siklus (Hari)
+              Target Bertahan
             </Text>{" "}
             agar aplikasi menghitung jatah belanja aman harian Anda!
           </Text>

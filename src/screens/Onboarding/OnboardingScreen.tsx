@@ -42,15 +42,15 @@ const OnboardingScreen = ({ navigation }: any) => {
     },
     {
       id: "2",
-      badge: "INOVASI SIKLUS GAJIAN",
+      badge: "JATAH BELANJA HARIAN AMAN",
       title: "Ketahui Batas Belanja\nAman Harian",
       description:
-        "Sistem membagi sisa uang dengan sisa hari gajian nyata. Anda tahu batas belanja aman hari ini tanpa takut tekor akhir bulan!",
+        "Sistem membagi sisa uang dengan sisa hari bulan pembukuan Anda. Anda tahu persis batas belanja aman hari ini tanpa takut uang habis sebelum akhir bulan!",
       lottie: require("../../../assets/lottie/Credit Assessment Animated.json"),
       accent: "#22D3EE",
       highlights: [
         "Pacing harian: tahu jatah aman hari ini",
-        "Siklus fleksibel mingguan atau bulanan",
+        "Perhitungan otomatis fleksibel mingguan atau bulanan",
       ],
     },
     {
