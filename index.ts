@@ -10,6 +10,7 @@ const ignoredWarnings = [
   "`expo-notifications` functionality is not fully supported in Expo Go",
   "Error encountered while fetching auto-registration state",
   "⚠️ MULTIPLE CYCLE INCOMES DETECTED",
+  "The `isReanimated3` function is deprecated",
 ];
 
 LogBox.ignoreLogs(ignoredWarnings);

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useDrawerStatus } from "@react-navigation/drawer";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -25,6 +26,8 @@ type Mode = "idle" | "horizontal" | "vertical";
 
 const FloatingDrawerHandle: React.FC = () => {
   const navigation = useNavigation<any>();
+  const drawerStatus = useDrawerStatus();
+  const isDrawerOpen = drawerStatus === "open";
 
   const [side, setSide] = useState<Side>("left");
   const sideRef = useRef<Side>("left");
@@ -141,6 +144,11 @@ const FloatingDrawerHandle: React.FC = () => {
   });
 
   const isRight = side === "right";
+
+  // Sembunyikan handle jika drawer sedang terbuka agar tidak menghalangi tap penutup di luar
+  if (isDrawerOpen) {
+    return null;
+  }
 
   return (
     <Animated.View

@@ -36,6 +36,7 @@ import {
   resetSessionDismissed,
 } from "../../components/Mascot/FloatingMascotBubble";
 import { DEFAULT_CATEGORIES } from "../../components/CategoryPickerModal";
+import { AppGuidebookModal } from "../../components/Tutorial";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -653,6 +654,7 @@ const SettingsScreen = () => {
     visible: boolean;
     type: "morning" | "evening" | "quietStart" | "quietEnd" | null;
   }>({ visible: false, type: null });
+  const [showGuidebook, setShowGuidebook] = useState(false);
 
   useEffect(() => {
     loadAllSettings();
@@ -1088,16 +1090,56 @@ const SettingsScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* ── Page Header ─────────────────────────────────────────────── */}
       <View
-        style={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 20 }}
+        style={{
+          paddingHorizontal: 18,
+          paddingTop: 16,
+          paddingBottom: 18,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        <Text
-          style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
+        <View>
+          <Text
+            style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
+          >
+            Pengaturan
+          </Text>
+          <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
+            Kelola preferensi dan pembukuan
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => setShowGuidebook(true)}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: `${colors.accent}15`,
+            borderWidth: 1,
+            borderColor: `${colors.accent}40`,
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            borderRadius: 20,
+          }}
         >
-          Pengaturan
-        </Text>
-        <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
-          Kelola prevensi dan data aplikasi
-        </Text>
+          <Ionicons
+            name="book-outline"
+            size={14}
+            color={colors.accent}
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={{
+              color: colors.accent,
+              fontSize: 11,
+              fontWeight: "700",
+            }}
+          >
+            Buku Panduan
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* ── Tab Control ─────────────────────────────────────────────── */}
@@ -1259,7 +1301,7 @@ const SettingsScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <SectionHeader title="Periode & Aturan Pembukuan" />
+            <SectionHeader title="Siklus & Aturan Pembukuan" />
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -1300,7 +1342,7 @@ const SettingsScreen = () => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginBottom: 2 }}>
-                    Awal Siklus 
+                    Awal Siklus / Tanggal Gajian
                   </Text>
                   <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }}>
                     Acuan perputaran bulan finansial Anda (Tiap tanggal {paydayDate})
@@ -2065,7 +2107,127 @@ const SettingsScreen = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "data" && (
           <>
+            <SectionHeader title="Buku Panduan & Edukasi" />
+            <TouchableOpacity
+              onPress={() => setShowGuidebook(true)}
+              activeOpacity={0.8}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: `${colors.accent}35`,
+                padding: 18,
+                marginBottom: 22,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 3,
+                  backgroundColor: colors.accent,
+                }}
+              />
+              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                    borderWidth: 1,
+                    borderColor: `${colors.accent}30`,
+                  }}
+                >
+                  <Ionicons name="book" size={24} color={colors.accent} />
+                </View>
 
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: "700",
+                      }}
+                    >
+                      Buku Panduan Seluruh Fitur
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor: `${colors.accent}20`,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.accent,
+                          fontSize: 10,
+                          fontWeight: "700",
+                        }}
+                      >
+                        A to Z
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 12,
+                      lineHeight: 18,
+                      marginBottom: 10,
+                    }}
+                  >
+                    Panduan visual lengkap seluruh 20+ fitur MyMoney: fungsi utama, langkah pakai praktis, dampak finansial, dan tombol pintas langsung.
+                  </Text>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      alignSelf: "flex-start",
+                      backgroundColor: `${colors.accent}15`,
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.accent,
+                        fontSize: 11,
+                        fontWeight: "700",
+                        marginRight: 4,
+                      }}
+                    >
+                      Buka Buku Panduan
+                    </Text>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={12}
+                      color={colors.accent}
+                    />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
 
             <SectionHeader title="Backup & Restore (Offline)" />
             <View
@@ -2598,6 +2760,19 @@ const SettingsScreen = () => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* ── Modal Buku Panduan Seluruh Fitur ── */}
+      <AppGuidebookModal
+        visible={showGuidebook}
+        onClose={() => setShowGuidebook(false)}
+        onNavigateAction={(target) => {
+          try {
+            navigation.navigate(target as any);
+          } catch (e) {
+            console.warn("Guidebook navigation error:", e);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 };

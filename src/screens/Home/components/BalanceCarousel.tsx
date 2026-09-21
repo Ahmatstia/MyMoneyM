@@ -114,11 +114,21 @@ const getPeriodEndLabel = (
   if (!projectionData || timeFilter === "all") return null;
 
   const days = safeNumber(projectionData.daysRemaining);
+  const isCycle =
+    projectionData.label === "gajian berikutnya" ||
+    projectionData.label === "akhir periode";
 
   if (days <= 0) {
+    if (isCycle) return "Siklus berakhir hari ini";
     if (timeFilter === "monthly") return "Bulan berakhir hari ini";
     if (timeFilter === "yearly") return "Tahun berakhir hari ini";
-    return "Periode berakhir hari ini";
+    return "Siklus berakhir hari ini";
+  }
+
+  if (isCycle) {
+    return days === 1
+      ? "Siklus berakhir besok"
+      : `Siklus berakhir dalam ${days} hari`;
   }
 
   if (timeFilter === "monthly") {
@@ -132,8 +142,8 @@ const getPeriodEndLabel = (
       : `Tahun berakhir dalam ${days} hari`;
   }
   return days === 1
-    ? "Periode berakhir besok"
-    : `Periode berakhir dalam ${days} hari`;
+    ? "Siklus berakhir besok"
+    : `Siklus berakhir dalam ${days} hari`;
 };
 
 // ─── PeriodEndBadge ─────────────────────────────────────────────────────────────
@@ -687,7 +697,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 1,
                 }}
               >
-                {hasExpenses ? "Analisis beban belanja" : "Periode ini"}
+                {hasExpenses ? "Analisis beban belanja" : "Siklus ini"}
               </Text>
             </View>
           </View>
@@ -764,7 +774,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginBottom: 3,
                 }}
               >
-                Belum ada pengeluaran di periode ini
+                Belum ada pengeluaran di siklus ini
               </Text>
               <AnimatedNumber
                 value="Rp 0"
@@ -860,7 +870,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
                   marginTop: 4,
                 }}
               >
-                Satu-satunya kategori pengeluaran periode ini
+                Satu-satunya kategori pengeluaran siklus ini
               </Text>
             )}
           </View>

@@ -3,6 +3,8 @@ import FloatingDrawerHandle from "../components/FloatingDrawerHandle";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
+  useNavigation,
+  DrawerActions,
 } from "@react-navigation/native";
 import { navigationRef } from "./navigationRef";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -10,12 +12,14 @@ import {
   createDrawerNavigator,
   DrawerContentComponentProps,
   DrawerContentScrollView,
+  useDrawerStatus,
 } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Dimensions,
   Platform,
   Alert,
@@ -201,74 +205,98 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <DrawerContentScrollView
         {...props}
-        contentContainerStyle={{ paddingTop: 0 }}
+        contentContainerStyle={{ paddingTop: 0, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header dengan foto profil */}
-        <TouchableOpacity
-          onPress={() => {
-            props.navigation.navigate("Profile");
-            props.navigation.closeDrawer();
-          }}
-          activeOpacity={0.9}
-        >
-          <ImageBackground
-            source={
-              userProfile.coverImage && !coverError
-                ? { uri: userProfile.coverImage }
-                : require("../../assets/bg.png")
-            }
-            onError={() => setCoverError(true)}
-            style={{
-              paddingTop: 56,
-              paddingBottom: 32,
-              paddingHorizontal: 24,
-              marginBottom: 16,
-            }}
-            imageStyle={{ opacity: 0.4 }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <LevelAvatarBorder
-                avatarUri={
-                  userProfile.avatar && !avatarError ? userProfile.avatar : null
+          {/* Header dengan foto profil dan tombol tutup X */}
+          <View style={{ position: "relative" }}>
+            <TouchableOpacity
+              onPress={() => {
+                props.navigation.navigate("Profile");
+                props.navigation.closeDrawer();
+              }}
+              activeOpacity={0.9}
+            >
+              <ImageBackground
+                source={
+                  userProfile.coverImage && !coverError
+                    ? { uri: userProfile.coverImage }
+                    : require("../../assets/bg.png")
                 }
-                name={userProfile.name}
-                size={64}
-                showLevelBadge={true}
-              />
-              <View style={{ marginLeft: 16, flex: 1 }}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: "700",
-                  }}
-                  numberOfLines={1}
-                >
-                  {userProfile.name}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 4,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: colors.accent,
-                      fontSize: 12,
-                      fontWeight: "600",
-                    }}
-                    numberOfLines={1}
-                  >
-                    {progress.title}
-                  </Text>
+                onError={() => setCoverError(true)}
+                style={{
+                  paddingTop: 56,
+                  paddingBottom: 32,
+                  paddingHorizontal: 24,
+                  marginBottom: 16,
+                }}
+                imageStyle={{ opacity: 0.4 }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <LevelAvatarBorder
+                    avatarUri={
+                      userProfile.avatar && !avatarError ? userProfile.avatar : null
+                    }
+                    name={userProfile.name}
+                    size={64}
+                    showLevelBadge={true}
+                  />
+                  <View style={{ marginLeft: 16, flex: 1, paddingRight: 36 }}>
+                    <Text
+                      style={{
+                        color: colors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: "700",
+                      }}
+                      numberOfLines={1}
+                    >
+                      {userProfile.name}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginTop: 4,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.accent,
+                          fontSize: 12,
+                          fontWeight: "600",
+                        }}
+                        numberOfLines={1}
+                      >
+                        {progress.title}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          </ImageBackground>
-        </TouchableOpacity>
+              </ImageBackground>
+            </TouchableOpacity>
+
+            {/* Tombol Tutup X Eksplisit */}
+            <TouchableOpacity
+              onPress={() => props.navigation.closeDrawer()}
+              activeOpacity={0.7}
+              style={{
+                position: "absolute",
+                top: 48,
+                right: 14,
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "rgba(0,0,0,0.45)",
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.2)",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+              }}
+            >
+              <Ionicons name="close" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
 
         {/* Label */}
         <View style={{ paddingHorizontal: 24, marginBottom: 12 }}>
@@ -581,12 +609,30 @@ const MainStackNavigator = () => {
   );
 };
 
-const StackWithHandle: React.FC = () => (
-  <View style={{ flex: 1 }}>
-    <MainStackNavigator />
-    <FloatingDrawerHandle />
-  </View>
-);
+const StackWithHandle: React.FC = () => {
+  const navigation = useNavigation<any>();
+  const drawerStatus = useDrawerStatus();
+  const isDrawerOpen = drawerStatus === "open";
+
+  return (
+    <View style={{ flex: 1 }}>
+      <MainStackNavigator />
+      <FloatingDrawerHandle />
+      {isDrawerOpen && (
+        <TouchableWithoutFeedback
+          onPress={() => navigation.dispatch(DrawerActions.closeDrawer())}
+        >
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { zIndex: 100, backgroundColor: "transparent" },
+            ]}
+          />
+        </TouchableWithoutFeedback>
+      )}
+    </View>
+  );
+};
 
 // ─── Drawer Navigator ─────────────────────────────────────────────────────────
 
@@ -598,10 +644,21 @@ const DrawerNavigator = () => {
       useLegacyImplementation={false}
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
-        drawerStyle: { width: width * 0.8, backgroundColor: colors.background },
+        drawerStyle: {
+          width: Math.min(width * 0.82, 340),
+          backgroundColor: colors.background,
+          borderTopRightRadius: 24,
+          borderBottomRightRadius: 24,
+          shadowColor: "#000",
+          shadowOffset: { width: 6, height: 0 },
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
+          elevation: 20,
+        },
         drawerType: "front",
-        overlayColor: "rgba(0,0,0,0.7)",
+        overlayColor: "rgba(15, 23, 42, 0.65)",
         swipeEnabled: true,
+        swipeEdgeWidth: 80,
         headerShown: false,
       }}
     >
