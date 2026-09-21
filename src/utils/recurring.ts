@@ -179,9 +179,9 @@ export const processRecurringTransactions = (
         category: currentItem.category,
         description:
           currentItem.description?.trim() ||
-          (currentItem.type === "income"
-            ? `Pemasukan Rutin: ${currentItem.name}`
-            : `Pengeluaran Rutin: ${currentItem.name}`),
+          (currentItem.name && currentItem.name !== currentItem.category
+            ? currentItem.name
+            : currentItem.category),
         date: currentItem.nextRunDate,
         createdAt: new Date().toISOString(),
         cyclePeriod: cycleDays,

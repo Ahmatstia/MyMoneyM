@@ -96,7 +96,6 @@ const RecurringTransactionsScreen: React.FC = () => {
 
   // Form states
   const [formType, setFormType] = useState<TransactionType>("income");
-  const [formName, setFormName] = useState("");
   const [formAmount, setFormAmount] = useState("");
   const [formCategory, setFormCategory] = useState("");
   const [formFrequency, setFormFrequency] = useState<RecurringFrequency>("monthly");
@@ -105,7 +104,8 @@ const RecurringTransactionsScreen: React.FC = () => {
   const [formIntervalDays, setFormIntervalDays] = useState<string>("7");
   const [formStartDate, setFormStartDate] = useState<string>(getJakartaDateKey());
   const [formAutoCycle, setFormAutoCycle] = useState<boolean>(true);
-  const [formCycleDays, setFormCycleDays] = useState<string>("30");
+  const [cyclePreset, setCyclePreset] = useState<"weekly" | "biweekly" | "monthly" | "custom">("monthly");
+  const [customDays, setCustomDays] = useState<string>("14");
   const [formDescription, setFormDescription] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -183,10 +183,9 @@ const RecurringTransactionsScreen: React.FC = () => {
 
   // Open Add Modal
   const handleOpenAdd = () => {
-    const firstCustomCat = (state.customCategories || [])[0]?.name || "";
+    const firstCustomCat = (state.customCategories || [])[0]?.name || "Gaji";
     setEditingItem(null);
     setFormType("income");
-    setFormName("");
     setFormAmount("");
     setFormCategory(firstCustomCat);
     setFormFrequency("monthly");
@@ -195,7 +194,8 @@ const RecurringTransactionsScreen: React.FC = () => {
     setFormIntervalDays("7");
     setFormStartDate(getJakartaDateKey());
     setFormAutoCycle(true);
-    setFormCycleDays("30");
+    setCyclePreset("monthly");
+    setCustomDays("14");
     setFormDescription("");
     setModalVisible(true);
   };
@@ -204,7 +204,6 @@ const RecurringTransactionsScreen: React.FC = () => {
   const handleOpenEdit = (item: RecurringTransaction) => {
     setEditingItem(item);
     setFormType(item.type);
-    setFormName(item.name);
     setFormAmount(String(item.amount));
     setFormCategory(item.category);
     setFormFrequency(item.frequency);
@@ -213,16 +212,25 @@ const RecurringTransactionsScreen: React.FC = () => {
     setFormIntervalDays(String(item.intervalDays || 7));
     setFormStartDate(item.startDate);
     setFormAutoCycle(item.autoStartNewCycle ?? true);
-    setFormCycleDays(String(item.cyclePeriodDays || (item.frequency === "weekly" ? 7 : 30)));
-    setFormDescription(item.description || "");
+    const days = item.cyclePeriodDays || (item.frequency === "weekly" ? 7 : 30);
+    if (days === 7) {
+      setCyclePreset("weekly");
+    } else if (days === 14) {
+      setCyclePreset("biweekly");
+    } else if (days === 30) {
+      setCyclePreset("monthly");
+    } else {
+      setCyclePreset("custom");
+      setCustomDays(String(days));
+    }
+    setFormDescription(item.description || (item.name !== item.category ? item.name : ""));
     setModalVisible(true);
   };
 
   // Save Modal Form
   const handleSave = async () => {
-    const rawName = formName.trim();
-    if (!rawName) {
-      Alert.alert("Perhatian", "Silakan masukkan nama transaksi rutin");
+    if (!formCategory.trim()) {
+      Alert.alert("Perhatian", "Silakan pilih atau buat kategori terlebih dahulu");
       return;
     }
 
@@ -232,15 +240,15 @@ const RecurringTransactionsScreen: React.FC = () => {
       return;
     }
 
-    if (!formCategory.trim()) {
-      Alert.alert("Perhatian", "Silakan pilih atau buat kategori terlebih dahulu");
-      return;
-    }
+    const effectiveName = formDescription.trim() || formCategory;
 
-    const cycleDaysVal =
-      formType === "income" && formAutoCycle
-        ? Math.max(1, parseInt(formCycleDays, 10) || (formFrequency === "weekly" ? 7 : 30))
-        : undefined;
+    let cycleDaysVal: number | undefined = undefined;
+    if (formType === "income" && formAutoCycle) {
+      if (cyclePreset === "weekly") cycleDaysVal = 7;
+      else if (cyclePreset === "biweekly") cycleDaysVal = 14;
+      else if (cyclePreset === "monthly") cycleDaysVal = 30;
+      else cycleDaysVal = Math.max(1, parseInt(customDays, 10) || 7);
+    }
 
     const intervalDaysVal =
       formFrequency === "custom_days"
@@ -249,7 +257,7 @@ const RecurringTransactionsScreen: React.FC = () => {
 
     if (editingItem) {
       await editRecurringTransaction(editingItem.id, {
-        name: rawName,
+        name: effectiveName,
         amount: numAmount,
         type: formType,
         category: formCategory,
@@ -264,7 +272,7 @@ const RecurringTransactionsScreen: React.FC = () => {
       });
     } else {
       await addRecurringTransaction({
-        name: rawName,
+        name: effectiveName,
         amount: numAmount,
         type: formType,
         category: formCategory,
@@ -1104,31 +1112,6 @@ const RecurringTransactionsScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Nama Transaksi */}
-              <View style={{ marginBottom: 14 }}>
-                <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                  NAMA JADWAL / TRANSAKSI
-                </Text>
-                <TextInput
-                  value={formName}
-                  onChangeText={setFormName}
-                  placeholder={
-                    formType === "income" ? "Contoh: Uang Bulanan / Honor" : "Contoh: Tagihan Kost"
-                  }
-                  placeholderTextColor={colors.gray500}
-                  style={{
-                    backgroundColor: colors.background,
-                    borderRadius: 14,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    color: colors.textPrimary,
-                    fontSize: 14,
-                    borderWidth: 1,
-                    borderColor: `${colors.border}80`,
-                  }}
-                />
-              </View>
-
               {/* Nominal */}
               <View style={{ marginBottom: 14 }}>
                 <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
@@ -1349,9 +1332,9 @@ const RecurringTransactionsScreen: React.FC = () => {
                         onPress={() => {
                           setFormFrequency(freq.id as any);
                           if (freq.id === "weekly") {
-                            setFormCycleDays("7");
+                            setCyclePreset("weekly");
                           } else if (freq.id === "monthly") {
-                            setFormCycleDays("30");
+                            setCyclePreset("monthly");
                           }
                         }}
                         activeOpacity={0.7}
@@ -1622,32 +1605,121 @@ const RecurringTransactionsScreen: React.FC = () => {
                   {formAutoCycle && (
                     <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: `${colors.border}50` }}>
                       <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", marginBottom: 6 }}>
-                        DURASI UANG BERTAHAN (HARI)
+                        TARGET BERTAHAN (HARI):
                       </Text>
-                      <View style={{ flexDirection: "row", gap: 8 }}>
-                        {["7", "14", "30"].map((d) => (
-                          <TouchableOpacity
-                            key={d}
-                            onPress={() => setFormCycleDays(d)}
-                            style={{
-                              paddingHorizontal: 12,
-                              paddingVertical: 6,
-                              borderRadius: 8,
-                              backgroundColor: formCycleDays === d ? colors.accent : colors.surface,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: formCycleDays === d ? "#FFFFFF" : colors.gray400,
-                                fontSize: 11,
-                                fontWeight: "700",
-                              }}
-                            >
-                              {d} Hari
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                      <View style={{ flexDirection: "row", gap: 6 }}>
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: cyclePreset === "weekly" ? `${colors.accent}20` : colors.surface,
+                            borderWidth: 1,
+                            borderColor: cyclePreset === "weekly" ? colors.accent : `${colors.border}60`,
+                          }}
+                          onPress={() => setCyclePreset("weekly")}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: cyclePreset === "weekly" ? colors.accent : colors.gray400 }}>7 hr</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: cyclePreset === "biweekly" ? `${colors.accent}20` : colors.surface,
+                            borderWidth: 1,
+                            borderColor: cyclePreset === "biweekly" ? colors.accent : `${colors.border}60`,
+                          }}
+                          onPress={() => setCyclePreset("biweekly")}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: cyclePreset === "biweekly" ? colors.accent : colors.gray400 }}>14 hr</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: cyclePreset === "monthly" ? `${colors.accent}20` : colors.surface,
+                            borderWidth: 1,
+                            borderColor: cyclePreset === "monthly" ? colors.accent : `${colors.border}60`,
+                          }}
+                          onPress={() => setCyclePreset("monthly")}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: cyclePreset === "monthly" ? colors.accent : colors.gray400 }}>30 hr</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: cyclePreset === "custom" ? `${colors.accent}20` : colors.surface,
+                            borderWidth: 1,
+                            borderColor: cyclePreset === "custom" ? colors.accent : `${colors.border}60`,
+                          }}
+                          onPress={() => setCyclePreset("custom")}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: cyclePreset === "custom" ? colors.accent : colors.gray400 }}>Kustom</Text>
+                        </TouchableOpacity>
                       </View>
+
+                      {cyclePreset === "custom" && (
+                        <View style={{
+                          marginTop: 10,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          backgroundColor: colors.surface,
+                          borderRadius: 12,
+                          paddingHorizontal: 14,
+                          paddingVertical: 2,
+                          borderWidth: 1,
+                          borderColor: `${colors.border}80`,
+                        }}>
+                          <TextInput
+                            style={{ flex: 1, paddingVertical: 8, fontSize: 14, fontWeight: "600", color: colors.textPrimary }}
+                            value={customDays}
+                            onChangeText={setCustomDays}
+                            keyboardType="number-pad"
+                            placeholder="Contoh: 15"
+                            placeholderTextColor={colors.gray500}
+                            maxLength={3}
+                          />
+                          <Text style={{ fontSize: 13, fontWeight: "500", color: colors.gray400 }}>Hari</Text>
+                        </View>
+                      )}
+
+                      {/* Live Simulation Preview */}
+                      {(() => {
+                        const cleanAmount = parseFloat(formAmount.replace(/\D/g, ""));
+                        const days = cyclePreset === "weekly" ? 7 : cyclePreset === "biweekly" ? 14 : cyclePreset === "monthly" ? 30 : Math.max(1, parseInt(customDays, 10) || 7);
+                        if (cleanAmount > 0) {
+                          const dailyRate = Math.round(cleanAmount / days);
+                          return (
+                            <View style={{
+                              marginTop: 10,
+                              padding: 10,
+                              borderRadius: 12,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              backgroundColor: `${colors.accent}12`,
+                              borderWidth: 1,
+                              borderColor: `${colors.accent}30`,
+                            }}>
+                              <Ionicons name="bulb-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+                              <Text style={{ fontSize: 11, color: colors.textPrimary, flex: 1 }}>
+                                Jatah belanja aman: <Text style={{ color: colors.accent, fontWeight: "700" }}>~{formatCurrency(dailyRate)}</Text> per hari selama {days} hari ke depan.
+                              </Text>
+                            </View>
+                          );
+                        }
+                        return null;
+                      })()}
                     </View>
                   )}
                 </View>
@@ -1723,7 +1795,11 @@ const RecurringTransactionsScreen: React.FC = () => {
                 <TextInput
                   value={formDescription}
                   onChangeText={setFormDescription}
-                  placeholder="Keterangan tambahan..."
+                  placeholder={
+                    formType === "income"
+                      ? "Contoh: Gaji Kantor, Honor Project, dll."
+                      : "Contoh: Netflix, Kost Kamar 12, dll."
+                  }
                   placeholderTextColor={colors.gray500}
                   style={{
                     backgroundColor: colors.background,
