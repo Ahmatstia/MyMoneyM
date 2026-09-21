@@ -24,6 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type AddSavingsTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -35,19 +36,19 @@ type AddSavingsTransactionScreenRouteProp = RouteProp<
   "AddSavingsTransaction"
 >;
 
-// WARNA KONSISTEN
-const PRIMARY_COLOR = Colors.primary;
-const ACCENT_COLOR = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const BORDER_COLOR = Colors.border;
-const SUCCESS_COLOR = Colors.success;
-const ERROR_COLOR = Colors.error;
-const INFO_COLOR = Colors.info;
-
 const AddSavingsTransactionScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR = colors.primary;
+  const ACCENT_COLOR = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const BORDER_COLOR = colors.border;
+  const SUCCESS_COLOR = colors.success;
+  const ERROR_COLOR = colors.error;
+  const INFO_COLOR = colors.info;
+
   const navigation = useNavigation<AddSavingsTransactionScreenNavigationProp>();
   const route = useRoute<AddSavingsTransactionScreenRouteProp>();
 
@@ -66,6 +67,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getCurrentDate());
   const [note, setNote] = useState("");
+  const [syncWithCash, setSyncWithCash] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Temukan savings berdasarkan ID
@@ -235,12 +237,16 @@ const AddSavingsTransactionScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      await addSavingsTransaction(saving.id, {
-        type: transactionType,
-        amount: amountNum,
-        date,
-        note: note.trim(),
-      });
+      await addSavingsTransaction(
+        saving.id,
+        {
+          type: transactionType,
+          amount: amountNum,
+          date,
+          note: note.trim(),
+        },
+        syncWithCash
+      );
 
       Alert.alert(
         "Sukses",
@@ -495,6 +501,60 @@ const AddSavingsTransactionScreen: React.FC = () => {
             />
           </View>
         </View>
+
+        {/* Opsi Sinkronisasi Saldo Kas */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setSyncWithCash(!syncWithCash)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: syncWithCash
+              ? (transactionType === "deposit" ? `${SUCCESS_COLOR}15` : `${INFO_COLOR}15`)
+              : SURFACE_COLOR,
+            borderWidth: 1,
+            borderColor: syncWithCash
+              ? (transactionType === "deposit" ? SUCCESS_COLOR : INFO_COLOR)
+              : `${BORDER_COLOR}60`,
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 16,
+          }}
+        >
+          <View
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              borderWidth: 1.5,
+              borderColor: syncWithCash
+                ? (transactionType === "deposit" ? SUCCESS_COLOR : INFO_COLOR)
+                : Colors.gray500,
+              backgroundColor: syncWithCash
+                ? (transactionType === "deposit" ? SUCCESS_COLOR : INFO_COLOR)
+                : "transparent",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 12,
+            }}
+          >
+            {syncWithCash && (
+              <Ionicons name="checkmark" size={16} color="#FFF" />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>
+              {transactionType === "deposit"
+                ? "Potong dari Saldo Kas utama (Pengeluaran)"
+                : "Masukkan ke Saldo Kas utama (Pemasukan)"}
+            </Text>
+            <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+              {transactionType === "deposit"
+                ? "Saldo dompet berkurang dan otomatis tercatat sebagai mutasi pengeluaran tabungan."
+                : "Saldo dompet bertambah dan otomatis tercatat sebagai mutasi pemasukan tabungan."}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Tips */}
         <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: INFO_COLOR + "10" }]}>

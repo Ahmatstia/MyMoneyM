@@ -19,29 +19,22 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { Debt, RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type AddDebtRoute = RouteProp<RootStackParamList, "AddDebt">;
 
 const CATEGORIES = ["Kebutuhan", "Darurat", "Konsumtif", "Usaha", "Pendidikan", "Lainnya"];
 
-// ─── Tema warna (Konsisten dengan HomeScreen) ──────────────────────────────────
-const PRIMARY_COLOR    = Colors.primary;
-const ACCENT_COLOR     = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const BORDER_COLOR     = Colors.border;
-
-const SectionHeader = ({ title }: { title: string }) => (
-  <Text
-    style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}
-  >
-    {title}
-  </Text>
-);
-
 const AddDebtScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR    = colors.primary;
+  const ACCENT_COLOR     = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const TEXT_SECONDARY   = colors.textSecondary;
+  const BORDER_COLOR     = colors.border;
+
   const navigation = useNavigation<any>();
   const route = useRoute<AddDebtRoute>();
   const { addDebt, editDebt } = useAppContext();
@@ -55,9 +48,18 @@ const AddDebtScreen: React.FC = () => {
   const [category, setCategory] = useState(existingDebt?.category ?? "Lainnya");
   const [description, setDescription] = useState(existingDebt?.description ?? "");
   const [dueDate, setDueDate] = useState(existingDebt?.dueDate ?? "");
+  const [syncWithCash, setSyncWithCash] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // RISK-006 FIX: Use a date picker instead of free-text input
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <Text
+      style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}
+    >
+      {title}
+    </Text>
+  );
 
   const validate = () => {
     if (!name.trim()) { Alert.alert("Error", "Nama wajib diisi"); return false; }
@@ -106,7 +108,7 @@ const AddDebtScreen: React.FC = () => {
       if (editMode && existingDebt) {
         await editDebt(existingDebt.id, payload);
       } else {
-        await addDebt(payload);
+        await addDebt(payload, syncWithCash);
       }
       navigation.goBack();
     } catch (e) {
@@ -264,7 +266,7 @@ const AddDebtScreen: React.FC = () => {
           </View>
 
           {/* Description */}
-          <View style={tw`mb-6`}>
+          <View style={tw`mb-4`}>
             <SectionHeader title="Keterangan" />
             <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
               <TextInput
@@ -278,6 +280,54 @@ const AddDebtScreen: React.FC = () => {
               />
             </View>
           </View>
+
+          {/* Opsi Sinkronisasi Saldo Kas */}
+          {!editMode && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setSyncWithCash(!syncWithCash)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: syncWithCash ? `${ACCENT_COLOR}15` : SURFACE_COLOR,
+                borderWidth: 1,
+                borderColor: syncWithCash ? ACCENT_COLOR : `${colors.border}60`,
+                borderRadius: 14,
+                padding: 14,
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 6,
+                  borderWidth: 1.5,
+                  borderColor: syncWithCash ? ACCENT_COLOR : Colors.gray500,
+                  backgroundColor: syncWithCash ? ACCENT_COLOR : "transparent",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                {syncWithCash && (
+                  <Ionicons name="checkmark" size={16} color={BACKGROUND_COLOR} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>
+                  {type === "borrowed"
+                    ? "Tambah ke Saldo Kas (Pemasukan)"
+                    : "Kurangi dari Saldo Kas (Pengeluaran)"}
+                </Text>
+                <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                  {type === "borrowed"
+                    ? "Saldo dompet bertambah dan otomatis tercatat sebagai transaksi pemasukan pinjaman."
+                    : "Saldo dompet berkurang dan otomatis tercatat sebagai transaksi pengeluaran pinjaman."}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           {/* Action Buttons */}
           <TouchableOpacity

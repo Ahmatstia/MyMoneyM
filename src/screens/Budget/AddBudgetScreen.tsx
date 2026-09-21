@@ -24,6 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 
@@ -34,18 +35,7 @@ type AddBudgetScreenNavigationProp = StackNavigationProp<
 
 type AddBudgetScreenRouteProp = RouteProp<RootStackParamList, "AddBudget">;
 
-// WARNA KONSISTEN
-const PRIMARY_COLOR = Colors.primary;
-const ACCENT_COLOR = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const BORDER_COLOR = Colors.border;
-const SUCCESS_COLOR = Colors.success;
-const WARNING_COLOR = Colors.warning;
-const ERROR_COLOR = Colors.error;
-const INFO_COLOR = Colors.info;
+
 
 
 // Helper untuk format tanggal
@@ -74,6 +64,19 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 };
 
 const AddBudgetScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR = colors.primary;
+  const ACCENT_COLOR = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const BORDER_COLOR = colors.border;
+  const SUCCESS_COLOR = colors.success;
+  const WARNING_COLOR = colors.warning;
+  const ERROR_COLOR = colors.error;
+  const INFO_COLOR = colors.info;
+
   const navigation = useNavigation<AddBudgetScreenNavigationProp>();
   const route = useRoute<AddBudgetScreenRouteProp>();
   const { addBudget, editBudget, deleteBudget, state } = useAppContext();
@@ -399,10 +402,16 @@ const AddBudgetScreen: React.FC = () => {
 
     // Validasi duplikat kategori (kecuali edit mode)
     if (!isEditMode) {
-      // RISK-005 FIX: Compare case-insensitively to prevent duplicate budgets with different casing
-      const isDuplicate = state.budgets.some((b) => b.category.toLowerCase() === category.toLowerCase());
+      // RISK-005 FIX: Compare case-insensitively & only check active budgets
+      const today = new Date().toISOString().split("T")[0];
+      const isDuplicate = state.budgets.some((b) => {
+        if (b.category.toLowerCase() !== category.toLowerCase()) return false;
+        // Jika anggaran lama adalah sekali pakai dan sudah lewat tanggalnya, jangan blokir
+        const isCompleted = b.isRecurring === false && today > b.endDate;
+        return !isCompleted;
+      });
       if (isDuplicate) {
-        Alert.alert("Error", `Kategori "${category}" sudah memiliki anggaran.`);
+        Alert.alert("Error", `Kategori "${category}" sudah memiliki anggaran aktif.`);
         return;
       }
     }

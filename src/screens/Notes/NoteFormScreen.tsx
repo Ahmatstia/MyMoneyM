@@ -1,5 +1,5 @@
 // File: src/screens/Notes/NoteFormScreen.tsx - KONSISTEN DENGAN TEMA NAVY BLUE
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { useAppContext } from "../../context/AppContext";
 import { safeNumber, getCurrentDate } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type NoteFormScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -30,94 +31,96 @@ type NoteFormScreenNavigationProp = StackNavigationProp<
 
 type NoteFormScreenRouteProp = RouteProp<RootStackParamList, "NoteForm">;
 
-// WARNA KONSISTEN
-const PRIMARY_COLOR = Colors.primary;
-const ACCENT_COLOR = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const BORDER_COLOR = Colors.border;
-const SUCCESS_COLOR = Colors.success;
-const WARNING_COLOR = Colors.warning;
-const ERROR_COLOR = Colors.error;
-const INFO_COLOR = Colors.info;
-const PURPLE_COLOR = Colors.purple;
-const PINK_COLOR = Colors.pink;
 
-const NOTE_TYPES = [
-  {
-    id: "financial_decision",
-    name: "Keputusan Finansial",
-    icon: "cash" as const,
-    color: ACCENT_COLOR,
-  },
-  {
-    id: "expense_reflection",
-    name: "Refleksi Pengeluaran",
-    icon: "receipt" as const,
-    color: SUCCESS_COLOR,
-  },
-  {
-    id: "goal_progress",
-    name: "Progress Tujuan",
-    icon: "flag" as const,
-    color: WARNING_COLOR,
-  },
-  {
-    id: "investment_idea",
-    name: "Ide Investasi",
-    icon: "trending-up" as const,
-    color: INFO_COLOR,
-  },
-  {
-    id: "budget_analysis",
-    name: "Analisis Budget",
-    icon: "pie-chart" as const,
-    color: PURPLE_COLOR,
-  },
-  {
-    id: "general",
-    name: "Catatan Umum",
-    icon: "document-text" as const,
-    color: PINK_COLOR,
-  },
-] as const;
-
-const MOODS = [
-  {
-    id: "positive" as const,
-    name: "😊 Positif",
-    icon: "happy" as const,
-    color: SUCCESS_COLOR,
-  },
-  {
-    id: "neutral" as const,
-    name: "😐 Netral",
-    icon: "remove" as const,
-    color: WARNING_COLOR,
-  },
-  {
-    id: "negative" as const,
-    name: "😔 Negatif",
-    icon: "sad" as const,
-    color: ERROR_COLOR,
-  },
-  {
-    id: "reflective" as const,
-    name: "🤔 Reflektif",
-    icon: "bulb" as const,
-    color: INFO_COLOR,
-  },
-] as const;
-
-const IMPACTS = [
-  { id: "positive" as const, name: "Positif (+💰)", color: SUCCESS_COLOR },
-  { id: "neutral" as const, name: "Netral", color: WARNING_COLOR },
-  { id: "negative" as const, name: "Negatif (-💰)", color: ERROR_COLOR },
-] as const;
 
 const NoteFormScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR = colors.primary;
+  const ACCENT_COLOR = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const BORDER_COLOR = colors.border;
+  const SUCCESS_COLOR = colors.success;
+  const WARNING_COLOR = colors.warning;
+  const ERROR_COLOR = colors.error;
+  const INFO_COLOR = colors.info;
+  const PURPLE_COLOR = colors.purple;
+  const PINK_COLOR = colors.pink;
+
+  const NOTE_TYPES = useMemo(() => [
+    {
+      id: "financial_decision",
+      name: "Keputusan Finansial",
+      icon: "cash" as const,
+      color: ACCENT_COLOR,
+    },
+    {
+      id: "expense_reflection",
+      name: "Refleksi Pengeluaran",
+      icon: "receipt" as const,
+      color: SUCCESS_COLOR,
+    },
+    {
+      id: "goal_progress",
+      name: "Progress Tujuan",
+      icon: "flag" as const,
+      color: WARNING_COLOR,
+    },
+    {
+      id: "investment_idea",
+      name: "Ide Investasi",
+      icon: "trending-up" as const,
+      color: INFO_COLOR,
+    },
+    {
+      id: "budget_analysis",
+      name: "Analisis Budget",
+      icon: "pie-chart" as const,
+      color: PURPLE_COLOR,
+    },
+    {
+      id: "general",
+      name: "Catatan Umum",
+      icon: "document-text" as const,
+      color: PINK_COLOR,
+    },
+  ], [ACCENT_COLOR, SUCCESS_COLOR, WARNING_COLOR, INFO_COLOR, PURPLE_COLOR, PINK_COLOR]);
+
+  const MOODS = useMemo(() => [
+    {
+      id: "positive" as const,
+      name: "😊 Positif",
+      icon: "happy" as const,
+      color: SUCCESS_COLOR,
+    },
+    {
+      id: "neutral" as const,
+      name: "😐 Netral",
+      icon: "remove" as const,
+      color: WARNING_COLOR,
+    },
+    {
+      id: "negative" as const,
+      name: "😔 Negatif",
+      icon: "sad" as const,
+      color: ERROR_COLOR,
+    },
+    {
+      id: "reflective" as const,
+      name: "🤔 Reflektif",
+      icon: "bulb" as const,
+      color: INFO_COLOR,
+    },
+  ], [SUCCESS_COLOR, WARNING_COLOR, ERROR_COLOR, INFO_COLOR]);
+
+  const IMPACTS = useMemo(() => [
+    { id: "positive" as const, name: "Positif (+💰)", color: SUCCESS_COLOR },
+    { id: "neutral" as const, name: "Netral", color: WARNING_COLOR },
+    { id: "negative" as const, name: "Negatif (-💰)", color: ERROR_COLOR },
+  ], [SUCCESS_COLOR, WARNING_COLOR, ERROR_COLOR]);
+
   const navigation = useNavigation<NoteFormScreenNavigationProp>();
   const route = useRoute<NoteFormScreenRouteProp>();
 

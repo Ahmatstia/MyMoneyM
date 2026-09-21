@@ -79,6 +79,7 @@ interface AppContextType {
       date: string;
       note?: string;
     },
+    syncWithCash?: boolean,
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
@@ -93,6 +94,7 @@ interface AppContextType {
   // 🔹 DEBTS
   addDebt: (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
+    syncWithCash?: boolean,
   ) => Promise<void>;
   editDebt: (id: string, updates: Partial<Debt>) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
@@ -655,6 +657,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       date: string;
       note?: string;
     },
+    syncWithCash: boolean = false,
   ) => {
     const saving = state.savings.find((s) => s.id === savingsId);
     if (!saving) throw new Error("Tabungan tidak ditemukan");
@@ -687,10 +690,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: new Date().toISOString(),
     };
 
+    let updatedTransactions = state.transactions;
+    let totals = {
+      totalIncome: state.totalIncome,
+      totalExpense: state.totalExpense,
+      balance: state.balance,
+    };
+    let updatedBudgets = state.budgets;
+
+    if (syncWithCash && amount > 0) {
+      const isDeposit = transaction.type === "deposit";
+      const newCashTransaction: Transaction = {
+        id: generateTransactionId(),
+        amount: amount,
+        type: isDeposit ? "expense" : "income",
+        category: "Tabungan",
+        description: isDeposit
+          ? `Setor Tabungan: ${saving.name}`
+          : `Tarik Tabungan: ${saving.name}`,
+        date: transaction.date || new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString(),
+      };
+      updatedTransactions = [newCashTransaction, ...state.transactions];
+      totals = calculateTotals(updatedTransactions);
+      updatedBudgets = updateBudgetsFromTransactions(
+        updatedTransactions,
+        state.budgets,
+      );
+    }
+
     const newState: AppState = {
       ...state,
       savings: updatedSavings,
       savingsTransactions: [...state.savingsTransactions, newTransaction],
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
     };
 
     setState(newState);
@@ -790,6 +825,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // ========== DEBTS FUNCTIONS ==========
   const addDebt = async (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
+    syncWithCash: boolean = false,
   ) => {
     const newDebt: Debt = {
       ...debt,
@@ -800,9 +836,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedAt: new Date().toISOString(), // RISK-004 FIX: set updatedAt on creation for consistent sorting/filtering
     };
 
+    let updatedTransactions = state.transactions;
+    let totals = {
+      totalIncome: state.totalIncome,
+      totalExpense: state.totalExpense,
+      balance: state.balance,
+    };
+    let updatedBudgets = state.budgets;
+
+    if (syncWithCash && debt.amount > 0) {
+      const isBorrowed = debt.type === "borrowed";
+      const newTransaction: Transaction = {
+        id: generateTransactionId(),
+        amount: debt.amount,
+        type: isBorrowed ? "income" : "expense",
+        category: "Hutang",
+        description: isBorrowed
+          ? `Penerimaan Pinjaman: ${debt.name}`
+          : `Pemberian Pinjaman: ${debt.name}`,
+        date: new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString(),
+      };
+      updatedTransactions = [newTransaction, ...state.transactions];
+      totals = calculateTotals(updatedTransactions);
+      updatedBudgets = updateBudgetsFromTransactions(
+        updatedTransactions,
+        state.budgets,
+      );
+    }
+
     const newState: AppState = {
       ...state,
       debts: [newDebt, ...state.debts],
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      ...totals,
     };
     setState(newState);
     await storageService.saveData(newState);

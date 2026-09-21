@@ -21,6 +21,7 @@ import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
@@ -33,19 +34,22 @@ type AddTransactionScreenRouteProp = RouteProp<
   "AddTransaction"
 >;
 
-const PRIMARY_COLOR = Colors.primary;
-const ACCENT_COLOR = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const BORDER_COLOR = Colors.border;
-const SUCCESS_COLOR = Colors.success;
-const ERROR_COLOR = Colors.error;
-const WARNING_COLOR = Colors.warning;
+
 
 
 const AddTransactionScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR = colors.primary;
+  const ACCENT_COLOR = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const BORDER_COLOR = colors.border;
+  const SUCCESS_COLOR = colors.success;
+  const ERROR_COLOR = colors.error;
+  const WARNING_COLOR = colors.warning;
+
   const navigation = useNavigation<AddTransactionScreenNavigationProp>();
   const route = useRoute<AddTransactionScreenRouteProp>();
   const { addTransaction, editTransaction, deleteTransaction, state } =

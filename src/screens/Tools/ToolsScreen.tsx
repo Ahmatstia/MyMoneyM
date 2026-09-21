@@ -167,7 +167,7 @@ const DailyLimitCalc = ({ visible, onClose, balance, totalDebt }: {
                 <Text style={{ color: TS, fontSize: 12, marginBottom: 4 }}>Uang yang BISA dipakai</Text>
                 <Text style={{ color: ACCENT, fontSize: 20, fontWeight: "800" }}>{fmt(safeBalance)}</Text>
                 {totalDebt > 0 && (
-                   <Text style={{ color: Colors.error, fontSize: 10, marginTop: 4 }}>*Telah dipotong hutang (Rp {fmt(totalDebt)})</Text>
+                   <Text style={{ color: Colors.error, fontSize: 10, marginTop: 4 }}>*Telah dipotong hutang ({fmt(totalDebt)})</Text>
                 )}
               </View>
 
@@ -533,8 +533,10 @@ const BasicCalc = ({ visible, onClose }: { visible: boolean; onClose: () => void
         if (!sanitized) return;
         const withPercent = sanitized.replace(/%/g, '/100');
         const evalResult = new Function('return ' + withPercent)();
-        if (evalResult !== undefined && !isNaN(evalResult)) {
+        if (evalResult !== undefined && !isNaN(evalResult) && isFinite(evalResult)) {
           setResult(parseFloat(evalResult.toFixed(10)).toString());
+        } else {
+          setResult("Error");
         }
       } catch (e) {
         setResult("Error");

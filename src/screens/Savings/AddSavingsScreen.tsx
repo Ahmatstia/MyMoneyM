@@ -27,6 +27,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 type AddSavingsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -35,20 +36,7 @@ type AddSavingsScreenNavigationProp = StackNavigationProp<
 
 type AddSavingsScreenRouteProp = RouteProp<RootStackParamList, "AddSavings">;
 
-// WARNA KONSISTEN
-const PRIMARY_COLOR = Colors.primary;
-const ACCENT_COLOR = Colors.accent;
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const BORDER_COLOR = Colors.border;
-const SUCCESS_COLOR = Colors.success;
-const WARNING_COLOR = Colors.warning;
-const ERROR_COLOR = Colors.error;
-const INFO_COLOR = Colors.info;
-const PURPLE_COLOR = Colors.purple;
-const PINK_COLOR = Colors.pink;
+
 
 const CATEGORIES = [
   { id: "emergency", name: "Dana Darurat", icon: "shield" as const },
@@ -69,6 +57,21 @@ const PRIORITIES = [
 ];
 
 const AddSavingsScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const PRIMARY_COLOR = colors.primary;
+  const ACCENT_COLOR = colors.accent;
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const BORDER_COLOR = colors.border;
+  const SUCCESS_COLOR = colors.success;
+  const WARNING_COLOR = colors.warning;
+  const ERROR_COLOR = colors.error;
+  const INFO_COLOR = colors.info;
+  const PURPLE_COLOR = colors.purple;
+  const PINK_COLOR = colors.pink;
+
   const navigation = useNavigation<AddSavingsScreenNavigationProp>();
   const route = useRoute<AddSavingsScreenRouteProp>();
 

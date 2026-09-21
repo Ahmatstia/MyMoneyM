@@ -15,21 +15,11 @@ import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
-// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const ERROR_COLOR      = Colors.error;
-
-// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
@@ -41,50 +31,63 @@ const SectionHeader = ({
   title: string;
   linkLabel?: string;
   onPress?: () => void;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 14,
-    }}
-  >
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: ACCENT_COLOR,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: Colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-    {linkLabel && onPress && (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Text style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "600" }}>
-          {linkLabel}
+}) => {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            width: 3,
+            height: 13,
+            backgroundColor: colors.accent,
+            borderRadius: 2,
+            marginRight: 8,
+          }}
+        />
+        <Text
+          style={{
+            color: colors.gray400,
+            fontSize: 10,
+            fontWeight: "700",
+            letterSpacing: 1.2,
+            textTransform: "uppercase",
+          }}
+        >
+          {title}
         </Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+      </View>
+      {linkLabel && onPress && (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+            {linkLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const SavingsHistoryScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const TEXT_SECONDARY   = colors.textSecondary;
+  const ACCENT_COLOR     = colors.accent;
+  const SUCCESS_COLOR    = colors.success;
+  const ERROR_COLOR      = colors.error;
+  const CARD_BORDER      = `${colors.border}80`;
+
   const navigation = useNavigation<any>();
   const route      = useRoute<any>();
   const { savingsId } = route.params;

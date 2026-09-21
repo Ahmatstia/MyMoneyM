@@ -16,20 +16,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
-// ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const ERROR_COLOR      = Colors.error;
-
-// ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
 const CARD_RADIUS  = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD     = 20;
-const CARD_BORDER  = "rgba(255,255,255,0.06)";
 
 // ─── Note type config (tidak diubah) ─────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { color: string; label: string; icon: keyof typeof Ionicons.glyphMap }> = {
@@ -44,6 +35,15 @@ const TYPE_CONFIG: Record<string, { color: string; label: string; icon: keyof ty
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const NoteDetailScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const BACKGROUND_COLOR = colors.background;
+  const SURFACE_COLOR    = colors.surface;
+  const TEXT_PRIMARY     = colors.textPrimary;
+  const TEXT_SECONDARY   = colors.textSecondary;
+  const ACCENT_COLOR     = colors.accent;
+  const ERROR_COLOR      = colors.error;
+  const CARD_BORDER      = `${colors.border}80`;
+
   const { state, deleteNote } = useAppContext();
   const { notes }    = state;
   const navigation   = useNavigation<any>();
