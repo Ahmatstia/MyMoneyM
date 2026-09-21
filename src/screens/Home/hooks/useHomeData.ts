@@ -21,7 +21,7 @@ import {
   DEFAULT_CATEGORIES,
   ALL_SYSTEM_CATEGORIES,
   CategoryItem,
-} from "../../../components/CategoryPickerModal";
+} from "../../../constants/categories";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 

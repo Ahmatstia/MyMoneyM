@@ -241,8 +241,25 @@ const SavingsDetailScreen: React.FC = () => {
       if (diffDays <= 30) return { text: `${Math.floor(diffDays / 7)} minggu lagi`, color: Colors.info };
       return              { text: `${Math.floor(diffDays / 30)} bulan lagi`,       color: SUCCESS_COLOR };
     } catch {
-      return { text: saving.deadline, color: Colors.textTertiary };
+      return { text: saving?.deadline || "", color: Colors.textTertiary };
     }
+  };
+
+  const getCategoryDisplay = (s?: { category?: string }): string => {
+    if (!s?.category) return "Lainnya";
+    const lower = s.category.toLowerCase();
+    const legacyMap: Record<string, string> = {
+      emergency: "Dana Darurat",
+      vacation: "Liburan",
+      gadget: "Gadget",
+      education: "Pendidikan",
+      house: "Rumah",
+      car: "Kendaraan",
+      health: "Kesehatan",
+      wedding: "Pernikahan",
+      other: "Lainnya",
+    };
+    return legacyMap[lower] || s.category;
   };
 
   const deadlineInfo = formatDeadlineInfo();
@@ -500,6 +517,24 @@ const SavingsDetailScreen: React.FC = () => {
               >
                 {saving.name}
               </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: saving.description ? 4 : 0 }}>
+                <View
+                  style={{
+                    paddingHorizontal: 7,
+                    paddingVertical: 2,
+                    borderRadius: 8,
+                    backgroundColor: `${activeColor}18`,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Ionicons name={(saving.icon as any) || "wallet-outline"} size={10} color={activeColor} />
+                  <Text style={{ color: activeColor, fontSize: 9, fontWeight: "700" }}>
+                    {getCategoryDisplay(saving)}
+                  </Text>
+                </View>
+              </View>
               {saving.description ? (
                 <Text
                   style={{ color: Colors.gray400, fontSize: 12, lineHeight: 17 }}

@@ -1,5 +1,5 @@
 // File: src/screens/AddSavingsScreen.tsx - KONSISTEN DENGAN TEMA NAVY BLUE
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   TextInput,
   Modal,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -28,6 +30,10 @@ import {
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
+import CategoryPickerModal, {
+  ALL_SYSTEM_CATEGORIES,
+  CategoryItem,
+} from "../../components/CategoryPickerModal";
 
 type AddSavingsScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -36,19 +42,20 @@ type AddSavingsScreenNavigationProp = StackNavigationProp<
 
 type AddSavingsScreenRouteProp = RouteProp<RootStackParamList, "AddSavings">;
 
-
-
-const CATEGORIES = [
-  { id: "emergency", name: "Dana Darurat", icon: "shield" as const },
-  { id: "vacation", name: "Liburan", icon: "airplane" as const },
-  { id: "gadget", name: "Gadget", icon: "phone-portrait" as const },
-  { id: "education", name: "Pendidikan", icon: "school" as const },
-  { id: "house", name: "Rumah", icon: "home" as const },
-  { id: "car", name: "Mobil", icon: "car" as const },
-  { id: "health", name: "Kesehatan", icon: "medical" as const },
-  { id: "wedding", name: "Pernikahan", icon: "heart" as const },
-  { id: "other", name: "Lainnya", icon: "wallet" as const },
-];
+const LEGACY_SAVINGS_CATEGORY_MAP: Record<
+  string,
+  { name: string; icon: string; color: string }
+> = {
+  emergency: { name: "Dana Darurat", icon: "shield-checkmark-outline", color: "#EF4444" },
+  vacation:  { name: "Liburan",      icon: "airplane-outline",         color: "#3B82F6" },
+  gadget:    { name: "Gadget",       icon: "phone-portrait-outline",  color: "#8B5CF6" },
+  education: { name: "Pendidikan",   icon: "school-outline",          color: "#10B981" },
+  house:     { name: "Rumah",        icon: "home-outline",            color: "#F59E0B" },
+  car:       { name: "Kendaraan",    icon: "car-outline",             color: "#06B6D4" },
+  health:    { name: "Kesehatan",    icon: "medical-outline",         color: "#EC4899" },
+  wedding:   { name: "Pernikahan",   icon: "heart-outline",           color: "#F43F5E" },
+  other:     { name: "Lainnya",      icon: "wallet-outline",          color: "#94A3B8" },
+};
 
 const PRIORITIES = [
   { id: "low" as const, name: "Rendah", icon: "flag" as const },
@@ -79,7 +86,7 @@ const AddSavingsScreen: React.FC = () => {
   const isEditMode = params.editMode || false;
   const savingsData = params.savingsData;
 
-  const { addSavings, editSavings, deleteSavings } = useAppContext();
+  const { addSavings, editSavings, deleteSavings, state } = useAppContext();
 
   // State utama
   const [name, setName] = useState(savingsData?.name || "");
@@ -92,7 +99,19 @@ const AddSavingsScreen: React.FC = () => {
   const [deadline, setDeadline] = useState<string | undefined>(
     savingsData?.deadline
   );
-  const [category, setCategory] = useState(savingsData?.category || "other");
+
+  // Inisialisasi kategori: petakan jika savingsData memakai id legacy (misal "emergency")
+  const initialCategory = useMemo(() => {
+    if (!savingsData?.category) return "";
+    const lower = savingsData.category.toLowerCase();
+    if (LEGACY_SAVINGS_CATEGORY_MAP[lower]) {
+      return LEGACY_SAVINGS_CATEGORY_MAP[lower].name;
+    }
+    return savingsData.category;
+  }, [savingsData?.category]);
+
+  const [category, setCategory] = useState(initialCategory);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [priority, setPriority] = useState<"low" | "medium" | "high">(
     savingsData?.priority || "medium"
   );
@@ -108,6 +127,42 @@ const AddSavingsScreen: React.FC = () => {
 
   // State untuk calendar modal
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // Resolve kategori dari custom categories pengguna & system categories
+  const resolvedCategory = useMemo((): CategoryItem | null => {
+    const all: CategoryItem[] = [
+      ...(state.customCategories || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        color: c.color,
+        isCustom: true as const,
+        customId: c.id,
+      })),
+      ...ALL_SYSTEM_CATEGORIES,
+    ];
+
+    if (!category) return null;
+
+    const lower = category.toLowerCase();
+    const foundByName = all.find((c) => c.name.toLowerCase() === lower);
+    if (foundByName) return foundByName;
+
+    const foundById = all.find((c) => c.id.toLowerCase() === lower);
+    if (foundById) return foundById;
+
+    const legacy = LEGACY_SAVINGS_CATEGORY_MAP[lower];
+    if (legacy) {
+      return {
+        id: category,
+        name: legacy.name,
+        icon: legacy.icon,
+        color: legacy.color,
+      };
+    }
+
+    return null;
+  }, [category, state.customCategories]);
 
   // Validasi nama
   const validateName = (value: string): boolean => {
@@ -296,30 +351,6 @@ const AddSavingsScreen: React.FC = () => {
     }).format(amountNum);
   };
 
-  // Get category color
-  const getCategoryColor = (catId: string) => {
-    switch (catId) {
-      case "emergency":
-        return ERROR_COLOR;
-      case "vacation":
-        return INFO_COLOR;
-      case "gadget":
-        return PURPLE_COLOR;
-      case "education":
-        return SUCCESS_COLOR;
-      case "house":
-        return WARNING_COLOR;
-      case "car":
-        return ACCENT_COLOR;
-      case "health":
-        return PINK_COLOR;
-      case "wedding":
-        return ERROR_COLOR + "CC";
-      default:
-        return Colors.textTertiary;
-    }
-  };
-
   // Get priority color
   const getPriorityColor = (pri: "low" | "medium" | "high") => {
     switch (pri) {
@@ -370,18 +401,19 @@ const AddSavingsScreen: React.FC = () => {
   const saveSavings = async (targetNum: number, currentNum: number) => {
     setLoading(true);
     try {
-      const selectedCategory = CATEGORIES.find((c) => c.id === category);
+      const categoryName = resolvedCategory?.name || category || "Lainnya";
+      const categoryIcon = resolvedCategory?.icon || "wallet-outline";
 
       const savingsDataToSave = {
         name: name.trim(),
         target: targetNum,
         current: currentNum,
         deadline,
-        category: category || "other",
+        category: categoryName,
         priority: priority || "medium",
         description: description.trim() || "",
         imageCover: imageCover.trim() || undefined,
-        icon: selectedCategory?.icon || "wallet",
+        icon: categoryIcon,
       };
 
       if (isEditMode && savingsData) {
@@ -435,17 +467,22 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   const progress = calculateProgress();
-  const categoryColor = getCategoryColor(category);
+  const categoryColor = resolvedCategory?.color || ACCENT_COLOR;
   const priorityColor = getPriorityColor(priority);
   const smartRecommendation = getSmartRecommendation();
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
-      <ScrollView
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-2`}
-        showsVerticalScrollIndicator={false}
       >
+        <ScrollView
+          style={tw`flex-1`}
+          contentContainerStyle={[tw`px-4 pt-2`, { paddingBottom: 60 }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* ── Page Header ─────────────────────────────────────────────── */}
         <View
           style={{
@@ -717,67 +754,86 @@ const AddSavingsScreen: React.FC = () => {
         )}
 
         {/* Category Selection */}
-        <View style={tw`mb-5`}>
-          <View style={tw`flex-row items-center justify-between mb-3`}>
-            <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>
-              Kategori
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
+              Kategori Tabungan
             </Text>
-            <Text style={[tw`text-xs`, { color: ACCENT_COLOR }]}>
-              {CATEGORIES.find((c) => c.id === category)?.name || "Lainnya"}
-            </Text>
+            {category ? (
+              <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>
+                ✓ Terpilih
+              </Text>
+            ) : null}
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={tw`-mx-1`}
+          <TouchableOpacity
+            onPress={() => setShowCategoryPicker(true)}
+            disabled={loading}
+            style={[
+              tw`rounded-xl px-4 py-3 flex-row items-center`,
+              { backgroundColor: SURFACE_COLOR },
+            ]}
           >
-            <View style={tw`flex-row px-1`}>
-              {CATEGORIES.map((cat) => {
-                const isSelected = category === cat.id;
-                const catColor = getCategoryColor(cat.id);
+            {resolvedCategory ? (
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  backgroundColor: `${resolvedCategory.color}20`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name={resolvedCategory.icon as any}
+                  size={18}
+                  color={resolvedCategory.color}
+                />
+              </View>
+            ) : (
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 10,
+                  backgroundColor: `${ACCENT_COLOR}12`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="grid-outline" size={18} color={ACCENT_COLOR} />
+              </View>
+            )}
 
-                return (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={tw`mr-3`}
-                    onPress={() => setCategory(cat.id)}
-                    disabled={loading}
-                  >
-                    <View
-                      style={[
-                        tw`rounded-2xl items-center p-3 w-20`,
-                        isSelected
-                          ? {
-                              backgroundColor: catColor + "20",
-                              borderWidth: 2,
-                              borderColor: catColor,
-                            }
-                          : { backgroundColor: SURFACE_COLOR },
-                      ]}
-                    >
-                      <Ionicons
-                        name={cat.icon}
-                        size={24}
-                        color={isSelected ? catColor : TEXT_SECONDARY}
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        tw`text-xs mt-1.5 text-center`,
-                        isSelected
-                          ? { fontWeight: "600", color: TEXT_PRIMARY }
-                          : { color: TEXT_SECONDARY },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {cat.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  color: category ? TEXT_PRIMARY : Colors.textTertiary,
+                  fontSize: 13,
+                  fontWeight: "600",
+                }}
+              >
+                {category ? (resolvedCategory?.name || category) : "Pilih kategori tabungan..."}
+              </Text>
+              {resolvedCategory?.isCustom && (
+                <Text style={{ color: ACCENT_COLOR, fontSize: 10, marginTop: 1 }}>
+                  Kategori Kustom
+                </Text>
+              )}
             </View>
-          </ScrollView>
+
+            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+          </TouchableOpacity>
+
+          <CategoryPickerModal
+            visible={showCategoryPicker}
+            onClose={() => setShowCategoryPicker(false)}
+            onSelect={(catName) => setCategory(catName)}
+            selectedName={category}
+          />
         </View>
 
         {/* Priority Selection */}
@@ -928,7 +984,7 @@ const AddSavingsScreen: React.FC = () => {
               </Text>{" "}
               untuk kategori{" "}
               <Text style={tw`font-bold`}>
-                {CATEGORIES.find((c) => c.id === category)?.name || "Lainnya"}
+                {resolvedCategory?.name || category || "Lainnya"}
               </Text>
               {description
                 ? ` - ${description.substring(0, 30)}${
@@ -984,6 +1040,7 @@ const AddSavingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* DateTime Picker Modal */}
       {showCalendar && (

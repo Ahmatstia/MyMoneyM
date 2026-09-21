@@ -173,15 +173,36 @@ const SavingsScreen: React.FC = () => {
     });
   }, [savings, filter]);
 
+  const getCategoryDisplay = (s: Savings): string => {
+    const raw = s.category || "";
+    const lower = raw.toLowerCase();
+    const legacyMap: Record<string, string> = {
+      emergency: "Dana Darurat",
+      vacation: "Liburan",
+      gadget: "Gadget",
+      education: "Pendidikan",
+      house: "Rumah",
+      car: "Kendaraan",
+      health: "Kesehatan",
+      wedding: "Pernikahan",
+      other: "Lainnya",
+    };
+    return legacyMap[lower] || raw || "Lainnya";
+  };
+
   const getIcon = (s: Savings): SafeIconName => {
     if (s.icon) return s.icon as SafeIconName;
     const map: Record<string, SafeIconName> = {
-      emergency: "shield",     vacation: "airplane",
-      gadget:    "phone-portrait", education: "school",
-      house:     "home",       car: "car",
-      health:    "medical",    wedding: "heart",
+      emergency: "shield-checkmark-outline" as any,
+      vacation:  "airplane-outline" as any,
+      gadget:    "phone-portrait-outline" as any,
+      education: "school-outline" as any,
+      house:     "home-outline" as any,
+      car:       "car-outline" as any,
+      health:    "medical-outline" as any,
+      wedding:   "heart-outline" as any,
     };
-    return map[s.category || ""] || "wallet";
+    return map[s.category || ""] || ("wallet-outline" as any);
   };
 
   const getProgressColor = (p: number) => {
@@ -559,11 +580,12 @@ const SavingsScreen: React.FC = () => {
                               height: 22, paddingHorizontal: 8,
                               borderRadius: 12, backgroundColor: "rgba(255,255,255,0.08)",
                               borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
-                              justifyContent: "center",
+                              flexDirection: "row", alignItems: "center", gap: 4,
                             }}
                           >
+                            <Ionicons name={iconName} size={11} color={Colors.gray400} />
                             <Text style={{ color: Colors.gray400, fontSize: 8, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                              {saving.category}
+                              {getCategoryDisplay(saving)}
                             </Text>
                           </View>
                         </View>

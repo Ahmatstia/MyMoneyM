@@ -569,7 +569,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("weekly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 Hari (1 Mgg)</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 hr</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -579,7 +579,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("biweekly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "biweekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>14 Hari (2 Mgg)</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "biweekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>14 hr</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -589,7 +589,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("monthly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 Hari (1 Bln)</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 hr</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

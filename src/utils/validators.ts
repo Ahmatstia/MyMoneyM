@@ -149,10 +149,11 @@ export const validateSavings = (savings: any): Savings => {
       target: Math.max(0, savings.target || 0),
       current: Math.max(0, savings.current || 0),
       deadline: savings.deadline,
-      category: savings.category || "other",
+      category: savings.category || "Lainnya",
       priority: savings.priority || "medium",
       description: savings.description || "",
       icon: savings.icon || "wallet",
+      imageCover: savings.imageCover || undefined,
       createdAt: savings.createdAt || new Date().toISOString(),
     };
   } catch (error) {
@@ -163,10 +164,11 @@ export const validateSavings = (savings: any): Savings => {
       target: 0,
       current: 0,
       deadline: undefined,
-      category: "other",
+      category: "Lainnya",
       priority: "medium",
       description: "",
       icon: "wallet",
+      imageCover: undefined,
       createdAt: new Date().toISOString(),
     };
   }

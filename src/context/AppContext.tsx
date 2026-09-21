@@ -44,7 +44,7 @@ import {
   calculateInitialRunDate,
 } from "../utils/recurring";
 import { isImageFileExisting } from "../utils/imageStorage";
-import { ALL_SYSTEM_CATEGORIES } from "../components/CategoryPickerModal";
+import { ALL_SYSTEM_CATEGORIES } from "../constants/categories";
 
 interface AppContextType {
   state: AppState;

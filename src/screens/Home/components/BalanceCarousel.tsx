@@ -15,7 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { formatCurrency, safeNumber } from "../../../utils/calculations";
 import { Transaction, Budget, CustomCategory } from "../../../types";
-import { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES } from "../../../components/CategoryPickerModal";
+import { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES } from "../../../constants/categories";
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
