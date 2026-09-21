@@ -37,10 +37,10 @@ const WARNING_COLOR    = Colors.warning;
 const ERROR_COLOR      = Colors.error;
 
 // ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
-const CARD_RADIUS  = 20;
-const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
-const SECTION_GAP  = 24;
+const CARD_RADIUS  = 16;
+const INNER_RADIUS = 12;
+const CARD_PAD     = 14;
+const SECTION_GAP  = 16;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
@@ -290,78 +290,104 @@ const SavingsScreen: React.FC = () => {
         {savings.length > 0 && (
           <View
             style={{
-              backgroundColor: SURFACE_COLOR,
               borderRadius: CARD_RADIUS,
               borderWidth: 1,
               borderColor: CARD_BORDER,
-              padding: CARD_PAD,
-              marginBottom: 20,
+              overflow: "hidden",
+              marginBottom: 16,
+              backgroundColor: SURFACE_COLOR,
             }}
           >
-            <Text
+            <LinearGradient
+              colors={[ACCENT_COLOR + "14", SURFACE_COLOR, SURFACE_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                color: Colors.gray400,
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-                marginBottom: 5,
+                padding: CARD_PAD,
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              Total Tabungan
-            </Text>
-            <Text
-              style={{
-                color: TEXT_PRIMARY,
-                fontSize: 30,
-                fontWeight: "800",
-                letterSpacing: -0.5,
-                marginBottom: 16,
-              }}
-            >
-              {formatCurrency(totalStats.totalCurrent)}
-            </Text>
+              {/* Decorative watermark ring */}
+              <View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  right: -16,
+                  top: -16,
+                  width: 90,
+                  height: 90,
+                  borderRadius: 45,
+                  borderWidth: 1,
+                  borderColor: ACCENT_COLOR + "20",
+                }}
+              />
 
-            {/* Terkumpul / Target */}
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                  <View
-                    style={{
-                      width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: ACCENT_COLOR, marginRight: 5,
-                    }}
-                  />
-                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Tersimpan
+              <Text
+                style={{
+                  color: Colors.gray400,
+                  fontSize: 9,
+                  fontWeight: "700",
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                  marginBottom: 3,
+                }}
+              >
+                Total Tabungan
+              </Text>
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  letterSpacing: -0.4,
+                  marginBottom: 12,
+                }}
+              >
+                {formatCurrency(totalStats.totalCurrent)}
+              </Text>
+
+              {/* Terkumpul / Target */}
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                    <View
+                      style={{
+                        width: 5, height: 5, borderRadius: 2.5,
+                        backgroundColor: ACCENT_COLOR, marginRight: 5,
+                      }}
+                    />
+                    <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Tersimpan
+                    </Text>
+                  </View>
+                  <Text style={{ color: ACCENT_COLOR, fontSize: 13, fontWeight: "700" }}>
+                    {formatCurrency(totalStats.totalCurrent)}
                   </Text>
                 </View>
-                <Text style={{ color: ACCENT_COLOR, fontSize: 14, fontWeight: "700" }}>
-                  {formatCurrency(totalStats.totalCurrent)}
-                </Text>
-              </View>
 
-              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
+                <View style={{ width: 1, height: 26, backgroundColor: CARD_BORDER, marginHorizontal: 12 }} />
 
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                  <View
-                    style={{
-                      width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: SUCCESS_COLOR, marginRight: 5,
-                    }}
-                  />
-                  <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Target
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                    <View
+                      style={{
+                        width: 5, height: 5, borderRadius: 2.5,
+                        backgroundColor: SUCCESS_COLOR, marginRight: 5,
+                      }}
+                    />
+                    <Text style={{ color: Colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Target
+                    </Text>
+                  </View>
+                  <Text style={{ color: SUCCESS_COLOR, fontSize: 13, fontWeight: "700" }}>
+                    {formatCurrency(totalStats.totalTarget)}
                   </Text>
                 </View>
-                <Text style={{ color: SUCCESS_COLOR, fontSize: 14, fontWeight: "700" }}>
-                  {formatCurrency(totalStats.totalTarget)}
-                </Text>
               </View>
-            </View>
 
-            <ThinBar progress={totalStats.overallProgress} color={utilizationColor} />
+              <ThinBar progress={totalStats.overallProgress} color={utilizationColor} />
+            </LinearGradient>
           </View>
         )}
 

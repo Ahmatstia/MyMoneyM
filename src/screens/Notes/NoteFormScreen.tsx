@@ -572,7 +572,7 @@ const NoteFormScreen: React.FC = () => {
 
           {/* Tags List */}
           {tags.length > 0 && (
-            <View style={tw`flex-row flex-wrap gap-2`}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
               {tags.map((tag, index) => (
                 <View key={index} style={[tw`rounded-full px-3 py-1.5 flex-row items-center`, { backgroundColor: ACCENT_COLOR + "20" }]}>
                   <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>#{tag}</Text>
@@ -581,7 +581,7 @@ const NoteFormScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           )}
         </View>
 

@@ -343,7 +343,7 @@ const NoteDetailScreen: React.FC = () => {
             >
               Tags
             </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
               {note.tags.map((tag: string) => (
                 <View
                   key={tag}
@@ -361,7 +361,7 @@ const NoteDetailScreen: React.FC = () => {
                   </Text>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
       </ScrollView>

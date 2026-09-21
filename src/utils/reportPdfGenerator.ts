@@ -15,7 +15,7 @@ export interface MonthlyReportTransactionItem {
   category: string;
   amount: number;
   date: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
 }
 
 export interface MonthlyReportData {

@@ -60,6 +60,7 @@ import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 import ToolsScreen from "../screens/Tools/ToolsScreen";
 import RecurringTransactionsScreen from "../screens/Recurring/RecurringTransactionsScreen";
+import WalletsScreen from "../screens/Wallets/WalletsScreen";
 import MoniScreen from "../screens/Gamification/MoniScreen";
 
 // Types
@@ -84,6 +85,7 @@ type StackParamList = {
   Debt: undefined;
   Tools: undefined;
   RecurringTransactions: undefined;
+  Wallets: undefined;
   SavingsDetail: { savingsId: string };
   SavingsHistory: { savingsId: string };
   AddTransaction: { editMode?: boolean; transactionData?: any };
@@ -171,6 +173,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       color: colors.error,
     },
     {
+      name: "Wallets",
+      label: "Dompet & Rekening",
+      icon: "wallet-outline" as const,
+      color: colors.primary,
+    },
+    {
       name: "RecurringTransactions",
       label: "Transaksi Rutin",
       icon: "repeat-outline" as const,
@@ -196,7 +204,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     },
   ];
 
-  const navigateToScreen = (screenName: keyof StackParamList) => {
+  const navigateToScreen = (screenName: any) => {
     props.navigation.navigate(screenName);
     props.navigation.closeDrawer();
   };
@@ -598,6 +606,11 @@ const MainStackNavigator = () => {
       <MainStack.Screen
         name="RecurringTransactions"
         component={RecurringTransactionsScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="Wallets"
+        component={WalletsScreen}
         options={{ headerShown: false }}
       />
       <MainStack.Screen

@@ -20,8 +20,8 @@ const COLUMN_GAP  = 12;
 const CARD_WIDTH  = (width - 36 - COLUMN_GAP) / 2; // 18px padding each side + gap
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const CARD_RADIUS = 20;
-const CARD_PAD    = 20;
+const CARD_RADIUS = 16;
+const CARD_PAD    = 14;
 
 // Warna kartu note (dikurasi, sesuai dark theme)
 const NOTE_COLORS = [
@@ -97,7 +97,7 @@ const NotesScreen = ({ navigation }: any) => {
           borderRadius: CARD_RADIUS,
           borderWidth: 1,
           borderColor: colorTheme.border,
-          padding: 16,
+          padding: 13,
           marginBottom: COLUMN_GAP,
           borderLeftWidth: 3,
           borderLeftColor: colorTheme.text,

@@ -603,53 +603,49 @@ export const useHomeData = (
       ];
     }
 
-    const totalBudgetLimit = state.budgets.reduce(
-      (sum, b) => sum + safeNumber(b.limit),
-      0,
+    // Hitung kategori pengeluaran terbesar sesuai timeFilter
+    const expenseTxList = (filteredTransactions || []).filter(
+      (t) => t.type === "expense",
     );
-    const totalBudgetSpent = state.budgets.reduce(
-      (sum, b) => sum + safeNumber(b.spent),
-      0,
+    const categorySpending: Record<string, number> = {};
+    expenseTxList.forEach((t) => {
+      const cat = t.category || "Lainnya";
+      categorySpending[cat] =
+        (categorySpending[cat] || 0) + safeNumber(t.amount);
+    });
+    const sortedCategories = Object.entries(categorySpending).sort(
+      (a, b) => safeNumber(b[1]) - safeNumber(a[1]),
     );
-    const hasBudgets = state.budgets.length > 0;
-    const remainingBudget = Math.max(0, totalBudgetLimit - totalBudgetSpent);
-
-    const daysRemaining = Math.max(
-      1,
-      safeNumber(projectionData?.daysRemaining) || 1,
-    );
-
-    // Unified daily safe limit synchronized with Slide 3 in Carousel:
-    // If budget exists -> remainingBudget / daysRemaining
-    // If no budget -> total liquid wallet balance / daysRemaining
-    const safeDailySpend =
-      timeFilter === "all"
-        ? Math.max(0, safeNumber(state.balance))
-        : hasBudgets
-          ? Math.max(0, Math.round(remainingBudget / daysRemaining))
-          : Math.max(0, Math.round(safeNumber(state.balance) / daysRemaining));
+    const topCategory = sortedCategories.length > 0 ? sortedCategories[0] : null;
+    const topCatName = topCategory ? topCategory[0] : "-";
+    const topCatAmount = topCategory ? safeNumber(topCategory[1]) : 0;
+    const topCatPct =
+      filteredExpense > 0
+        ? Math.min(100, Math.round((topCatAmount / filteredExpense) * 100))
+        : 0;
 
     const avgDaily = projectionData?.dailyAvgExpense || 0;
     const currentTransactionCount = filteredTransactions.length;
 
     return [
       {
-        id: "safe_spend",
-        label:
-          timeFilter === "all"
-            ? "Saldo Kas"
-            : hasBudgets
-              ? "Batas Anggaran"
-              : "Batas Uang",
+        id: "top_expense",
+        label: "Beban Terbesar",
         value:
-          safeDailySpend >= 1000000
-            ? `${(safeDailySpend / 1000000).toFixed(1)}jt`
-            : safeDailySpend >= 1000
-              ? `${(safeDailySpend / 1000).toFixed(0)}rb`
-              : safeDailySpend.toFixed(0),
-        unit: timeFilter === "all" ? "total" : "/hari",
-        trend: safeDailySpend > 0 ? "↑" : "↓",
-        color: safeDailySpend > 0 ? Colors.success : Colors.warning,
+          topCategory && topCatAmount > 0
+            ? topCatAmount >= 1000000
+              ? `${(topCatAmount / 1000000).toFixed(1)}jt`
+              : topCatAmount >= 1000
+                ? `${(topCatAmount / 1000).toFixed(0)}rb`
+                : topCatAmount.toFixed(0)
+            : "Rp 0",
+        unit:
+          topCategory && topCatAmount > 0
+            ? `${topCatName} (${topCatPct}%)`
+            : "Nihil",
+        trend: topCategory && topCatAmount > 0 ? "●" : "✓",
+        trendLabel: topCategory && topCatAmount > 0 ? `${topCatPct}%` : "Terkendali",
+        color: topCategory && topCatAmount > 0 ? Colors.warning : Colors.success,
       },
       {
         id: "daily_avg",

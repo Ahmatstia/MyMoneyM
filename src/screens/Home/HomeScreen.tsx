@@ -34,6 +34,7 @@ import { calculateFinancialHealthScore } from "../../utils/analytics";
 
 import { useTheme } from '../../theme/ThemeContext';
 import { BalanceCarousel } from "./components/BalanceCarousel";
+import { WalletHorizontalList } from "./components/WalletHorizontalList";
 import ExpenseTrendChart from "./components/ExpenseTrendChart";
 import {
   GuideCenterModal,
@@ -603,7 +604,12 @@ const HomeScreen: React.FC = () => {
         ============================================================ */}
         <BalanceCarousel
           hasFinancialData={hasFinancialData}
-          balance={safeNumber(state.balance)}
+          balance={
+            state.wallets && state.wallets.length > 0
+              ? state.wallets.reduce((sum, w) => sum + safeNumber(w.balance), 0)
+              : safeNumber(state.balance)
+          }
+          operationalBalance={safeNumber(state.operationalBalance)}
           filteredIncome={filteredIncome}
           filteredExpense={filteredExpense}
           timeFilter={timeFilter}
@@ -613,6 +619,21 @@ const HomeScreen: React.FC = () => {
           filteredTransactions={filteredTransactions}
           budgets={state.budgets}
           customCategories={state.customCategories}
+          defaultWallet={
+            state.wallets?.find((w) => w.isDefault) ??
+            (state.wallets?.length > 0 ? state.wallets[0] : null)
+          }
+        />
+
+        {/* ============================================================
+            WALLET CAROUSEL & LIQUIDITY PARTITIONING
+        ============================================================ */}
+        <WalletHorizontalList
+          wallets={state.wallets || []}
+          operationalBalance={safeNumber(state.operationalBalance)}
+          savingsBalance={safeNumber(state.savingsBalance)}
+          onManagePress={() => navigation.navigate("Wallets")}
+          onAddWalletPress={() => navigation.navigate("Wallets", { openAddModal: true })}
         />
 
         {/* ============================================================

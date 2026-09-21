@@ -199,13 +199,13 @@ const AddDebtScreen: React.FC = () => {
           {/* Category Selection */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Kategori" />
-            <View style={tw`flex-row flex-wrap gap-2`}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
               {CATEGORIES.map((cat) => {
                 const isActive = category === cat;
                 return (
                   <TouchableOpacity
                     key={cat}
-                    style={[tw`px-4 py-2.5 rounded-xl`, isActive ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: SURFACE_COLOR }]}
+                    style={[tw`px-3.5 py-2 rounded-xl`, isActive ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: SURFACE_COLOR }]}
                     onPress={() => setCategory(cat)}
                     activeOpacity={0.7}
                   >
@@ -215,7 +215,7 @@ const AddDebtScreen: React.FC = () => {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
           </View>
 
 

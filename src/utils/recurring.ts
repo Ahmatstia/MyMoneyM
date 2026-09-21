@@ -1,6 +1,12 @@
 // File: src/utils/recurring.ts
 import { AppState, RecurringTransaction, Transaction } from "../types";
-import { calculateTotals, safeNumber } from "./calculations";
+import {
+  calculateTotals,
+  calculateWalletBalances,
+  calculatePartitionedBalances,
+  DEFAULT_WALLET_ID,
+  safeNumber,
+} from "./calculations";
 import { getJakartaDateKey } from "./dailyCheckIn";
 
 /**
@@ -185,6 +191,9 @@ export const processRecurringTransactions = (
         date: currentItem.nextRunDate,
         createdAt: new Date().toISOString(),
         cyclePeriod: cycleDays,
+        walletId: currentItem.walletId || DEFAULT_WALLET_ID,
+        toWalletId: currentItem.toWalletId,
+        adminFee: currentItem.adminFee,
       };
 
       newTransactions.push(newTx);
@@ -209,11 +218,16 @@ export const processRecurringTransactions = (
   // Gabungkan transaksi baru (taruh di depan/urut tanggal)
   const combinedTransactions = [...newTransactions, ...state.transactions];
   const totals = calculateTotals(combinedTransactions);
+  const updatedWallets = calculateWalletBalances(state.wallets || [], combinedTransactions);
+  const partitioned = calculatePartitionedBalances(updatedWallets);
 
   const updatedState: AppState = {
     ...state,
     transactions: combinedTransactions,
+    wallets: updatedWallets,
     recurringTransactions: updatedRecurringList,
+    operationalBalance: partitioned.operationalBalance,
+    savingsBalance: partitioned.savingsBalance,
     ...totals,
   };
 

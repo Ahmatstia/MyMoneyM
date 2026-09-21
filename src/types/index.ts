@@ -1,4 +1,25 @@
-export type TransactionType = "income" | "expense";
+export type TransactionType = "income" | "expense" | "transfer";
+
+export type WalletType = "cash" | "bank" | "ewallet" | "investment" | "credit";
+// WalletRole is now a flexible string — users can define any role name (e.g. "Belanja", "Dana Darurat", "Pensiun")
+// Use isLiquid to control whether this wallet counts toward the operational (spendable) balance.
+export type WalletRole = string;
+
+export interface Wallet {
+  id: string; // Unique ID, e.g. "w_default_cash", "w_bca_123"
+  name: string; // Display name, e.g. "Dompet Utama", "BCA Gajian", "GoPay"
+  type: WalletType;
+  role: WalletRole; // Now a flexible string — user-defined role name
+  isLiquid?: boolean; // If true, counts toward operational (spendable) balance. Default: true for non-savings roles.
+  balance: number; // Current calculated balance
+  initialBalance: number; // Starting balance when wallet was created
+  color: string; // Hex color for card UI, e.g. "#10B981"
+  icon: string; // Ionicons glyph name, e.g. "wallet", "card", "phone-portrait"
+  accountNumber?: string; // Optional last 4 digits of account number
+  isDefault?: boolean;
+  createdAt: string; // ISO string
+  updatedAt?: string; // ISO string
+}
 
 export interface CustomCategory {
   id: string; // Unique ID, e.g. "cat_abc123"
@@ -27,6 +48,9 @@ export interface Transaction {
   createdAt: string; // ISO string
   cyclePeriod?: number; // Days for income cycle (7, 30, etc)
   subTransactions?: SubTransaction[]; // Optional: itemized cart items
+  walletId?: string; // Source wallet ID (defaults to default wallet if omitted)
+  toWalletId?: string; // Destination wallet ID (for type === "transfer")
+  adminFee?: number; // Optional admin fee for transfer
 }
 
 export interface Budget {
@@ -123,7 +147,7 @@ export interface RecurringTransaction {
   id: string;
   name: string; // e.g. "Uang Bulanan", "Uang Saku", "Kost"
   amount: number;
-  type: TransactionType; // "income" | "expense"
+  type: TransactionType; // "income" | "expense" | "transfer"
   category: string;
   frequency: RecurringFrequency;
   intervalDays?: number; // if custom_days (e.g. every 7, 10, 14 days)
@@ -138,11 +162,17 @@ export interface RecurringTransaction {
   isActive: boolean; // pause or resume
   createdAt: string;
   updatedAt?: string;
+  walletId?: string; // Source wallet ID
+  toWalletId?: string; // Destination wallet ID (for standing instruction auto-transfer)
+  adminFee?: number; // Admin fee for recurring transfer
+  linkedSavingsId?: string; // Optional: auto-deposit to savings goal
+  linkedDebtId?: string; // Optional: auto-pay debt
 }
 
 export interface AppState {
   // Financial data
   transactions: Transaction[];
+  wallets: Wallet[]; // Multi-wallet accounts
   budgets: Budget[];
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];
@@ -157,7 +187,9 @@ export interface AppState {
   // Calculated totals
   totalIncome: number;
   totalExpense: number;
-  balance: number;
+  balance: number; // Net Worth (Total of all wallets)
+  operationalBalance?: number; // Total balance of operational/spending wallets
+  savingsBalance?: number; // Total balance of savings/reserve wallets
 }
 
 // BUG-03 FIX: Sinkronkan interface dengan implementasi di analytics.ts
@@ -231,6 +263,7 @@ export type RootStackParamList = {
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   ManageCategories: undefined;
   RecurringTransactions: undefined; // NEW: Transaksi Berulang
+  Wallets: undefined; // NEW: Kelola Dompet & Rekening
 };
 
 declare global {

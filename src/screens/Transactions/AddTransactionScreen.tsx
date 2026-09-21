@@ -18,8 +18,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { getCurrentDate, safeNumber, formatCurrency } from "../../utils/calculations";
-import { RootStackParamList, TransactionType, SubTransaction } from "../../types";
+import { getCurrentDate, safeNumber, formatCurrency, DEFAULT_WALLET_ID } from "../../utils/calculations";
+import { RootStackParamList, TransactionType, SubTransaction, Wallet } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
@@ -55,7 +55,15 @@ const AddTransactionScreen: React.FC = () => {
   const { addTransaction, editTransaction, deleteTransaction, state } =
     useAppContext();
 
+  const wallets = state.wallets || [];
+  const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
+
   const [type, setType] = useState<TransactionType>("expense");
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(
+    defaultWallet ? defaultWallet.id : DEFAULT_WALLET_ID
+  );
+  const [selectedToWalletId, setSelectedToWalletId] = useState<string>("");
+  const [adminFee, setAdminFee] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -74,9 +82,20 @@ const AddTransactionScreen: React.FC = () => {
   // Helper: change type and clear sub-items (sub-items only for expense)
   const handleTypeChange = (newType: TransactionType) => {
     setType(newType);
-    if (newType === "income") {
+    if (newType === "transfer") {
       setShowSubItems(false);
       setSubItems([]);
+      setCategory("Transfer");
+      if (!selectedToWalletId) {
+        const other = wallets.find((w) => w.id !== selectedWalletId);
+        if (other) setSelectedToWalletId(other.id);
+      }
+    } else if (newType === "income") {
+      setShowSubItems(false);
+      setSubItems([]);
+      if (category === "Transfer") setCategory("");
+    } else {
+      if (category === "Transfer") setCategory("");
     }
   };
 
@@ -137,6 +156,9 @@ const AddTransactionScreen: React.FC = () => {
       setCategory(transactionData.category);
       setDescription(transactionData.description || "");
       setDate(transactionData.date);
+      if (transactionData.walletId) setSelectedWalletId(transactionData.walletId);
+      if (transactionData.toWalletId) setSelectedToWalletId(transactionData.toWalletId);
+      if (transactionData.adminFee) setAdminFee(String(transactionData.adminFee));
       if (transactionData.cyclePeriod) {
         setIsCycleActive(true);
         if (transactionData.cyclePeriod === 7) setCyclePreset("weekly");
@@ -268,7 +290,16 @@ const AddTransactionScreen: React.FC = () => {
       return;
     }
 
-    if (!category) {
+    if (type === "transfer") {
+      if (!selectedWalletId || !selectedToWalletId) {
+        Alert.alert("Perhatian", "Pilih rekening asal dan rekening tujuan transfer");
+        return;
+      }
+      if (selectedWalletId === selectedToWalletId) {
+        Alert.alert("Perhatian", "Rekening asal dan tujuan tidak boleh sama");
+        return;
+      }
+    } else if (!category) {
       Alert.alert("Perhatian", "Pilih atau buat kategori transaksi terlebih dahulu");
       return;
     }
@@ -296,15 +327,29 @@ const AddTransactionScreen: React.FC = () => {
     const finalSubItems: SubTransaction[] | undefined =
       validSubItems.length > 0 ? validSubItems : undefined;
 
+    const cleanAdminFee =
+      type === "transfer" && adminFee
+        ? safeNumber(parseFloat(adminFee.replace(/\D/g, "")))
+        : undefined;
+
+    const effectiveCategory = type === "transfer" ? "Transfer" : category;
+    const toWalletName = wallets.find((w) => w.id === selectedToWalletId)?.name || "Rekening";
+    const effectiveDescription =
+      description.trim() ||
+      (type === "transfer" ? `Transfer ke ${toWalletName}` : "");
+
     setLoading(true);
     try {
       if (isEditMode && transactionData) {
         await editTransaction(transactionData.id, {
           amount: amountNum,
           type,
-          category,
-          description: description.trim(),
+          category: effectiveCategory,
+          description: effectiveDescription,
           date,
+          walletId: selectedWalletId,
+          toWalletId: type === "transfer" ? selectedToWalletId : undefined,
+          adminFee: cleanAdminFee,
           ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : { cyclePeriod: undefined }),
           subTransactions: finalSubItems, // always passed — undefined clears it
         });
@@ -315,9 +360,12 @@ const AddTransactionScreen: React.FC = () => {
         await addTransaction({
           amount: amountNum,
           type,
-          category,
-          description: description.trim(),
+          category: effectiveCategory,
+          description: effectiveDescription,
           date,
+          walletId: selectedWalletId,
+          toWalletId: type === "transfer" ? selectedToWalletId : undefined,
+          adminFee: cleanAdminFee,
           ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : {}),
           ...(finalSubItems ? { subTransactions: finalSubItems } : {}),
         });
@@ -378,11 +426,11 @@ const AddTransactionScreen: React.FC = () => {
           >
             Tipe Transaksi
           </Text>
-          <View style={tw`flex-row gap-3`}>
+          <View style={tw`flex-row gap-2`}>
             {/* Pengeluaran */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-3`,
+                tw`flex-1 rounded-xl px-2 py-3`,
                 type === "expense"
                   ? { backgroundColor: ERROR_COLOR + "15" }
                   : { backgroundColor: SURFACE_COLOR },
@@ -391,8 +439,8 @@ const AddTransactionScreen: React.FC = () => {
               disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
-                <Ionicons name="arrow-up" size={16} color={type === "expense" ? ERROR_COLOR : TEXT_SECONDARY} />
-                <Text style={[tw`text-xs font-bold ml-1.5`, { color: type === "expense" ? ERROR_COLOR : TEXT_SECONDARY }]}>
+                <Ionicons name="arrow-up" size={15} color={type === "expense" ? ERROR_COLOR : TEXT_SECONDARY} />
+                <Text style={[tw`text-[11px] font-bold ml-1`, { color: type === "expense" ? ERROR_COLOR : TEXT_SECONDARY }]}>
                   Pengeluaran
                 </Text>
               </View>
@@ -401,7 +449,7 @@ const AddTransactionScreen: React.FC = () => {
             {/* Pemasukan */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-3 py-3`,
+                tw`flex-1 rounded-xl px-2 py-3`,
                 type === "income"
                   ? { backgroundColor: SUCCESS_COLOR + "15" }
                   : { backgroundColor: SURFACE_COLOR },
@@ -410,14 +458,167 @@ const AddTransactionScreen: React.FC = () => {
               disabled={loading}
             >
               <View style={tw`flex-row items-center justify-center`}>
-                <Ionicons name="arrow-down" size={16} color={type === "income" ? SUCCESS_COLOR : TEXT_SECONDARY} />
-                <Text style={[tw`text-xs font-bold ml-1.5`, { color: type === "income" ? SUCCESS_COLOR : TEXT_SECONDARY }]}>
+                <Ionicons name="arrow-down" size={15} color={type === "income" ? SUCCESS_COLOR : TEXT_SECONDARY} />
+                <Text style={[tw`text-[11px] font-bold ml-1`, { color: type === "income" ? SUCCESS_COLOR : TEXT_SECONDARY }]}>
                   Pemasukan
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Transfer */}
+            <TouchableOpacity
+              style={[
+                tw`flex-1 rounded-xl px-2 py-3`,
+                type === "transfer"
+                  ? { backgroundColor: ACCENT_COLOR + "20" }
+                  : { backgroundColor: SURFACE_COLOR },
+              ]}
+              onPress={() => handleTypeChange("transfer")}
+              disabled={loading}
+            >
+              <View style={tw`flex-row items-center justify-center`}>
+                <Ionicons name="swap-horizontal" size={15} color={type === "transfer" ? ACCENT_COLOR : TEXT_SECONDARY} />
+                <Text style={[tw`text-[11px] font-bold ml-1`, { color: type === "transfer" ? ACCENT_COLOR : TEXT_SECONDARY }]}>
+                  Transfer
                 </Text>
               </View>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* ── WALLET SELECTION SECTION ── */}
+        <View style={tw`mb-4`}>
+          <View style={tw`flex-row items-center justify-between mb-2`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest ml-1`, { color: TEXT_SECONDARY }]}>
+              {type === "transfer"
+                ? "Dari Rekening (Sumber)"
+                : type === "income"
+                  ? "Masuk ke Rekening"
+                  : "Bayar Pakai (Rekening)"}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Wallets")}>
+              <Text style={[tw`text-[11px] font-semibold`, { color: ACCENT_COLOR }]}>
+                + Kelola Dompet
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
+            <View style={tw`flex-row px-1`}>
+              {wallets.map((w) => {
+                const isSelected = selectedWalletId === w.id;
+                const walletColor = w.color || ACCENT_COLOR;
+                return (
+                  <TouchableOpacity
+                    key={w.id}
+                    onPress={() => setSelectedWalletId(w.id)}
+                    style={[
+                      tw`flex-row items-center px-3.5 py-2.5 rounded-2xl mr-2.5 border`,
+                      isSelected
+                        ? { backgroundColor: walletColor + "20", borderColor: walletColor }
+                        : { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        tw`w-7 h-7 rounded-xl items-center justify-center mr-2`,
+                        { backgroundColor: walletColor + "25" },
+                      ]}
+                    >
+                      <Ionicons name={(w.icon as any) || "wallet"} size={14} color={walletColor} />
+                    </View>
+                    <View>
+                      <Text
+                        style={[
+                          tw`text-xs font-bold`,
+                          { color: isSelected ? walletColor : TEXT_PRIMARY },
+                        ]}
+                      >
+                        {w.name}
+                      </Text>
+                      <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>
+                        {formatCurrency(w.balance)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* ── TRANSFER DESTINATION WALLET (TRANSFER ONLY) ── */}
+        {type === "transfer" && (
+          <View style={tw`mb-4`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-2 ml-1`, { color: TEXT_SECONDARY }]}>
+              Ke Rekening (Tujuan)
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
+              <View style={tw`flex-row px-1`}>
+                {wallets
+                  .filter((w) => w.id !== selectedWalletId)
+                  .map((w) => {
+                    const isSelected = selectedToWalletId === w.id;
+                    const walletColor = w.color || ACCENT_COLOR;
+                    return (
+                      <TouchableOpacity
+                        key={w.id}
+                        onPress={() => setSelectedToWalletId(w.id)}
+                        style={[
+                          tw`flex-row items-center px-3.5 py-2.5 rounded-2xl mr-2.5 border`,
+                          isSelected
+                            ? { backgroundColor: walletColor + "20", borderColor: walletColor }
+                            : { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            tw`w-7 h-7 rounded-xl items-center justify-center mr-2`,
+                            { backgroundColor: walletColor + "25" },
+                          ]}
+                        >
+                          <Ionicons name={(w.icon as any) || "card"} size={14} color={walletColor} />
+                        </View>
+                        <View>
+                          <Text
+                            style={[
+                              tw`text-xs font-bold`,
+                              { color: isSelected ? walletColor : TEXT_PRIMARY },
+                            ]}
+                          >
+                            {w.name}
+                          </Text>
+                          <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>
+                            {formatCurrency(w.balance)}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </View>
+            </ScrollView>
+          </View>
+        )}
+
+        {/* ── BIAYA ADMIN INPUT (TRANSFER ONLY) ── */}
+        {type === "transfer" && (
+          <View style={tw`mb-4`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+              Biaya Admin / Transfer (Opsional)
+            </Text>
+            <TextInput
+              value={adminFee}
+              onChangeText={setAdminFee}
+              placeholder="Rp 0 (misal: 1000 atau 2500)"
+              placeholderTextColor={TEXT_SECONDARY}
+              keyboardType="numeric"
+              style={[
+                tw`rounded-xl px-4 py-3 text-xs font-semibold`,
+                { backgroundColor: SURFACE_COLOR, color: TEXT_PRIMARY },
+              ]}
+            />
+          </View>
+        )}
 
         {/* Quick Amount Suggestions */}
         {!amount && (
@@ -478,31 +679,33 @@ const AddTransactionScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Category Selection */}
-        <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Kategori</Text>
-          <TouchableOpacity
-            onPress={() => setShowCategoryPicker(true)}
-            disabled={loading}
-            style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
-          >
-            {resolvedCategory ? (
-              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                <Ionicons name={resolvedCategory.icon as any} size={16} color={resolvedCategory.color} />
+        {/* Category Selection (Expense and Income only) */}
+        {type !== "transfer" && (
+          <View style={tw`mb-4`}>
+            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+            <TouchableOpacity
+              onPress={() => setShowCategoryPicker(true)}
+              disabled={loading}
+              style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+            >
+              {resolvedCategory ? (
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                  <Ionicons name={resolvedCategory.icon as any} size={16} color={resolvedCategory.color} />
+                </View>
+              ) : (
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}12`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
+                  <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
+                </View>
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                  {category || "Pilih kategori..."}
+                </Text>
               </View>
-            ) : (
-              <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${ACCENT_COLOR}12`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
-              </View>
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
-                {category || "Pilih kategori..."}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
-          </TouchableOpacity>
-        </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* CategoryPickerModal */}
         <CategoryPickerModal

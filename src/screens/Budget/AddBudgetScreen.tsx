@@ -761,12 +761,12 @@ const AddBudgetScreen: React.FC = () => {
                       hari sekali (auto-reset setiap {customDays || "10"} hari)
                     </Text>
                   </View>
-                  <View style={tw`flex-row gap-2`}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
                     {["7", "10", "14", "15", "30"].map((d) => (
                       <TouchableOpacity
                         key={d}
                         style={[
-                          tw`px-2.5 py-1 rounded-lg`,
+                          tw`px-3 py-1.5 rounded-lg`,
                           customDays === d
                             ? { backgroundColor: ACCENT_COLOR }
                             : { backgroundColor: Colors.background },
@@ -779,11 +779,11 @@ const AddBudgetScreen: React.FC = () => {
                             customDays === d ? { color: Colors.background } : { color: TEXT_SECONDARY },
                           ]}
                         >
-                          {d} hr
+                          {d} hari
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </View>
+                  </ScrollView>
                 </View>
               )}
             </View>

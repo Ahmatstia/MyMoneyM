@@ -25,9 +25,9 @@ import { formatDate } from "../../utils/formatters";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 
-const CARD_RADIUS  = 20;
-const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
+const CARD_RADIUS  = 16;
+const INNER_RADIUS = 12;
+const CARD_PAD     = 14;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
@@ -307,9 +307,7 @@ const SavingsDetailScreen: React.FC = () => {
         {/* Icon */}
         <View
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 13,
+            width: 32, height: 32, borderRadius: 10,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 13,
@@ -319,7 +317,7 @@ const SavingsDetailScreen: React.FC = () => {
         >
           <Ionicons
             name={isDeposit ? "arrow-down-outline" : "arrow-up-outline"}
-            size={17}
+            size={15}
             color={txColor}
           />
         </View>

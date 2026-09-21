@@ -1,5 +1,7 @@
 // File: src/utils/calculations.ts
-import { Transaction, Budget, Savings } from "../types";
+import { Transaction, Budget, Savings, Wallet } from "../types";
+
+export const DEFAULT_WALLET_ID = "w_default_cash";
 
 // Safe number helper - ALLOWS NEGATIVE (needed for balance/deficit)
 export const safeNumber = (num: any): number => {
@@ -32,9 +34,15 @@ export const calculateTotals = (transactions: Transaction[] = []) => {
       .filter((t) => t?.type === "income")
       .reduce((sum, t) => sum + safeNumber(t?.amount), 0);
 
-    const totalExpense = transactions
+    const normalExpense = transactions
       .filter((t) => t?.type === "expense")
       .reduce((sum, t) => sum + safeNumber(t?.amount), 0);
+
+    const transferAdminFees = transactions
+      .filter((t) => t?.type === "transfer")
+      .reduce((sum, t) => sum + safeNumber(t?.adminFee), 0);
+
+    const totalExpense = normalExpense + transferAdminFees;
 
     // BUG-02 FIX: Balance MUST be allowed to be negative (deficit)
     const balance = totalIncome - totalExpense;
@@ -44,6 +52,90 @@ export const calculateTotals = (transactions: Transaction[] = []) => {
     return { totalIncome: 0, totalExpense: 0, balance: 0 };
   }
 };
+
+/**
+ * Calculates real-time balances for each wallet from its initialBalance and transaction history.
+ */
+export const calculateWalletBalances = (
+  wallets: Wallet[] = [],
+  transactions: Transaction[] = []
+): Wallet[] => {
+  const defaultWalletId =
+    wallets.find((w) => w.isDefault)?.id ||
+    wallets[0]?.id ||
+    DEFAULT_WALLET_ID;
+
+  return wallets.map((wallet) => {
+    let currentBalance = safeNumber(wallet.initialBalance);
+
+    for (const tx of transactions) {
+      const txAmount = safeNumber(tx.amount);
+      const txWalletId = tx.walletId || defaultWalletId;
+
+      if (tx.type === "income" && txWalletId === wallet.id) {
+        currentBalance += txAmount;
+      } else if (tx.type === "expense" && txWalletId === wallet.id) {
+        currentBalance -= txAmount;
+      } else if (tx.type === "transfer") {
+        if (txWalletId === wallet.id) {
+          currentBalance -= txAmount;
+          currentBalance -= safeNumber(tx.adminFee);
+        }
+        if (tx.toWalletId === wallet.id) {
+          currentBalance += txAmount;
+        }
+      }
+    }
+
+    return {
+      ...wallet,
+      balance: currentBalance,
+    };
+  });
+};
+
+/**
+ * Splits wallet balances by their liquidity:
+ * - Liquid (isLiquid=true, or legacy role="operational"): counts toward operational (spendable) balance
+ * - Illiquid (isLiquid=false, or legacy role="savings"/"credit"): counts toward savings/reserve balance
+ *
+ * Backward compatibility: if isLiquid is undefined, falls back to role-based detection.
+ */
+export const calculatePartitionedBalances = (wallets: Wallet[] = []) => {
+  let netWorth = 0;
+  let operationalBalance = 0;
+  let savingsBalance = 0;
+  let creditBalance = 0;
+
+  for (const w of wallets) {
+    const b = safeNumber(w.balance);
+    netWorth += b;
+
+    // Determine liquidity: explicit isLiquid flag takes priority, then legacy role fallback
+    const isLiquid =
+      w.isLiquid !== undefined
+        ? w.isLiquid
+        : w.role === "operational"; // legacy fallback
+
+    const isCredit = w.role === "credit" && w.isLiquid === false;
+
+    if (isCredit) {
+      creditBalance += b;
+    } else if (isLiquid) {
+      operationalBalance += b;
+    } else {
+      savingsBalance += b;
+    }
+  }
+
+  return {
+    netWorth,
+    operationalBalance,
+    savingsBalance,
+    creditBalance,
+  };
+};
+
 
 export const calculateBudgetProgress = (budget: Budget) => {
   try {

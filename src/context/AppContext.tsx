@@ -18,9 +18,16 @@ import {
   UserProfile,
   CustomCategory,
   RecurringTransaction,
+  Wallet,
 } from "../types";
-import { storageService } from "../utils/storage";
-import { calculateTotals, safeNumber } from "../utils/calculations";
+import { storageService, createDefaultWallet } from "../utils/storage";
+import {
+  calculateTotals,
+  calculateWalletBalances,
+  calculatePartitionedBalances,
+  DEFAULT_WALLET_ID,
+  safeNumber,
+} from "../utils/calculations";
 import { getJakartaDateKey, calculateDailyCheckInStreak } from "../utils/dailyCheckIn";
 import { gamificationBus } from "../utils/gamificationBus";
 import {
@@ -62,6 +69,18 @@ interface AppContextType {
   editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
+  // 🔹 WALLETS
+  addWallet: (
+    wallet: Omit<Wallet, "id" | "createdAt" | "balance">,
+  ) => Promise<void>;
+  editWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
+  deleteWallet: (id: string) => Promise<void>;
+  reconcileWallet: (
+    walletId: string,
+    actualBalance: number,
+    note?: string,
+  ) => Promise<void>;
+
   // 🔹 BUDGETS
   addBudget: (
     budget: Omit<Budget, "id" | "spent" | "createdAt" | "lastResetDate">,
@@ -80,8 +99,10 @@ interface AppContextType {
       amount: number;
       date: string;
       note?: string;
+      walletId?: string;
     },
     syncWithCash?: boolean,
+    walletId?: string,
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
@@ -97,10 +118,11 @@ interface AppContextType {
   addDebt: (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
     syncWithCash?: boolean,
+    walletId?: string,
   ) => Promise<void>;
   editDebt: (id: string, updates: Partial<Debt>) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
-  payDebt: (id: string, amount: number) => Promise<void>;
+  payDebt: (id: string, amount: number, walletId?: string) => Promise<void>;
 
   // 🔹 CUSTOM CATEGORIES
   addCustomCategory: (
@@ -141,6 +163,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const defaultAppState: AppState = {
   transactions: [],
+  wallets: [createDefaultWallet(0)],
   budgets: [],
   savings: [],
   savingsTransactions: [],
@@ -156,6 +179,8 @@ const defaultAppState: AppState = {
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
+  operationalBalance: 0,
+  savingsBalance: 0,
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -482,29 +507,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Only re-run when isLoading changes (not on every dailyCheckIns update)
   }, [isLoading]);
 
+  // Centralized helper to recompute totals, budgets, wallets, and partitioned balances consistently
+  const computeFullState = (
+    baseState: AppState,
+    updatedTransactions: Transaction[],
+    overrides: Partial<AppState> = {},
+  ): AppState => {
+    const totals = calculateTotals(updatedTransactions);
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      overrides.budgets || baseState.budgets,
+    );
+    const walletsToCalculate = overrides.wallets || baseState.wallets || [];
+    const updatedWallets = calculateWalletBalances(
+      walletsToCalculate,
+      updatedTransactions,
+    );
+    const partitioned = calculatePartitionedBalances(updatedWallets);
+
+    return {
+      ...baseState,
+      ...overrides,
+      transactions: updatedTransactions,
+      wallets: updatedWallets,
+      budgets: updatedBudgets,
+      ...totals,
+      balance: updatedWallets.length > 0 ? partitioned.netWorth : totals.balance,
+      operationalBalance: partitioned.operationalBalance,
+      savingsBalance: partitioned.savingsBalance,
+    };
+  };
+
   // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt">,
   ) => {
+    const defaultWalletId =
+      state.wallets?.find((w) => w.isDefault)?.id ||
+      state.wallets?.[0]?.id ||
+      DEFAULT_WALLET_ID;
+
     const newTransaction: Transaction = {
       ...transaction,
       id: generateTransactionId(),
       createdAt: new Date().toISOString(),
+      walletId: transaction.walletId || defaultWalletId,
     };
 
     const updatedTransactions = [newTransaction, ...state.transactions];
-    const totals = calculateTotals(updatedTransactions);
-    const updatedBudgets = updateBudgetsFromTransactions(
-      updatedTransactions,
-      state.budgets,
-    );
-
-    const newState: AppState = {
-      ...state,
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
-    };
+    const newState = computeFullState(state, updatedTransactions);
 
     setState(newState);
     await storageService.saveData(newState);
@@ -518,7 +569,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       await notificationService.sendNotification({
         title: "💰 Transaksi Besar",
         body: `Transaksi ${
-          transaction.type === "income" ? "pemasukan" : "pengeluaran"
+          transaction.type === "income"
+            ? "pemasukan"
+            : transaction.type === "transfer"
+              ? "transfer"
+              : "pengeluaran"
         } Rp ${transaction.amount.toLocaleString("id-ID")} tercatat`,
         data: { type: "NEW_TRANSACTION", transactionId: newTransaction.id },
       });
@@ -530,18 +585,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       t.id === id ? { ...t, ...updates } : t,
     );
 
-    const totals = calculateTotals(updatedTransactions);
-    const updatedBudgets = updateBudgetsFromTransactions(
-      updatedTransactions,
-      state.budgets,
-    );
-
-    const newState: AppState = {
-      ...state,
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
-    };
+    const newState = computeFullState(state, updatedTransactions);
 
     setState(newState);
     await storageService.saveData(newState);
@@ -555,18 +599,147 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const updatedTransactions = state.transactions.filter((t) => t.id !== id);
-    const totals = calculateTotals(updatedTransactions);
-    const updatedBudgets = updateBudgetsFromTransactions(
-      updatedTransactions,
-      state.budgets,
-    );
+    const newState = computeFullState(state, updatedTransactions);
 
-    const newState: AppState = {
-      ...state,
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
+    setState(newState);
+    await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
+  };
+
+  // ========== WALLETS FUNCTIONS ==========
+  const addWallet = async (
+    walletData: Omit<Wallet, "id" | "createdAt" | "balance">,
+  ) => {
+    const newWalletId = `w_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const newWallet: Wallet = {
+      ...walletData,
+      id: newWalletId,
+      balance: safeNumber(walletData.initialBalance),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
+
+    let updatedWalletsList = [...(state.wallets || [])];
+    if (newWallet.isDefault) {
+      updatedWalletsList = updatedWalletsList.map((w) => ({
+        ...w,
+        isDefault: false,
+      }));
+    }
+    updatedWalletsList.push(newWallet);
+
+    const newState = computeFullState(state, state.transactions, {
+      wallets: updatedWalletsList,
+    });
+
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const editWallet = async (id: string, updates: Partial<Wallet>) => {
+    let updatedWalletsList = (state.wallets || []).map((w) => {
+      if (w.id === id) {
+        return {
+          ...w,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      if (updates.isDefault) {
+        return { ...w, isDefault: false };
+      }
+      return w;
+    });
+
+    const newState = computeFullState(state, state.transactions, {
+      wallets: updatedWalletsList,
+    });
+
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const deleteWallet = async (id: string) => {
+    const wallets = state.wallets || [];
+    if (wallets.length <= 1) {
+      throw new Error("Tidak dapat menghapus dompet terakhir");
+    }
+
+    const targetWallet = wallets.find((w) => w.id === id);
+    if (!targetWallet) return;
+
+    let remainingWallets = wallets.filter((w) => w.id !== id);
+
+    if (targetWallet.isDefault && remainingWallets.length > 0) {
+      remainingWallets[0] = { ...remainingWallets[0], isDefault: true };
+    }
+
+    const fallbackWalletId = remainingWallets[0].id;
+
+    // Reassign transactions referencing this wallet to fallback
+    const updatedTransactions = state.transactions.map((tx) => {
+      let modified = false;
+      let newWalletId = tx.walletId;
+      let newToWalletId = tx.toWalletId;
+
+      if (tx.walletId === id) {
+        newWalletId = fallbackWalletId;
+        modified = true;
+      }
+      if (tx.toWalletId === id) {
+        newToWalletId = fallbackWalletId;
+        modified = true;
+      }
+
+      return modified
+        ? { ...tx, walletId: newWalletId, toWalletId: newToWalletId }
+        : tx;
+    });
+
+    const newState = computeFullState(state, updatedTransactions, {
+      wallets: remainingWallets,
+    });
+
+    setState(newState);
+    await storageService.saveData(newState);
+  };
+
+  const reconcileWallet = async (
+    walletId: string,
+    actualBalance: number,
+    note?: string,
+  ) => {
+    const targetWallet = (state.wallets || []).find((w) => w.id === walletId);
+    if (!targetWallet) return;
+
+    const currentBalance = safeNumber(targetWallet.balance);
+    const diff = safeNumber(actualBalance) - currentBalance;
+
+    if (diff === 0) return;
+
+    const isSurplus = diff > 0;
+    const defaultWalletId =
+      state.wallets?.find((w) => w.isDefault)?.id ||
+      state.wallets?.[0]?.id ||
+      DEFAULT_WALLET_ID;
+
+    const adjustmentTx: Transaction = {
+      id: generateTransactionId(),
+      amount: Math.abs(diff),
+      type: isSurplus ? "income" : "expense",
+      category: "Koreksi Saldo",
+      description:
+        note?.trim() ||
+        (isSurplus
+          ? `Penyesuaian Saldo Kas Masuk: ${targetWallet.name}`
+          : `Penyesuaian Selisih Saldo Kas: ${targetWallet.name}`),
+      date: getJakartaDateKey(),
+      createdAt: new Date().toISOString(),
+      walletId: walletId || defaultWalletId,
+    };
+
+    const updatedTransactions = [adjustmentTx, ...state.transactions];
+    const newState = computeFullState(state, updatedTransactions);
 
     setState(newState);
     await storageService.saveData(newState);
@@ -723,8 +896,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       amount: number;
       date: string;
       note?: string;
+      walletId?: string;
     },
     syncWithCash: boolean = false,
+    walletId?: string,
   ) => {
     const saving = state.savings.find((s) => s.id === savingsId);
     if (!saving) throw new Error("Tabungan tidak ditemukan");
@@ -758,12 +933,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     let updatedTransactions = state.transactions;
-    let totals = {
-      totalIncome: state.totalIncome,
-      totalExpense: state.totalExpense,
-      balance: state.balance,
-    };
-    let updatedBudgets = state.budgets;
+    const targetWalletId =
+      transaction.walletId ||
+      walletId ||
+      state.wallets?.find((w) => w.isDefault)?.id ||
+      DEFAULT_WALLET_ID;
 
     if (syncWithCash && amount > 0) {
       const isDeposit = transaction.type === "deposit";
@@ -777,23 +951,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           : `Tarik Tabungan: ${saving.name}`,
         date: transaction.date || getJakartaDateKey(),
         createdAt: new Date().toISOString(),
+        walletId: targetWalletId,
       };
       updatedTransactions = [newCashTransaction, ...state.transactions];
-      totals = calculateTotals(updatedTransactions);
-      updatedBudgets = updateBudgetsFromTransactions(
-        updatedTransactions,
-        state.budgets,
-      );
     }
 
-    const newState: AppState = {
+    const baseState: AppState = {
       ...state,
       savings: updatedSavings,
       savingsTransactions: [...state.savingsTransactions, newTransaction],
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
     };
+
+    const newState = computeFullState(baseState, updatedTransactions);
 
     setState(newState);
     await storageService.saveData(newState);
@@ -893,6 +1062,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const addDebt = async (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
     syncWithCash: boolean = false,
+    walletId?: string,
   ) => {
     const newDebt: Debt = {
       ...debt,
@@ -904,12 +1074,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     let updatedTransactions = state.transactions;
-    let totals = {
-      totalIncome: state.totalIncome,
-      totalExpense: state.totalExpense,
-      balance: state.balance,
-    };
-    let updatedBudgets = state.budgets;
+    const targetWalletId =
+      walletId ||
+      state.wallets?.find((w) => w.isDefault)?.id ||
+      DEFAULT_WALLET_ID;
 
     if (syncWithCash && debt.amount > 0) {
       const isBorrowed = debt.type === "borrowed";
@@ -923,22 +1091,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           : `Pemberian Pinjaman: ${debt.name}`,
         date: getJakartaDateKey(),
         createdAt: new Date().toISOString(),
+        walletId: targetWalletId,
       };
       updatedTransactions = [newTransaction, ...state.transactions];
-      totals = calculateTotals(updatedTransactions);
-      updatedBudgets = updateBudgetsFromTransactions(
-        updatedTransactions,
-        state.budgets,
-      );
     }
 
-    const newState: AppState = {
+    const baseState: AppState = {
       ...state,
       debts: [newDebt, ...state.debts],
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
     };
+    const newState = computeFullState(baseState, updatedTransactions);
+
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
@@ -967,7 +1130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await notificationService.updateNotifications(newState);
   };
 
-  const payDebt = async (id: string, amount: number) => {
+  const payDebt = async (id: string, amount: number, walletId?: string) => {
     const debt = state.debts.find((d) => d.id === id);
     if (!debt) return;
 
@@ -991,6 +1154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         : d,
     );
 
+    const targetWalletId =
+      walletId ||
+      state.wallets?.find((w) => w.isDefault)?.id ||
+      DEFAULT_WALLET_ID;
+
     // 2. Buat transaksi otomatis
     // Jika 'borrowed' (hutang kita), maka itu pengeluaran (expense)
     // Jika 'lent' (piutang), maka itu pemasukan (income)
@@ -1004,26 +1172,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }: ${debt.name}`,
       date: getJakartaDateKey(),
       createdAt: new Date().toISOString(),
+      walletId: targetWalletId,
     };
 
     const updatedTransactions = [newTransaction, ...state.transactions];
 
-    // 3. Hitung ulang total saldo dan budget
-    const totals = calculateTotals(updatedTransactions);
-    const updatedBudgets = updateBudgetsFromTransactions(
-      updatedTransactions,
-      state.budgets,
-    );
-
-    const newState: AppState = {
+    const baseState: AppState = {
       ...state,
       debts: updatedDebts,
-      transactions: updatedTransactions,
-      budgets: updatedBudgets,
-      ...totals,
     };
+    const newState = computeFullState(baseState, updatedTransactions);
 
-    // 4. Simpan ke state dan storage
+    // 3. Simpan ke state dan storage
     setState(newState);
     await storageService.saveData(newState);
     await notificationService.updateNotifications(newState);
@@ -1373,6 +1533,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addTransaction,
     editTransaction,
     deleteTransaction,
+
+    addWallet,
+    editWallet,
+    deleteWallet,
+    reconcileWallet,
+
     addBudget,
     editBudget,
     deleteBudget,

@@ -68,6 +68,8 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [date, setDate] = useState(getCurrentDate());
   const [note, setNote] = useState("");
   const [syncWithCash, setSyncWithCash] = useState(false);
+  const defaultWallet = state.wallets?.find((w) => w.isDefault) || state.wallets?.[0];
+  const [selectedWalletId, setSelectedWalletId] = useState<string>(defaultWallet?.id || "");
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Temukan savings berdasarkan ID
@@ -244,8 +246,10 @@ const AddSavingsTransactionScreen: React.FC = () => {
           amount: amountNum,
           date,
           note: note.trim(),
+          walletId: selectedWalletId,
         },
-        syncWithCash
+        syncWithCash,
+        selectedWalletId
       );
 
       Alert.alert(
@@ -555,6 +559,93 @@ const AddSavingsTransactionScreen: React.FC = () => {
             </Text>
           </View>
         </TouchableOpacity>
+
+        {/* Pemilih Dompet/Rekening saat Sinkronisasi Kas Aktif */}
+        {syncWithCash && (state.wallets || []).length > 0 && (
+          <View style={tw`mb-4`}>
+            <Text
+              style={[
+                tw`text-[10px] font-bold uppercase tracking-widest mb-2 ml-1`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
+              {transactionType === "deposit"
+                ? "Pilih Rekening Sumber Dana"
+                : "Pilih Rekening Tujuan Penarikan"}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {(state.wallets || []).map((w) => {
+                const isSelected =
+                  (selectedWalletId || defaultWallet?.id) === w.id;
+                return (
+                  <TouchableOpacity
+                    key={w.id}
+                    onPress={() => setSelectedWalletId(w.id)}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      borderRadius: 14,
+                      backgroundColor: isSelected
+                        ? `${w.color || ACCENT_COLOR}22`
+                        : SURFACE_COLOR,
+                      borderWidth: 1.5,
+                      borderColor: isSelected
+                        ? w.color || ACCENT_COLOR
+                        : `${BORDER_COLOR}60`,
+                      gap: 8,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        backgroundColor: `${w.color || ACCENT_COLOR}20`,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons
+                        name={(w.icon as any) || "wallet-outline"}
+                        size={15}
+                        color={w.color || ACCENT_COLOR}
+                      />
+                    </View>
+                    <View>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: isSelected ? "700" : "600",
+                          color: isSelected ? TEXT_PRIMARY : TEXT_SECONDARY,
+                        }}
+                      >
+                        {w.name}
+                      </Text>
+                      <Text style={{ fontSize: 10, color: Colors.gray400 }}>
+                        {formatCurrency(w.balance)}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={15}
+                        color={w.color || ACCENT_COLOR}
+                        style={{ marginLeft: 2 }}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Tips */}
         <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: INFO_COLOR + "10" }]}>

@@ -903,6 +903,116 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         actionTarget: "Settings",
         actionLabel: "Cek Menu Reset",
       },
+
+      // ══════════════════════════════════════════════════════════════════════════
+      // PILAR 7: MULTI-DOMPET & MANAJEMEN METODE PEMBAYARAN
+      // ══════════════════════════════════════════════════════════════════════════
+      {
+        id: "multi_wallet_setup",
+        name: "Kelola Dompet & Metode Pembayaran",
+        category: "home",
+        categoryLabel: "Beranda & Pembukuan",
+        tag: "Brankas Multi-Kantong",
+        icon: "wallet-outline",
+        color: colors.accent,
+        location: "Menu Dompet (Ikon Dompet di Beranda) ➔ Tambah Dompet",
+        analogy:
+          "Ibarat seorang bendahara keluarga yang menyimpan uang di beberapa tempat berbeda: dompet fisik untuk belanja harian, rekening bank untuk dana cadangan, dan celengan kusus untuk tabungan jangka panjang. Setiap kantong tahu perannya masing-masing, dan total kekayaan adalah jumlah seluruh kantong.",
+        summary:
+          "Mengelola beberapa sumber dana (Tunai, Bank, E-Wallet, Kartu Kredit) secara bersamaan dalam satu aplikasi. Setiap dompet memiliki peran berbeda: Operasional (belanja harian) atau Tabungan (dana cadangan/investasi).",
+        howItWorks: [
+          "Peran Dompet Operasional: Dompet bertipe 'Operasional' (misal: Tunai, GoPay, Dana) adalah sumber dana aktif untuk transaksi belanja sehari-hari. Saldo dompet ini ditampilkan pada indikator 'Dompet Aktif' di Beranda.",
+          "Peran Dompet Tabungan: Dompet bertipe 'Tabungan' (misal: Rekening BCA, Deposito) adalah dana cadangan yang tidak ikut dihitung sebagai kas belanja harian. Ini memisahkan uang yang 'terkunci' dari uang operasional.",
+          "Dompet Default: Dompet yang dicentang sebagai 'Default' akan otomatis dipilih saat mencatat transaksi baru. Anda tetap bisa memilih dompet lain secara manual di form transaksi.",
+          "Saldo Real-time: Setiap dompet otomatis menghitung ulang saldo berdasarkan seluruh riwayat transaksi yang terhubung kepadanya. Tidak ada angka yang perlu diinput manual.",
+          "Migrasi Otomatis: Semua transaksi lama sebelum fitur ini diaktifkan otomatis dipindahkan ke 'Dompet Kas Utama' tanpa kehilangan satu data pun.",
+        ],
+        steps: [
+          "Buka layar 'Dompet' melalui ikon dompet di Beranda atau menu navigasi.",
+          "Tekan tombol '+' atau 'Tambah Dompet Baru'.",
+          "Beri nama dompet (misal: GoPay, BCA Tabungan, Tunai Dompet).",
+          "Pilih tipe ikon dan warna unik untuk memudahkan identifikasi visual.",
+          "Pilih Peran: 'Operasional' untuk belanja harian, 'Tabungan' untuk dana cadangan.",
+          "Masukkan saldo awal jika ada (misal: Rp 500.000 untuk saldo GoPay saat ini).",
+          "Simpan. Dompet baru siap digunakan sebagai sumber dana transaksi!",
+        ],
+        impact:
+          "Anda tidak perlu lagi menghitung manual berapa uang di rekening A ditambah dompet B. Aplikasi merangkum total kekayaan kas Anda dari semua sumber secara real-time dan akurat.",
+        proTip:
+          "Tandai rekening atau e-wallet yang 'tidak boleh disentuh' (seperti dana darurat) sebagai dompet bertipe Tabungan agar tidak tercampur dalam perhitungan kas belanja harian Anda.",
+        actionTarget: "Wallets",
+        actionLabel: "Kelola Dompet Saya",
+      },
+      {
+        id: "transfer_between_wallets",
+        name: "Transfer Antar Dompet",
+        category: "transactions",
+        categoryLabel: "Transaksi & Struk",
+        tag: "Pindah Dana Antar Kantong",
+        icon: "swap-horizontal-outline",
+        color: colors.info,
+        location: "Tombol (+) ➔ Tab 'Transfer' (Tab Ketiga)",
+        analogy:
+          "Ibarat memindahkan uang tunai dari dompet saku ke dalam amplop rekening bank Anda sendiri. Nilai total kekayaan Anda tidak berubah serupiah pun — hanya lokasi penyimpanannya yang berpindah. Bedanya, jika ada biaya administrasi transfer bank, biaya itu saja yang dicatat sebagai pengeluaran nyata.",
+        summary:
+          "Mencatat perpindahan dana antara dua dompet milik Anda sendiri (misal: Tunai → BCA, GoPay → Dana). Transfer bersifat 'netral' — tidak mengurangi atau menambah total kekayaan bersih Anda, kecuali biaya admin bank jika ada.",
+        howItWorks: [
+          "Net-Neutral (Kekayaan Tetap): Saldo dompet sumber berkurang dan saldo dompet tujuan bertambah dengan nominal yang sama. Total kekayaan Anda tidak berubah.",
+          "Biaya Admin Terpisah: Jika ada biaya transfer bank (misal: Rp 6.500), masukkan di kolom 'Biaya Admin'. Hanya biaya admin ini yang dicatat sebagai pengeluaran nyata dan mengurangi total kekayaan.",
+          "Pemilihan Dompet Sumber & Tujuan: Anda wajib memilih dua dompet berbeda. Aplikasi mencegah transfer ke dompet yang sama.",
+          "Konsistensi Saldo: Setelah transfer, saldo kedua dompet diperbarui secara otomatis dan instan tanpa perlu refresh manual.",
+        ],
+        steps: [
+          "Tekan tombol (+) hijau di tengah bawah layar.",
+          "Pilih tab 'Transfer' (tab ketiga, ikon panah bolak-balik).",
+          "Pilih 'Dompet Asal' (sumber dana keluar) dari daftar dompet Anda.",
+          "Pilih 'Dompet Tujuan' (penerima dana masuk) — harus berbeda dari dompet asal.",
+          "Masukkan nominal uang yang dipindahkan (misal: Rp 500.000).",
+          "Isi 'Biaya Admin' jika ada biaya transfer bank (opsional, misal: Rp 6.500).",
+          "Tambahkan catatan opsional lalu tekan 'Simpan Transfer'.",
+        ],
+        impact:
+          "Memisahkan perpindahan dana internal dari arus kas nyata sehingga laporan keuangan Anda tidak terdistorsi. Tanpa fitur ini, transfer dari bank ke GoPay akan salah tercatat sebagai 'pengeluaran + pemasukan' sekaligus dan menggelembungkan total transaksi secara palsu.",
+        proTip:
+          "Setelah gajian, gunakan fitur Transfer untuk memindahkan sebagian gaji ke dompet 'BCA Tabungan' secara instan. Prinsip 'Bayar Diri Sendiri Dulu' (Pay Yourself First) terlaksana hanya dalam 3 ketukan!",
+        actionTarget: "AddTransaction",
+        actionLabel: "Coba Transfer Antar Dompet",
+      },
+      {
+        id: "smart_reconcile",
+        name: "Koreksi Saldo Dompet (Smart Reconcile)",
+        category: "home",
+        categoryLabel: "Beranda & Pembukuan",
+        tag: "Kalibrasi Ulang Saldo",
+        icon: "git-compare-outline",
+        color: colors.warning,
+        location: "Layar Dompet ➔ Ketuk Kartu Dompet ➔ 'Koreksi Saldo'",
+        analogy:
+          "Ibarat kasir yang menghitung ulang uang di laci kasir setiap akhir shift. Jika uang fisik di laci ternyata Rp 5.000 lebih atau kurang dari catatan mesin kasir, kasir mencatat selisih tersebut sebagai 'koreksi' tanpa harus menelusuri satu per satu transaksi mana yang salah.",
+        summary:
+          "Menyamakan saldo tercatat di aplikasi dengan saldo fisik/rekening aktual Anda. Jika ada selisih, sistem otomatis membuat satu transaksi penyesuaian (koreksi kas masuk atau keluar) untuk merapikan perbedaan tanpa menghapus riwayat lama.",
+        howItWorks: [
+          "Input Saldo Fisik: Anda memasukkan saldo aktual yang Anda hitung secara fisik (hitung uang tunai di dompet) atau lihat di aplikasi m-banking.",
+          "Deteksi Selisih Otomatis: Sistem membandingkan saldo fisik yang Anda masukkan dengan saldo tercatat di aplikasi.",
+          "Transaksi Koreksi Otomatis: Jika ada selisih, sistem membuat satu transaksi khusus berlabel 'Koreksi Saldo' secara otomatis — surplus (selisih positif) dicatat sebagai Pemasukan Koreksi, deficit (selisih negatif) dicatat sebagai Pengeluaran Koreksi.",
+          "Zero Downtime: Semua riwayat transaksi sebelumnya tetap utuh. Hanya satu baris transaksi koreksi yang ditambahkan.",
+          "Tidak Berlaku Jika Sama: Jika saldo fisik = saldo aplikasi, tidak ada transaksi koreksi yang dibuat.",
+        ],
+        steps: [
+          "Buka layar 'Dompet' dan ketuk kartu dompet yang ingin dikoreksi.",
+          "Tekan opsi 'Koreksi Saldo' atau 'Sesuaikan Saldo'.",
+          "Hitung uang tunai di dompet fisik Anda ATAU cek saldo di aplikasi m-banking.",
+          "Masukkan angka saldo aktual yang benar (misal: Rp 237.500).",
+          "Tambahkan catatan alasan koreksi (opsional, misal: 'Uang kembalian tidak tercatat').",
+          "Konfirmasi. Transaksi 'Koreksi Saldo' otomatis muncul di riwayat dan saldo dompet langsung sinkron!",
+        ],
+        impact:
+          "Menghilangkan stres akibat selisih kecil yang tidak bisa dilacak asal-usulnya (misal: kembalian receh Rp 500 yang sering tidak dicatat). Anda bisa fokus ke gambaran besar keuangan tanpa terjebak berburu perbedaan Rp 2.000.",
+        proTip:
+          "Lakukan koreksi saldo rutin setiap awal atau akhir bulan pembukuan — khususnya untuk dompet tunai yang paling rawan selisih. Jadikan ini ritual bulanan seperti mengecek laporan rekening koran.",
+        actionTarget: "Wallets",
+        actionLabel: "Koreksi Saldo Dompet",
+      },
     ],
     [colors]
   );
@@ -993,7 +1103,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
             Panduan & Tutorial Seluruh Fitur
           </Text>
           <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4, lineHeight: 18 }}>
-            Ketahui fungsi, analogi nyata, cara pakai, dan dampak finansial 27 fitur MyMoney untuk menguasai keuangan Anda 100%.
+            Ketahui fungsi, analogi nyata, cara pakai, dan dampak finansial 30 fitur MyMoney untuk menguasai keuangan Anda 100%.
           </Text>
 
           {/* Quick Search Bar */}

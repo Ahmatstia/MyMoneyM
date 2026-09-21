@@ -5,6 +5,7 @@ import { View, ScrollView, Alert, TouchableOpacity, Animated } from "react-nativ
 import { Text } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -15,10 +16,10 @@ import { useTheme } from '../../theme/ThemeContext';
 
 // ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
 // ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
-const CARD_RADIUS  = 20;
-const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
-const SECTION_GAP  = 24;
+const CARD_RADIUS  = 16;
+const INNER_RADIUS = 12;
+const CARD_PAD     = 13;
+const SECTION_GAP  = 16;
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -333,100 +334,139 @@ const BudgetScreen: React.FC = () => {
 
         {/* ── Summary hero card ────────────────────────────────────────── */}
         {activeBudgets.length > 0 && (
-          <Card style={{ marginBottom: 20 }}>
-            {/* Total limit + bar */}
-            <Text
+          <View
+            style={{
+              borderRadius: CARD_RADIUS,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+              overflow: "hidden",
+              marginBottom: 16,
+              backgroundColor: colors.surface,
+            }}
+          >
+            <LinearGradient
+              colors={[colors.accent + "18", colors.surface, colors.surface]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={{
-                color: colors.gray400,
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-                marginBottom: 5,
+                padding: CARD_PAD,
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              Total Anggaran
-            </Text>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 30,
-                fontWeight: "800",
-                letterSpacing: -0.5,
-                marginBottom: 16,
-              }}
-            >
-              {formatCurrency(summary.totalLimit)}
-            </Text>
+              {/* Decorative watermark ring */}
+              <View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  right: -16,
+                  top: -16,
+                  width: 90,
+                  height: 90,
+                  borderRadius: 45,
+                  borderWidth: 1,
+                  borderColor: colors.accent + "20",
+                }}
+              />
 
-            {/* Limit / Spent / Remaining row */}
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                  <View
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: colors.accent,
-                      marginRight: 5,
-                    }}
-                  />
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Terpakai
-                  </Text>
-                </View>
-                <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700" }}>
-                  {formatCurrency(summary.totalSpent)}
-                </Text>
-              </View>
-
-              <View style={{ width: 1, height: 32, backgroundColor: CARD_BORDER, marginHorizontal: 14 }} />
-
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                  <View
-                    style={{
-                      width: 6, height: 6, borderRadius: 3,
-                      backgroundColor: summary.totalRemaining >= 0 ? colors.success : colors.error,
-                      marginRight: 5,
-                    }}
-                  />
-                  <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                    Sisa
-                  </Text>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 14, fontWeight: "700",
-                    color: summary.totalRemaining >= 0 ? colors.success : colors.error,
-                  }}
-                >
-                  {formatCurrency(summary.totalRemaining)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Overall utilization bar */}
-            <ThinBar progress={utilizationRate} color={utilizationColor} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ color: colors.gray400, fontSize: 10 }}>
-                {utilizationRate.toFixed(1)}% terpakai
+              {/* Total limit + bar */}
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                  marginBottom: 3,
+                }}
+              >
+                Total Anggaran
               </Text>
               <Text
                 style={{
-                  fontSize: 10, fontWeight: "600",
-                  color: utilizationColor,
+                  color: colors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  letterSpacing: -0.4,
+                  marginBottom: 12,
                 }}
               >
-                {utilizationRate > 100
-                  ? "Melebihi batas!"
-                  : utilizationRate >= 80
-                  ? "Perlu perhatian"
-                  : "Dalam batas aman"}
+                {formatCurrency(summary.totalLimit)}
               </Text>
-            </View>
-          </Card>
+
+              {/* Limit / Spent / Remaining row */}
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 2.5,
+                        backgroundColor: colors.accent,
+                        marginRight: 5,
+                      }}
+                    />
+                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Terpakai
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "700" }}>
+                    {formatCurrency(summary.totalSpent)}
+                  </Text>
+                </View>
+
+                <View style={{ width: 1, height: 26, backgroundColor: CARD_BORDER, marginHorizontal: 12 }} />
+
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 2.5,
+                        backgroundColor: summary.totalRemaining >= 0 ? colors.success : colors.error,
+                        marginRight: 5,
+                      }}
+                    />
+                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      Sisa
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: summary.totalRemaining >= 0 ? colors.success : colors.error,
+                    }}
+                  >
+                    {formatCurrency(summary.totalRemaining)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Overall utilization bar */}
+              <ThinBar progress={utilizationRate} color={utilizationColor} />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 5 }}>
+                <Text style={{ color: colors.gray400, fontSize: 9 }}>
+                  {utilizationRate.toFixed(1)}% terpakai
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontWeight: "600",
+                    color: utilizationColor,
+                  }}
+                >
+                  {utilizationRate > 100
+                    ? "Melebihi batas!"
+                    : utilizationRate >= 80
+                    ? "Perlu perhatian"
+                    : "Dalam batas aman"}
+                </Text>
+              </View>
+            </LinearGradient>
+          </View>
         )}
 
         {/* ── Filter — segmented control ───────────────────────────────── */}
@@ -595,12 +635,12 @@ const BudgetScreen: React.FC = () => {
                       {/* Category icon */}
                       <View
                         style={{
-                          width: 38, height: 38, borderRadius: 12,
+                          width: 32, height: 32, borderRadius: 10,
                           alignItems: "center", justifyContent: "center",
-                          backgroundColor: `${statusColor}15`,
+                          backgroundColor: `${statusColor}18`,
                         }}
                       >
-                        <Ionicons name="pie-chart-outline" size={17} color={statusColor} />
+                        <Ionicons name="pie-chart-outline" size={15} color={statusColor} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text
@@ -652,7 +692,7 @@ const BudgetScreen: React.FC = () => {
                     <View style={{ flexDirection: "row", gap: 6 }}>
                       <TouchableOpacity
                         style={{
-                          width: 34, height: 34, borderRadius: 10,
+                          width: 30, height: 30, borderRadius: 8,
                           alignItems: "center", justifyContent: "center",
                           backgroundColor: `${colors.accent}15`,
                           borderWidth: 1, borderColor: `${colors.accent}20`,
@@ -665,11 +705,11 @@ const BudgetScreen: React.FC = () => {
                         }
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="pencil-outline" size={15} color={colors.accent} />
+                        <Ionicons name="pencil-outline" size={13} color={colors.accent} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={{
-                          width: 34, height: 34, borderRadius: 10,
+                          width: 30, height: 30, borderRadius: 8,
                           alignItems: "center", justifyContent: "center",
                           backgroundColor: `${colors.error}15`,
                           borderWidth: 1, borderColor: `${colors.error}20`,
@@ -677,7 +717,7 @@ const BudgetScreen: React.FC = () => {
                         onPress={() => handleDelete(budget)}
                         activeOpacity={0.7}
                       >
-                        <Ionicons name="trash-outline" size={15} color={colors.error} />
+                        <Ionicons name="trash-outline" size={13} color={colors.error} />
                       </TouchableOpacity>
                     </View>
                   </View>

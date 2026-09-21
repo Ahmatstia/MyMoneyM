@@ -106,6 +106,8 @@ const RecurringTransactionsScreen: React.FC = () => {
   const [formAutoCycle, setFormAutoCycle] = useState<boolean>(true);
   const [cyclePreset, setCyclePreset] = useState<"weekly" | "biweekly" | "monthly" | "custom">("monthly");
   const [customDays, setCustomDays] = useState<string>("14");
+  const defaultWallet = state.wallets?.find((w) => w.isDefault) || state.wallets?.[0];
+  const [formWalletId, setFormWalletId] = useState<string>(defaultWallet?.id || "");
   const [formDescription, setFormDescription] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -196,6 +198,7 @@ const RecurringTransactionsScreen: React.FC = () => {
     setFormAutoCycle(true);
     setCyclePreset("monthly");
     setCustomDays("14");
+    setFormWalletId(defaultWallet?.id || "");
     setFormDescription("");
     setModalVisible(true);
   };
@@ -223,6 +226,7 @@ const RecurringTransactionsScreen: React.FC = () => {
       setCyclePreset("custom");
       setCustomDays(String(days));
     }
+    setFormWalletId(item.walletId || defaultWallet?.id || "");
     setFormDescription(item.description || (item.name !== item.category ? item.name : ""));
     setModalVisible(true);
   };
@@ -269,6 +273,7 @@ const RecurringTransactionsScreen: React.FC = () => {
         autoStartNewCycle: formType === "income" ? formAutoCycle : undefined,
         cyclePeriodDays: cycleDaysVal,
         description: formDescription.trim(),
+        walletId: formWalletId || defaultWallet?.id,
       });
     } else {
       await addRecurringTransaction({
@@ -285,6 +290,7 @@ const RecurringTransactionsScreen: React.FC = () => {
         cyclePeriodDays: cycleDaysVal,
         description: formDescription.trim(),
         isActive: true,
+        walletId: formWalletId || defaultWallet?.id,
       });
     }
 
@@ -801,6 +807,27 @@ const RecurringTransactionsScreen: React.FC = () => {
 
                   {/* Badges / Information Tags */}
                   <View style={{ gap: 6, marginBottom: 12 }}>
+                    {/* Wallet Badge */}
+                    {item.walletId && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          alignSelf: "flex-start",
+                          backgroundColor: `${colors.border}50`,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 6,
+                          gap: 4,
+                        }}
+                      >
+                        <Ionicons name="wallet-outline" size={11} color={colors.gray400} />
+                        <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "600" }}>
+                          {(state.wallets || []).find((w) => w.id === item.walletId)?.name || "Dompet"}
+                        </Text>
+                      </View>
+                    )}
+
                     {/* Auto period cycle badge */}
                     {isIncome && item.autoStartNewCycle && (
                       <View
@@ -1171,6 +1198,53 @@ const RecurringTransactionsScreen: React.FC = () => {
                   </View>
                 </ScrollView>
               </View>
+
+              {/* Rekening / Dompet */}
+              {(state.wallets || []).length > 0 && (
+                <View style={{ marginBottom: 14 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
+                    {formType === "income" ? "REKENING PENERIMA" : "REKENING PEMOTONG"}
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {(state.wallets || []).map((w) => {
+                      const isSelected = (formWalletId || defaultWallet?.id) === w.id;
+                      return (
+                        <TouchableOpacity
+                          key={w.id}
+                          onPress={() => setFormWalletId(w.id)}
+                          activeOpacity={0.7}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                            borderRadius: 12,
+                            backgroundColor: isSelected ? `${w.color || colors.accent}22` : colors.background,
+                            borderWidth: 1.5,
+                            borderColor: isSelected ? (w.color || colors.accent) : `${colors.border}80`,
+                            gap: 6,
+                          }}
+                        >
+                          <Ionicons
+                            name={(w.icon as any) || "wallet-outline"}
+                            size={14}
+                            color={isSelected ? (w.color || colors.accent) : colors.gray400}
+                          />
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: isSelected ? "700" : "500",
+                              color: isSelected ? colors.textPrimary : colors.gray400,
+                            }}
+                          >
+                            {w.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
 
               {/* Kategori Selector Card + Quick Chips */}
               <View style={{ marginBottom: 14 }}>

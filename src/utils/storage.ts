@@ -11,8 +11,14 @@ import {
   Debt,
   CustomCategory,
   RecurringTransaction,
+  Wallet,
 } from "../types";
-import { calculateTotals } from "./calculations";
+import {
+  calculateTotals,
+  calculateWalletBalances,
+  calculatePartitionedBalances,
+  DEFAULT_WALLET_ID,
+} from "./calculations";
 import { normalizeCheckIns } from "./dailyCheckIn";
 
 // ======================================================
@@ -55,7 +61,7 @@ const validateTransaction = (obj: any): Transaction | null => {
     if (
       typeof obj.id !== "string" ||
       typeof obj.amount !== "number" ||
-      !["income", "expense"].includes(obj.type) ||
+      !["income", "expense", "transfer"].includes(obj.type) ||
       typeof obj.category !== "string"
     ) {
       return null;
@@ -85,6 +91,9 @@ const validateTransaction = (obj: any): Transaction | null => {
         subTransactions && subTransactions.length > 0
           ? subTransactions
           : undefined,
+      walletId: typeof obj.walletId === "string" ? obj.walletId : DEFAULT_WALLET_ID,
+      toWalletId: typeof obj.toWalletId === "string" ? obj.toWalletId : undefined,
+      adminFee: typeof obj.adminFee === "number" ? Math.max(0, obj.adminFee) : undefined,
     };
   } catch (error) {
     return null;
@@ -336,7 +345,7 @@ const validateRecurringTransaction = (obj: any): RecurringTransaction | null => 
     if (
       typeof obj.id !== "string" ||
       typeof obj.amount !== "number" ||
-      !["income", "expense"].includes(obj.type) ||
+      !["income", "expense", "transfer"].includes(obj.type) ||
       typeof obj.category !== "string" ||
       !["weekly", "monthly", "custom_days"].includes(obj.frequency) ||
       typeof obj.startDate !== "string" ||
@@ -373,11 +382,66 @@ const validateRecurringTransaction = (obj: any): RecurringTransaction | null => 
           : undefined,
       createdAt: obj.createdAt || new Date().toISOString(),
       updatedAt: obj.updatedAt || undefined,
+      walletId: typeof obj.walletId === "string" ? obj.walletId : DEFAULT_WALLET_ID,
+      toWalletId: typeof obj.toWalletId === "string" ? obj.toWalletId : undefined,
+      adminFee: typeof obj.adminFee === "number" ? Math.max(0, obj.adminFee) : undefined,
+      linkedSavingsId: typeof obj.linkedSavingsId === "string" ? obj.linkedSavingsId : undefined,
+      linkedDebtId: typeof obj.linkedDebtId === "string" ? obj.linkedDebtId : undefined,
     };
   } catch {
     return null;
   }
 };
+
+export const createDefaultWallet = (initialBalance: number = 0): Wallet => ({
+  id: DEFAULT_WALLET_ID,
+  name: "Dompet Utama",
+  type: "cash",
+  role: "operational",
+  balance: initialBalance,
+  initialBalance: initialBalance,
+  color: "#10B981",
+  icon: "wallet",
+  isDefault: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+});
+
+export const validateWallet = (obj: any): Wallet | null => {
+  if (!obj || typeof obj !== "object") return null;
+  try {
+    // Hard requirements: id and name must be valid strings
+    if (
+      typeof obj.id !== "string" ||
+      typeof obj.name !== "string"
+    ) {
+      return null;
+    }
+    // Graceful fallback for schema-evolved fields (backward compat with older saves)
+    const validTypes = ["cash", "bank", "ewallet", "investment", "credit"];
+    const validRoles = ["operational", "savings", "credit"];
+    const walletType = validTypes.includes(obj.type) ? obj.type : "cash";
+    const walletRole = validRoles.includes(obj.role) ? obj.role : "operational";
+
+    return {
+      id: obj.id,
+      name: obj.name.trim().substring(0, 40) || "Dompet",
+      type: walletType,
+      role: walletRole,
+      balance: typeof obj.balance === "number" ? obj.balance : 0,
+      initialBalance: typeof obj.initialBalance === "number" ? obj.initialBalance : 0,
+      color: typeof obj.color === "string" && obj.color.startsWith("#") ? obj.color : "#10B981",
+      icon: typeof obj.icon === "string" ? obj.icon : "wallet",
+      accountNumber: typeof obj.accountNumber === "string" ? obj.accountNumber : undefined,
+      isDefault: Boolean(obj.isDefault),
+      createdAt: obj.createdAt || new Date().toISOString(),
+      updatedAt: obj.updatedAt || new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+};
+
 
 // ======================================================
 
@@ -462,9 +526,11 @@ const migrateOldData = async (): Promise<AppState | null> => {
             : [];
 
           const totals = calculateTotals(transactions);
+          const defaultWallet = createDefaultWallet(totals.balance);
 
           migratedData = {
             transactions,
+            wallets: [defaultWallet],
             budgets,
             savings,
             savingsTransactions,
@@ -475,6 +541,8 @@ const migrateOldData = async (): Promise<AppState | null> => {
             recurringTransactions: [],
             userProfile: { name: "MyMoney" },
             ...totals,
+            operationalBalance: totals.balance,
+            savingsBalance: 0,
           };
 
           // Simpan sebagai data baru
@@ -566,10 +634,24 @@ export const storageService = {
               )
           : [];
 
+      const validatedWallets: Wallet[] = Array.isArray(data.wallets)
+        ? data.wallets
+            .map((w) => validateWallet(w))
+            .filter((w: Wallet | null): w is Wallet => w !== null)
+        : [];
+
+      const effectiveWallets =
+        validatedWallets.length > 0
+          ? validatedWallets
+          : [createDefaultWallet(0)];
+
+      const updatedWallets = calculateWalletBalances(effectiveWallets, validatedTransactions);
+      const partitioned = calculatePartitionedBalances(updatedWallets);
       const totals = calculateTotals(validatedTransactions);
 
       const appData: AppState = {
         transactions: validatedTransactions,
+        wallets: updatedWallets,
         budgets: validatedBudgets,
         savings: validatedSavings,
         savingsTransactions: validatedSavingsTransactions,
@@ -586,6 +668,8 @@ export const storageService = {
             ? data.paydayCutoff
             : 1,
         ...totals,
+        operationalBalance: partitioned.operationalBalance,
+        savingsBalance: partitioned.savingsBalance,
       };
 
       await AsyncStorage.setItem(
@@ -621,6 +705,7 @@ export const storageService = {
       if (!appDataJson) {
         return {
           transactions: [],
+          wallets: [createDefaultWallet(0)],
           budgets: [],
           savings: [],
           savingsTransactions: [],
@@ -633,6 +718,8 @@ export const storageService = {
           totalIncome: 0,
           totalExpense: 0,
           balance: 0,
+          operationalBalance: 0,
+          savingsBalance: 0,
         };
       }
 
@@ -723,10 +810,28 @@ export const storageService = {
         } catch {}
       }
 
+      let wallets: Wallet[] = Array.isArray(parsedData.wallets)
+        ? parsedData.wallets
+            .map((w: any) => validateWallet(w))
+            .filter((w: Wallet | null): w is Wallet => w !== null)
+        : [];
+
+      // Migrasi Zero-Data-Loss: Buat default wallet jika belum ada
+      if (wallets.length === 0) {
+        wallets = [createDefaultWallet(0)];
+      }
+
+      if (!wallets.some((w) => w.isDefault)) {
+        wallets[0].isDefault = true;
+      }
+
+      const updatedWallets = calculateWalletBalances(wallets, transactions);
+      const partitioned = calculatePartitionedBalances(updatedWallets);
       const totals = calculateTotals(transactions);
 
       const appData: AppState = {
         transactions,
+        wallets: updatedWallets,
         budgets,
         savings,
         savingsTransactions,
@@ -738,12 +843,17 @@ export const storageService = {
         userProfile: parsedData.userProfile || { name: "MyMoney" },
         paydayCutoff: loadedPaydayCutoff,
         ...totals,
+        balance: updatedWallets.length > 0 ? partitioned.netWorth : totals.balance,
+        operationalBalance: partitioned.operationalBalance,
+        savingsBalance: partitioned.savingsBalance,
       };
 
       return appData;
     } catch (error) {
+      const fallbackWallet = createDefaultWallet(0);
       return {
         transactions: [],
+        wallets: [fallbackWallet],
         budgets: [],
         savings: [],
         savingsTransactions: [],
@@ -756,6 +866,8 @@ export const storageService = {
         totalIncome: 0,
         totalExpense: 0,
         balance: 0,
+        operationalBalance: 0,
+        savingsBalance: 0,
       };
     }
   },

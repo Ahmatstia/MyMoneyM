@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { useAppContext } from "../../context/AppContext";
 import { Debt } from "../../types";
@@ -33,9 +34,9 @@ import { formatCurrency, safeNumber } from "../../utils/calculations";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-const CARD_RADIUS  = 20;
-const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
+const CARD_RADIUS  = 16;
+const INNER_RADIUS = 12;
+const CARD_PAD     = 14;
 // ─── Status maps ──────────────────────────────────────────────────────────────
 const STATUS_LABEL: Record<Debt["status"], string> = {
   active:  "Belum Bayar",
@@ -223,177 +224,201 @@ const DebtScreen: React.FC = () => {
         </View>
 
         {/* ══════════════════════════════════════════
-            SUMMARY HERO CARD (REDESIGNED)
-            Tambahan: overdue badge, active count per kategori,
-            label kontekstual di bawah ratio bar
+            SUMMARY HERO CARD (REDESIGNED NEO-FINTECH)
         ══════════════════════════════════════════ */}
         <View
           style={{
-            backgroundColor: colors.surface,
             borderRadius: CARD_RADIUS,
             borderWidth: 1,
             borderColor: CARD_BORDER,
-            padding: CARD_PAD,
-            marginBottom: 20,
+            overflow: "hidden",
+            marginBottom: 16,
+            backgroundColor: colors.surface,
           }}
         >
-          {/* Label + overdue warning badge */}
-          <View
+          <LinearGradient
+            colors={[colors.accent + "14", colors.surface, colors.surface]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 4,
+              padding: CARD_PAD,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <Text
-              style={{
-                color: colors.gray400,
-                fontSize: 9,
-                fontWeight: "700",
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-              }}
-            >
-              Posisi Bersih
-            </Text>
-            {overdueCount > 0 && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 7,
-                  paddingVertical: 3,
-                  borderRadius: 7,
-                  backgroundColor: `${colors.error}16`,
-                  borderWidth: 1,
-                  borderColor: `${colors.error}28`,
-                }}
-              >
-                <Ionicons
-                  name="warning-outline"
-                  size={10}
-                  color={colors.error}
-                  style={{ marginRight: 4 }}
-                />
-                <Text style={{ color: colors.error, fontSize: 9, fontWeight: "700" }}>
-                  {overdueCount} terlambat
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Net amount */}
-          <Text
-            style={{
-              color: net >= 0 ? colors.success : colors.error,
-              fontSize: 28,
-              fontWeight: "800",
-              letterSpacing: -0.5,
-              marginBottom: 16,
-            }}
-          >
-            {formatCurrency(net)}
-          </Text>
-
-          {/* Hutang / Piutang row */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
-            {/* Hutang */}
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
-                <View
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: colors.error,
-                    marginRight: 5,
-                  }}
-                />
-                <Text
-                  style={{
-                    color: colors.gray400,
-                    fontSize: 9,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                  }}
-                >
-                  Hutang Saya
-                </Text>
-              </View>
-              <Text style={{ color: colors.error, fontSize: 16, fontWeight: "700" }}>
-                {formatCurrency(totalBorrowed)}
-              </Text>
-              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 2 }}>
-                {borrowedActiveCount} catatan aktif
-              </Text>
-            </View>
-
+            {/* Decorative watermark ring */}
             <View
+              pointerEvents="none"
               style={{
-                width: 1,
-                height: 44,
-                backgroundColor: CARD_BORDER,
-                marginHorizontal: 14,
+                position: "absolute",
+                right: -16,
+                top: -16,
+                width: 90,
+                height: 90,
+                borderRadius: 45,
+                borderWidth: 1,
+                borderColor: colors.accent + "20",
               }}
             />
 
-            {/* Piutang */}
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
+            {/* Label + overdue warning badge */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 9,
+                  fontWeight: "700",
+                  letterSpacing: 1.1,
+                  textTransform: "uppercase",
+                }}
+              >
+                Posisi Bersih
+              </Text>
+              {overdueCount > 0 && (
                 <View
                   style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: colors.success,
-                    marginRight: 5,
-                  }}
-                />
-                <Text
-                  style={{
-                    color: colors.gray400,
-                    fontSize: 9,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 7,
+                    paddingVertical: 2.5,
+                    borderRadius: 6,
+                    backgroundColor: `${colors.error}16`,
+                    borderWidth: 1,
+                    borderColor: `${colors.error}28`,
                   }}
                 >
-                  Piutang
+                  <Ionicons
+                    name="warning-outline"
+                    size={10}
+                    color={colors.error}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={{ color: colors.error, fontSize: 9, fontWeight: "700" }}>
+                    {overdueCount} terlambat
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Net amount */}
+            <Text
+              style={{
+                color: net >= 0 ? colors.success : colors.error,
+                fontSize: 22,
+                fontWeight: "800",
+                letterSpacing: -0.4,
+                marginBottom: 12,
+              }}
+            >
+              {formatCurrency(net)}
+            </Text>
+
+            {/* Hutang / Piutang row */}
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+              {/* Hutang */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      backgroundColor: colors.error,
+                      marginRight: 5,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                    }}
+                  >
+                    Hutang Saya
+                  </Text>
+                </View>
+                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "700" }}>
+                  {formatCurrency(totalBorrowed)}
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}>
+                  {borrowedActiveCount} catatan aktif
                 </Text>
               </View>
-              <Text style={{ color: colors.success, fontSize: 16, fontWeight: "700" }}>
-                {formatCurrency(totalLent)}
+
+              <View
+                style={{
+                  width: 1,
+                  height: 32,
+                  backgroundColor: CARD_BORDER,
+                  marginHorizontal: 12,
+                }}
+              />
+
+              {/* Piutang */}
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: 2.5,
+                      backgroundColor: colors.success,
+                      marginRight: 5,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      color: colors.gray400,
+                      fontSize: 9,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.8,
+                    }}
+                  >
+                    Piutang
+                  </Text>
+                </View>
+                <Text style={{ color: colors.success, fontSize: 13, fontWeight: "700" }}>
+                  {formatCurrency(totalLent)}
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}>
+                  {lentActiveCount} catatan aktif
+                </Text>
+              </View>
+            </View>
+
+            {/* Ratio bar */}
+            <ProgressBar
+              progress={
+                totalBorrowed + totalLent > 0
+                  ? totalLent / (totalBorrowed + totalLent)
+                  : 0.5
+              }
+              color={net >= 0 ? colors.success : colors.error}
+              height={4}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 5,
+              }}
+            >
+              <Text style={{ color: colors.gray400, fontSize: 9 }}>
+                {allDebts.filter((d) => d.status !== "paid").length} aktif
               </Text>
-              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 2 }}>
-                {lentActiveCount} catatan aktif
+              <Text style={{ color: colors.gray400, fontSize: 9 }}>
+                {net >= 0 ? "Piutang lebih besar" : "Hutang lebih besar"}
               </Text>
             </View>
-          </View>
-
-          {/* Ratio bar */}
-          <ProgressBar
-            progress={
-              totalBorrowed + totalLent > 0
-                ? totalLent / (totalBorrowed + totalLent)
-                : 0.5
-            }
-            color={net >= 0 ? colors.success : colors.error}
-            height={4}
-          />
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 6,
-            }}
-          >
-            <Text style={{ color: colors.gray400, fontSize: 10 }}>
-              {allDebts.filter((d) => d.status !== "paid").length} aktif
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 10 }}>
-              {net >= 0 ? "Piutang lebih besar" : "Hutang lebih besar"}
-            </Text>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* ══════════════════════════════════════════
@@ -631,9 +656,7 @@ const DebtScreen: React.FC = () => {
                   >
                     <View
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 13,
+                        width: 32, height: 32, borderRadius: 10,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: `${statusColor}15`,
@@ -647,7 +670,7 @@ const DebtScreen: React.FC = () => {
                             ? "arrow-down-outline"
                             : "arrow-up-outline"
                         }
-                        size={18}
+                        size={15}
                         color={statusColor}
                       />
                     </View>
@@ -811,8 +834,7 @@ const DebtScreen: React.FC = () => {
                       <View
                         style={{
                           flex: 1,
-                          height: 40,
-                          borderRadius: 12,
+                          height: 36, borderRadius: 10,
                           alignItems: "center",
                           justifyContent: "center",
                           flexDirection: "row",
@@ -842,8 +864,7 @@ const DebtScreen: React.FC = () => {
                       <TouchableOpacity
                         style={{
                           flex: 1,
-                          height: 40,
-                          borderRadius: 12,
+                          height: 36, borderRadius: 10,
                           alignItems: "center",
                           justifyContent: "center",
                           flexDirection: "row",
@@ -875,8 +896,7 @@ const DebtScreen: React.FC = () => {
                     <TouchableOpacity
                       style={{
                         width: 40,
-                        height: 40,
-                        borderRadius: 12,
+                        height: 36, borderRadius: 10,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: `${colors.accent}14`,
@@ -898,8 +918,7 @@ const DebtScreen: React.FC = () => {
                     <TouchableOpacity
                       style={{
                         width: 40,
-                        height: 40,
-                        borderRadius: 12,
+                        height: 36, borderRadius: 10,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: `${colors.error}14`,

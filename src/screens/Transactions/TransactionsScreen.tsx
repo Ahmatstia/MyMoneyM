@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
 import { Calendar } from "react-native-calendars";
+import { LinearGradient } from "expo-linear-gradient";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
@@ -37,11 +38,11 @@ const { width } = Dimensions.get("window");
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
 // ─── Theme colors (tidak diubah) ──────────────────────────────────────────────
-// ─── Design tokens (konsisten dengan HomeScreen & AnalyticsScreen) ────────────
-const CARD_RADIUS  = 20;
-const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
-const SECTION_GAP  = 24;
+// ─── Design tokens (konsisten dengan HomeScreen & WalletsScreen) ──────────────
+const CARD_RADIUS  = 16;
+const INNER_RADIUS = 12;
+const CARD_PAD     = 14;
+const SECTION_GAP  = 16;
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
@@ -748,24 +749,46 @@ const TransactionsScreen: React.FC = () => {
         }
         ListHeaderComponent={
           <View style={{ paddingHorizontal: 18, paddingTop: 16 }}>
-            {/* ── Summary Card ─────────────────────────────────────────── */}
+            {/* ── Summary Card (Neo-Fintech Ambient Sheen) ─────────────────────────────────────────── */}
             <View
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: CARD_RADIUS,
                 borderWidth: 1,
-                borderColor: CARD_BORDER,
-                padding: 16,
+                borderColor: `${CARD_BORDER}`,
+                padding: 12,
                 marginBottom: 4,
-                borderLeftWidth: 3,
-                borderLeftColor: totals.balance >= 0 ? colors.success : colors.error,
+                overflow: "hidden",
+                position: "relative",
               }}
             >
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
+              {/* Subtle Gradient Sheen */}
+              <LinearGradient
+                colors={[`${totals.balance >= 0 ? colors.success : colors.error}15`, colors.surface]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+              />
+
+              {/* Holographic Watermark Ring */}
+              <View
+                style={{
+                  position: "absolute",
+                  right: -12,
+                  top: -12,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  borderWidth: 1.2,
+                  borderColor: `${totals.balance >= 0 ? colors.success : colors.error}18`,
+                }}
+              />
+
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
                   Ringkasan Transaksi ({getDateFilterLabel()})
                 </Text>
-                <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "600" }}>
+                <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
                   {filteredTransactions.length} transaksi
                 </Text>
               </View>
@@ -773,43 +796,43 @@ const TransactionsScreen: React.FC = () => {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {/* Income */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginRight: 5 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.success, marginRight: 4 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
                       Pemasukan
                     </Text>
                   </View>
-                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                  <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     +{formatCurrency(totals.totalIncome)}
                   </Text>
                 </View>
 
-                <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER, marginHorizontal: 10 }} />
+                <View style={{ width: 1, height: 22, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
 
                 {/* Expense */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error, marginRight: 5 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.error, marginRight: 4 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
                       Pengeluaran
                     </Text>
                   </View>
-                  <Text style={{ color: colors.error, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                  <Text style={{ color: colors.error, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     -{formatCurrency(totals.totalExpense)}
                   </Text>
                 </View>
 
-                <View style={{ width: 1, height: 28, backgroundColor: CARD_BORDER, marginHorizontal: 10 }} />
+                <View style={{ width: 1, height: 22, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
 
                 {/* Net */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 5 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 9, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
+                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 4 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
                       Selisih
                     </Text>
                   </View>
-                  <Text style={{ color: totals.balance >= 0 ? colors.textPrimary : colors.warning, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>
+                  <Text style={{ color: totals.balance >= 0 ? colors.textPrimary : colors.warning, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     {totals.balance >= 0 ? "+" : ""}{formatCurrency(totals.balance)}
                   </Text>
                 </View>
@@ -921,8 +944,8 @@ const TransactionsScreen: React.FC = () => {
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      paddingVertical: 13,
-                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      paddingHorizontal: 13,
                       backgroundColor: colors.surface,
                     }}
                     activeOpacity={0.6}
@@ -935,19 +958,19 @@ const TransactionsScreen: React.FC = () => {
                     {/* Category icon */}
                     <View
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 13,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
                         alignItems: "center",
                         justifyContent: "center",
-                        marginRight: 13,
+                        marginRight: 11,
                         flexShrink: 0,
-                        backgroundColor: `${categoryInfo.color}15`,
+                        backgroundColor: `${categoryInfo.color}18`,
                       }}
                     >
                       <Ionicons
                         name={resolveCategory(transaction.category).icon as any}
-                        size={17}
+                        size={15}
                         color={resolveCategory(transaction.category).color}
                       />
                     </View>
