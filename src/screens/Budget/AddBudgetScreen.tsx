@@ -1,5 +1,4 @@
-// File: src/screens/AddBudgetScreen.tsx - KONSISTEN DENGAN SEMUA FITUR
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -21,6 +20,7 @@ import {
   formatCurrency,
   safeNumber,
   getCurrentDate,
+  getMonthlyCycleRange,
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
@@ -112,9 +112,17 @@ const AddBudgetScreen: React.FC = () => {
   const [period, setPeriod] = useState<
     "custom" | "weekly" | "monthly" | "yearly"
   >(budgetData?.period || "monthly");
-  const [startDate, setStartDate] = useState<string>(
-    budgetData?.startDate || getCurrentDate()
-  );
+
+  const initialStartDate = useMemo(() => {
+    if (budgetData?.startDate) return budgetData.startDate;
+    if (state.paydayCutoff && state.paydayCutoff > 1) {
+      const cycleRange = getMonthlyCycleRange(state.paydayCutoff);
+      return formatDateToYYYYMMDD(cycleRange.startDate);
+    }
+    return getCurrentDate();
+  }, [budgetData, state.paydayCutoff]);
+
+  const [startDate, setStartDate] = useState<string>(initialStartDate);
   const [endDate, setEndDate] = useState<string>(
     budgetData?.endDate || getCurrentDate()
   );

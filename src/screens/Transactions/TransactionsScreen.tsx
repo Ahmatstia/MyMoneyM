@@ -22,7 +22,11 @@ import { Calendar } from "react-native-calendars";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, safeNumber } from "../../utils/calculations";
+import {
+  formatCurrency,
+  safeNumber,
+  getMonthlyCycleRange,
+} from "../../utils/calculations";
 import { Transaction } from "../../types";
 import { useTheme } from '../../theme/ThemeContext';
 import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
@@ -173,8 +177,13 @@ const TransactionsScreen: React.FC = () => {
           startDate.setHours(0, 0, 0, 0);
           break;
         case "month":
-          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          startDate.setHours(0, 0, 0, 0);
+          if (state.paydayCutoff && state.paydayCutoff > 1) {
+            const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
+            startDate = cycleRange.startDate;
+          } else {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            startDate.setHours(0, 0, 0, 0);
+          }
           break;
         case "custom":
           if (customStartDate && customEndDate) {

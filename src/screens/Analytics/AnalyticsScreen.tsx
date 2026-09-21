@@ -27,6 +27,7 @@ import {
   calculateProjection,
   calculateOpeningBalance,
   getActiveCycleInfo,
+  getMonthlyCycleRange,
 } from "../../utils/calculations";
 import { useTheme } from "../../theme/ThemeContext";
 import { RootStackParamList } from "../../types";
@@ -223,6 +224,7 @@ const AnalyticsScreen: React.FC = () => {
       const analytics = calculateTransactionAnalytics(
         state.transactions || [],
         timeRange,
+        state.paydayCutoff,
       );
       return {
         ...analytics,
@@ -254,7 +256,7 @@ const AnalyticsScreen: React.FC = () => {
         endDate: new Date(),
       };
     }
-  }, [state.transactions, timeRange]);
+  }, [state.transactions, timeRange, state.paydayCutoff]);
 
   const budgetAnalytics = useMemo(() => {
     try {
@@ -421,8 +423,8 @@ const AnalyticsScreen: React.FC = () => {
       let cycleIncomeId: string | undefined;
 
       if (timeRange === "week") {
-        const cycle = getActiveCycleInfo(state.transactions);
-        if (cycle) {
+        const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
+        if (cycle && cycle.period <= 14) {
           startDate = cycle.startDate;
           cycleIncomeId = cycle.cycleIncomeId;
         } else {
@@ -430,7 +432,12 @@ const AnalyticsScreen: React.FC = () => {
           startDate.setDate(startDate.getDate() - currentDay + 1);
         }
       } else if (timeRange === "month") {
-        startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        if (state.paydayCutoff && state.paydayCutoff > 1) {
+          const cycleRange = getMonthlyCycleRange(state.paydayCutoff, startDate);
+          startDate = cycleRange.startDate;
+        } else {
+          startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        }
       } else if (timeRange === "year") {
         startDate = new Date(startDate.getFullYear(), 0, 1);
       }
@@ -464,7 +471,7 @@ const AnalyticsScreen: React.FC = () => {
     } catch (error) {
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
-  }, [transactionAnalytics, state.transactions, timeRange]);
+  }, [transactionAnalytics, state.transactions, timeRange, state.paydayCutoff]);
 
   const handleExport = () => {
     setIsReportModalVisible(true);

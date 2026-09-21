@@ -152,6 +152,7 @@ export interface AppState {
   userProfile: UserProfile;
   customCategories: CustomCategory[]; // NEW: User-defined categories
   dailyCheckIns: string[]; // Daily app-open check-in dates (YYYY-MM-DD, Jakarta timezone)
+  paydayCutoff?: number; // 1 - 31: Awal siklus / tanggal gajian pembukuan (default: 1)
 
   // Calculated totals
   totalIncome: number;

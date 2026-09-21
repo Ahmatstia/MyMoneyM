@@ -562,8 +562,11 @@ const HomeScreen: React.FC = () => {
           {(["weekly", "monthly", "yearly", "all"] as TimeFilter[]).map(
             (filter) => {
               const labels: Record<string, string> = {
-                weekly: activeCycle ? activeCycle.label : "Minggu Ini",
-                monthly: "Bulan Ini",
+                weekly: activeCycle && activeCycle.period <= 14 ? activeCycle.label : "Minggu Ini",
+                monthly:
+                  state.paydayCutoff && state.paydayCutoff > 1
+                    ? `Siklus ${state.paydayCutoff}`
+                    : "Bulan Ini",
                 yearly: "Tahun Ini",
                 all: "Semua",
               };

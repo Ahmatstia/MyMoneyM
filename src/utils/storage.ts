@@ -579,6 +579,12 @@ export const storageService = {
         customCategories: validatedCustomCategories,
         dailyCheckIns: normalizeCheckIns(data.dailyCheckIns),
         userProfile: data.userProfile,
+        paydayCutoff:
+          typeof data.paydayCutoff === "number" &&
+          data.paydayCutoff >= 1 &&
+          data.paydayCutoff <= 31
+            ? data.paydayCutoff
+            : 1,
         ...totals,
       };
 
@@ -697,6 +703,26 @@ export const storageService = {
         : [];
       const dailyCheckIns = normalizeCheckIns(parsedData.dailyCheckIns);
 
+      // Cek apakah ada nilai paydayCutoff tersimpan (atau fallback ke key khusus)
+      let loadedPaydayCutoff = 1;
+      if (
+        typeof parsedData.paydayCutoff === "number" &&
+        parsedData.paydayCutoff >= 1 &&
+        parsedData.paydayCutoff <= 31
+      ) {
+        loadedPaydayCutoff = parsedData.paydayCutoff;
+      } else {
+        try {
+          const directSaved = await AsyncStorage.getItem("@mymoney_payday_cutoff");
+          if (directSaved) {
+            const parsedDirect = parseInt(directSaved, 10);
+            if (!isNaN(parsedDirect) && parsedDirect >= 1 && parsedDirect <= 31) {
+              loadedPaydayCutoff = parsedDirect;
+            }
+          }
+        } catch {}
+      }
+
       const totals = calculateTotals(transactions);
 
       const appData: AppState = {
@@ -710,6 +736,7 @@ export const storageService = {
         customCategories,
         dailyCheckIns,
         userProfile: parsedData.userProfile || { name: "MyMoney" },
+        paydayCutoff: loadedPaydayCutoff,
         ...totals,
       };
 

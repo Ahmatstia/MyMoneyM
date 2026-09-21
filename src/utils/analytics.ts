@@ -6,6 +6,7 @@ import {
   getSafePercentage,
   filterTransactionsByTime,
   getActiveCycleInfo,
+  getMonthlyCycleRange,
 } from "./calculations";
 
 // ==================== SAFE ANALYTICS FUNCTIONS ====================
@@ -14,6 +15,7 @@ import {
 export const calculateTransactionAnalytics = (
   transactions: Transaction[] = [],
   timeRange: "week" | "month" | "year" = "month",
+  paydayCutoff: number = 1,
 ) => {
   try {
     // Filter transactions by date range / cycle using the shared utility
@@ -26,6 +28,7 @@ export const calculateTransactionAnalytics = (
           : timeRange === "year"
             ? "yearly"
             : "all",
+      paydayCutoff,
     );
 
     // Tetap ambil startDate dan endDate statis untuk fallback metadata
@@ -34,10 +37,8 @@ export const calculateTransactionAnalytics = (
     try {
       if (filteredTransactions.length > 0) {
         // Ambil range dari transaksi termuda & tertua atau ikuti week/month range asli
-        // For simplicity we will just generate static dates for display bounds
-        // or re-use the util ranges
         if (timeRange === "week") {
-          const cycle = getActiveCycleInfo(transactions);
+          const cycle = getActiveCycleInfo(transactions, paydayCutoff);
           if (cycle) {
             startDate = cycle.startDate;
             endDate = cycle.endDate;
@@ -46,8 +47,14 @@ export const calculateTransactionAnalytics = (
             endDate = getWeekRange().end;
           }
         } else if (timeRange === "month") {
-          startDate = getMonthRange().start;
-          endDate = getMonthRange().end;
+          if (paydayCutoff > 1) {
+            const cycleRange = getMonthlyCycleRange(paydayCutoff);
+            startDate = cycleRange.startDate;
+            endDate = cycleRange.endDate;
+          } else {
+            startDate = getMonthRange().start;
+            endDate = getMonthRange().end;
+          }
         } else if (timeRange === "year") {
           startDate = getYearRange().start;
           endDate = getYearRange().end;

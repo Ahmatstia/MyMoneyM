@@ -6,6 +6,7 @@ import {
   filterTransactionsByTime,
   calculateTotals,
   getActiveCycleInfo,
+  getMonthlyCycleRange,
   calculateProjection,
   calculateOpeningBalance,
   safeNumber,
@@ -29,15 +30,20 @@ export const useHomeData = (
   navigation: any,
 ) => {
   const activeCycle = useMemo(() => {
-    const cycle = getActiveCycleInfo(state.transactions);
+    const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
 
-    // Cycle calculation automatically anchors to the latest cycle income via getActiveCycleInfo
+    // Cycle calculation automatically anchors to paydayCutoff or the latest cycle income via getActiveCycleInfo
     return cycle;
-  }, [state.transactions]);
+  }, [state.transactions, state.paydayCutoff]);
 
   const filteredTransactions = useMemo(
-    () => filterTransactionsByTime(state.transactions, timeFilter),
-    [state.transactions, timeFilter],
+    () =>
+      filterTransactionsByTime(
+        state.transactions,
+        timeFilter,
+        state.paydayCutoff,
+      ),
+    [state.transactions, timeFilter, state.paydayCutoff],
   );
 
   const {
@@ -58,7 +64,7 @@ export const useHomeData = (
     let cycleIncomeId: string | undefined;
 
     if (timeFilter === "weekly") {
-      const cycle = getActiveCycleInfo(state.transactions);
+      const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
       if (cycle && cycle.period <= 14) {
         startDate = cycle.startDate;
         cycleIncomeId = cycle.cycleIncomeId;
@@ -67,10 +73,13 @@ export const useHomeData = (
         startDate.setDate(now.getDate() - currentDay + 1);
       }
     } else if (timeFilter === "monthly") {
-      const cycle = getActiveCycleInfo(state.transactions);
+      const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
       if (cycle && cycle.period > 14) {
         startDate = cycle.startDate;
         cycleIncomeId = cycle.cycleIncomeId;
+      } else if (state.paydayCutoff && state.paydayCutoff > 1) {
+        const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
+        startDate = cycleRange.startDate;
       } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       }
@@ -83,7 +92,7 @@ export const useHomeData = (
       startDate,
       cycleIncomeId,
     );
-  }, [state.transactions, timeFilter]);
+  }, [state.transactions, timeFilter, state.paydayCutoff]);
 
   const filteredBalance = useMemo(
     () => openingBalance + filteredPeriodNetto,
@@ -502,7 +511,14 @@ export const useHomeData = (
       if (activeCycle && activeCycle.period > 14) {
         startDate = activeCycle.startDate;
         endDate = activeCycle.endDate;
-        label = "akhir periode";
+        label = (activeCycle as any).isPaydayCycle
+          ? "gajian berikutnya"
+          : "akhir periode";
+      } else if (state.paydayCutoff && state.paydayCutoff > 1) {
+        const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
+        startDate = cycleRange.startDate;
+        endDate = cycleRange.endDate;
+        label = "gajian berikutnya";
       } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -535,6 +551,7 @@ export const useHomeData = (
     filteredIncome,
     filteredExpense,
     openingBalance,
+    state.paydayCutoff,
   ]);
 
   const getGoalsPreview = () => {

@@ -135,7 +135,7 @@ const RecurringTransactionsScreen: React.FC = () => {
     setFormCategory("Gaji");
     setFormFrequency("monthly");
     setFormDayOfWeek(1);
-    setFormDayOfMonth(25);
+    setFormDayOfMonth(state.paydayCutoff || 25);
     setFormIntervalDays("7");
     setFormStartDate(getJakartaDateKey());
     setFormAutoCycle(true);
@@ -1235,39 +1235,132 @@ const RecurringTransactionsScreen: React.FC = () => {
 
               {formFrequency === "monthly" && (
                 <View style={{ marginBottom: 14 }}>
-                  <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                    TANGGAL SETIAP BULAN (1 - 31)
-                  </Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700" }}>
+                      TANGGAL SETIAP BULAN (1 - 31)
+                    </Text>
+                    {state.paydayCutoff && state.paydayCutoff > 1 && (
+                      <TouchableOpacity
+                        onPress={() => setFormDayOfMonth(state.paydayCutoff!)}
+                        activeOpacity={0.7}
+                        style={{
+                          backgroundColor: `${colors.accent}15`,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 6,
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
+                          Sesuai Gajian (Tgl {state.paydayCutoff})
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: colors.background,
+                      borderRadius: 14,
+                      padding: 8,
+                      borderWidth: 1,
+                      borderColor: `${colors.border}80`,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setFormDayOfMonth((prev) => Math.max(1, (prev || 1) - 1))}
+                      activeOpacity={0.7}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: colors.surface,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 1,
+                        borderColor: `${colors.border}80`,
+                      }}
+                    >
+                      <Ionicons name="remove" size={18} color={colors.textPrimary} />
+                    </TouchableOpacity>
+
+                    <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "800" }}>
+                      Tanggal {formDayOfMonth || 1} setiap bulan
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => setFormDayOfMonth((prev) => Math.min(31, (prev || 1) + 1))}
+                      activeOpacity={0.7}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: colors.surface,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: 1,
+                        borderColor: `${colors.border}80`,
+                      }}
+                    >
+                      <Ionicons name="add" size={18} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                  </View>
+
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={{ flexDirection: "row", gap: 6 }}>
-                      {[1, 5, 10, 15, 20, 25, 28, 30].map((dayNum) => {
-                        const isSelected = formDayOfMonth === dayNum;
-                        return (
-                          <TouchableOpacity
-                            key={dayNum}
-                            onPress={() => setFormDayOfMonth(dayNum)}
-                            activeOpacity={0.7}
-                            style={{
-                              paddingHorizontal: 12,
-                              paddingVertical: 8,
-                              borderRadius: 10,
-                              backgroundColor: isSelected ? colors.accent : colors.background,
-                              borderWidth: 1,
-                              borderColor: isSelected ? colors.accent : `${colors.border}60`,
-                            }}
-                          >
-                            <Text
+                      {Array.from(
+                        new Set([
+                          1,
+                          5,
+                          10,
+                          15,
+                          20,
+                          state.paydayCutoff || 25,
+                          28,
+                          30,
+                        ]),
+                      )
+                        .sort((a, b) => a - b)
+                        .map((dayNum) => {
+                          const isSelected = formDayOfMonth === dayNum;
+                          const isPayday =
+                            dayNum === state.paydayCutoff &&
+                            state.paydayCutoff > 1;
+                          return (
+                            <TouchableOpacity
+                              key={dayNum}
+                              onPress={() => setFormDayOfMonth(dayNum)}
+                              activeOpacity={0.7}
                               style={{
-                                color: isSelected ? "#FFFFFF" : colors.gray400,
-                                fontSize: 12,
-                                fontWeight: "700",
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 10,
+                                backgroundColor: isSelected
+                                  ? colors.accent
+                                  : colors.background,
+                                borderWidth: 1,
+                                borderColor: isSelected
+                                  ? colors.accent
+                                  : isPayday
+                                    ? `${colors.accent}60`
+                                    : `${colors.border}60`,
                               }}
                             >
-                              Tgl {dayNum}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                              <Text
+                                style={{
+                                  color: isSelected ? "#FFFFFF" : colors.gray400,
+                                  fontSize: 12,
+                                  fontWeight: "700",
+                                }}
+                              >
+                                Tgl {dayNum} {isPayday ? "⭐" : ""}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                     </View>
                   </ScrollView>
                 </View>

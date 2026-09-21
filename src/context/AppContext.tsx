@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { AppState as RNAppState } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AppState,
   Transaction,
@@ -132,6 +133,7 @@ interface AppContextType {
   clearAllData: () => Promise<void>;
   debugStorage: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updatePaydayCutoff: (day: number, syncRecurringSalary?: boolean) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -149,6 +151,7 @@ const defaultAppState: AppState = {
   userProfile: {
     name: "MyMoney",
   },
+  paydayCutoff: 1,
   totalIncome: 0,
   totalExpense: 0,
   balance: 0,
@@ -199,6 +202,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         recurringTransactions: appData.recurringTransactions || [],
         customCategories: appData.customCategories || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
+        paydayCutoff: appData.paydayCutoff || 1,
       };
 
       // Migrasi Nama Default Otomatis (Hapus paksa nama lama yang tersimpan)
@@ -1186,6 +1190,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const updatePaydayCutoff = async (
+    day: number,
+    syncRecurringSalary: boolean = false,
+  ) => {
+    try {
+      const validDay = Math.max(1, Math.min(31, Math.floor(day)));
+
+      await AsyncStorage.setItem("@mymoney_payday_cutoff", validDay.toString());
+
+      let updatedRecurring = [...state.recurringTransactions];
+      if (syncRecurringSalary) {
+        updatedRecurring = updatedRecurring.map((r) => {
+          if (r.type === "income" && r.frequency === "monthly") {
+            const now = new Date();
+            let target = new Date(now.getFullYear(), now.getMonth(), validDay);
+            if (now.getDate() >= validDay) {
+              target = new Date(now.getFullYear(), now.getMonth() + 1, validDay);
+            }
+            const nextStr = target.toISOString().split("T")[0];
+            return {
+              ...r,
+              dayOfMonth: validDay,
+              nextRunDate: nextStr,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return r;
+        });
+      }
+
+      const updatedState: AppState = {
+        ...state,
+        paydayCutoff: validDay,
+        recurringTransactions: updatedRecurring,
+      };
+
+      await storageService.saveData(updatedState);
+      setState(updatedState);
+
+      try {
+        await notificationService.updateQuickActionWidget(updatedState);
+      } catch {}
+    } catch (error) {
+      console.error("Error updating payday cutoff:", error);
+      throw error;
+    }
+  };
+
   const contextValue: AppContextType = {
     state,
     isLoading,
@@ -1223,6 +1275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     processRecurringNow,
 
     updateUserProfile,
+    updatePaydayCutoff,
 
     triggerNotificationCheck,
 

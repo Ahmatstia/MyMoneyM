@@ -107,6 +107,17 @@ export const getCurrentDate = (): string => {
   }
 };
 
+export const formatToDateKey = (date: Date): string => {
+  try {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  } catch {
+    return date.toISOString().split("T")[0];
+  }
+};
+
 export const formatResetDate = (dateString?: string): string => {
   if (!dateString) return "Belum pernah reset";
 
@@ -163,7 +174,108 @@ export const formatNumber = (num: number): string => {
 // Filter transactions by time period (Weekly, Monthly, Yearly, All)
 export type TimeFilter = "weekly" | "monthly" | "yearly" | "all";
 
-export const getActiveCycleInfo = (transactions: Transaction[]) => {
+export interface MonthlyCycleRange {
+  startDate: Date;
+  endDate: Date;
+  nextPaydayDate: Date;
+  daysRemaining: number;
+  totalDays: number;
+  daysPassed: number;
+  label: string;
+}
+
+/**
+ * Menghitung rentang siklus bulanan berdasarkan tanggal gajian (payday cut-off).
+ * Menangani secara akurat kondisi sebelum gajian vs sesudah gajian dan tanggal akhir bulan.
+ */
+export const getMonthlyCycleRange = (
+  paydayCutoff: number = 1,
+  referenceDate: Date = new Date(),
+): MonthlyCycleRange => {
+  const ref = new Date(referenceDate);
+  const cutoff = Math.max(1, Math.min(31, Math.floor(paydayCutoff || 1)));
+
+  // Clamping tanggal agar aman di bulan yang tidak memiliki tgl 31 / 30 / 29 (Februari)
+  const getClampedDate = (year: number, month: number, targetDay: number): Date => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const day = Math.min(targetDay, daysInMonth);
+    return new Date(year, month, day);
+  };
+
+  let startDate: Date;
+  let endDate: Date;
+  let nextPaydayDate: Date;
+
+  if (cutoff === 1) {
+    // Kalender standar: tanggal 1 s/d akhir bulan berjalan
+    startDate = new Date(ref.getFullYear(), ref.getMonth(), 1, 0, 0, 0, 0);
+    const lastDayOfMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+    endDate = new Date(ref.getFullYear(), ref.getMonth(), lastDayOfMonth, 23, 59, 59, 999);
+    nextPaydayDate = new Date(ref.getFullYear(), ref.getMonth() + 1, 1, 0, 0, 0, 0);
+  } else {
+    const currentDay = ref.getDate();
+
+    if (currentDay < cutoff) {
+      // Kondisi 1: Hari ini sebelum tanggal gajian (masih dalam siklus bulan sebelumnya)
+      // Contoh: Hari ini 21 Sept, cutoff 25 -> Siklus: 25 Ags s/d 24 Sept. Next payday: 25 Sept.
+      const startYear = ref.getMonth() === 0 ? ref.getFullYear() - 1 : ref.getFullYear();
+      const startMonth = ref.getMonth() === 0 ? 11 : ref.getMonth() - 1;
+      startDate = getClampedDate(startYear, startMonth, cutoff);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDay = Math.max(1, cutoff - 1);
+      endDate = getClampedDate(ref.getFullYear(), ref.getMonth(), endDay);
+      endDate.setHours(23, 59, 59, 999);
+
+      nextPaydayDate = getClampedDate(ref.getFullYear(), ref.getMonth(), cutoff);
+      nextPaydayDate.setHours(0, 0, 0, 0);
+    } else {
+      // Kondisi 2: Hari ini >= tanggal gajian (sudah gajian, masuk siklus bulan ini)
+      // Contoh: Hari ini 26 Sept, cutoff 25 -> Siklus: 25 Sept s/d 24 Okt. Next payday: 25 Okt.
+      startDate = getClampedDate(ref.getFullYear(), ref.getMonth(), cutoff);
+      startDate.setHours(0, 0, 0, 0);
+
+      const nextMonth = ref.getMonth() + 1;
+      const endYear = ref.getFullYear() + Math.floor(nextMonth / 12);
+      const normNextMonth = nextMonth % 12;
+
+      const endDay = Math.max(1, cutoff - 1);
+      endDate = getClampedDate(endYear, normNextMonth, endDay);
+      endDate.setHours(23, 59, 59, 999);
+
+      nextPaydayDate = getClampedDate(endYear, normNextMonth, cutoff);
+      nextPaydayDate.setHours(0, 0, 0, 0);
+    }
+  }
+
+  const totalDays = Math.max(
+    1,
+    Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+  );
+
+  const msToNext = nextPaydayDate.getTime() - ref.getTime();
+  const daysRemaining = Math.max(0, Math.ceil(msToNext / (1000 * 60 * 60 * 24)));
+  const daysPassed = Math.max(1, totalDays - daysRemaining);
+
+  const startStr = startDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  const endStr = endDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+  const label = cutoff === 1 ? "Bulan Ini" : `${startStr} - ${endStr}`;
+
+  return {
+    startDate,
+    endDate,
+    nextPaydayDate,
+    daysRemaining,
+    totalDays,
+    daysPassed,
+    label,
+  };
+};
+
+export const getActiveCycleInfo = (
+  transactions: Transaction[] = [],
+  paydayCutoff: number = 1,
+) => {
   const now = new Date();
   let latestCycleStart: Date | null = null;
   let latestTime = 0;
@@ -221,14 +333,31 @@ export const getActiveCycleInfo = (transactions: Transaction[]) => {
       endDate,
       label,
       cycleIncomeId,
+      isPaydayCycle: false,
     };
   }
+
+  // Jika tidak ada transaksi pemasukan berlabel siklus khusus, namun paydayCutoff > 1:
+  if (paydayCutoff && paydayCutoff > 1) {
+    const cycleRange = getMonthlyCycleRange(paydayCutoff, now);
+    return {
+      hasCycle: true,
+      period: cycleRange.totalDays,
+      startDate: cycleRange.startDate,
+      endDate: cycleRange.endDate,
+      label: `Siklus Gajian (${cycleRange.label})`,
+      cycleIncomeId: undefined,
+      isPaydayCycle: true,
+    };
+  }
+
   return null;
 };
 
 export const filterTransactionsByTime = (
   transactions: Transaction[],
   timeFilter: TimeFilter,
+  paydayCutoff: number = 1,
 ): Transaction[] => {
   if (timeFilter === "all" || !transactions?.length) return transactions;
 
@@ -237,13 +366,14 @@ export const filterTransactionsByTime = (
   const currentMonth = now.getMonth();
 
   // Pre-calculate weekly & monthly bounds / cycle info
-  let startOfWeek: Date, endOfWeek: Date;
+  let startOfWeek: Date | undefined;
+  let endOfWeek: Date | undefined;
   let cycleIncomeId: string | undefined;
 
   let startOfMonth: Date | undefined, endOfMonth: Date | undefined;
   let monthlyCycleIncomeId: string | undefined;
 
-  const cycle = getActiveCycleInfo(transactions);
+  const cycle = getActiveCycleInfo(transactions, paydayCutoff);
 
   if (timeFilter === "weekly") {
     if (cycle && cycle.period <= 14) {
@@ -265,6 +395,14 @@ export const filterTransactionsByTime = (
       startOfMonth = cycle.startDate;
       endOfMonth = cycle.endDate;
       monthlyCycleIncomeId = cycle.cycleIncomeId;
+    } else if (paydayCutoff > 1) {
+      const cycleRange = getMonthlyCycleRange(paydayCutoff, now);
+      startOfMonth = cycleRange.startDate;
+      endOfMonth = cycleRange.endDate;
+    } else {
+      const standardMonthRange = getMonthlyCycleRange(1, now);
+      startOfMonth = standardMonthRange.startDate;
+      endOfMonth = standardMonthRange.endDate;
     }
   }
 
@@ -275,49 +413,52 @@ export const filterTransactionsByTime = (
     ? transactions.find((t) => t.id === monthlyCycleIncomeId)
     : null;
 
+  const currentYearStr = String(currentYear);
+  const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+
+  const startOfWeekStr = startOfWeek ? formatToDateKey(startOfWeek) : "";
+  const endOfWeekStr = endOfWeek ? formatToDateKey(endOfWeek) : "";
+  const startOfMonthStr = startOfMonth ? formatToDateKey(startOfMonth) : "";
+  const endOfMonthStr = endOfMonth ? formatToDateKey(endOfMonth) : "";
+
   return transactions.filter((t) => {
     try {
-      const d = new Date(t.date);
-      if (isNaN(d.getTime())) return false;
+      const txDateStr = (t?.date || "").slice(0, 10);
+      if (!txDateStr || txDateStr.length < 10) return false;
 
       if (timeFilter === "yearly") {
-        return d.getFullYear() === currentYear;
+        return txDateStr.startsWith(currentYearStr);
       }
 
       if (timeFilter === "monthly") {
-        if (startOfMonth && endOfMonth) {
-          if (d < startOfMonth || d > endOfMonth) return false;
-          const dNormalized = new Date(d);
-          dNormalized.setHours(0, 0, 0, 0);
+        if (startOfMonthStr && endOfMonthStr) {
+          if (txDateStr < startOfMonthStr || txDateStr > endOfMonthStr) return false;
 
           if (
             monthlyCycleIncome &&
-            dNormalized.getTime() === startOfMonth.getTime() &&
+            txDateStr === startOfMonthStr &&
             t.id !== monthlyCycleIncomeId
           ) {
-            if (t.createdAt < monthlyCycleIncome.createdAt) return false;
+            if (t.createdAt && monthlyCycleIncome.createdAt && t.createdAt < monthlyCycleIncome.createdAt) {
+              return false;
+            }
           }
           return true;
         }
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        return txDateStr.startsWith(currentMonthStr);
       }
 
       if (timeFilter === "weekly") {
-        // Cek apakah tanggal di luar range siklus
-        if (d < startOfWeek || d > endOfWeek) return false;
-
-        // Smart Day Sorting: Jika hari sama dengan awal siklus
-        const dNormalized = new Date(d);
-        dNormalized.setHours(0, 0, 0, 0);
+        if (txDateStr < startOfWeekStr || txDateStr > endOfWeekStr) return false;
 
         if (
           cycleIncome &&
-          dNormalized.getTime() === startOfWeek.getTime() &&
+          txDateStr === startOfWeekStr &&
           t.id !== cycleIncomeId
         ) {
-          // Jika transaksi ini dicatat SEBELUM income pembuka siklus, jangan masukkan ke filter ini
-          // (Karena akan dianggap sebagai bagian dari Saldo Awal/Bawaan)
-          if (t.createdAt < cycleIncome.createdAt) return false;
+          if (t.createdAt && cycleIncome.createdAt && t.createdAt < cycleIncome.createdAt) {
+            return false;
+          }
         }
 
         return true;
@@ -419,19 +560,18 @@ export const calculateOpeningBalance = (
   cycleIncomeId?: string,
 ) => {
   try {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
+    const startStr = formatToDateKey(startDate);
 
     const cycleIncome = cycleIncomeId
       ? transactions.find((t) => t.id === cycleIncomeId)
       : null;
 
     return transactions.reduce((sum, t) => {
-      const tDate = new Date(t.date);
-      tDate.setHours(0, 0, 0, 0);
+      const txDateStr = (t?.date || "").slice(0, 10);
+      if (!txDateStr || txDateStr.length < 10) return sum;
 
       // 1. Jika tanggal transaksi mutlak sebelum startDate
-      if (tDate < start) {
+      if (txDateStr < startStr) {
         return (
           sum +
           (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))
@@ -441,10 +581,10 @@ export const calculateOpeningBalance = (
       // 2. Jika tanggal SAMA, tapi dicatat SEBELUM income pembuka siklus
       if (
         cycleIncome &&
-        tDate.getTime() === start.getTime() &&
+        txDateStr === startStr &&
         t.id !== cycleIncomeId
       ) {
-        if (t.createdAt < cycleIncome.createdAt) {
+        if (t.createdAt && cycleIncome.createdAt && t.createdAt < cycleIncome.createdAt) {
           return (
             sum +
             (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))

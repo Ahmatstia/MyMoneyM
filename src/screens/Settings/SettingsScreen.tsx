@@ -10,6 +10,8 @@ import {
   Linking,
   Modal,
   Platform,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,6 +35,7 @@ import {
   STORAGE_KEY_MASCOT_HIDDEN,
   resetSessionDismissed,
 } from "../../components/Mascot/FloatingMascotBubble";
+import { DEFAULT_CATEGORIES } from "../../components/CategoryPickerModal";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -624,7 +627,7 @@ const SettingsScreen = () => {
   const { colors, themeId, setTheme } = useTheme();
   const navigation = useNavigation<any>();
   const CARD_BORDER = `${colors.border}80`;
-  const { clearAllData, refreshData, debugStorage, state, setLoading } =
+  const { clearAllData, refreshData, debugStorage, state, setLoading, updatePaydayCutoff } =
     useAppContext();
 
   const [notificationSettings, setNotificationSettings] = useState(
@@ -637,8 +640,13 @@ const SettingsScreen = () => {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "appearance" | "notifications" | "data"
-  >("appearance");
+    "financial" | "appearance" | "notifications" | "data"
+  >("financial");
+  const [paydayDate, setPaydayDate] = useState<number>(state.paydayCutoff || 1);
+  const [tempPaydayInput, setTempPaydayInput] = useState<string>(
+    (state.paydayCutoff || 1).toString(),
+  );
+  const [showPaydayModal, setShowPaydayModal] = useState<boolean>(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isMoniVisible, setIsMoniVisible] = useState(true);
   const [timePickerConfig, setTimePickerConfig] = useState<{
@@ -663,6 +671,9 @@ const SettingsScreen = () => {
       if (savedMoniHidden !== null) {
         setIsMoniVisible(savedMoniHidden !== "true");
       }
+      const currentCutoff = state.paydayCutoff || 1;
+      setPaydayDate(currentCutoff);
+      setTempPaydayInput(currentCutoff.toString());
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -680,6 +691,24 @@ const SettingsScreen = () => {
       console.warn("Failed to toggle mascot visibility:", e);
     }
   };
+
+  const handleSelectPayday = async (day: number) => {
+    setPaydayDate(day);
+    setShowPaydayModal(false);
+    try {
+      // Langsung simpan dan selaraskan otomatis di latar belakang secara mulus
+      await updatePaydayCutoff(day, true);
+    } catch (e) {
+      console.warn("Failed to update payday cutoff:", e);
+    }
+  };
+
+  const activeRecurringCount = (state.recurringTransactions || []).filter(
+    (r) => r.isActive
+  ).length;
+  const totalRecurringCount = (state.recurringTransactions || []).length;
+  const totalCategories =
+    DEFAULT_CATEGORIES.length + (state.customCategories || []).length;
 
   const saveNotificationSettings = async (
     newSettings: typeof DEFAULT_NOTIFICATION_SETTINGS,
@@ -1083,39 +1112,44 @@ const SettingsScreen = () => {
             borderColor: CARD_BORDER,
           }}
         >
-          {(["appearance", "notifications", "data"] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 10,
-                  alignItems: "center",
-                  backgroundColor: isActive
-                    ? `${colors.accent}20`
-                    : "transparent",
-                }}
-                onPress={() => setActiveTab(tab)}
-                activeOpacity={0.7}
-              >
-                <Text
+          {(["financial", "appearance", "notifications", "data"] as const).map(
+            (tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <TouchableOpacity
+                  key={tab}
                   style={{
-                    fontSize: 11,
-                    fontWeight: isActive ? "700" : "500",
-                    color: isActive ? colors.accent : colors.gray400,
+                    flex: 1,
+                    paddingVertical: 8,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    backgroundColor: isActive
+                      ? `${colors.accent}20`
+                      : "transparent",
                   }}
+                  onPress={() => setActiveTab(tab)}
+                  activeOpacity={0.7}
                 >
-                  {tab === "appearance"
-                    ? "Tampilan"
-                    : tab === "notifications"
-                      ? "Notifikasi"
-                      : "Manajemen Data"}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: isActive ? "700" : "500",
+                      color: isActive ? colors.accent : colors.gray400,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {tab === "financial"
+                      ? "Pembukuan"
+                      : tab === "appearance"
+                        ? "Tampilan"
+                        : tab === "notifications"
+                          ? "Notifikasi"
+                          : "Data & Info"}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }
+          )}
         </View>
       </View>
 
@@ -1124,6 +1158,235 @@ const SettingsScreen = () => {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* ══════════════════════════════════════════════════════════════════════
+            PEMBUKUAN (FINANCIAL MASTER DATA)
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "financial" && (
+          <>
+            <SectionHeader title="Master Data & Jadwal" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                paddingHorizontal: 16,
+                marginBottom: 24,
+              }}
+            >
+              {/* Transaksi Rutin */}
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: CARD_BORDER,
+                }}
+                onPress={() => navigation.navigate("RecurringTransactions")}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="repeat-outline" size={20} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
+                      Transaksi Rutin
+                    </Text>
+                    <View style={{ backgroundColor: `${colors.accent}20`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                      <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "700" }}>
+                        {activeRecurringCount} Aktif
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }} numberOfLines={2}>
+                    Otomatisasi pencatatan gaji berkala, tagihan bulanan, dan langganan rutin
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.gray500} style={{ marginLeft: 8 }} />
+              </TouchableOpacity>
+
+              {/* Kategori Transaksi */}
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                }}
+                onPress={() => navigation.navigate("ManageCategories")}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.info}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="pricetags-outline" size={20} color={colors.info} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                    <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
+                      Kategori
+                    </Text>
+                    <View style={{ backgroundColor: `${colors.info}20`, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                      <Text style={{ color: colors.info, fontSize: 10, fontWeight: "700" }}>
+                        {totalCategories} Kategori
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }} numberOfLines={2}>
+                    Kelola nama, ikon visual, dan warna kategori transaksi kustom Anda
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.gray500} style={{ marginLeft: 8 }} />
+              </TouchableOpacity>
+            </View>
+
+            <SectionHeader title="Periode & Aturan Pembukuan" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                paddingHorizontal: 16,
+                marginBottom: 24,
+              }}
+            >
+              {/* Tanggal Cut-off / Gajian */}
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: CARD_BORDER,
+                }}
+                onPress={() => {
+                  setTempPaydayInput(paydayDate.toString());
+                  setShowPaydayModal(true);
+                }}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.success}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={colors.success} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginBottom: 2 }}>
+                    Awal Siklus 
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }}>
+                    Acuan perputaran bulan finansial Anda (Tiap tanggal {paydayDate})
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700", marginRight: 4 }}>
+                    Tgl {paydayDate}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
+                </View>
+              </TouchableOpacity>
+
+              {/* Sinkronisasi Kas Otomatis */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: CARD_BORDER,
+                }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.warning}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="swap-horizontal-outline" size={20} color={colors.warning} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginBottom: 2 }}>
+                    Prinsip Pembukuan Ganda
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }}>
+                    Pinjaman utang & setoran tabungan terintegrasi otomatis dengan saldo dompet kas
+                  </Text>
+                </View>
+                <View style={{ backgroundColor: `${colors.success}20`, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                  <Text style={{ color: colors.success, fontSize: 10, fontWeight: "700" }}>Aktif ✓</Text>
+                </View>
+              </View>
+
+              {/* Mata Uang */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                }}
+              >
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.purple}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="cash-outline" size={20} color={colors.purple} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700", marginBottom: 2 }}>
+                    Format Mata Uang
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16 }}>
+                    Format nominal Indonesia (IDR - Rp) dengan pemisah titik ribuan
+                  </Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600" }}>
+                  IDR (Rp)
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
+
         {/* ══════════════════════════════════════════════════════════════════════
             TAMPILAN
         ══════════════════════════════════════════════════════════════════════ */}
@@ -1802,68 +2065,7 @@ const SettingsScreen = () => {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "data" && (
           <>
-            <SectionHeader title="Kategori" />
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                borderRadius: CARD_RADIUS,
-                borderWidth: 1,
-                borderColor: CARD_BORDER,
-                paddingHorizontal: 16,
-                marginBottom: 20,
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                }}
-                onPress={() => navigation.navigate("ManageCategories")}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    backgroundColor: `${colors.info}15`,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 14,
-                  }}
-                >
-                  <Ionicons name="list-outline" size={18} color={colors.info} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: colors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: "600",
-                      marginBottom: 2,
-                    }}
-                  >
-                    Kelola Kategori Kustom
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.gray400,
-                      fontSize: 11,
-                      paddingRight: 8,
-                    }}
-                    numberOfLines={2}
-                  >
-                    Tambah, ubah, atau hapus kategori buatan sendiri
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.gray500}
-                />
-              </TouchableOpacity>
-            </View>
+
 
             <SectionHeader title="Backup & Restore (Offline)" />
             <View
@@ -2042,6 +2244,51 @@ const SettingsScreen = () => {
               </TouchableOpacity>
             </View>
 
+            <SectionHeader title="Tentang Aplikasi" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: 18,
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 14,
+                  }}
+                >
+                  <Ionicons name="wallet" size={24} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "700" }}>
+                    MyMoney Mobile
+                  </Text>
+                  <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600", marginTop: 1 }}>
+                    Versi 1.0.4 • Offline-First Edition
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ backgroundColor: `${colors.border}40`, height: 1, marginBottom: 12 }} />
+
+              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} style={{ marginRight: 8, marginTop: 1 }} />
+                <Text style={{ color: colors.gray400, fontSize: 11, flex: 1, lineHeight: 16 }}>
+                  Seluruh data keuangan disimpan secara lokal di perangkat Anda. Tidak ada data yang dikirim ke server pihak ketiga demi keamanan dan privasi finansial maksimal.
+                </Text>
+              </View>
+            </View>
+
             <SectionHeader title="Zona Kritis" />
             <TouchableOpacity
               style={{
@@ -2131,6 +2378,226 @@ const SettingsScreen = () => {
                 : "Akhir Quiet Hours"
         }
       />
+
+      {/* ── Modal Pemilih Tanggal Siklus / Gajian (Interactive Bottom Sheet) ── */}
+      <Modal
+        visible={showPaydayModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPaydayModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}
+        >
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={() => setShowPaydayModal(false)}
+          />
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              borderTopWidth: 1,
+              borderColor: CARD_BORDER,
+              padding: 24,
+              paddingBottom: Platform.OS === "ios" ? 40 : 28,
+            }}
+          >
+            {/* Drag Handle Indicator */}
+            <View
+              style={{
+                width: 42,
+                height: 4,
+                backgroundColor: `${colors.border}80`,
+                borderRadius: 2,
+                alignSelf: "center",
+                marginBottom: 18,
+              }}
+            />
+
+            {/* Modal Header */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    backgroundColor: `${colors.accent}15`,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 12,
+                  }}
+                >
+                  <Ionicons name="calendar" size={22} color={colors.accent} />
+                </View>
+                <View>
+                  <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: "800" }}>
+                    Awal Siklus Pembukuan
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2 }}>
+                    Tentukan tanggal gajian / awal perputaran bulanan
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowPaydayModal(false)}
+                style={{ padding: 4 }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={24} color={colors.gray400} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Stepper & Manual Input Hero Box */}
+            <View
+              style={{
+                backgroundColor: colors.background,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: `${colors.border}60`,
+                padding: 16,
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                Tanggal Setiap Bulan
+              </Text>
+
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 20 }}>
+                {/* Decrement Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    const currentVal = Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1));
+                    const newVal = currentVal > 1 ? currentVal - 1 : 31;
+                    setTempPaydayInput(newVal.toString());
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="remove" size={24} color={colors.textPrimary} />
+                </TouchableOpacity>
+
+                {/* Direct Number Input */}
+                <View style={{ alignItems: "center", minWidth: 90 }}>
+                  <TextInput
+                    value={tempPaydayInput}
+                    onChangeText={(val) => {
+                      const clean = val.replace(/\D/g, "");
+                      if (clean === "") {
+                        setTempPaydayInput("");
+                        return;
+                      }
+                      const num = parseInt(clean, 10);
+                      if (num <= 31) {
+                        setTempPaydayInput(num.toString());
+                      }
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    textAlign="center"
+                    placeholder="1"
+                    placeholderTextColor={colors.gray500}
+                    style={{
+                      color: colors.accent,
+                      fontSize: 40,
+                      fontWeight: "900",
+                      padding: 0,
+                      height: 52,
+                      minWidth: 70,
+                    }}
+                  />
+                  <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "500", marginTop: 2 }}>
+                    (Ketik 1 — 31)
+                  </Text>
+                </View>
+
+                {/* Increment Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    const currentVal = Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1));
+                    const newVal = currentVal < 31 ? currentVal + 1 : 1;
+                    setTempPaydayInput(newVal.toString());
+                  }}
+                  activeOpacity={0.7}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="add" size={24} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+
+            {/* Live Explanation Box */}
+            <View
+              style={{
+                backgroundColor: `${colors.info}12`,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: `${colors.info}25`,
+                padding: 14,
+                marginBottom: 20,
+                flexDirection: "row",
+                alignItems: "flex-start",
+              }}
+            >
+              <Ionicons name="information-circle" size={18} color={colors.info} style={{ marginRight: 10, marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "700", lineHeight: 17 }}>
+                  Simulasi Siklus Finansial:
+                </Text>
+                <Text style={{ color: colors.gray400, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
+                  Siklus 1 bulan Anda akan dihitung dari <Text style={{ color: colors.info, fontWeight: "700" }}>Tanggal {Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1))}</Text> hingga <Text style={{ color: colors.info, fontWeight: "700" }}>{((Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1) === 0 ? "Akhir Bulan" : `Tanggal ${Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1)) - 1}`)}</Text> bulan berikutnya.
+                </Text>
+              </View>
+            </View>
+
+            {/* Action Save Button */}
+            <TouchableOpacity
+              onPress={() => {
+                const finalDay = Math.max(1, Math.min(31, parseInt(tempPaydayInput, 10) || 1));
+                handleSelectPayday(finalDay);
+              }}
+              activeOpacity={0.8}
+              style={{
+                backgroundColor: colors.accent,
+                borderRadius: 16,
+                paddingVertical: 15,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>
+                Simpan Tanggal Siklus
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
