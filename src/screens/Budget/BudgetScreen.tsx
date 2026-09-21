@@ -8,7 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { formatCurrency, safeNumber, formatToDateKey } from "../../utils/calculations";
 import { Budget } from "../../types";
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -148,7 +148,7 @@ const BudgetScreen: React.FC = () => {
     Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
   // ── Tanggal hari ini untuk deteksi status selesai ─────────────────────────
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatToDateKey(new Date());
 
   const parseDate = (dateStr: string): Date => {
     try { return new Date(dateStr); }

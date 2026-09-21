@@ -411,7 +411,7 @@ const AddBudgetScreen: React.FC = () => {
     // Validasi duplikat kategori (kecuali edit mode)
     if (!isEditMode) {
       // RISK-005 FIX: Compare case-insensitively & only check active budgets
-      const today = new Date().toISOString().split("T")[0];
+      const today = getCurrentDate();
       const isDuplicate = state.budgets.some((b) => {
         if (b.category.toLowerCase() !== category.toLowerCase()) return false;
         // Jika anggaran lama adalah sekali pakai dan sudah lewat tanggalnya, jangan blokir

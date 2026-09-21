@@ -26,6 +26,7 @@ import {
   formatCurrency,
   safeNumber,
   getMonthlyCycleRange,
+  formatToDateKey,
 } from "../../utils/calculations";
 import { Transaction } from "../../types";
 import { useTheme } from '../../theme/ThemeContext';
@@ -164,49 +165,52 @@ const TransactionsScreen: React.FC = () => {
 
     if (dateFilter !== "all") {
       const now = new Date();
-      now.setHours(23, 59, 59, 999);
-      let startDate = new Date();
+      let startDateStr = "";
+      let endDateStr = "";
 
       switch (dateFilter) {
-        case "today":
-          startDate = new Date();
-          startDate.setHours(0, 0, 0, 0);
+        case "today": {
+          startDateStr = formatToDateKey(now);
+          endDateStr = startDateStr;
           break;
-        case "week":
-          startDate.setDate(now.getDate() - 6);
-          startDate.setHours(0, 0, 0, 0);
+        }
+        case "week": {
+          const past = new Date(now);
+          past.setDate(now.getDate() - 6);
+          startDateStr = formatToDateKey(past);
+          endDateStr = formatToDateKey(now);
           break;
-        case "month":
+        }
+        case "month": {
           if (state.paydayCutoff && state.paydayCutoff > 1) {
             const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
-            startDate = cycleRange.startDate;
+            startDateStr = formatToDateKey(cycleRange.startDate);
+            endDateStr = formatToDateKey(cycleRange.endDate);
           } else {
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            startDate.setHours(0, 0, 0, 0);
+            const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            startDateStr = formatToDateKey(startMonth);
+            endDateStr = formatToDateKey(endMonth);
           }
           break;
-        case "custom":
+        }
+        case "custom": {
           if (customStartDate && customEndDate) {
-            const start = new Date(customStartDate);
-            const end   = new Date(customEndDate);
-            start.setHours(0, 0, 0, 0);
-            end.setHours(23, 59, 59, 999);
-            filtered = filtered.filter((t) => {
-              try {
-                const transDate = new Date(t.date);
-                return transDate >= start && transDate <= end;
-              } catch { return false; }
-            });
+            startDateStr = formatToDateKey(new Date(customStartDate));
+            endDateStr = formatToDateKey(new Date(customEndDate));
           }
           break;
+        }
       }
 
-      if (dateFilter !== "custom") {
+      if (startDateStr && endDateStr) {
         filtered = filtered.filter((t) => {
           try {
-            const transDate = new Date(t.date);
-            return transDate >= startDate && transDate <= now;
-          } catch { return false; }
+            const txDate = (t?.date || "").slice(0, 10);
+            return txDate >= startDateStr && txDate <= endDateStr;
+          } catch {
+            return false;
+          }
         });
       }
     }
@@ -388,7 +392,7 @@ const TransactionsScreen: React.FC = () => {
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day   = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
-    } catch { return new Date().toISOString().split("T")[0]; }
+    } catch { return formatToDateKey(new Date()); }
   };
 
   const handleRefresh = () => {

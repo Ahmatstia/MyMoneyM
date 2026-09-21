@@ -298,7 +298,7 @@ const SavingsScreen: React.FC = () => {
                 marginBottom: 16,
               }}
             >
-              {formatCurrency(totalStats.totalTarget)}
+              {formatCurrency(totalStats.totalCurrent)}
             </Text>
 
             {/* Terkumpul / Target */}

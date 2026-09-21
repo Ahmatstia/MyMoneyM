@@ -656,7 +656,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         savingsId: newSavings.id,
         type: "initial",
         amount: safeNumber(newSavings.current),
-        date: new Date().toISOString().split("T")[0],
+        date: getJakartaDateKey(),
         note: "Saldo awal",
         previousBalance: 0,
         newBalance: safeNumber(newSavings.current),
@@ -775,7 +775,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         description: isDeposit
           ? `Setor Tabungan: ${saving.name}`
           : `Tarik Tabungan: ${saving.name}`,
-        date: transaction.date || new Date().toISOString().split("T")[0],
+        date: transaction.date || getJakartaDateKey(),
         createdAt: new Date().toISOString(),
       };
       updatedTransactions = [newCashTransaction, ...state.transactions];
@@ -921,7 +921,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         description: isBorrowed
           ? `Penerimaan Pinjaman: ${debt.name}`
           : `Pemberian Pinjaman: ${debt.name}`,
-        date: new Date().toISOString().split("T")[0],
+        date: getJakartaDateKey(),
         createdAt: new Date().toISOString(),
       };
       updatedTransactions = [newTransaction, ...state.transactions];
@@ -941,6 +941,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
     gamificationBus.award("debt_recorded");
   };
 
@@ -953,6 +954,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const newState: AppState = { ...state, debts: updatedDebts };
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const deleteDebt = async (id: string) => {
@@ -962,6 +964,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const payDebt = async (id: string, amount: number) => {
@@ -999,7 +1002,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       description: `Pembayaran ${
         debt.type === "borrowed" ? "Hutang" : "Piutang"
       }: ${debt.name}`,
-      date: new Date().toISOString().split("T")[0],
+      date: getJakartaDateKey(),
       createdAt: new Date().toISOString(),
     };
 
@@ -1061,24 +1064,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     id: string,
     updates: Partial<Omit<CustomCategory, "id" | "isCustom" | "createdAt">>,
   ) => {
-    const updated = state.customCategories.map((c) =>
-      c.id === id ? { ...c, ...updates } : c,
+    const existing = state.customCategories.find((c) => c.id === id);
+    if (!existing) return;
+
+    const oldName = existing.name;
+    const newName = updates.name && updates.name.trim().length > 0 ? updates.name.trim() : oldName;
+    const nameChanged = oldName !== newName;
+
+    const updatedCategories = state.customCategories.map((c) =>
+      c.id === id ? { ...c, ...updates, name: newName } : c,
     );
-    const newState: AppState = { ...state, customCategories: updated };
+
+    let updatedTransactions = state.transactions;
+    let updatedBudgets = state.budgets;
+    let updatedRecurring = state.recurringTransactions;
+
+    if (nameChanged) {
+      updatedTransactions = state.transactions.map((t) =>
+        t.category === oldName ? { ...t, category: newName } : t
+      );
+      updatedBudgets = updateBudgetsFromTransactions(
+        updatedTransactions,
+        state.budgets.map((b) =>
+          b.category === oldName ? { ...b, category: newName } : b
+        )
+      );
+      updatedRecurring = (state.recurringTransactions || []).map((r) =>
+        r.category === oldName ? { ...r, category: newName } : r
+      );
+    }
+
+    const newState: AppState = {
+      ...state,
+      customCategories: updatedCategories,
+      transactions: updatedTransactions,
+      budgets: updatedBudgets,
+      recurringTransactions: updatedRecurring,
+    };
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   const deleteCustomCategory = async (id: string) => {
     const categoryToDelete = state.customCategories.find((c) => c.id === id);
     if (!categoryToDelete) return;
 
-    // Smart delete: migrate existing transactions that used this category to 'Lainnya'
+    // Smart delete: migrate existing transactions, budgets, & recurring to 'Lainnya'
     const updatedTransactions = state.transactions.map((t) =>
       t.category === categoryToDelete.name ? { ...t, category: "Lainnya" } : t,
     );
-    const updatedBudgets = state.budgets.map((b) =>
-      b.category === categoryToDelete.name ? { ...b, category: "Lainnya" } : b,
+    const updatedBudgets = updateBudgetsFromTransactions(
+      updatedTransactions,
+      state.budgets.map((b) =>
+        b.category === categoryToDelete.name ? { ...b, category: "Lainnya" } : b,
+      )
+    );
+    const updatedRecurring = (state.recurringTransactions || []).map((r) =>
+      r.category === categoryToDelete.name ? { ...r, category: "Lainnya" } : r
     );
 
     const newState: AppState = {
@@ -1086,9 +1129,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       customCategories: state.customCategories.filter((c) => c.id !== id),
       transactions: updatedTransactions,
       budgets: updatedBudgets,
+      recurringTransactions: updatedRecurring,
     };
     setState(newState);
     await storageService.saveData(newState);
+    await notificationService.updateNotifications(newState);
   };
 
   // ========== RECURRING TRANSACTIONS FUNCTIONS ==========
@@ -1212,9 +1257,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const willBeActive = !existing.isActive;
     let nextRun = existing.nextRunDate;
+    const todayStr = getJakartaDateKey();
 
     if (willBeActive) {
-      const todayStr = getJakartaDateKey();
       if (nextRun < todayStr) {
         nextRun = calculateInitialRunDate(
           existing.frequency,
@@ -1236,9 +1281,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         : r,
     );
 
-    const newState: AppState = { ...state, recurringTransactions: updated };
-    setState(newState);
-    await storageService.saveData(newState);
+    const tempState: AppState = { ...state, recurringTransactions: updated };
+
+    if (willBeActive && nextRun <= todayStr) {
+      const { updatedState, executedCount } = processRecurringTransactions(tempState);
+      if (executedCount > 0) {
+        const updatedBudgets = updateBudgetsFromTransactions(
+          updatedState.transactions,
+          updatedState.budgets,
+        );
+        const finalState = {
+          ...updatedState,
+          budgets: updatedBudgets,
+        };
+        setState(finalState);
+        await storageService.saveData(finalState);
+        await notificationService.updateNotifications(finalState);
+        return;
+      }
+    }
+
+    setState(tempState);
+    await storageService.saveData(tempState);
   };
 
   // ========== PROVIDER VALUE ==========
@@ -1264,14 +1328,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       let updatedRecurring = [...state.recurringTransactions];
       if (syncRecurringSalary) {
+        const todayStr = getJakartaDateKey();
         updatedRecurring = updatedRecurring.map((r) => {
           if (r.type === "income" && r.frequency === "monthly") {
-            const now = new Date();
-            let target = new Date(now.getFullYear(), now.getMonth(), validDay);
-            if (now.getDate() >= validDay) {
-              target = new Date(now.getFullYear(), now.getMonth() + 1, validDay);
-            }
-            const nextStr = target.toISOString().split("T")[0];
+            const nextStr = calculateInitialRunDate(
+              "monthly",
+              todayStr,
+              undefined,
+              validDay
+            );
             return {
               ...r,
               dayOfMonth: validDay,

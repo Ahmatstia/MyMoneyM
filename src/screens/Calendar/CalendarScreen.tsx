@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency } from "../../utils/calculations";
+import { formatCurrency, formatToDateKey, getCurrentDate } from "../../utils/calculations";
 import {
   getBusiestDays,
   getHighestSpendingDays,
@@ -146,19 +146,15 @@ const CalendarScreen: React.FC = () => {
   const CARD_BORDER      = `${colors.border}80`;
 
   const { state } = useAppContext();
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [visibleMonth, setVisibleMonth] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDate());
+  const [visibleMonth, setVisibleMonth] = useState<string>(getCurrentDate());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showDayDetail, setShowDayDetail] = useState<boolean>(false);
 
   const handleMonthYearChange = (_event: any, date?: Date) => {
     setShowDatePicker(false);
     if (date) {
-      const dateString = date.toISOString().split("T")[0];
+      const dateString = formatToDateKey(date);
       setSelectedDate(dateString);
       setVisibleMonth(dateString);
     }

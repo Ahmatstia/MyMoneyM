@@ -1,5 +1,6 @@
 import { Note, Budget, Savings, Transaction, SavingsTransaction, SubTransaction } from "../types";
-import { safeNumber } from "./calculations";
+import { safeNumber, formatToDateKey } from "./calculations";
+import { getJakartaDateKey } from "./dailyCheckIn";
 import { generateId, generateSavingsId, generateTransactionId, generateBudgetId } from "./idGenerator";
 
 export const isValidDateString = (dateString: any): boolean => {
@@ -45,7 +46,7 @@ export const validateNote = (note: any): Note => {
         : [],
       date: isValidDateString(note.date)
         ? note.date
-        : new Date().toISOString().split("T")[0],
+        : getJakartaDateKey(),
       createdAt: note.createdAt || new Date().toISOString(),
       updatedAt: note.updatedAt || new Date().toISOString(),
     };
@@ -58,7 +59,7 @@ export const validateNote = (note: any): Note => {
       content: "",
       type: "general",
       tags: [],
-      date: now.split("T")[0],
+      date: getJakartaDateKey(),
       createdAt: now,
       updatedAt: now,
     };
@@ -194,7 +195,7 @@ export const validateTransaction = (transaction: any): Transaction => {
       description: transaction.description || "",
       date: isValidDateString(transaction.date)
         ? transaction.date
-        : new Date().toISOString().split("T")[0],
+        : getJakartaDateKey(),
       createdAt: transaction.createdAt || new Date().toISOString(),
       cyclePeriod: typeof transaction.cyclePeriod === "number" ? transaction.cyclePeriod : undefined,
       subTransactions: subTransactions && subTransactions.length > 0 ? subTransactions : undefined,
@@ -207,7 +208,7 @@ export const validateTransaction = (transaction: any): Transaction => {
       type: "expense",
       category: "Lainnya",
       description: "",
-      date: new Date().toISOString().split("T")[0],
+      date: getJakartaDateKey(),
       createdAt: new Date().toISOString(),
     };
   }
@@ -222,7 +223,7 @@ export const validateSavingsTransaction = (transaction: any): SavingsTransaction
       amount: Math.max(0, transaction.amount || 0),
       date: isValidDateString(transaction.date)
         ? transaction.date
-        : new Date().toISOString().split("T")[0],
+        : getJakartaDateKey(),
       note: transaction.note || "",
       previousBalance: Math.max(0, transaction.previousBalance || 0),
       newBalance: Math.max(0, transaction.newBalance || 0),
@@ -235,7 +236,7 @@ export const validateSavingsTransaction = (transaction: any): SavingsTransaction
       savingsId: "",
       type: "deposit",
       amount: 0,
-      date: new Date().toISOString().split("T")[0],
+      date: getJakartaDateKey(),
       note: "",
       previousBalance: 0,
       newBalance: 0,
@@ -250,21 +251,24 @@ export const updateBudgetsFromTransactions = (
 ): Budget[] => {
   if (!budgets.length) return budgets;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getJakartaDateKey();
 
   return budgets.map((budget) => {
     try {
       let startDate = budget.startDate;
       let endDate = budget.endDate;
+      let lastResetDate = budget.lastResetDate;
 
       // Auto rollover logic ONLY if budget is recurring (default true)
       const isRecurring = budget.isRecurring !== false;
       if (isRecurring && today > endDate) {
         let start = new Date(startDate);
         let end = new Date(endDate);
+        let safetyCounter = 0;
         
         // Loop to advance the period until it covers today
-        while (today > end.toISOString().split("T")[0]) {
+        while (today > formatToDateKey(end) && safetyCounter < 120) {
+          safetyCounter++;
           switch (budget.period) {
             case "weekly":
               start.setDate(start.getDate() + 7);
@@ -311,15 +315,17 @@ export const updateBudgetsFromTransactions = (
               end.setMonth(end.getMonth() + 1);
           }
         }
-        startDate = start.toISOString().split("T")[0];
-        endDate = end.toISOString().split("T")[0];
+        startDate = formatToDateKey(start);
+        endDate = formatToDateKey(end);
+        lastResetDate = new Date().toISOString();
       }
 
+      const budgetCategoryLower = (budget.category || "").trim().toLowerCase();
       const spent = transactions
         .filter((t) => {
           if (t.type !== "expense") return false;
-          if (t.category !== budget.category) return false;
-          const transDate = t.date;
+          if ((t.category || "").trim().toLowerCase() !== budgetCategoryLower) return false;
+          const transDate = (t.date || "").slice(0, 10);
           return transDate >= startDate && transDate <= endDate;
         })
         .reduce((sum, t) => sum + safeNumber(t.amount), 0);
@@ -328,6 +334,7 @@ export const updateBudgetsFromTransactions = (
         ...budget,
         startDate,
         endDate,
+        lastResetDate,
         spent: Math.max(0, spent),
       };
     } catch (error) {

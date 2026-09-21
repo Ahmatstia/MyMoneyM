@@ -6,6 +6,7 @@ import {
   getCurrentDate,
   safeNumber,
   formatCurrency,
+  formatToDateKey,
 } from "../calculations";
 
 export const checkBudgetAlerts = (appState: AppState): any[] => {
@@ -229,7 +230,7 @@ export const generateWeeklySummary = (appState: AppState): string => {
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
 
-    const weekStartStr = weekStart.toISOString().split("T")[0];
+    const weekStartStr = formatToDateKey(weekStart);
 
     const weekTransactions = appState.transactions.filter(
       (t) => t.date >= weekStartStr
