@@ -25,7 +25,7 @@ import {
 import { RootStackParamList } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
-import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+import CategoryPickerModal, { ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 
 type AddBudgetScreenNavigationProp = StackNavigationProp<
@@ -488,11 +488,11 @@ const AddBudgetScreen: React.FC = () => {
   // Resolve icon+color for the selected category
   const resolvedCategory = React.useMemo((): CategoryItem | null => {
     const all: CategoryItem[] = [
-      ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
         id: c.id, name: c.name, icon: c.icon, color: c.color,
         isCustom: true as const, customId: c.id,
       })),
+      ...ALL_SYSTEM_CATEGORIES,
     ];
     return all.find((c) => c.name === category) || null;
   }, [category, state.customCategories]);

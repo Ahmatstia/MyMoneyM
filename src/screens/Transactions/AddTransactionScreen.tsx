@@ -22,7 +22,7 @@ import { getCurrentDate, safeNumber, formatCurrency } from "../../utils/calculat
 import { RootStackParamList, TransactionType, SubTransaction } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
-import CategoryPickerModal, { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+import CategoryPickerModal, { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -269,7 +269,7 @@ const AddTransactionScreen: React.FC = () => {
     }
 
     if (!category) {
-      Alert.alert("Error", "Pilih kategori transaksi");
+      Alert.alert("Perhatian", "Pilih atau buat kategori transaksi terlebih dahulu");
       return;
     }
 
@@ -355,11 +355,11 @@ const AddTransactionScreen: React.FC = () => {
   // Resolve icon + color for the currently selected category
   const resolvedCategory = React.useMemo((): CategoryItem | null => {
     const all: CategoryItem[] = [
-      ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
         id: c.id, name: c.name, icon: c.icon, color: c.color,
         isCustom: true as const, customId: c.id,
       })),
+      ...ALL_SYSTEM_CATEGORIES,
     ];
     return all.find((c) => c.name === category) || null;
   }, [category, state.customCategories]);

@@ -20,9 +20,12 @@ import { useAppContext } from "../../context/AppContext";
 import { RecurringTransaction, RecurringFrequency, TransactionType } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
-import { getFrequencyLabel, formatDateString } from "../../utils/recurring";
+import { getFrequencyLabel, formatDateString, calculateInitialRunDate } from "../../utils/recurring";
 import { getJakartaDateKey } from "../../utils/dailyCheckIn";
-import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+import CategoryPickerModal, {
+  ALL_SYSTEM_CATEGORIES,
+  CategoryItem,
+} from "../../components/CategoryPickerModal";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -39,6 +42,41 @@ const DAYS_OF_WEEK = [
   { id: 7, name: "Minggu" },
 ];
 
+function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "-";
+  try {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      return d.toLocaleDateString("id-ID", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+    return dateStr;
+  } catch {
+    return dateStr;
+  }
+}
+
+function getTomorrowDateKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function getFirstOfNextMonthKey(): string {
+  const d = new Date();
+  const y = d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear();
+  const m = String(((d.getMonth() + 1) % 12) + 1).padStart(2, "0");
+  return `${y}-${m}-01`;
+}
+
 const RecurringTransactionsScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
@@ -53,13 +91,14 @@ const RecurringTransactionsScreen: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<"all" | "income" | "expense">("all");
   const [modalVisible, setModalVisible] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [editingItem, setEditingItem] = useState<RecurringTransaction | null>(null);
 
   // Form states
   const [formType, setFormType] = useState<TransactionType>("income");
   const [formName, setFormName] = useState("");
   const [formAmount, setFormAmount] = useState("");
-  const [formCategory, setFormCategory] = useState("Uang Bulanan");
+  const [formCategory, setFormCategory] = useState("");
   const [formFrequency, setFormFrequency] = useState<RecurringFrequency>("monthly");
   const [formDayOfWeek, setFormDayOfWeek] = useState<number>(1);
   const [formDayOfMonth, setFormDayOfMonth] = useState<number>(25);
@@ -97,7 +136,6 @@ const RecurringTransactionsScreen: React.FC = () => {
   // Categories resolution
   const allCategories: CategoryItem[] = useMemo(() => {
     return [
-      ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
         id: c.id,
         name: c.name,
@@ -106,6 +144,7 @@ const RecurringTransactionsScreen: React.FC = () => {
         isCustom: true as const,
         customId: c.id,
       })),
+      ...ALL_SYSTEM_CATEGORIES,
     ];
   }, [state.customCategories]);
 
@@ -126,13 +165,30 @@ const RecurringTransactionsScreen: React.FC = () => {
     return "receipt-outline";
   };
 
+  // Preview initial execution date
+  const previewFirstRunDateStr = useMemo(() => {
+    try {
+      return calculateInitialRunDate(
+        formFrequency,
+        formStartDate || getJakartaDateKey(),
+        formFrequency === "weekly" ? formDayOfWeek : undefined,
+        formFrequency === "monthly" ? formDayOfMonth : undefined
+      );
+    } catch {
+      return formStartDate || getJakartaDateKey();
+    }
+  }, [formFrequency, formDayOfWeek, formDayOfMonth, formStartDate]);
+
+  const isFirstRunToday = previewFirstRunDateStr <= getJakartaDateKey();
+
   // Open Add Modal
   const handleOpenAdd = () => {
+    const firstCustomCat = (state.customCategories || [])[0]?.name || "";
     setEditingItem(null);
     setFormType("income");
     setFormName("");
     setFormAmount("");
-    setFormCategory("Uang Bulanan");
+    setFormCategory(firstCustomCat);
     setFormFrequency("monthly");
     setFormDayOfWeek(1);
     setFormDayOfMonth(state.paydayCutoff || 25);
@@ -173,6 +229,11 @@ const RecurringTransactionsScreen: React.FC = () => {
     const numAmount = parseFloat(formAmount.replace(/\D/g, ""));
     if (!numAmount || numAmount <= 0) {
       Alert.alert("Perhatian", "Silakan masukkan nominal yang valid");
+      return;
+    }
+
+    if (!formCategory.trim()) {
+      Alert.alert("Perhatian", "Silakan pilih atau buat kategori terlebih dahulu");
       return;
     }
 
@@ -1095,50 +1156,179 @@ const RecurringTransactionsScreen: React.FC = () => {
                     borderColor: `${colors.border}80`,
                   }}
                 />
+                {/* Quick Nominal Chips */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                  <View style={{ flexDirection: "row", gap: 6 }}>
+                    {[
+                      { label: "100rb", val: "100000" },
+                      { label: "250rb", val: "250000" },
+                      { label: "500rb", val: "500000" },
+                      { label: "1jt", val: "1000000" },
+                      { label: "2.5jt", val: "2500000" },
+                      { label: "5jt", val: "5000000" },
+                    ].map((item) => (
+                      <TouchableOpacity
+                        key={item.label}
+                        onPress={() => setFormAmount(item.val)}
+                        activeOpacity={0.7}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 5,
+                          borderRadius: 8,
+                          backgroundColor: colors.background,
+                          borderWidth: 1,
+                          borderColor: `${colors.border}60`,
+                        }}
+                      >
+                        <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
               </View>
 
-              {/* Kategori Quick Chips */}
+              {/* Kategori Selector Card + Quick Chips */}
               <View style={{ marginBottom: 14 }}>
                 <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
                   KATEGORI
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    {(formType === "income"
-                      ? ["Uang Bulanan", "Pemasukan Rutin", "Investasi", "Tabungan", "Hadiah", "Lainnya"]
-                      : ["Tagihan", "Listrik", "Air", "Internet", "Cicilan", "Makanan", "Rumah", "Langganan", "Lainnya"]
-                    ).map((catName) => {
-                      const isSelected = formCategory === catName;
-                      return (
-                        <TouchableOpacity
-                          key={catName}
-                          onPress={() => setFormCategory(catName)}
-                          activeOpacity={0.7}
-                          style={{
-                            paddingHorizontal: 14,
-                            paddingVertical: 8,
-                            borderRadius: 12,
-                            backgroundColor: isSelected
-                              ? `${colors.accent}20`
-                              : colors.background,
-                            borderWidth: 1,
-                            borderColor: isSelected ? colors.accent : `${colors.border}60`,
-                          }}
-                        >
-                          <Text
+
+                {/* Selected Category Card */}
+                <TouchableOpacity
+                  onPress={() => setShowCategoryPicker(true)}
+                  activeOpacity={0.8}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: colors.background,
+                    borderRadius: 14,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: `${colors.border}80`,
+                    marginBottom: 8,
+                  }}
+                >
+                  {formCategory ? (
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 12,
+                        backgroundColor: `${resolveCategory(formCategory).color}25`,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                        borderWidth: 1,
+                        borderColor: resolveCategory(formCategory).color,
+                      }}
+                    >
+                      <Ionicons
+                        name={getSafeIcon(resolveCategory(formCategory).icon)}
+                        size={20}
+                        color={resolveCategory(formCategory).color}
+                      />
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 12,
+                        backgroundColor: `${colors.accent}15`,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 12,
+                      }}
+                    >
+                      <Ionicons name="pricetag-outline" size={20} color={colors.accent} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        color: formCategory ? colors.textPrimary : colors.gray500,
+                        fontSize: 14,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {formCategory || "Pilih kategori transaksi..."}
+                    </Text>
+                    <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 2 }}>
+                      {formCategory ? "Tekan untuk mengganti" : "Wajib dipilih untuk pengelompokan"}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.gray400} />
+                </TouchableOpacity>
+
+                {/* Quick Chips if custom categories exist */}
+                {(state.customCategories || []).length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      {(state.customCategories || []).slice(0, 6).map((cat) => {
+                        const isSelected = formCategory === cat.name;
+                        return (
+                          <TouchableOpacity
+                            key={cat.id}
+                            onPress={() => setFormCategory(cat.name)}
+                            activeOpacity={0.7}
                             style={{
-                              color: isSelected ? colors.accent : colors.gray400,
-                              fontSize: 12,
-                              fontWeight: isSelected ? "700" : "500",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 10,
+                              backgroundColor: isSelected ? `${cat.color}20` : colors.background,
+                              borderWidth: 1,
+                              borderColor: isSelected ? cat.color : `${colors.border}60`,
                             }}
                           >
-                            {catName}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </ScrollView>
+                            <Ionicons
+                              name={getSafeIcon(cat.icon)}
+                              size={12}
+                              color={isSelected ? cat.color : colors.gray400}
+                              style={{ marginRight: 5 }}
+                            />
+                            <Text
+                              style={{
+                                color: isSelected ? cat.color : colors.gray400,
+                                fontSize: 11,
+                                fontWeight: isSelected ? "700" : "500",
+                              }}
+                            >
+                              {cat.name}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setModalVisible(false);
+                      navigation.navigate("ManageCategories");
+                    }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: `${colors.accent}10`,
+                      borderRadius: 10,
+                      paddingVertical: 8,
+                      borderWidth: 1,
+                      borderColor: `${colors.accent}30`,
+                      borderStyle: "dashed",
+                    }}
+                  >
+                    <Ionicons name="add-circle-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                    <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>
+                      Belum ada kategori. Buat kategori terlebih dahulu
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* Frekuensi Selector */}
@@ -1466,28 +1656,67 @@ const RecurringTransactionsScreen: React.FC = () => {
               {/* Tanggal Mulai */}
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                  TANGGAL MULAI (YYYY-MM-DD)
+                  TANGGAL MULAI AKTIF
                 </Text>
-                <TextInput
-                  value={formStartDate}
-                  onChangeText={setFormStartDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.gray500}
+                <View
                   style={{
                     backgroundColor: colors.background,
                     borderRadius: 14,
                     paddingHorizontal: 14,
                     paddingVertical: 12,
-                    color: colors.textPrimary,
-                    fontSize: 14,
                     borderWidth: 1,
                     borderColor: `${colors.border}80`,
+                    marginBottom: 8,
                   }}
-                />
+                >
+                  <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "700" }}>
+                    {formatDisplayDate(formStartDate)}
+                  </Text>
+                  <Text style={{ color: colors.gray500, fontSize: 10, marginTop: 2 }}>
+                    Format data: {formStartDate}
+                  </Text>
+                </View>
+
+                {/* Quick Date Pills */}
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  {[
+                    { label: "Hari Ini", val: getJakartaDateKey() },
+                    { label: "Besok", val: getTomorrowDateKey() },
+                    { label: "Awal Bulan Depan", val: getFirstOfNextMonthKey() },
+                  ].map((p) => {
+                    const isSelected = formStartDate === p.val;
+                    return (
+                      <TouchableOpacity
+                        key={p.label}
+                        onPress={() => setFormStartDate(p.val)}
+                        activeOpacity={0.7}
+                        style={{
+                          flex: 1,
+                          alignItems: "center",
+                          paddingVertical: 7,
+                          borderRadius: 8,
+                          backgroundColor: isSelected ? `${colors.accent}20` : colors.background,
+                          borderWidth: 1,
+                          borderColor: isSelected ? colors.accent : `${colors.border}60`,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: isSelected ? colors.accent : colors.gray400,
+                            fontSize: 10,
+                            fontWeight: isSelected ? "700" : "500",
+                          }}
+                        >
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* Deskripsi Tambahan */}
-              <View style={{ marginBottom: 20 }}>
+              <View style={{ marginBottom: 16 }}>
                 <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
                   CATATAN / KETERANGAN (OPSIONAL)
                 </Text>
@@ -1507,6 +1736,61 @@ const RecurringTransactionsScreen: React.FC = () => {
                     borderColor: `${colors.border}80`,
                   }}
                 />
+              </View>
+
+              {/* Live Execution & Schedule Preview Box */}
+              <View
+                style={{
+                  backgroundColor: colors.background,
+                  borderRadius: 14,
+                  padding: 14,
+                  borderWidth: 1,
+                  borderColor: isFirstRunToday ? `${colors.accent}60` : `${colors.border}80`,
+                  marginBottom: 18,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                  <Ionicons name="information-circle-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+                  <Text style={{ color: colors.textPrimary, fontSize: 12, fontWeight: "700" }}>
+                    Pratinjau Jadwal Eksekusi
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 11 }}>Pencatatan Pertama:</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "700" }}>
+                    {formatDisplayDate(previewFirstRunDateStr)}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.gray400, fontSize: 11 }}>Pola Pengulangan:</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "700" }}>
+                    {formFrequency === "weekly"
+                      ? `Setiap ${DAYS_OF_WEEK.find((d) => d.id === formDayOfWeek)?.name || "Minggu"}`
+                      : formFrequency === "monthly"
+                        ? `Setiap tanggal ${formDayOfMonth}`
+                        : `Setiap ${formIntervalDays} hari`}
+                  </Text>
+                </View>
+
+                {isFirstRunToday && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: `${colors.accent}15`,
+                      padding: 8,
+                      borderRadius: 8,
+                      marginTop: 10,
+                    }}
+                  >
+                    <Ionicons name="flash" size={13} color={colors.accent} style={{ marginRight: 6 }} />
+                    <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "600", flex: 1, lineHeight: 14 }}>
+                      Transaksi pertama akan langsung dicatat hari ini saat kamu menekan tombol simpan.
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Action Buttons */}
@@ -1549,6 +1833,14 @@ const RecurringTransactionsScreen: React.FC = () => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* CategoryPickerModal for Recurring Screen */}
+      <CategoryPickerModal
+        visible={showCategoryPicker}
+        onClose={() => setShowCategoryPicker(false)}
+        onSelect={(name) => setFormCategory(name)}
+        selectedName={formCategory}
+      />
     </SafeAreaView>
   );
 };

@@ -29,7 +29,7 @@ import {
 } from "../../utils/calculations";
 import { Transaction } from "../../types";
 import { useTheme } from '../../theme/ThemeContext';
-import { DEFAULT_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+import { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 const { width } = Dimensions.get("window");
 
@@ -145,11 +145,11 @@ const TransactionsScreen: React.FC = () => {
 
   const resolveCategory = (categoryName: string): CategoryItem => {
     const all: CategoryItem[] = [
-      ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
         id: c.id, name: c.name, icon: c.icon, color: c.color,
         isCustom: true as const, customId: c.id,
       })),
+      ...ALL_SYSTEM_CATEGORIES,
     ];
     const found = all.find((c) => c.name === categoryName || (categoryName === "Gaji" && c.id === "pemasukan"));
     return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: colors.gray400 };

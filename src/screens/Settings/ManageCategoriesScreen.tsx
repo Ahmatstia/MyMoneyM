@@ -19,7 +19,6 @@ import { useAppContext } from "../../context/AppContext";
 import { CustomCategory } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
-import { DEFAULT_CATEGORIES } from "../../components/CategoryPickerModal";
 
 const ICON_GROUPS = [
   { label: "🍔 Makanan",     icons: ["restaurant-outline","cafe-outline","pizza-outline","beer-outline","wine-outline","ice-cream-outline","fast-food-outline","nutrition-outline","fish-outline","leaf-outline"] },
@@ -276,10 +275,9 @@ export default function ManageCategoriesScreen() {
     if (!trimmed) { Alert.alert("Error", "Nama kategori tidak boleh kosong."); return; }
     if (trimmed.length > 20) { Alert.alert("Error", "Nama kategori maksimal 20 karakter."); return; }
 
-    const allNames = [
-      ...DEFAULT_CATEGORIES.map((c) => c.name.toLowerCase()),
-      ...customCategories.filter((c) => c.id !== editTarget?.id).map((c) => c.name.toLowerCase()),
-    ];
+    const allNames = customCategories
+      .filter((c) => c.id !== editTarget?.id)
+      .map((c) => c.name.toLowerCase());
 
     if (allNames.includes(trimmed.toLowerCase())) {
       Alert.alert("Duplikat", `Kategori "${trimmed}" sudah ada.`);
@@ -344,13 +342,18 @@ export default function ManageCategoriesScreen() {
           </TouchableOpacity>
 
           <Text style={{ color: TS, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
-            Kategori Kustom ({customCategories.length})
+            Daftar Kategori ({customCategories.length})
           </Text>
           
           {customCategories.length === 0 ? (
-            <View style={{ padding: 20, backgroundColor: SURF, borderRadius: 16, alignItems: "center", marginBottom: 24 }}>
-              <Ionicons name="folder-open-outline" size={40} color={BORDER} />
-              <Text style={{ color: TS, fontSize: 14, marginTop: 12 }}>Belum ada kategori kustom.</Text>
+            <View style={{ padding: 28, backgroundColor: SURF, borderRadius: 20, alignItems: "center", marginBottom: 24, borderWidth: 1, borderColor: BORDER }}>
+              <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: `${ACCENT}15`, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <Ionicons name="folder-open-outline" size={30} color={ACCENT} />
+              </View>
+              <Text style={{ color: TP, fontSize: 15, fontWeight: "700", marginBottom: 6 }}>Belum Ada Kategori</Text>
+              <Text style={{ color: TS, fontSize: 12, textAlign: "center", lineHeight: 18 }}>
+                Tekan tombol "Buat Kategori Baru" di atas untuk mulai membuat kategori transaksi pribadimu.
+              </Text>
             </View>
           ) : (
             <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginBottom: 24 }}>
@@ -390,19 +393,6 @@ export default function ManageCategoriesScreen() {
             </View>
           )}
 
-          <Text style={{ color: TS, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 }}>
-            Kategori Bawaan
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16 }}>
-            {DEFAULT_CATEGORIES.map((cat) => (
-              <View key={cat.id} style={{ width: "20%", alignItems: "center" }}>
-                <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: SURF, alignItems: "center", justifyContent: "center", marginBottom: 6, borderWidth: 1, borderColor: BORDER }}>
-                  <Ionicons name={cat.icon as any} size={22} color={cat.color} />
-                </View>
-                <Text style={{ color: TS, fontSize: 9, textAlign: "center" }} numberOfLines={1}>{cat.name}</Text>
-              </View>
-            ))}
-          </View>
           <View style={{ height: 40 }} />
         </ScrollView>
       )}

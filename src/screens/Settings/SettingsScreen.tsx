@@ -35,7 +35,6 @@ import {
   STORAGE_KEY_MASCOT_HIDDEN,
   resetSessionDismissed,
 } from "../../components/Mascot/FloatingMascotBubble";
-import { DEFAULT_CATEGORIES } from "../../components/CategoryPickerModal";
 import { AppGuidebookModal } from "../../components/Tutorial";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
@@ -709,8 +708,7 @@ const SettingsScreen = () => {
     (r) => r.isActive
   ).length;
   const totalRecurringCount = (state.recurringTransactions || []).length;
-  const totalCategories =
-    DEFAULT_CATEGORIES.length + (state.customCategories || []).length;
+  const totalCategories = (state.customCategories || []).length;
 
   const saveNotificationSettings = async (
     newSettings: typeof DEFAULT_NOTIFICATION_SETTINGS,

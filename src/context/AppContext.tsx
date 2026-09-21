@@ -44,6 +44,7 @@ import {
   calculateInitialRunDate,
 } from "../utils/recurring";
 import { isImageFileExisting } from "../utils/imageStorage";
+import { ALL_SYSTEM_CATEGORIES } from "../components/CategoryPickerModal";
 
 interface AppContextType {
   state: AppState;
@@ -232,6 +233,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         !isImageFileExisting(completeAppData.userProfile.coverImage)
       ) {
         completeAppData.userProfile.coverImage = undefined;
+      }
+
+      // Auto-Migration: Menyelamatkan kategori yang sudah pernah digunakan pengguna pada transaksi/anggaran lama
+      // agar tidak hilang dari daftar pilihan kategori kustom saat beralih ke Zero-Default.
+      const migrationCatKey = "@mymoney_legacy_categories_migrated_v1";
+      const isCatMigrated = await AsyncStorage.getItem(migrationCatKey);
+      if (!isCatMigrated) {
+        const existingCatNames = new Set(
+          (completeAppData.customCategories || []).map((c) => c.name.toLowerCase())
+        );
+        const usedCategoriesInTransactions = new Set<string>();
+
+        // 1. Ambil dari riwayat transaksi
+        (completeAppData.transactions || []).forEach((t) => {
+          if (t.category && t.category.trim()) {
+            usedCategoriesInTransactions.add(t.category.trim());
+          }
+        });
+        // 2. Ambil dari anggaran
+        (completeAppData.budgets || []).forEach((b) => {
+          if (b.category && b.category.trim()) {
+            usedCategoriesInTransactions.add(b.category.trim());
+          }
+        });
+        // 3. Ambil dari transaksi rutin
+        (completeAppData.recurringTransactions || []).forEach((r) => {
+          if (r.category && r.category.trim()) {
+            usedCategoriesInTransactions.add(r.category.trim());
+          }
+        });
+
+        let hasNewAdoptedCategories = false;
+        const adoptedCategories: CustomCategory[] = [
+          ...(completeAppData.customCategories || []),
+        ];
+
+        usedCategoriesInTransactions.forEach((catName) => {
+          if (!existingCatNames.has(catName.toLowerCase())) {
+            const preset = ALL_SYSTEM_CATEGORIES.find(
+              (p) =>
+                p.name.toLowerCase() === catName.toLowerCase() ||
+                (catName.toLowerCase() === "gaji" && p.id === "pemasukan")
+            );
+
+            adoptedCategories.push({
+              id: `cat_migrated_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+              name: catName.toLowerCase() === "gaji" ? "Pemasukan" : catName,
+              icon: preset ? preset.icon : "pricetag-outline",
+              color: preset ? preset.color : "#8B5CF6",
+              isCustom: true,
+              createdAt: new Date().toISOString(),
+            });
+            existingCatNames.add(catName.toLowerCase());
+            hasNewAdoptedCategories = true;
+          }
+        });
+
+        if (hasNewAdoptedCategories) {
+          completeAppData.customCategories = adoptedCategories;
+          await storageService.saveData(completeAppData);
+        }
+        await AsyncStorage.setItem(migrationCatKey, "true");
       }
 
       // Check & process any due recurring transactions upon startup

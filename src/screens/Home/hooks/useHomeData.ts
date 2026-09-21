@@ -19,6 +19,7 @@ import {
 import { Colors } from "../../../theme/theme";
 import {
   DEFAULT_CATEGORIES,
+  ALL_SYSTEM_CATEGORIES,
   CategoryItem,
 } from "../../../components/CategoryPickerModal";
 
@@ -717,7 +718,6 @@ export const useHomeData = (
 
   const resolveCategory = (categoryName: string): CategoryItem => {
     const all: CategoryItem[] = [
-      ...DEFAULT_CATEGORIES,
       ...(state.customCategories || []).map((c) => ({
         id: c.id,
         name: c.name,
@@ -726,6 +726,7 @@ export const useHomeData = (
         isCustom: true as const,
         customId: c.id,
       })),
+      ...ALL_SYSTEM_CATEGORIES,
     ];
     const found = all.find((c) => c.name === categoryName || (categoryName === "Gaji" && c.id === "pemasukan"));
     return (
