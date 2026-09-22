@@ -110,7 +110,8 @@ const TransactionsScreen: React.FC = () => {
   const { state, deleteTransaction } = useAppContext();
 
   const [searchQuery, setSearchQuery]         = useState("");
-  const [filterType, setFilterType]           = useState<"all" | "income" | "expense">("all");
+  const [filterType, setFilterType]           = useState<"all" | "income" | "expense" | "transfer">("all");
+  const [walletFilterId, setWalletFilterId]   = useState<string>("all");
   const [dateFilter, setDateFilter]           = useState<"all" | "today" | "week" | "month" | "custom">("month");
   const [customStartDate, setCustomStartDate] = useState<Date>(new Date());
   const [customEndDate, setCustomEndDate]     = useState<Date>(new Date());
@@ -157,11 +158,22 @@ const TransactionsScreen: React.FC = () => {
     return found || { id: "unknown", name: categoryName, icon: "receipt-outline", color: colors.gray400 };
   };
 
+  const getWalletName = (walletId?: string) =>
+    state.wallets.find((wallet) => wallet.id === walletId)?.name || "Dompet Utama";
+
   const filteredTransactions = useMemo(() => {
     let filtered = [...state.transactions];
 
     if (filterType !== "all") {
       filtered = filtered.filter((t) => t.type === filterType);
+    }
+
+    if (walletFilterId !== "all") {
+      filtered = filtered.filter(
+        (transaction) =>
+          transaction.walletId === walletFilterId ||
+          transaction.toWalletId === walletFilterId,
+      );
     }
 
     if (dateFilter !== "all") {
@@ -224,6 +236,8 @@ const TransactionsScreen: React.FC = () => {
           return (
             t.category.toLowerCase().includes(query) ||
             (t.description && t.description.toLowerCase().includes(query)) ||
+            getWalletName(t.walletId).toLowerCase().includes(query) ||
+            (t.toWalletId && getWalletName(t.toWalletId).toLowerCase().includes(query)) ||
             amountString.includes(query) ||
             t.date.toLowerCase().includes(query)
           );
@@ -235,7 +249,7 @@ const TransactionsScreen: React.FC = () => {
       try { return new Date(b.date).getTime() - new Date(a.date).getTime(); }
       catch { return 0; }
     });
-  }, [state.transactions, filterType, dateFilter, searchQuery, customStartDate, customEndDate]);
+  }, [state.transactions, state.wallets, filterType, walletFilterId, dateFilter, searchQuery, customStartDate, customEndDate]);
 
   interface TransactionSection {
     title: string;
@@ -379,6 +393,13 @@ const TransactionsScreen: React.FC = () => {
     setCustomEndDate(today);
   };
 
+  const resetAllFilters = () => {
+    setSearchQuery("");
+    setFilterType("all");
+    setWalletFilterId("all");
+    resetDateFilter();
+  };
+
   const applyFilter = () => {
     if (dateFilter === "custom" && customStartDate > customEndDate) {
       Alert.alert("Error", "Tanggal mulai tidak boleh setelah tanggal akhir");
@@ -402,7 +423,7 @@ const TransactionsScreen: React.FC = () => {
   };
 
   const hasActiveFilter =
-    Boolean(searchQuery || filterType !== "all" || dateFilter !== "month");
+    Boolean(searchQuery || filterType !== "all" || walletFilterId !== "all" || dateFilter !== "month");
 
   // ── Swipe actions ─────────────────────────────────────────────────────────
   const renderRightActions = (transaction: Transaction) => (
@@ -634,6 +655,7 @@ const TransactionsScreen: React.FC = () => {
             { key: "all",     label: "Semua" },
             { key: "income",  label: "Pemasukan" },
             { key: "expense", label: "Pengeluaran" },
+            { key: "transfer", label: "Transfer" },
           ].map((item) => {
             const isActive = filterType === item.key;
             const activeColor =
@@ -641,6 +663,8 @@ const TransactionsScreen: React.FC = () => {
                 ? colors.success
                 : item.key === "expense"
                 ? colors.error
+                : item.key === "transfer"
+                ? colors.accent
                 : colors.accent;
             return (
               <TouchableOpacity
@@ -670,6 +694,20 @@ const TransactionsScreen: React.FC = () => {
             );
           })}
         </View>
+
+        {state.wallets.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10 }}>
+            {[{ id: "all", name: "Semua Rekening", icon: "wallet-outline", color: colors.accent }, ...state.wallets].map((wallet) => {
+              const isActive = walletFilterId === wallet.id;
+              return (
+                <TouchableOpacity key={wallet.id} onPress={() => setWalletFilterId(wallet.id)} activeOpacity={0.7} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20, backgroundColor: isActive ? `${wallet.color}20` : colors.surface, borderWidth: 1, borderColor: isActive ? wallet.color : CARD_BORDER }}>
+                  <Ionicons name={(wallet.icon as any) || "wallet-outline"} size={12} color={isActive ? wallet.color : colors.gray400} style={{ marginRight: 5 }} />
+                  <Text numberOfLines={1} style={{ maxWidth: 130, fontSize: 11, fontWeight: isActive ? "700" : "500", color: isActive ? wallet.color : colors.gray400 }}>{wallet.name}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* Quick Date Filter Chips */}
         <ScrollView
@@ -786,7 +824,7 @@ const TransactionsScreen: React.FC = () => {
 
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
-                  Ringkasan Transaksi ({getDateFilterLabel()})
+                  Ringkasan Transaksi ({getDateFilterLabel()}{walletFilterId !== "all" ? ` · ${getWalletName(walletFilterId)}` : ""})
                 </Text>
                 <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
                   {filteredTransactions.length} transaksi
@@ -890,6 +928,16 @@ const TransactionsScreen: React.FC = () => {
           const isLast = index === section.data.length - 1;
           const categoryInfo = resolveCategory(transaction.category);
           const isIncome = transaction.type === "income";
+          const isTransfer = transaction.type === "transfer";
+          const sourceWalletName = getWalletName(transaction.walletId);
+          const destinationWalletName = transaction.toWalletId
+            ? getWalletName(transaction.toWalletId)
+            : "Rekening tujuan";
+          const transactionColor = isIncome
+            ? colors.success
+            : isTransfer
+              ? colors.accent
+              : colors.error;
 
           return (
             <View style={{ paddingHorizontal: 18 }}>
@@ -905,7 +953,7 @@ const TransactionsScreen: React.FC = () => {
                   borderBottomWidth: isLast ? 1 : 1,
                   borderColor: CARD_BORDER,
                   borderLeftWidth: 3,
-                  borderLeftColor: isIncome ? colors.success : colors.error,
+                  borderLeftColor: transactionColor,
                   overflow: "hidden",
                 }}
               >
@@ -1001,6 +1049,12 @@ const TransactionsScreen: React.FC = () => {
                           minute: "2-digit",
                         })}
                       </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginTop: 4 }}>
+                        <Ionicons name={isTransfer ? "swap-horizontal-outline" : "wallet-outline"} size={11} color={transactionColor} style={{ marginRight: 4 }} />
+                        <Text numberOfLines={1} style={{ color: transactionColor, fontSize: 10, fontWeight: "600" }}>
+                          {isTransfer ? `${sourceWalletName} → ${destinationWalletName}` : sourceWalletName}
+                        </Text>
+                      </View>
                       {transaction.subTransactions && transaction.subTransactions.length > 0 && (
                         <TouchableOpacity
                           onPress={() => setSelectedReceiptTx(transaction)}
@@ -1039,10 +1093,7 @@ const TransactionsScreen: React.FC = () => {
                         style={{
                           fontSize: 13,
                           fontWeight: "700",
-                          color:
-                            transaction.type === "income"
-                              ? colors.success
-                              : colors.error,
+                          color: transactionColor,
                         }}
                       >
                         {transaction.type === "income" ? "+" : "−"}
