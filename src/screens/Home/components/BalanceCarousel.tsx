@@ -19,9 +19,19 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { calculateDailyPlanAllowance, formatCurrency, safeNumber } from "../../../utils/calculations";
+import {
+  calculateDailyPlanAllowance,
+  formatCurrency,
+  safeNumber,
+} from "../../../utils/calculations";
 import { getJakartaDateKey } from "../../../utils/dailyCheckIn";
-import { Transaction, Budget, CustomCategory, Wallet, DailyPlan } from "../../../types";
+import {
+  Transaction,
+  Budget,
+  CustomCategory,
+  Wallet,
+  DailyPlan,
+} from "../../../types";
 
 // ─── Constants & Card Geometry (ISO 7810 Ratio ~1.58:1) ───────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -69,7 +79,7 @@ export const buildDynamicTheme = (walletColor?: string): SlideTheme => {
   const { r, g, b } = hexToRgb(base);
 
   // Muted, sophisticated matte executive card with subtle wallet tint
-  const topStop = `rgba(${Math.round(r * 0.30 + 8)}, ${Math.round(g * 0.30 + 10)}, ${Math.round(b * 0.30 + 18)}, 0.96)`;
+  const topStop = `rgba(${Math.round(r * 0.3 + 8)}, ${Math.round(g * 0.3 + 10)}, ${Math.round(b * 0.3 + 18)}, 0.96)`;
   const midStop = `rgba(${Math.round(r * 0.15 + 4)}, ${Math.round(g * 0.15 + 5)}, ${Math.round(b * 0.15 + 10)}, 0.98)`;
   const botStop = "#090D14";
 
@@ -85,25 +95,22 @@ export const buildDynamicTheme = (walletColor?: string): SlideTheme => {
 // ─── Curated Distinct Themes for Slides 2, 3, 4 ─────────────────────────────────
 export const FIXED_SLIDE_THEMES: Record<number, SlideTheme> = {
   1: {
-    // Slide 2: Total Saldo / Net Worth — Elegant Deep Forest Slate (Muted, Not Glaring)
-    accent: "#10B981",
-    gradientColors: ["#0B382B", "#07261D", "#04140F"],
+    accent: "#A78BFA",
+    gradientColors: ["#26203D", "#151226", "#090812"],
     subtlePatternColor: "rgba(255,255,255,0.05)",
-    networkColor1: "#10B981",
-    networkColor2: "#06B6D4",
+    networkColor1: "#C4B5FD",
+    networkColor2: "#7C3AED",
   },
   2: {
-    // Slide 3: Batas Uang & Uang Bertahan — Deep Midnight Navy / Slate (Muted, Not Glaring)
-    accent: "#06B6D4",
-    gradientColors: ["#0C3545", "#08232E", "#041217"],
+    accent: "#22D3EE",
+    gradientColors: ["#15313A", "#0B1C22", "#070C0E"],
     subtlePatternColor: "rgba(255,255,255,0.05)",
     networkColor1: "#06B6D4",
-    networkColor2: "#8B5CF6",
+    networkColor2: "#0EA5E9",
   },
   3: {
-    // Slide 4: Kontrol Anggaran — Deep Espresso Bronze (Muted, Not Glaring)
-    accent: "#F59E0B",
-    gradientColors: ["#381F0A", "#241304", "#120801"],
+    accent: "#FBBF24",
+    gradientColors: ["#342712", "#1D160B", "#0D0A05"],
     subtlePatternColor: "rgba(255,255,255,0.05)",
     networkColor1: "#F59E0B",
     networkColor2: "#EF4444",
@@ -129,6 +136,7 @@ export interface BalanceCarouselProps {
   dailyPlans?: DailyPlan[];
   wallets?: Wallet[];
   defaultWallet?: Wallet | null;
+  profileName?: string;
 }
 
 // ─── Helper: Teks "sisa X hari lagi" ──────────────────────────────────────────
@@ -148,13 +156,19 @@ const getPeriodEndLabel = (
   }
 
   if (timeFilter === "weekly") {
-    return days === 1 ? "Sisa 1 hari lagi (Mingguan)" : `Sisa ${days} hari lagi (Mingguan)`;
+    return days === 1
+      ? "Sisa 1 hari lagi (Mingguan)"
+      : `Sisa ${days} hari lagi (Mingguan)`;
   }
   if (timeFilter === "monthly") {
-    return days === 1 ? "Sisa 1 hari lagi bulan ini" : `Sisa ${days} hari lagi bulan ini`;
+    return days === 1
+      ? "Sisa 1 hari lagi bulan ini"
+      : `Sisa ${days} hari lagi bulan ini`;
   }
   if (timeFilter === "yearly") {
-    return days === 1 ? "Sisa 1 hari lagi tahun ini" : `Sisa ${days} hari lagi tahun ini`;
+    return days === 1
+      ? "Sisa 1 hari lagi tahun ini"
+      : `Sisa ${days} hari lagi tahun ini`;
   }
   return days === 1 ? "Sisa 1 hari lagi" : `Sisa ${days} hari lagi`;
 };
@@ -275,8 +289,22 @@ const HologramSeal = () => (
 );
 
 // ─── Dual-Circle Payment Network Emblem ─────────────────────────────────────────
-const NetworkEmblem = ({ color1 = "#EF4444", color2 = "#F59E0B" }: { color1?: string; color2?: string }) => (
-  <View style={{ flexDirection: "row", alignItems: "center", width: 30, height: 18, position: "relative" }}>
+const NetworkEmblem = ({
+  color1 = "#EF4444",
+  color2 = "#F59E0B",
+}: {
+  color1?: string;
+  color2?: string;
+}) => (
+  <View
+    style={{
+      flexDirection: "row",
+      alignItems: "center",
+      width: 30,
+      height: 18,
+      position: "relative",
+    }}
+  >
     <View
       style={{
         position: "absolute",
@@ -357,10 +385,12 @@ const LuxeCardWrapper = ({
         borderRadius: CARD_RADIUS,
       }}
     >
-      {/* Outer Metallic Bezel Ring */}
+      {/* Satu border lembut agar fokus tetap pada informasi, bukan efek dekoratif. */}
       <LinearGradient
         colors={[
-          "rgba(255,255,255,0.18)", `${theme.accent}33`, "rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)",
+          "rgba(255,255,255,0.18)",
+          `${theme.accent}55`,
+          "rgba(255,255,255,0.08)",
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -382,10 +412,12 @@ const LuxeCardWrapper = ({
             position: "relative",
           }}
         >
-          {/* Specular Diagonal Light Glare Ribbon */}
+          {/* Cahaya lembut memberi kedalaman tanpa membuat kartu ramai. */}
           <LinearGradient
             colors={[
-              "rgba(255,255,255,0.10)", "rgba(255,255,255,0.02)", "transparent",
+              "rgba(255,255,255,0.10)",
+              "rgba(255,255,255,0.02)",
+              "transparent",
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -396,12 +428,12 @@ const LuxeCardWrapper = ({
               width: CARD_WIDTH * 1.5,
               height: CARD_HEIGHT * 1.4,
               transform: [{ rotate: "-22deg" }],
-              opacity: 0.9,
+              opacity: 0.45,
               pointerEvents: "none",
             }}
           />
 
-          {/* Cybernetic Watermark Radar Rings */}
+          {/* Pola latar yang tenang. */}
           <View
             pointerEvents="none"
             style={{
@@ -426,7 +458,7 @@ const LuxeCardWrapper = ({
               borderRadius: 80,
               borderWidth: 1,
               borderColor: theme.subtlePatternColor,
-              borderStyle: "dashed",
+              opacity: 0.55,
             }}
           />
 
@@ -441,9 +473,18 @@ const LuxeCardWrapper = ({
               left: 20,
               right: 20,
               height: 1.5,
-              opacity: 0.45, }} />
+              opacity: 0.45,
+            }}
+          />
           {/* Content Layer */}
-          <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 13, justifyContent: "space-between" }}>
+          <View
+            style={{
+              flex: 1,
+              paddingHorizontal: 16,
+              paddingVertical: 13,
+              justifyContent: "space-between",
+            }}
+          >
             {children}
           </View>
         </LinearGradient>
@@ -466,6 +507,7 @@ const Slide0 = ({
 }) => {
   const wallet = props.defaultWallet;
   const theme = buildDynamicTheme(wallet?.color);
+  const profileName = (props.profileName || "MYMONEY").trim().toUpperCase();
   const [copied, setCopied] = useState(false);
 
   const formatDisplayAccountNumber = (num?: string) => {
@@ -487,18 +529,25 @@ const Slide0 = ({
     }
   };
 
-  const walletTypeLabel = {
-    bank: "Rekening Bank",
-    ewallet: "Dompet Digital",
-    cash: "Uang Tunai",
-    investment: "Investasi",
-    credit: "Kredit / Paylater",
-  }[wallet?.type || "cash"] || "Dompet";
+  const walletTypeLabel =
+    {
+      bank: "Rekening Bank",
+      ewallet: "Dompet Digital",
+      cash: "Uang Tunai",
+      investment: "Investasi",
+      credit: "Kredit / Paylater",
+    }[wallet?.type || "cash"] || "Dompet";
 
   return (
     <LuxeCardWrapper theme={theme}>
       {/* ── ROW 1 (TOP): Bank Brand + Contactless + EMV Chip + Hologram ── */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
@@ -551,7 +600,7 @@ const Slide0 = ({
       </View>
 
       {/* ── ROW 2 (HERO SALDO - BCA Mobile Style on top) ── */}
-      <View style={{ display: "none" }}>
+      <View style={{ marginTop: 5 }}>
         <View
           style={{
             flexDirection: "row",
@@ -640,6 +689,20 @@ const Slide0 = ({
         )}
       </View>
 
+      <Text
+        numberOfLines={1}
+        style={{
+          color: "rgba(255,255,255,0.88)",
+          fontSize: 13,
+          fontWeight: "800",
+          letterSpacing: 1.3,
+          marginTop: 2,
+          alignSelf: "flex-end",
+        }}
+      >
+        {profileName}
+      </Text>
+
       {/* ── ROW 3 (BOTTOM): Nomor Kartu + Detail Status + Copy Button ── */}
       <View
         style={{
@@ -648,7 +711,13 @@ const Slide0 = ({
           borderTopColor: "rgba(255,255,255,0.15)",
         }}
       >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           {/* Nomor Kartu */}
           <TouchableOpacity
             onPress={handleCopy}
@@ -668,20 +737,31 @@ const Slide0 = ({
             {wallet?.accountNumber && (
               <View
                 style={{
-                  backgroundColor: copied ? "rgba(16, 185, 129, 0.3)" : "rgba(255,255,255,0.15)",
+                  backgroundColor: copied
+                    ? "rgba(16, 185, 129, 0.3)"
+                    : "rgba(255,255,255,0.15)",
                   paddingHorizontal: 5,
                   paddingVertical: 1.5,
                   borderRadius: 5,
                 }}
               >
-                <Text style={{ color: copied ? "#10B981" : "rgba(255,255,255,0.85)", fontSize: 7.5, fontWeight: "700" }}>
+                <Text
+                  style={{
+                    color: copied ? "#10B981" : "rgba(255,255,255,0.85)",
+                    fontSize: 7.5,
+                    fontWeight: "700",
+                  }}
+                >
                   {copied ? "Tersalin! ✓" : "Salin"}
                 </Text>
               </View>
             )}
           </TouchableOpacity>
 
-          <NetworkEmblem color1={theme.networkColor1} color2={theme.networkColor2} />
+          <NetworkEmblem
+            color1={theme.networkColor1}
+            color2={theme.networkColor2}
+          />
         </View>
 
         {/* Footer info: Default status & role badge */}
@@ -692,40 +772,7 @@ const Slide0 = ({
             alignItems: "center",
             marginTop: 3,
           }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={9}
-              color="rgba(255,255,255,0.7)"
-              style={{ marginRight: 4 }}
-            />
-            <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8.5 }}>
-              {wallet?.isDefault ? "Rekening transaksi utama" : "Bukan rekening utama"}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              paddingHorizontal: 6,
-              paddingVertical: 1.5,
-              borderRadius: 5,
-              backgroundColor: "rgba(255,255,255,0.18)",
-            }}
-          >
-            <Text
-              style={{
-                color: G_TEXT,
-                fontSize: 8,
-                fontWeight: "800",
-                letterSpacing: 0.4,
-                textTransform: "uppercase",
-              }}
-            >
-              {wallet?.role || "UTAMA"}
-            </Text>
-          </View>
-        </View>
+        ></View>
       </View>
     </LuxeCardWrapper>
   );
@@ -751,7 +798,13 @@ const Slide1 = ({
   return (
     <LuxeCardWrapper theme={theme}>
       {/* Row 1: Header Brand + Netto Chip + Toggle Button */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
@@ -843,7 +896,11 @@ const Slide1 = ({
               />
               <Text style={{ color: netColor, fontSize: 8, fontWeight: "700" }}>
                 {isPositive ? "+" : "-"}
-                {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}
+                {isBalanceHidden
+                  ? "••••••"
+                  : formatCurrency(
+                      safeNumber(Math.abs(props.filteredPeriodNetto)),
+                    )}
               </Text>
             </View>
           )}
@@ -908,7 +965,8 @@ const Slide1 = ({
               marginTop: 1,
             }}
           >
-            Termasuk saldo awal {isBalanceHidden ? "••••••" : formatCurrency(props.openingBalance)}
+            Termasuk saldo awal{" "}
+            {isBalanceHidden ? "••••••" : formatCurrency(props.openingBalance)}
           </Text>
         )}
       </View>
@@ -928,7 +986,9 @@ const Slide1 = ({
           }}
         >
           <View style={{ flex: 1, alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 3 }}
+            >
               <Ionicons name="arrow-down-circle" size={10} color="#A7F3D0" />
               <Text
                 style={{
@@ -951,7 +1011,9 @@ const Slide1 = ({
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(props.filteredIncome))}
+              {isBalanceHidden
+                ? "••••••"
+                : formatCurrency(safeNumber(props.filteredIncome))}
             </Text>
           </View>
 
@@ -966,7 +1028,9 @@ const Slide1 = ({
           />
 
           <View style={{ flex: 1, alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 3 }}
+            >
               <Ionicons name="arrow-up-circle" size={10} color="#FCA5A5" />
               <Text
                 style={{
@@ -989,7 +1053,9 @@ const Slide1 = ({
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(props.filteredExpense))}
+              {isBalanceHidden
+                ? "••••••"
+                : formatCurrency(safeNumber(props.filteredExpense))}
             </Text>
           </View>
         </View>
@@ -1010,7 +1076,13 @@ const Slide1 = ({
           timeFilter={props.timeFilter}
           projectionData={props.projectionData}
         />
-        <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 8.5, fontWeight: "600" }}>
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.65)",
+            fontSize: 8.5,
+            fontWeight: "600",
+          }}
+        >
           Seluruh Kas
         </Text>
       </View>
@@ -1049,7 +1121,10 @@ const Slide2 = ({
         : (() => {
             if (cycle.endDate) {
               const endMs = new Date(cycle.endDate).getTime();
-              return Math.max(1, Math.ceil((endMs - now.getTime()) / (1000 * 60 * 60 * 24)));
+              return Math.max(
+                1,
+                Math.ceil((endMs - now.getTime()) / (1000 * 60 * 60 * 24)),
+              );
             }
             return 1;
           })();
@@ -1057,8 +1132,8 @@ const Slide2 = ({
       1,
       Math.min(
         totalDays,
-        safeNumber(cycle.daysPassed) || (totalDays - daysRemaining + 1)
-      )
+        safeNumber(cycle.daysPassed) || totalDays - daysRemaining + 1,
+      ),
     );
     cycleLabel = cycle.label || `Target ${totalDays} Hari`;
   } else if (safeNumber(props.projectionData?.daysRemaining) > 0) {
@@ -1070,14 +1145,19 @@ const Slide2 = ({
       1,
       Math.min(
         totalDays,
-        safeNumber(props.projectionData?.daysPassed) || (totalDays - daysRemaining)
-      )
+        safeNumber(props.projectionData?.daysPassed) ||
+          totalDays - daysRemaining,
+      ),
     );
     cycleLabel = props.projectionData?.label
       ? `Siklus ${props.projectionData.label}`
       : "Siklus Pembukuan";
   } else {
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const lastDay = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
     totalDays = lastDay;
     daysRemaining = Math.max(1, lastDay - now.getDate());
     daysPassed = Math.max(1, totalDays - daysRemaining);
@@ -1087,12 +1167,24 @@ const Slide2 = ({
   // Jatah aman harian dari rencana rekening yang aktif.
   const opBalance = safeNumber(props.operationalBalance);
   const todayKey = getJakartaDateKey();
-  const { activePlans, dailyAmount: planDailyTotal, nearestDaysRemaining: planDaysRemaining } =
-    calculateDailyPlanAllowance(props.dailyPlans || [], props.allTransactions || [], todayKey);
+  const {
+    activePlans,
+    dailyAmount: planDailyTotal,
+    nearestDaysRemaining: planDaysRemaining,
+  } = calculateDailyPlanAllowance(
+    props.dailyPlans || [],
+    props.allTransactions || [],
+    todayKey,
+  );
   const timeProgressPct = activePlans.length
-    ? Math.min(100, Math.max(0, Math.round(((30 - planDaysRemaining) / 30) * 100)))
+    ? Math.min(
+        100,
+        Math.max(0, Math.round(((30 - planDaysRemaining) / 30) * 100)),
+      )
     : 0;
-  const safeDaily = activePlans.length ? Math.max(0, Math.round(planDailyTotal)) : 0;
+  const safeDaily = activePlans.length
+    ? Math.max(0, Math.round(planDailyTotal))
+    : 0;
 
   // Status kas
   let statusLabel = "Kas Aman";
@@ -1125,7 +1217,7 @@ const Slide2 = ({
       withTiming(timeProgressPct, {
         duration: 800,
         easing: Easing.out(Easing.cubic),
-      })
+      }),
     );
   }, [timeProgressPct]);
 
@@ -1136,7 +1228,13 @@ const Slide2 = ({
   return (
     <LuxeCardWrapper theme={theme}>
       {/* Row 1: Header + Status Chip */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
@@ -1191,7 +1289,9 @@ const Slide2 = ({
           }}
         >
           <Ionicons name={statusIcon as any} size={11} color={statusColor} />
-          <Text style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}>
+          <Text
+            style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}
+          >
             {statusLabel}
           </Text>
         </View>
@@ -1224,18 +1324,31 @@ const Slide2 = ({
             >
               Rp •••••• / hari
             </Text>
+          ) : activePlans.length ? (
+            <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+              <AnimatedNumber
+                value={formatCurrency(safeDaily)}
+                style={{
+                  color: opBalance <= 0 ? G_ERROR : G_TEXT,
+                  fontSize: 24,
+                  lineHeight: 30,
+                }}
+              />
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: 10,
+                  fontWeight: "600",
+                  marginLeft: 4,
+                }}
+              >
+                /hari
+              </Text>
+            </View>
           ) : (
-            activePlans.length ? (
-              <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <AnimatedNumber
-                  value={formatCurrency(safeDaily)}
-                  style={{ color: opBalance <= 0 ? G_ERROR : G_TEXT, fontSize: 24, lineHeight: 30 }}
-                />
-                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "600", marginLeft: 4 }}>/hari</Text>
-              </View>
-            ) : (
-              <Text style={{ color: G_TEXT, fontSize: 20, fontWeight: "800" }}>Belum diatur</Text>
-            )
+            <Text style={{ color: G_TEXT, fontSize: 20, fontWeight: "800" }}>
+              Belum diatur
+            </Text>
           )}
         </View>
 
@@ -1274,7 +1387,9 @@ const Slide2 = ({
               textTransform: "uppercase",
             }}
           >
-            {activePlans.length ? "Rencana belanja aktif" : "Belum ada rencana aktif"}
+            {activePlans.length
+              ? "Rencana belanja aktif"
+              : "Belum ada rencana aktif"}
           </Text>
           <Text
             style={{
@@ -1283,7 +1398,9 @@ const Slide2 = ({
               fontWeight: "700",
             }}
           >
-            {activePlans.length ? `${planDaysRemaining} hari tersisa` : "Atur dari transaksi pemasukan"}
+            {activePlans.length
+              ? `${planDaysRemaining} hari tersisa`
+              : "Atur dari transaksi pemasukan"}
           </Text>
         </View>
 
@@ -1388,7 +1505,8 @@ const Slide3 = ({
   const totalSpent = budgets.reduce((sum, b) => sum + safeNumber(b.spent), 0);
   const remainingBudget = Math.max(0, totalLimit - totalSpent);
   const isOverbudget = totalLimit > 0 && totalSpent > totalLimit;
-  const burnRatePct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
+  const burnRatePct =
+    totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
 
   // Sisa hari menuju reset bulan
   const daysRemaining =
@@ -1396,7 +1514,11 @@ const Slide3 = ({
       ? safeNumber(props.projectionData?.daysRemaining)
       : (() => {
           const now = new Date();
-          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+          const lastDay = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+          ).getDate();
           return Math.max(1, lastDay - now.getDate());
         })();
 
@@ -1438,7 +1560,7 @@ const Slide3 = ({
       withTiming(hasBudgets ? Math.min(100, burnRatePct) : 0, {
         duration: 800,
         easing: Easing.out(Easing.cubic),
-      })
+      }),
     );
   }, [hasBudgets, burnRatePct]);
 
@@ -1449,7 +1571,13 @@ const Slide3 = ({
   return (
     <LuxeCardWrapper theme={theme}>
       {/* Row 1: Header + Status Chip */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
@@ -1484,7 +1612,9 @@ const Slide3 = ({
                 fontWeight: "600",
               }}
             >
-              {hasBudgets ? "Batas Belanja Pos Kategori" : "Belum Ada Pos Anggaran"}
+              {hasBudgets
+                ? "Batas Belanja Pos Kategori"
+                : "Belum Ada Pos Anggaran"}
             </Text>
           </View>
         </View>
@@ -1504,7 +1634,9 @@ const Slide3 = ({
           }}
         >
           <Ionicons name={statusIcon as any} size={11} color={statusColor} />
-          <Text style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}>
+          <Text
+            style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}
+          >
             {statusLabel}
           </Text>
         </View>
@@ -1630,7 +1762,8 @@ const Slide3 = ({
                   fontWeight: "700",
                 }}
               >
-                {burnRatePct}% ({isBalanceHidden ? "••••••" : formatCurrency(totalSpent)})
+                {burnRatePct}% (
+                {isBalanceHidden ? "••••••" : formatCurrency(totalSpent)})
               </Text>
             </View>
             <View
@@ -1661,7 +1794,8 @@ const Slide3 = ({
               }}
             >
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
-                Limit Total: {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
+                Limit Total:{" "}
+                {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
               </Text>
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
                 {budgets.length} pos aktif
@@ -1681,8 +1815,19 @@ const Slide3 = ({
               borderColor: "rgba(245,166,35,0.2)",
             }}
           >
-            <Ionicons name="bulb-outline" size={12} color={theme.accent} style={{ marginRight: 5 }} />
-            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 8.5, fontWeight: "600" }}>
+            <Ionicons
+              name="bulb-outline"
+              size={12}
+              color={theme.accent}
+              style={{ marginRight: 5 }}
+            />
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 8.5,
+                fontWeight: "600",
+              }}
+            >
               Pasang limit belanja bulanan di menu Anggaran.
             </Text>
           </View>
@@ -1701,7 +1846,9 @@ const Slide3 = ({
         }}
       >
         <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 8 }}>
-          {hasBudgets ? "Evaluasi batas anggaran berkala" : "Disiplin finansial dimulai dari limit"}
+          {hasBudgets
+            ? "Evaluasi batas anggaran berkala"
+            : "Disiplin finansial dimulai dari limit"}
         </Text>
         <Text style={{ color: theme.accent, fontSize: 8.5, fontWeight: "700" }}>
           Target Plafon
@@ -1727,11 +1874,7 @@ const CarouselItem = ({
 }) => {
   const step = CARD_WIDTH + CARD_GAP;
   const animStyle = useAnimatedStyle(() => {
-    const inputRange = [
-      (index - 1) * step,
-      index * step,
-      (index + 1) * step,
-    ];
+    const inputRange = [(index - 1) * step, index * step, (index + 1) * step];
     return {
       transform: [
         {
@@ -1753,11 +1896,29 @@ const CarouselItem = ({
   });
 
   return (
-    <Animated.View style={[{ width: CARD_WIDTH, marginRight: CARD_GAP }, animStyle]}>
-      {index === 0 && <Slide0 props={carouselProps} isBalanceHidden={isBalanceHidden} onToggleBalance={onToggleBalance} />}
-      {index === 1 && <Slide1 props={carouselProps} isBalanceHidden={isBalanceHidden} onToggleBalance={onToggleBalance} />}
-      {index === 2 && <Slide2 props={carouselProps} isBalanceHidden={isBalanceHidden} />}
-      {index === 3 && <Slide3 props={carouselProps} isBalanceHidden={isBalanceHidden} />}
+    <Animated.View
+      style={[{ width: CARD_WIDTH, marginRight: CARD_GAP }, animStyle]}
+    >
+      {index === 0 && (
+        <Slide0
+          props={carouselProps}
+          isBalanceHidden={isBalanceHidden}
+          onToggleBalance={onToggleBalance}
+        />
+      )}
+      {index === 1 && (
+        <Slide1
+          props={carouselProps}
+          isBalanceHidden={isBalanceHidden}
+          onToggleBalance={onToggleBalance}
+        />
+      )}
+      {index === 2 && (
+        <Slide2 props={carouselProps} isBalanceHidden={isBalanceHidden} />
+      )}
+      {index === 3 && (
+        <Slide3 props={carouselProps} isBalanceHidden={isBalanceHidden} />
+      )}
     </Animated.View>
   );
 };
@@ -1779,11 +1940,7 @@ const PaginationDot = ({
 
   const step = CARD_WIDTH + CARD_GAP;
   const dotStyle = useAnimatedStyle(() => {
-    const inputRange = [
-      (index - 1) * step,
-      index * step,
-      (index + 1) * step,
-    ];
+    const inputRange = [(index - 1) * step, index * step, (index + 1) * step];
     return {
       width: interpolate(
         scrollX.value,

@@ -714,6 +714,7 @@ const HomeScreen: React.FC = () => {
             state.wallets?.find((w) => w.isDefault) ??
             (state.wallets?.length > 0 ? state.wallets[0] : null)
           }
+          profileName={state.userProfile?.name}
         />
 
         {/* ============================================================

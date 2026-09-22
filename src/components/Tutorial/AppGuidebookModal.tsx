@@ -193,7 +193,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Saldo Total adalah isi seluruh brankas besi di kamar Anda (termasuk tabungan dan cadangan dana). Sedangkan Sisa Kas Bulan Ini adalah uang di dompet belanja yang dialokasikan untuk kebutuhan hidup sehari-hari hingga akhir bulan pembukuan.",
         summary:
-          "Membedakan dengan tegas antara total kekayaan kas bersih yang Anda miliki dengan jatah uang yang dialokasikan untuk operasional bulan berjalan saat ini.",
+          "Membedakan dengan tegas antara total kekayaan kas bersih yang Anda miliki dengan jatah uang belanja bulan berjalan saat ini.",
         howItWorks: [
           "Slide Saldo Total: Akumulasi seluruh pemasukan dikurangi seluruh pengeluaran sejak pertama kali mencatat.",
           "Slide Sisa Kas Bulan Ini: Pemasukan bulan berjalan dikurangi belanja bulan berjalan.",
@@ -267,7 +267,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
           "Perhatikan seluruh kartu grafik, total pengeluaran, dan pemasukan langsung menyesuaikan dalam sekejap.",
         ],
         impact:
-          "Memungkinkan Anda melakukan evaluasi operasional jangka pendek (mingguan) maupun evaluasi strategis jangka panjang (tahunan) dalam 1 sentuhan.",
+          "Memungkinkan Anda melakukan evaluasi jangka pendek (mingguan) maupun evaluasi strategis jangka panjang (tahunan) dalam 1 sentuhan.",
         proTip:
           "Gunakan filter 'Mingguan' saat akhir pekan untuk mengevaluasi apakah pengeluaran sabtu-minggu Anda terkendali.",
         actionTarget: "Home",
@@ -919,10 +919,10 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Ibarat seorang bendahara keluarga yang menyimpan uang di beberapa tempat berbeda: dompet fisik untuk belanja harian, rekening bank untuk dana cadangan, dan celengan kusus untuk tabungan jangka panjang. Setiap kantong tahu perannya masing-masing, dan total kekayaan adalah jumlah seluruh kantong.",
         summary:
-          "Mengelola beberapa sumber dana (Tunai, Bank, E-Wallet, Kartu Kredit) secara bersamaan dalam satu aplikasi. Setiap dompet memiliki peran berbeda: Operasional (belanja harian) atau Tabungan (dana cadangan/investasi).",
+          "Mengelola beberapa sumber dana (Tunai, Bank, E-Wallet, Kartu Kredit) secara bersamaan dalam satu aplikasi. Setiap dompet dapat diberi label, misalnya Belanja atau Tabungan.",
         howItWorks: [
-          "Peran Dompet Operasional: Dompet bertipe 'Operasional' (misal: Tunai, GoPay, Dana) adalah sumber dana aktif untuk transaksi belanja sehari-hari. Saldo dompet ini ditampilkan pada indikator 'Dompet Aktif' di Beranda.",
-          "Peran Dompet Tabungan: Dompet bertipe 'Tabungan' (misal: Rekening BCA, Deposito) adalah dana cadangan yang tidak ikut dihitung sebagai kas belanja harian. Ini memisahkan uang yang 'terkunci' dari uang operasional.",
+          "Label Belanja: Dompet berlabel 'Belanja' (misal: Tunai, GoPay, Dana) cocok untuk transaksi sehari-hari dan ikut dihitung sebagai uang siap dipakai.",
+          "Label Tabungan: Dompet berlabel 'Tabungan' (misal: Rekening BCA, Deposito) cocok untuk dana cadangan yang tidak ikut dihitung sebagai uang siap dipakai.",
           "Dompet Default: Dompet yang dicentang sebagai 'Default' akan otomatis dipilih saat mencatat transaksi baru. Anda tetap bisa memilih dompet lain secara manual di form transaksi.",
           "Saldo Real-time: Setiap dompet otomatis menghitung ulang saldo berdasarkan seluruh riwayat transaksi yang terhubung kepadanya. Tidak ada angka yang perlu diinput manual.",
           "Migrasi Otomatis: Semua transaksi lama sebelum fitur ini diaktifkan otomatis dipindahkan ke 'Dompet Kas Utama' tanpa kehilangan satu data pun.",
@@ -932,7 +932,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
           "Tekan tombol '+' atau 'Tambah Dompet Baru'.",
           "Beri nama dompet (misal: GoPay, BCA Tabungan, Tunai Dompet).",
           "Pilih tipe ikon dan warna unik untuk memudahkan identifikasi visual.",
-          "Pilih Peran: 'Operasional' untuk belanja harian, 'Tabungan' untuk dana cadangan.",
+          "Pilih label: 'Belanja' untuk kebutuhan harian atau 'Tabungan' untuk dana cadangan.",
           "Masukkan saldo awal jika ada (misal: Rp 500.000 untuk saldo GoPay saat ini).",
           "Simpan. Dompet baru siap digunakan sebagai sumber dana transaksi!",
         ],

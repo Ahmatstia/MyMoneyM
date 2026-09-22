@@ -502,7 +502,9 @@ const WalletsScreen: React.FC = () => {
               ? colors.success
               : colors.info;
 
-            const roleDisplayName = wallet.role
+            const roleDisplayName = wallet.role === "operational"
+              ? "Belanja"
+              : wallet.role
               ? wallet.role.length > 10
                 ? wallet.role.slice(0, 9) + "…"
                 : wallet.role
@@ -628,32 +630,8 @@ const WalletsScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Role Chip + Quick Actions */}
+                  {/* Quick actions */}
                   <View style={tw`flex-row items-center gap-1.5`}>
-                    <View
-                      style={[
-                        tw`flex-row items-center px-2 py-0.8 rounded-md`,
-                        { backgroundColor: `${roleBadgeColor}15` },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          tw`w-1.5 h-1.5 rounded-full mr-1`,
-                          { backgroundColor: roleBadgeColor },
-                        ]}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 9,
-                          fontWeight: "700",
-                          color: roleBadgeColor,
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {roleDisplayName}
-                      </Text>
-                    </View>
-
                     {/* Edit button */}
                     <TouchableOpacity
                       onPress={() => handleOpenEdit(wallet)}

@@ -275,7 +275,9 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 ? "Paylater"
                 : "Tunai";
 
-            const roleDisplayName = wallet.role
+            const roleDisplayName = wallet.role === "operational"
+              ? "Belanja"
+              : wallet.role
               ? wallet.role.length > 8
                 ? wallet.role.slice(0, 7) + "…"
                 : wallet.role
@@ -369,37 +371,6 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                     {wallet.isDefault && (
                       <Ionicons name="star" size={10} color="#F59E0B" style={{ marginRight: 1 }} />
                     )}
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 5,
-                        paddingVertical: 1.5,
-                        borderRadius: 5,
-                        backgroundColor: isLiquid ? `${colors.success}18` : `${colors.info}18`,
-                        gap: 3,
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: 2,
-                          backgroundColor: isLiquid ? colors.success : colors.info,
-                        }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 8,
-                          fontWeight: "700",
-                          color: isLiquid ? colors.success : colors.info,
-                          textTransform: "capitalize",
-                        }}
-                        numberOfLines={1}
-                      >
-                        {roleDisplayName}
-                      </Text>
-                    </View>
                   </View>
                 </View>
 
@@ -451,7 +422,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
             onPress={onAddWalletPress}
             activeOpacity={0.7}
             style={{
-              width: 76,
+              width: 136,
               height: 84,
               backgroundColor: `${colors.surface}80`,
               borderRadius: 14,
@@ -484,7 +455,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 textAlign: "center",
               }}
             >
-              Tambah
+              Tambah Rekening
             </Text>
           </TouchableOpacity>
         </ScrollView>
