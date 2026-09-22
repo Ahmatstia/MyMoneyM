@@ -19,6 +19,7 @@ import {
   CustomCategory,
   RecurringTransaction,
   Wallet,
+  DailyPlan,
 } from "../types";
 import { storageService, createDefaultWallet } from "../utils/storage";
 import {
@@ -26,6 +27,7 @@ import {
   calculateWalletBalances,
   calculatePartitionedBalances,
   DEFAULT_WALLET_ID,
+  formatToDateKey,
   safeNumber,
 } from "../utils/calculations";
 import { getJakartaDateKey, calculateDailyCheckInStreak } from "../utils/dailyCheckIn";
@@ -65,6 +67,7 @@ interface AppContextType {
   // 🔹 TRANSACTIONS
   addTransaction: (
     transaction: Omit<Transaction, "id" | "createdAt">,
+    replaceDailyPlan?: boolean,
   ) => Promise<void>;
   editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
@@ -164,6 +167,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const defaultAppState: AppState = {
   transactions: [],
   wallets: [createDefaultWallet(0)],
+  dailyPlans: [],
   budgets: [],
   savings: [],
   savingsTransactions: [],
@@ -227,6 +231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         debts: appData.debts || [],
         recurringTransactions: appData.recurringTransactions || [],
         customCategories: appData.customCategories || [],
+        dailyPlans: appData.dailyPlans || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
         paydayCutoff: appData.paydayCutoff || 1,
       };
@@ -396,6 +401,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         debts: appData.debts || [],
         recurringTransactions: appData.recurringTransactions || [],
         customCategories: appData.customCategories || [],
+        dailyPlans: appData.dailyPlans || [],
         userProfile: appData.userProfile || defaultAppState.userProfile,
       };
       if (isMounted.current) {
@@ -541,21 +547,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // ========== TRANSACTIONS FUNCTIONS ==========
   const addTransaction = async (
     transaction: Omit<Transaction, "id" | "createdAt">,
+    replaceDailyPlan: boolean = false,
   ) => {
     const defaultWalletId =
       state.wallets?.find((w) => w.isDefault)?.id ||
       state.wallets?.[0]?.id ||
       DEFAULT_WALLET_ID;
 
+    const cycleDays =
+      transaction.type === "income" &&
+      typeof transaction.cyclePeriod === "number" &&
+      transaction.cyclePeriod > 0
+        ? Math.floor(transaction.cyclePeriod)
+        : undefined;
+    const planStartDate = (transaction.date || getJakartaDateKey()).slice(0, 10);
+    const planEnd = new Date(`${planStartDate}T12:00:00`);
+    if (cycleDays) planEnd.setDate(planEnd.getDate() + cycleDays - 1);
+    const planEndDate = cycleDays
+      ? formatToDateKey(planEnd)
+      : undefined;
+    const conflicts = cycleDays && planEndDate
+      ? state.dailyPlans.filter(
+          (plan) =>
+            plan.walletId === (transaction.walletId || defaultWalletId) &&
+            plan.isActive &&
+            plan.endDate >= planStartDate &&
+            plan.startDate <= planEndDate,
+        )
+      : [];
+    if (conflicts.length && !replaceDailyPlan) {
+      throw new Error("DAILY_PLAN_CONFLICT");
+    }
+
+    // cyclePeriod hanya input form untuk membuat DailyPlan; jangan simpan aturan lama
+    // karena ia membuat filter global mencampur rekening yang berbeda.
+    const { cyclePeriod: _cyclePeriod, ...transactionData } = transaction;
     const newTransaction: Transaction = {
-      ...transaction,
+      ...transactionData,
       id: generateTransactionId(),
       createdAt: new Date().toISOString(),
       walletId: transaction.walletId || defaultWalletId,
     };
 
     const updatedTransactions = [newTransaction, ...state.transactions];
-    const newState = computeFullState(state, updatedTransactions);
+    const now = new Date().toISOString();
+    const dailyPlans = cycleDays && planEndDate
+      ? [
+          ...state.dailyPlans.map((plan) =>
+            conflicts.some((conflict) => conflict.id === plan.id)
+              ? { ...plan, isActive: false, endedAt: now }
+              : plan,
+          ),
+          {
+            id: `daily_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            walletId: transaction.walletId || defaultWalletId,
+            amount: safeNumber(transaction.amount),
+            sourceTransactionId: newTransaction.id,
+            startDate: planStartDate,
+            endDate: planEndDate,
+            isActive: true,
+            createdAt: now,
+          },
+        ]
+      : state.dailyPlans;
+    const newState = computeFullState(state, updatedTransactions, { dailyPlans });
 
     setState(newState);
     await storageService.saveData(newState);
@@ -581,11 +636,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const editTransaction = async (id: string, updates: Partial<Transaction>) => {
+    const existing = state.transactions.find((transaction) => transaction.id === id);
+    if (!existing) return;
+    const hasCycleUpdate = Object.prototype.hasOwnProperty.call(updates, "cyclePeriod");
+    const nextTransaction = { ...existing, ...updates };
+    let dailyPlans = state.dailyPlans;
+
+    if (hasCycleUpdate) {
+      const cycleDays =
+        nextTransaction.type === "income" &&
+        typeof updates.cyclePeriod === "number" &&
+        updates.cyclePeriod > 0
+          ? Math.floor(updates.cyclePeriod)
+          : undefined;
+      const relatedPlans = state.dailyPlans.filter((plan) => plan.sourceTransactionId === id);
+      const now = new Date().toISOString();
+
+      if (!cycleDays) {
+        dailyPlans = state.dailyPlans.map((plan) =>
+          plan.sourceTransactionId === id && plan.isActive
+            ? { ...plan, isActive: false, endedAt: now }
+            : plan,
+        );
+      } else {
+        const startDate = (nextTransaction.date || getJakartaDateKey()).slice(0, 10);
+        const end = new Date(`${startDate}T12:00:00`);
+        end.setDate(end.getDate() + cycleDays - 1);
+        const endDate = formatToDateKey(end);
+        const walletId = nextTransaction.walletId || DEFAULT_WALLET_ID;
+        const conflicts = state.dailyPlans.filter(
+          (plan) =>
+            !relatedPlans.some((related) => related.id === plan.id) &&
+            plan.walletId === walletId &&
+            plan.isActive &&
+            plan.endDate >= startDate &&
+            plan.startDate <= endDate,
+        );
+        if (conflicts.length) throw new Error("DAILY_PLAN_CONFLICT");
+
+        const plan = {
+          id: relatedPlans[0]?.id || `daily_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          walletId,
+          amount: safeNumber(nextTransaction.amount),
+          sourceTransactionId: id,
+          startDate,
+          endDate,
+          isActive: true,
+          createdAt: relatedPlans[0]?.createdAt || now,
+        };
+        dailyPlans = relatedPlans.length
+          ? state.dailyPlans.map((item) =>
+              item.id === relatedPlans[0].id ? { ...item, ...plan, endedAt: undefined } : item,
+            )
+          : [...state.dailyPlans, plan];
+      }
+    }
+
     const updatedTransactions = state.transactions.map((t) =>
-      t.id === id ? { ...t, ...updates } : t,
+      t.id === id ? { ...nextTransaction, cyclePeriod: undefined } : t,
     );
 
-    const newState = computeFullState(state, updatedTransactions);
+    const newState = computeFullState(state, updatedTransactions, { dailyPlans });
 
     setState(newState);
     await storageService.saveData(newState);
@@ -599,7 +710,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const updatedTransactions = state.transactions.filter((t) => t.id !== id);
-    const newState = computeFullState(state, updatedTransactions);
+    const dailyPlans = state.dailyPlans.map((plan) =>
+      plan.sourceTransactionId === id && plan.isActive
+        ? { ...plan, isActive: false, endedAt: new Date().toISOString() }
+        : plan,
+    );
+    const newState = computeFullState(state, updatedTransactions, { dailyPlans });
 
     setState(newState);
     await storageService.saveData(newState);
@@ -668,35 +784,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const targetWallet = wallets.find((w) => w.id === id);
     if (!targetWallet) return;
 
+    const hasHistory = state.transactions.some(
+      (tx) => tx.walletId === id || tx.toWalletId === id,
+    );
+    const hasPlan = state.dailyPlans.some((plan) => plan.walletId === id);
+    if (hasHistory || hasPlan) {
+      throw new Error(
+        "Rekening yang memiliki transaksi atau batas aktif tidak dapat dihapus. Hapus atau pindahkan riwayatnya terlebih dahulu.",
+      );
+    }
+
     let remainingWallets = wallets.filter((w) => w.id !== id);
 
     if (targetWallet.isDefault && remainingWallets.length > 0) {
       remainingWallets[0] = { ...remainingWallets[0], isDefault: true };
     }
 
-    const fallbackWalletId = remainingWallets[0].id;
-
-    // Reassign transactions referencing this wallet to fallback
-    const updatedTransactions = state.transactions.map((tx) => {
-      let modified = false;
-      let newWalletId = tx.walletId;
-      let newToWalletId = tx.toWalletId;
-
-      if (tx.walletId === id) {
-        newWalletId = fallbackWalletId;
-        modified = true;
-      }
-      if (tx.toWalletId === id) {
-        newToWalletId = fallbackWalletId;
-        modified = true;
-      }
-
-      return modified
-        ? { ...tx, walletId: newWalletId, toWalletId: newToWalletId }
-        : tx;
-    });
-
-    const newState = computeFullState(state, updatedTransactions, {
+    const newState = computeFullState(state, state.transactions, {
       wallets: remainingWallets,
     });
 

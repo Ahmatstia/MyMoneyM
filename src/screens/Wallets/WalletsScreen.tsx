@@ -211,7 +211,7 @@ const WalletsScreen: React.FC = () => {
 
     Alert.alert(
       "Hapus Rekening",
-      `Apakah Anda yakin ingin menghapus rekening "${w.name}"? Transaksi yang terkait akan dialihkan ke rekening utama secara aman.`,
+      `Hapus rekening "${w.name}"? Rekening yang sudah memiliki transaksi atau batas uang tidak dapat dihapus agar riwayat saldo tidak berubah.`,
       [
         { text: "Batal", style: "cancel" },
         {
@@ -1249,4 +1249,3 @@ const WalletsScreen: React.FC = () => {
 };
 
 export default WalletsScreen;
-

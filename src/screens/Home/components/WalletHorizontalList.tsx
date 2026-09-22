@@ -128,10 +128,6 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 height: 6,
                 borderRadius: 3,
                 backgroundColor: colors.success,
-                shadowColor: colors.success,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 3,
               }}
             />
             <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
@@ -168,10 +164,6 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 height: 6,
                 borderRadius: 3,
                 backgroundColor: colors.info,
-                shadowColor: colors.info,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 3,
               }}
             />
             <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>

@@ -21,6 +21,19 @@ export interface Wallet {
   updatedAt?: string; // ISO string
 }
 
+export interface DailyPlan {
+  id: string;
+  walletId: string;
+  /** Nominal pemasukan yang menjadi dasar batas, bukan saldo rekening saat ini. */
+  amount?: number;
+  sourceTransactionId?: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+  endedAt?: string;
+}
+
 export interface CustomCategory {
   id: string; // Unique ID, e.g. "cat_abc123"
   name: string; // Display name, e.g. "Vape"
@@ -173,6 +186,7 @@ export interface AppState {
   // Financial data
   transactions: Transaction[];
   wallets: Wallet[]; // Multi-wallet accounts
+  dailyPlans: DailyPlan[];
   budgets: Budget[];
   savings: Savings[];
   savingsTransactions: SavingsTransaction[];

@@ -17,6 +17,7 @@ import {
   calculateFinancialHealthScore,
 } from "../../../utils/analytics";
 import { Colors } from "../../../theme/theme";
+import { getJakartaDateKey } from "../../../utils/dailyCheckIn";
 import {
   DEFAULT_CATEGORIES,
   ALL_SYSTEM_CATEGORIES,
@@ -37,14 +38,26 @@ export const useHomeData = (
     return cycle;
   }, [state.transactions, state.paydayCutoff]);
 
+  const activeDailyPlans = useMemo(
+    () => {
+      const today = getJakartaDateKey();
+      return (state.dailyPlans || []).filter(
+        (plan) => plan.isActive && plan.startDate <= today && plan.endDate >= today,
+      );
+    },
+    [state.dailyPlans],
+  );
+
   const filteredTransactions = useMemo(
     () =>
       filterTransactionsByTime(
         state.transactions,
         timeFilter,
         state.paydayCutoff,
+        state.dailyPlans,
+        false,
       ),
-    [state.transactions, timeFilter, state.paydayCutoff],
+    [state.transactions, timeFilter, state.paydayCutoff, state.dailyPlans],
   );
 
   const {
@@ -62,23 +75,15 @@ export const useHomeData = (
     const now = new Date();
     let startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     startDate.setHours(0, 0, 0, 0);
-    let cycleIncomeId: string | undefined;
 
-    if (timeFilter === "weekly") {
-      const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
-      if (cycle && cycle.period <= 14) {
-        startDate = cycle.startDate;
-        cycleIncomeId = cycle.cycleIncomeId;
-      } else {
-        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
-        startDate.setDate(now.getDate() - currentDay + 1);
-      }
+    if (timeFilter === "target") {
+      const starts = activeDailyPlans.map((plan) => plan.startDate).sort();
+      if (starts.length) startDate = new Date(`${starts[0]}T00:00:00`);
+    } else if (timeFilter === "weekly") {
+      const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+      startDate.setDate(now.getDate() - currentDay + 1);
     } else if (timeFilter === "monthly") {
-      const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
-      if (cycle && cycle.period > 14) {
-        startDate = cycle.startDate;
-        cycleIncomeId = cycle.cycleIncomeId;
-      } else if (state.paydayCutoff && state.paydayCutoff > 1) {
+      if (state.paydayCutoff && state.paydayCutoff > 1) {
         const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
         startDate = cycleRange.startDate;
       } else {
@@ -91,9 +96,9 @@ export const useHomeData = (
     return calculateOpeningBalance(
       state.transactions,
       startDate,
-      cycleIncomeId,
+      undefined,
     );
-  }, [state.transactions, timeFilter, state.paydayCutoff]);
+  }, [state.transactions, timeFilter, state.paydayCutoff, activeDailyPlans]);
 
   const filteredBalance = useMemo(
     () => openingBalance + filteredPeriodNetto,
@@ -486,34 +491,32 @@ export const useHomeData = (
   );
 
   const projectionData = useMemo(() => {
-    if (!hasFinancialData || timeFilter === "all") return null;
+    if (!hasFinancialData) return null;
 
     const now = new Date();
+    const selectedCycle = null;
     let startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     let endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
     let label = "akhir bulan";
 
-    if (timeFilter === "weekly") {
-      if (activeCycle && activeCycle.period <= 14) {
-        startDate = activeCycle.startDate;
-        endDate = activeCycle.endDate;
-        label = "akhir target bertahan";
-      } else {
-        const currentDay = now.getDay() === 0 ? 7 : now.getDay();
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - currentDay + 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
-        label = "akhir minggu";
-      }
+    if (timeFilter === "target" && activeDailyPlans.length) {
+      const starts = activeDailyPlans.map((plan) => plan.startDate).sort();
+      const ends = activeDailyPlans.map((plan) => plan.endDate).sort();
+      startDate = new Date(`${starts[0]}T00:00:00`);
+      endDate = new Date(`${ends[ends.length - 1]}T23:59:59`);
+      label = "Batas Aktif";
+    } else if (timeFilter === "weekly") {
+      const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - currentDay + 1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+      label = "akhir minggu";
     } else if (timeFilter === "monthly") {
-      if (activeCycle && activeCycle.period > 14) {
-        startDate = activeCycle.startDate;
-        endDate = activeCycle.endDate;
-        label = "akhir bulan pembukuan";
-      } else if (state.paydayCutoff && state.paydayCutoff > 1) {
+      if (state.paydayCutoff && state.paydayCutoff > 1) {
         const cycleRange = getMonthlyCycleRange(state.paydayCutoff, now);
         startDate = cycleRange.startDate;
         endDate = cycleRange.endDate;
@@ -527,7 +530,7 @@ export const useHomeData = (
     } else if (timeFilter === "yearly") {
       startDate = new Date(now.getFullYear(), 0, 1);
       endDate = new Date(now.getFullYear(), 11, 31);
-      endDate.setHours(23, 59, 59, 999); // FIX-007: Set end time to avoid off-by-1 error
+      endDate.setHours(23, 59, 59, 999);
       label = "akhir tahun";
     }
 
@@ -542,11 +545,13 @@ export const useHomeData = (
         now,
       ),
       label,
+      activeCycle: selectedCycle,
     };
   }, [
     hasFinancialData,
     timeFilter,
     activeCycle,
+    activeDailyPlans,
     filteredIncome,
     filteredExpense,
     openingBalance,

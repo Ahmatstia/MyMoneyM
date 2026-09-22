@@ -13,7 +13,7 @@ import {
 } from "./triggers";
 import {
   calculateTotals,
-  getActiveCycleInfo,
+  calculateDailyPlanAllowance,
   formatCurrency,
 } from "../calculations";
 
@@ -859,41 +859,18 @@ export class NotificationService {
         return;
       }
 
-      const activeCycle = getActiveCycleInfo(appState.transactions);
       const totals = calculateTotals(appState.transactions);
+      const planSummary = calculateDailyPlanAllowance(
+        appState.dailyPlans || [],
+        appState.transactions,
+      );
 
       let title = "";
       let body = "";
 
-      if (activeCycle) {
-        const now = new Date();
-        const end = new Date(activeCycle.endDate);
-        const msDiff = end.getTime() - now.getTime();
-        const daysRemaining = Math.max(0, Math.ceil(msDiff / (1000 * 60 * 60 * 24)));
-
-        // Hitung pengeluaran dalam siklus ini
-        const cycleExpenses = appState.transactions
-          .filter((t) => {
-            const tDate = new Date(t.date);
-            return (
-              t.type === "expense" &&
-              tDate >= activeCycle.startDate &&
-              tDate <= activeCycle.endDate
-            );
-          })
-          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-
-        // Cari income pembuka siklus
-        const cycleIncome = activeCycle.cycleIncomeId
-          ? appState.transactions.find((t) => t.id === activeCycle.cycleIncomeId)
-          : null;
-        const cycleIncomeAmount = cycleIncome
-          ? Number(cycleIncome.amount) || 0
-          : totals.totalIncome;
-
-        const remainingCycleBalance = cycleIncomeAmount - cycleExpenses;
-        const safeDays = Math.max(1, daysRemaining);
-        const dailyPacing = Math.max(0, Math.round(remainingCycleBalance / safeDays));
+      if (planSummary.activePlans.length) {
+        const daysRemaining = planSummary.nearestDaysRemaining;
+        const dailyPacing = Math.max(0, Math.round(planSummary.dailyAmount));
 
         const pacingText = formatCurrency(dailyPacing);
         const balanceText = formatCurrency(totals.balance);

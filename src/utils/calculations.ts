@@ -1,5 +1,5 @@
 // File: src/utils/calculations.ts
-import { Transaction, Budget, Savings, Wallet } from "../types";
+import { Transaction, Budget, Savings, Wallet, DailyPlan } from "../types";
 
 export const DEFAULT_WALLET_ID = "w_default_cash";
 
@@ -264,7 +264,7 @@ export const formatNumber = (num: number): string => {
 };
 
 // Filter transactions by time period (Weekly, Monthly, Yearly, All)
-export type TimeFilter = "weekly" | "monthly" | "yearly" | "all";
+export type TimeFilter = "target" | "weekly" | "monthly" | "yearly" | "all";
 
 export interface MonthlyCycleRange {
   startDate: Date;
@@ -369,20 +369,61 @@ export const getActiveCycleInfo = (
   paydayCutoff: number = 1,
 ) => {
   const now = new Date();
+  const endOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
+
   let latestCycleStart: Date | null = null;
-  let latestTime = 0;
+  let latestTime = -1;
+  let latestFullTime = -1;
   let activePeriod = 7;
   let cycleIncomeId: string | undefined = undefined;
 
   for (let i = 0; i < transactions.length; i++) {
-    if (transactions[i].type === "income" && transactions[i].cyclePeriod) {
-      const tDate = new Date(transactions[i].date);
+    const t = transactions[i];
+    if (
+      t.type === "income" &&
+      typeof t.cyclePeriod === "number" &&
+      Number.isFinite(t.cyclePeriod) &&
+      t.cyclePeriod > 0
+    ) {
+      // Parse local date safely to prevent UTC-midnight timezone mismatch
+      const dateStr = (t.date || "").slice(0, 10);
+      const parts = dateStr.split("-");
+      const tDate =
+        parts.length === 3
+          ? new Date(
+              parseInt(parts[0], 10),
+              parseInt(parts[1], 10) - 1,
+              parseInt(parts[2], 10),
+              0,
+              0,
+              0,
+              0,
+            )
+          : new Date(t.date);
+
       const time = tDate.getTime();
-      if (time <= now.getTime() && time > latestTime) {
-        latestTime = time;
-        latestCycleStart = tDate;
-        activePeriod = transactions[i].cyclePeriod!;
-        cycleIncomeId = transactions[i].id;
+      const fullTime = t.createdAt ? new Date(t.createdAt).getTime() : time;
+
+      // Allow today's transactions and pick the true latest transaction (by date, and by createdAt/array position if dates match)
+      if (time <= endOfToday.getTime()) {
+        if (
+          time > latestTime ||
+          (time === latestTime && fullTime > latestFullTime)
+        ) {
+          latestTime = time;
+          latestFullTime = fullTime;
+          latestCycleStart = tDate;
+          activePeriod = Number(t.cyclePeriod);
+          cycleIncomeId = t.id;
+        }
       }
     }
   }
@@ -411,16 +452,31 @@ export const getActiveCycleInfo = (
     endDate.setDate(startDate.getDate() + activePeriod - 1);
     endDate.setHours(23, 59, 59, 999);
 
+    const msToNext = endDate.getTime() - now.getTime();
+    const daysRemaining = Math.max(
+      0,
+      Math.ceil(msToNext / (1000 * 60 * 60 * 24)),
+    );
+    const daysPassed = Math.max(
+      1,
+      Math.min(activePeriod, activePeriod - daysRemaining + 1),
+    );
+
     let label =
       activePeriod === 7
         ? "Target 7 Hari"
-        : activePeriod === 30
-          ? "Target 30 Hari"
-          : `Target ${activePeriod} Hari`;
+        : activePeriod === 14
+          ? "Target 14 Hari"
+          : activePeriod === 30
+            ? "Target 30 Hari"
+            : `Target ${activePeriod} Hari`;
 
     return {
       hasCycle: true,
       period: activePeriod,
+      totalDays: activePeriod,
+      daysRemaining,
+      daysPassed,
       startDate,
       endDate,
       label,
@@ -435,6 +491,9 @@ export const getActiveCycleInfo = (
     return {
       hasCycle: true,
       period: cycleRange.totalDays,
+      totalDays: cycleRange.totalDays,
+      daysRemaining: cycleRange.daysRemaining,
+      daysPassed: cycleRange.daysPassed,
       startDate: cycleRange.startDate,
       endDate: cycleRange.endDate,
       label: `Bulan Ini (${cycleRange.label})`,
@@ -450,8 +509,23 @@ export const filterTransactionsByTime = (
   transactions: Transaction[],
   timeFilter: TimeFilter,
   paydayCutoff: number = 1,
+  dailyPlans: DailyPlan[] = [],
+  useIncomeCycle: boolean = true,
 ): Transaction[] => {
   if (timeFilter === "all" || !transactions?.length) return transactions;
+
+  if (timeFilter === "target") {
+    const plans = dailyPlans.filter((plan) => plan.isActive);
+    return transactions.filter((transaction) => {
+      const date = (transaction.date || "").slice(0, 10);
+      return plans.some(
+        (plan) =>
+          date >= plan.startDate &&
+          date <= plan.endDate &&
+          (transaction.walletId === plan.walletId || transaction.toWalletId === plan.walletId),
+      );
+    });
+  }
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -465,7 +539,7 @@ export const filterTransactionsByTime = (
   let startOfMonth: Date | undefined, endOfMonth: Date | undefined;
   let monthlyCycleIncomeId: string | undefined;
 
-  const cycle = getActiveCycleInfo(transactions, paydayCutoff);
+  const cycle = useIncomeCycle ? getActiveCycleInfo(transactions, paydayCutoff) : null;
 
   if (timeFilter === "weekly") {
     if (cycle && cycle.period <= 14) {
@@ -560,6 +634,50 @@ export const filterTransactionsByTime = (
       return false;
     }
   });
+};
+
+/** Nilai aman per hari dari pemasukan yang secara eksplisit membuat batas. */
+export const calculateDailyPlanAllowance = (
+  plans: DailyPlan[],
+  transactions: Transaction[],
+  todayKey: string = formatToDateKey(new Date()),
+) => {
+  const activePlans = plans.filter(
+    (plan) => plan.isActive && plan.startDate <= todayKey && plan.endDate >= todayKey,
+  );
+  let dailyAmount = 0;
+  let nearestDaysRemaining = 0;
+
+  activePlans.forEach((plan) => {
+    const start = new Date(`${plan.startDate}T12:00:00`).getTime();
+    const end = new Date(`${plan.endDate}T12:00:00`).getTime();
+    const today = new Date(`${todayKey}T12:00:00`).getTime();
+    const daysRemaining = Math.max(1, Math.floor((end - today) / 86400000) + 1);
+    const source = plan.sourceTransactionId
+      ? transactions.find((transaction) => transaction.id === plan.sourceTransactionId)
+      : transactions.find(
+          (transaction) =>
+            transaction.type === "income" &&
+            transaction.walletId === plan.walletId &&
+            transaction.date.slice(0, 10) === plan.startDate,
+        );
+    const amount = safeNumber(plan.amount ?? source?.amount);
+    const spent = transactions.reduce((total, transaction) => {
+      const date = transaction.date.slice(0, 10);
+      if (date < plan.startDate || date > todayKey || transaction.walletId !== plan.walletId) return total;
+      if (transaction.type === "expense") return total + safeNumber(transaction.amount);
+      if (transaction.type === "transfer") {
+        return total + safeNumber(transaction.amount) + safeNumber(transaction.adminFee);
+      }
+      return total;
+    }, 0);
+    dailyAmount += Math.max(0, amount - spent) / daysRemaining;
+    nearestDaysRemaining = nearestDaysRemaining
+      ? Math.min(nearestDaysRemaining, daysRemaining)
+      : daysRemaining;
+  });
+
+  return { activePlans, dailyAmount, nearestDaysRemaining };
 };
 
 /**

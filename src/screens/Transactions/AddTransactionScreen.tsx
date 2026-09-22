@@ -159,13 +159,23 @@ const AddTransactionScreen: React.FC = () => {
       if (transactionData.walletId) setSelectedWalletId(transactionData.walletId);
       if (transactionData.toWalletId) setSelectedToWalletId(transactionData.toWalletId);
       if (transactionData.adminFee) setAdminFee(String(transactionData.adminFee));
-      if (transactionData.cyclePeriod) {
+      const sourcePlan = state.dailyPlans?.find(
+        (plan) => plan.sourceTransactionId === transactionData.id && plan.isActive,
+      );
+      const cycleDays = transactionData.cyclePeriod || (sourcePlan
+        ? Math.round(
+            (new Date(`${sourcePlan.endDate}T12:00:00`).getTime() -
+              new Date(`${sourcePlan.startDate}T12:00:00`).getTime()) /
+              86400000,
+          ) + 1
+        : undefined);
+      if (cycleDays) {
         setIsCycleActive(true);
-        if (transactionData.cyclePeriod === 7) setCyclePreset("weekly");
-        else if (transactionData.cyclePeriod === 30) setCyclePreset("monthly");
+        if (cycleDays === 7) setCyclePreset("weekly");
+        else if (cycleDays === 30) setCyclePreset("monthly");
         else {
           setCyclePreset("custom");
-          setCustomDays(transactionData.cyclePeriod.toString());
+          setCustomDays(cycleDays.toString());
         }
       }
       if (transactionData.subTransactions && transactionData.subTransactions.length > 0) {
@@ -337,6 +347,18 @@ const AddTransactionScreen: React.FC = () => {
     const effectiveDescription =
       description.trim() ||
       (type === "transfer" ? `Transfer ke ${toWalletName}` : "");
+    const transactionPayload = {
+      amount: amountNum,
+      type,
+      category: effectiveCategory,
+      description: effectiveDescription,
+      date,
+      walletId: selectedWalletId,
+      toWalletId: type === "transfer" ? selectedToWalletId : undefined,
+      adminFee: cleanAdminFee,
+      ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : {}),
+      ...(finalSubItems ? { subTransactions: finalSubItems } : {}),
+    };
 
     setLoading(true);
     try {
@@ -357,21 +379,32 @@ const AddTransactionScreen: React.FC = () => {
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
       } else {
-        await addTransaction({
-          amount: amountNum,
-          type,
-          category: effectiveCategory,
-          description: effectiveDescription,
-          date,
-          walletId: selectedWalletId,
-          toWalletId: type === "transfer" ? selectedToWalletId : undefined,
-          adminFee: cleanAdminFee,
-          ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : {}),
-          ...(finalSubItems ? { subTransactions: finalSubItems } : {}),
-        });
-        Alert.alert("Sukses", "Transaksi berhasil ditambahkan", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+        try {
+          await addTransaction(transactionPayload);
+          Alert.alert("Sukses", "Transaksi berhasil ditambahkan", [
+            { text: "OK", onPress: () => navigation.goBack() },
+          ]);
+        } catch (error: any) {
+          if (error?.message !== "DAILY_PLAN_CONFLICT") throw error;
+          Alert.alert(
+            "Target rekening masih aktif",
+            "Rekening ini masih memiliki target uang bertahan yang waktunya beririsan. Ganti target lama dengan target baru?",
+            [
+              { text: "Batal", style: "cancel" },
+              {
+                text: "Ganti target",
+                onPress: async () => {
+                  try {
+                    await addTransaction(transactionPayload, true);
+                    navigation.goBack();
+                  } catch (retryError: any) {
+                    Alert.alert("Error", retryError?.message || "Gagal menyimpan transaksi");
+                  }
+                },
+              },
+            ],
+          );
+        }
       }
     } catch (error: any) {
       Alert.alert(
@@ -772,7 +805,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("weekly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 hr</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "weekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>7 hari</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -782,7 +815,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("biweekly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "biweekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>14 hr</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "biweekly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>14 hari</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity
@@ -792,7 +825,7 @@ const AddTransactionScreen: React.FC = () => {
                       ]}
                       onPress={() => setCyclePreset("monthly")}
                     >
-                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 hr</Text>
+                      <Text style={[tw`text-[11px] font-medium`, { color: cyclePreset === "monthly" ? ACCENT_COLOR : TEXT_SECONDARY }]}>30 hari</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

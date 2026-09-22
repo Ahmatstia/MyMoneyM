@@ -1,5 +1,11 @@
-import React, { useEffect } from "react";
-import { View, Text, Dimensions } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Dimensions,
+  TouchableOpacity,
+  Clipboard,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -13,114 +19,117 @@ import Animated, {
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { formatCurrency, safeNumber } from "../../../utils/calculations";
-import { Transaction, Budget, CustomCategory, Wallet } from "../../../types";
-import { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES } from "../../../constants/categories";
+import { calculateDailyPlanAllowance, formatCurrency, safeNumber } from "../../../utils/calculations";
+import { getJakartaDateKey } from "../../../utils/dailyCheckIn";
+import { Transaction, Budget, CustomCategory, Wallet, DailyPlan } from "../../../types";
 
-// ─── Constants ──────────────────────────────────────────────────────────────────
+// ─── Constants & Card Geometry (ISO 7810 Ratio ~1.58:1) ───────────────────────
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH - 32;
-const CARD_HEIGHT = 210;
-const CARD_RADIUS = 28;
-const BORDER_W = 1.5;
+const CARD_WIDTH = SCREEN_WIDTH - 44;
+const CARD_HEIGHT = 216;
+const CARD_RADIUS = 22;
+const CARD_GAP = 12;
 const SLIDE_COUNT = 4;
 
-// ─── GoPay-Inspired Color Palette ───────────────────────────────────────────────
+// ─── Color Tokens ──────────────────────────────────────────────────────────────
 const G_TEXT = "#FFFFFF";
 const G_DIM = "#A0AEC0";
-const G_GREEN_PRIMARY = "#00D84A";
-const G_GREEN_DARK = "#00B341";
-const G_GREEN_DEEP = "#007A2F";
-const G_SUCCESS = "#00ED64";
-const G_ERROR = "#FF4D6A";
-const G_WARNING = "#FFB84D";
-const G_GOLD = "#F5A623";
+const G_SUCCESS = "#10B981";
+const G_ERROR = "#F43F5E";
+const G_WARNING = "#F59E0B";
 
-// ─── Per-slide identity ─────────────────────────────────────────────────────────
-const SLIDE_THEMES = [
-  {
-    // Slide 0 — Default Wallet Card (Indigo/Violet)
-    accent: "#818CF8",
-    gradientStart: "#050814",
-    gradientEnd: "#0D1230",
-    glowColor: "#6366F1",
-    accentDark: "#6366F1",
-    accentDeep: "#312E81",
+// ─── Helper: Hex to RGB ────────────────────────────────────────────────────────
+function hexToRgb(hex: string) {
+  const clean = (hex || "#3B82F6").replace("#", "");
+  const num = parseInt(clean, 16);
+  if (clean.length === 3) {
+    const r = (num >> 8) & 0xf;
+    const g = (num >> 4) & 0xf;
+    const b = num & 0xf;
+    return { r: r * 17, g: g * 17, b: b * 17 };
+  }
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+export interface SlideTheme {
+  accent: string;
+  gradientColors: [string, string, string];
+  subtlePatternColor: string;
+  networkColor1: string;
+  networkColor2: string;
+}
+
+// ─── Dynamic Palette Generator for Primary Wallet (Slide 1) ───────────────────
+export const buildDynamicTheme = (walletColor?: string): SlideTheme => {
+  const base = walletColor || "#3B82F6";
+  const { r, g, b } = hexToRgb(base);
+
+  // Muted, sophisticated matte executive card with subtle wallet tint
+  const topStop = `rgba(${Math.round(r * 0.30 + 8)}, ${Math.round(g * 0.30 + 10)}, ${Math.round(b * 0.30 + 18)}, 0.96)`;
+  const midStop = `rgba(${Math.round(r * 0.15 + 4)}, ${Math.round(g * 0.15 + 5)}, ${Math.round(b * 0.15 + 10)}, 0.98)`;
+  const botStop = "#090D14";
+
+  return {
+    accent: base,
+    gradientColors: [topStop, midStop, botStop],
+    subtlePatternColor: "rgba(255,255,255,0.06)",
+    networkColor1: "#EF4444",
+    networkColor2: "#F59E0B",
+  };
+};
+
+// ─── Curated Distinct Themes for Slides 2, 3, 4 ─────────────────────────────────
+export const FIXED_SLIDE_THEMES: Record<number, SlideTheme> = {
+  1: {
+    // Slide 2: Total Saldo / Net Worth — Elegant Deep Forest Slate (Muted, Not Glaring)
+    accent: "#10B981",
+    gradientColors: ["#0B382B", "#07261D", "#04140F"],
+    subtlePatternColor: "rgba(255,255,255,0.05)",
+    networkColor1: "#10B981",
+    networkColor2: "#06B6D4",
   },
-  {
-    // Slide 1 — Total Balance (Green)
-    accent: G_GREEN_PRIMARY,
-    gradientStart: "#001A08",
-    gradientEnd: "#0A2E15",
-    glowColor: G_GREEN_PRIMARY,
-    accentDark: G_GREEN_DARK,
-    accentDeep: G_GREEN_DEEP,
+  2: {
+    // Slide 3: Batas Uang & Uang Bertahan — Deep Midnight Navy / Slate (Muted, Not Glaring)
+    accent: "#06B6D4",
+    gradientColors: ["#0C3545", "#08232E", "#041217"],
+    subtlePatternColor: "rgba(255,255,255,0.05)",
+    networkColor1: "#06B6D4",
+    networkColor2: "#8B5CF6",
   },
-  {
-    // Slide 2 — Batas Uang (Teal)
-    accent: "#00D4AA",
-    gradientStart: "#001A14",
-    gradientEnd: "#052E24",
-    glowColor: "#00D4AA",
-    accentDark: "#00B894",
-    accentDeep: "#006B56",
+  3: {
+    // Slide 4: Kontrol Anggaran — Deep Espresso Bronze (Muted, Not Glaring)
+    accent: "#F59E0B",
+    gradientColors: ["#381F0A", "#241304", "#120801"],
+    subtlePatternColor: "rgba(255,255,255,0.05)",
+    networkColor1: "#F59E0B",
+    networkColor2: "#EF4444",
   },
-  {
-    // Slide 3 — Kontrol Anggaran (Gold)
-    accent: G_GOLD,
-    gradientStart: "#1A1100",
-    gradientEnd: "#2A1C05",
-    glowColor: G_GOLD,
-    accentDark: "#D4890A",
-    accentDeep: "#8B5E00",
-  },
-];
+};
 
 // ─── Interface ──────────────────────────────────────────────────────────────────
-interface BalanceCarouselProps {
+export interface BalanceCarouselProps {
   hasFinancialData: boolean;
-  balance: number;             // Net worth total (income − expense all wallets) → Slide 1
-  operationalBalance: number;  // Saldo kas yang bisa dibelanjakan (non-savings wallets) → Slide 2
+  balance: number;
+  operationalBalance: number;
   filteredIncome: number;
   filteredExpense: number;
   timeFilter: string;
   filteredPeriodNetto: number;
   projectionData: any;
+  activeCycle?: any;
   openingBalance: number;
   filteredTransactions?: Transaction[];
+  allTransactions?: Transaction[];
   budgets?: Budget[];
   customCategories?: CustomCategory[];
-  defaultWallet?: Wallet | null;  // Default wallet for Slide 0 card display
+  dailyPlans?: DailyPlan[];
+  wallets?: Wallet[];
+  defaultWallet?: Wallet | null;
 }
-
-// ─── Helper: Resolve Category Info ──────────────────────────────────────────────
-const resolveCategoryInfo = (
-  categoryName: string,
-  customCategories?: CustomCategory[]
-): { icon: string; color: string; name: string } => {
-  if (!categoryName) {
-    return { icon: "receipt-outline", color: G_DIM, name: "Lainnya" };
-  }
-  const custom = customCategories?.find(
-    (c) => c.name.toLowerCase() === categoryName.toLowerCase()
-  );
-  if (custom) {
-    return {
-      icon: custom.icon || "pricetag-outline",
-      color: custom.color || G_GOLD,
-      name: custom.name,
-    };
-  }
-  const def = ALL_SYSTEM_CATEGORIES.find(
-    (c) =>
-      c.name.toLowerCase() === categoryName.toLowerCase() ||
-      (categoryName.toLowerCase() === "gaji" && c.id === "pemasukan"),
-  );
-  if (def) {
-    return { icon: def.icon, color: def.color, name: def.name };
-  }
-  return { icon: "receipt-outline", color: G_DIM, name: categoryName };
-};
 
 // ─── Helper: Teks "sisa X hari lagi" ──────────────────────────────────────────
 const getPeriodEndLabel = (
@@ -150,7 +159,7 @@ const getPeriodEndLabel = (
   return days === 1 ? "Sisa 1 hari lagi" : `Sisa ${days} hari lagi`;
 };
 
-// ─── PeriodEndBadge ─────────────────────────────────────────────────────────────
+// ─── PeriodEndBadge Component ───────────────────────────────────────────────────
 const PeriodEndBadge = ({
   timeFilter,
   projectionData,
@@ -164,18 +173,18 @@ const PeriodEndBadge = ({
   const isUrgent = safeNumber(projectionData?.daysRemaining) <= 3;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
       <Ionicons
         name="hourglass-outline"
-        size={7}
-        color={isUrgent ? "#FFB84D" : "rgba(255,255,255,0.25)"}
-        style={{ marginRight: 3 }}
+        size={9}
+        color={isUrgent ? "#F59E0B" : "rgba(255,255,255,0.6)"}
+        style={{ marginRight: 4 }}
       />
       <Text
         style={{
-          color: isUrgent ? "rgba(255,184,77,0.8)" : "rgba(255,255,255,0.25)",
-          fontSize: 7,
-          fontWeight: isUrgent ? "600" : "400",
+          color: isUrgent ? "#F59E0B" : "rgba(255,255,255,0.75)",
+          fontSize: 8.5,
+          fontWeight: isUrgent ? "700" : "500",
         }}
       >
         {label}
@@ -184,11 +193,120 @@ const PeriodEndBadge = ({
   );
 };
 
+// ─── Realistic Gold EMV Smart Microchip (Clean Flat) ────────────────────────────
+const EMVChip = () => (
+  <View
+    style={{
+      width: 32,
+      height: 23,
+      borderRadius: 4.5,
+      padding: 1,
+      backgroundColor: "#C69634",
+    }}
+  >
+    <LinearGradient
+      colors={["#FFEBA3", "#D8A738", "#8B5E09", "#FFDA66"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={{
+        flex: 1,
+        borderRadius: 3.5,
+        overflow: "hidden",
+        position: "relative",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: 0.8,
+          backgroundColor: "rgba(70, 45, 5, 0.7)",
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          height: "100%",
+          width: 0.8,
+          backgroundColor: "rgba(70, 45, 5, 0.7)",
+        }}
+      />
+      <View
+        style={{
+          width: 12,
+          height: 10,
+          borderRadius: 2,
+          borderWidth: 0.8,
+          borderColor: "rgba(70, 45, 5, 0.8)",
+          backgroundColor: "rgba(255, 235, 160, 0.35)",
+        }}
+      />
+    </LinearGradient>
+  </View>
+);
+
+// ─── Iridescent Hologram Security Seal ──────────────────────────────────────────
+const HologramSeal = () => (
+  <LinearGradient
+    colors={["#FF0080", "#7928CA", "#00DFD8", "#FFDA66"]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={{
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      padding: 1,
+    }}
+  >
+    <View
+      style={{
+        flex: 1,
+        borderRadius: 10,
+        backgroundColor: "rgba(6, 12, 24, 0.6)",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Ionicons name="shield-checkmark" size={11} color="#FFFFFF" />
+    </View>
+  </LinearGradient>
+);
+
+// ─── Dual-Circle Payment Network Emblem ─────────────────────────────────────────
+const NetworkEmblem = ({ color1 = "#EF4444", color2 = "#F59E0B" }: { color1?: string; color2?: string }) => (
+  <View style={{ flexDirection: "row", alignItems: "center", width: 30, height: 18, position: "relative" }}>
+    <View
+      style={{
+        position: "absolute",
+        left: 0,
+        width: 17,
+        height: 17,
+        borderRadius: 8.5,
+        backgroundColor: color1,
+        opacity: 0.9,
+      }}
+    />
+    <View
+      style={{
+        position: "absolute",
+        left: 10,
+        width: 17,
+        height: 17,
+        borderRadius: 8.5,
+        backgroundColor: color2,
+        opacity: 0.9,
+      }}
+    />
+  </View>
+);
+
 // ─── AnimatedNumber ──────────────────────────────────────────────────────────────
 const AnimatedNumber = ({
   value,
   style,
-  duration = 800,
+  duration = 600,
 }: {
   value: string;
   style?: any;
@@ -208,10 +326,10 @@ const AnimatedNumber = ({
       style={[
         {
           color: G_TEXT,
-          fontSize: 26,
+          fontSize: 24,
           fontWeight: "800",
-          letterSpacing: -1,
-          lineHeight: 32,
+          letterSpacing: -0.5,
+          lineHeight: 30,
         },
         style,
       ]}
@@ -223,187 +341,150 @@ const AnimatedNumber = ({
   );
 };
 
-// ─── Glass Chip ─────────────────────────────────────────────────────────────────
-const GlassChip = ({
-  icon,
-  label,
-  color,
-  compact = false,
-}: {
-  icon: string;
-  label: string;
-  color: string;
-  compact?: boolean;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: compact ? 8 : 12,
-      paddingVertical: compact ? 4 : 6,
-      borderRadius: 20,
-      backgroundColor: "rgba(255,255,255,0.08)",
-      borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.12)",
-      alignSelf: "flex-start",
-    }}
-  >
-    <Ionicons
-      name={icon as any}
-      size={compact ? 10 : 12}
-      color={color}
-      style={{ marginRight: 4 }}
-    />
-    <Text
-      style={{
-        color,
-        fontSize: compact ? 9 : 10,
-        fontWeight: "700",
-        letterSpacing: 0.3,
-      }}
-    >
-      {label}
-    </Text>
-  </View>
-);
-
-// ─── GlowOrb ────────────────────────────────────────────────────────────────────
-const GlowOrb = ({
-  color,
-  size = 120,
-  top,
-  right,
-  bottom,
-  left,
-  opacity = 0.15,
-}: {
-  color: string;
-  size?: number;
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
-  opacity?: number;
-}) => (
-  <View
-    style={{
-      position: "absolute",
-      top,
-      right,
-      bottom,
-      left,
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-      backgroundColor: color,
-      opacity,
-      overflow: "hidden",
-    }}
-  >
-    <LinearGradient
-      colors={[color, "transparent"]}
-      style={{ width: size, height: size, borderRadius: size / 2 }}
-    />
-  </View>
-);
-
-// ─── ChromaCard ─────────────────────────────────────────────────────────────────
-const ChromaCard = ({
-  slideIndex,
+// ─── Neo-Fintech Luxe Card Wrapper (Clean Flat - No Shadows) ────────────────────
+const LuxeCardWrapper = ({
+  theme,
   children,
 }: {
-  slideIndex: number;
+  theme: SlideTheme;
   children: React.ReactNode;
 }) => {
-  const t = SLIDE_THEMES[slideIndex];
   return (
-    <LinearGradient
-      colors={[t.gradientStart, t.gradientEnd, "#060D0A"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1.2, y: 1 }}
+    <View
       style={{
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
-        borderRadius: CARD_RADIUS + BORDER_W,
-        padding: BORDER_W,
+        borderRadius: CARD_RADIUS,
       }}
     >
-      <View
+      {/* Outer Metallic Bezel Ring */}
+      <LinearGradient
+        colors={[
+          "rgba(255,255,255,0.18)", `${theme.accent}33`, "rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)",
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={{
           flex: 1,
           borderRadius: CARD_RADIUS,
-          overflow: "hidden",
-          backgroundColor: "rgba(6,13,10,0.6)",
+          padding: 1.5,
         }}
       >
-        <GlowOrb
-          color={t.glowColor}
-          size={160}
-          top={-60}
-          right={-50}
-          opacity={0.12}
-        />
-        <GlowOrb
-          color={t.glowColor}
-          size={100}
-          bottom={-20}
-          left={-30}
-          opacity={0.08}
-        />
+        {/* Card Surface */}
         <LinearGradient
-          colors={[`${t.accent}00`, t.accent, `${t.accent}00`]}
+          colors={theme.gradientColors}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={{
-            position: "absolute",
-            top: 0,
-            left: CARD_RADIUS / 2,
-            right: CARD_RADIUS / 2,
-            height: 1.5,
+            flex: 1,
+            borderRadius: CARD_RADIUS - 1.5,
+            overflow: "hidden",
+            position: "relative",
           }}
-        />
-        <View
-          style={{
-            position: "absolute",
-            bottom: -40,
-            right: -40,
-            width: 140,
-            height: 140,
-            borderRadius: 70,
-            borderWidth: 1,
-            borderColor: `${t.accent}10`,
-          }}
-        />
-        <View
-          style={{
-            position: "absolute",
-            bottom: -16,
-            right: -16,
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            borderWidth: 1,
-            borderColor: `${t.accent}18`,
-          }}
-        />
-        <View style={{ flex: 1, padding: 20 }}>{children}</View>
-      </View>
-    </LinearGradient>
+        >
+          {/* Specular Diagonal Light Glare Ribbon */}
+          <LinearGradient
+            colors={[
+              "rgba(255,255,255,0.10)", "rgba(255,255,255,0.02)", "transparent",
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              position: "absolute",
+              top: -CARD_HEIGHT * 0.4,
+              left: -CARD_WIDTH * 0.3,
+              width: CARD_WIDTH * 1.5,
+              height: CARD_HEIGHT * 1.4,
+              transform: [{ rotate: "-22deg" }],
+              opacity: 0.9,
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Cybernetic Watermark Radar Rings */}
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              bottom: -60,
+              right: -50,
+              width: 220,
+              height: 220,
+              borderRadius: 110,
+              borderWidth: 1.2,
+              borderColor: theme.subtlePatternColor,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              bottom: -35,
+              right: -25,
+              width: 160,
+              height: 160,
+              borderRadius: 80,
+              borderWidth: 1,
+              borderColor: theme.subtlePatternColor,
+              borderStyle: "dashed",
+            }}
+          />
+
+          {/* Top Edge Neon Accent Line */}
+          <LinearGradient
+            colors={["transparent", "#FFFFFF", theme.accent, "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 20,
+              right: 20,
+              height: 1.5,
+              opacity: 0.45, }} />
+          {/* Content Layer */}
+          <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 13, justifyContent: "space-between" }}>
+            {children}
+          </View>
+        </LinearGradient>
+      </LinearGradient>
+    </View>
   );
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 0 — Kartu Dompet Default (Default Wallet Card)
+// SLIDE 0 (Slide 1 User) — Kartu Dompet Default (BCA Mobile Layout + Synchronized)
 // ═════════════════════════════════════════════════════════════════════════════════
-const Slide0 = (props: BalanceCarouselProps) => {
-  const t = SLIDE_THEMES[0];
+const Slide0 = ({
+  props,
+  isBalanceHidden,
+  onToggleBalance,
+}: {
+  props: BalanceCarouselProps;
+  isBalanceHidden: boolean;
+  onToggleBalance: () => void;
+}) => {
   const wallet = props.defaultWallet;
+  const theme = buildDynamicTheme(wallet?.color);
+  const [copied, setCopied] = useState(false);
 
-  // Format account number with dots masking (e.g. ••• ••• 1234)
-  const formatAccountNumber = (num?: string) => {
-    if (!num) return null;
-    if (num.length <= 4) return `•••• ${num}`;
-    return `•••• •••• ${num.slice(-4)}`;
+  const formatDisplayAccountNumber = (num?: string) => {
+    if (!num || !num.trim()) {
+      return "•••• •••• ••••";
+    }
+    const clean = num.replace(/\s+/g, "");
+    if (clean.length <= 4) {
+      return `•••• •••• •••• ${clean}`;
+    }
+    return clean.match(/.{1,4}/g)?.join("  ") || clean;
+  };
+
+  const handleCopy = () => {
+    if (wallet?.accountNumber) {
+      Clipboard.setString(wallet.accountNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const walletTypeLabel = {
@@ -414,272 +495,388 @@ const Slide0 = (props: BalanceCarouselProps) => {
     credit: "Kredit / Paylater",
   }[wallet?.type || "cash"] || "Dompet";
 
-  const walletIcon = wallet?.icon || "card";
-  const walletColor = wallet?.color || t.accent;
-
   return (
-    <ChromaCard slideIndex={0}>
-      <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Row 1: Brand + Default Badge */}
+    <LuxeCardWrapper theme={theme}>
+      {/* ── ROW 1 (TOP): Bank Brand + Contactless + EMV Chip + Hologram ── */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              backgroundColor: "rgba(255,255,255,0.22)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.35)",
+            }}
+          >
+            <Ionicons
+              name={((wallet?.icon as any) || "card") as any}
+              size={15}
+              color="#FFFFFF"
+            />
+          </View>
+          <View>
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 13.5,
+                fontWeight: "800",
+                letterSpacing: -0.2,
+              }}
+              numberOfLines={1}
+            >
+              {wallet ? wallet.name : "Dompet Utama"}
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.75)",
+                fontSize: 8.5,
+                fontWeight: "700",
+                letterSpacing: 0.5,
+                marginTop: 0.5,
+              }}
+            >
+              {walletTypeLabel.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <EMVChip />
+        </View>
+      </View>
+
+      {/* ── ROW 2 (HERO SALDO - BCA Mobile Style on top) ── */}
+      <View style={{ display: "none" }}>
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
+            marginBottom: 2,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <LinearGradient
-              colors={[t.accent, t.accentDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
-              }}
-            >
-              <Ionicons name={walletIcon as any} size={13} color="#050814" />
-            </LinearGradient>
-            <View>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
-                }}
-              >
-                Dompet Utama
-              </Text>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.3)",
-                  fontSize: 7,
-                  marginTop: 1,
-                }}
-              >
-                {walletTypeLabel}
-              </Text>
-            </View>
-          </View>
-          <GlassChip
-            icon="star"
-            label="Default"
-            color={t.accent}
-            compact
-          />
-        </View>
-
-        {/* Row 2: Wallet Name + Account Number */}
-        <View style={{ marginTop: 4 }}>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 8,
-              fontWeight: "600",
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              marginBottom: 2,
-            }}
-          >
-            {wallet ? wallet.name : "Belum Ada Dompet"}
-          </Text>
-          {wallet?.accountNumber ? (
-            <Text
-              style={{
-                color: G_TEXT,
-                fontSize: 18,
-                fontWeight: "700",
-                letterSpacing: 4,
-                lineHeight: 26,
-              }}
-            >
-              {formatAccountNumber(wallet.accountNumber)}
-            </Text>
-          ) : (
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.25)",
-                fontSize: 13,
-                fontWeight: "500",
-                letterSpacing: 2,
-                lineHeight: 22,
-              }}
-            >
-              •••• •••• ••••
-            </Text>
-          )}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 4,
-            }}
-          >
             <View
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: walletColor,
+                width: 5,
+                height: 5,
+                borderRadius: 2.5,
+                backgroundColor: "#10B981",
                 marginRight: 5,
-                opacity: 0.9,
               }}
             />
             <Text
               style={{
-                color: t.accent,
+                color: "rgba(255,255,255,0.85)",
                 fontSize: 9,
-                fontWeight: "700",
+                fontWeight: "800",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
               }}
             >
-              Saldo Khusus Rekening Ini
+              Saldo Rekening Ini
             </Text>
           </View>
-          <AnimatedNumber
-            value={wallet ? `${wallet.balance < 0 ? "-" : ""}${formatCurrency(Math.abs(wallet.balance || 0))}` : "Rp 0"}
+
+          {/* Interactive Eye Button */}
+          <TouchableOpacity
+            onPress={onToggleBalance}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
             style={{
-              color: wallet && wallet.balance < 0 ? G_ERROR : G_TEXT,
-              fontSize: 22,
-              lineHeight: 28,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "rgba(255,255,255,0.18)",
+              paddingHorizontal: 7,
+              paddingVertical: 2.5,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.28)",
+              gap: 4,
             }}
-          />
+          >
+            <Ionicons
+              name={isBalanceHidden ? "eye-off-outline" : "eye-outline"}
+              size={11}
+              color={G_TEXT}
+            />
+            <Text style={{ color: G_TEXT, fontSize: 8.5, fontWeight: "700" }}>
+              {isBalanceHidden ? "Tampilkan" : "Sembunyikan"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Row 3: Footer with chip details */}
+        {isBalanceHidden ? (
+          <Text
+            style={{
+              color: G_TEXT,
+              fontSize: 24,
+              fontWeight: "800",
+              letterSpacing: 3,
+              lineHeight: 30,
+            }}
+          >
+            Rp ••••••••
+          </Text>
+        ) : (
+          <AnimatedNumber
+            value={
+              wallet
+                ? `${wallet.balance < 0 ? "-" : ""}${formatCurrency(Math.abs(wallet.balance || 0))}`
+                : "Rp 0"
+            }
+            style={{
+              color: wallet && wallet.balance < 0 ? G_ERROR : G_TEXT,
+              fontSize: 24,
+              fontWeight: "800",
+              lineHeight: 30,
+            }}
+          />
+        )}
+      </View>
+
+      {/* ── ROW 3 (BOTTOM): Nomor Kartu + Detail Status + Copy Button ── */}
+      <View
+        style={{
+          paddingTop: 6,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(255,255,255,0.15)",
+        }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          {/* Nomor Kartu */}
+          <TouchableOpacity
+            onPress={handleCopy}
+            activeOpacity={0.7}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+          >
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 13,
+                fontWeight: "800",
+                letterSpacing: 2,
+              }}
+            >
+              {formatDisplayAccountNumber(wallet?.accountNumber)}
+            </Text>
+            {wallet?.accountNumber && (
+              <View
+                style={{
+                  backgroundColor: copied ? "rgba(16, 185, 129, 0.3)" : "rgba(255,255,255,0.15)",
+                  paddingHorizontal: 5,
+                  paddingVertical: 1.5,
+                  borderRadius: 5,
+                }}
+              >
+                <Text style={{ color: copied ? "#10B981" : "rgba(255,255,255,0.85)", fontSize: 7.5, fontWeight: "700" }}>
+                  {copied ? "Tersalin! ✓" : "Salin"}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <NetworkEmblem color1={theme.networkColor1} color2={theme.networkColor2} />
+        </View>
+
+        {/* Footer info: Default status & role badge */}
         <View
           style={{
-            paddingTop: 4,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.06)",
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
+            marginTop: 3,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Ionicons
               name="shield-checkmark-outline"
-              size={8}
-              color="rgba(255,255,255,0.3)"
+              size={9}
+              color="rgba(255,255,255,0.7)"
               style={{ marginRight: 4 }}
             />
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.35)",
-                fontSize: 8,
-              }}
-            >
+            <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8.5 }}>
               {wallet?.isDefault ? "Rekening transaksi utama" : "Bukan rekening utama"}
             </Text>
           </View>
-          <Text
+
+          <View
             style={{
-              color: t.accent,
-              fontSize: 9,
-              fontWeight: "600",
+              paddingHorizontal: 6,
+              paddingVertical: 1.5,
+              borderRadius: 5,
+              backgroundColor: "rgba(255,255,255,0.18)",
             }}
           >
-            {wallet?.role
-              ? wallet.role.charAt(0).toUpperCase() + wallet.role.slice(1)
-              : "Dompet"}
-          </Text>
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 8,
+                fontWeight: "800",
+                letterSpacing: 0.4,
+                textTransform: "uppercase",
+              }}
+            >
+              {wallet?.role || "UTAMA"}
+            </Text>
+          </View>
         </View>
       </View>
-    </ChromaCard>
+    </LuxeCardWrapper>
   );
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 1 — Saldo Utama
+// SLIDE 1 (Slide 2 User) — Saldo Utama / Total Saldo Semua Dompet (RESTORED DETAILS)
 // ═════════════════════════════════════════════════════════════════════════════════
-const Slide1 = (props: BalanceCarouselProps) => {
-  const t = SLIDE_THEMES[1];
+const Slide1 = ({
+  props,
+  isBalanceHidden,
+  onToggleBalance,
+}: {
+  props: BalanceCarouselProps;
+  isBalanceHidden: boolean;
+  onToggleBalance: () => void;
+}) => {
+  const theme = FIXED_SLIDE_THEMES[1];
   const isPositive = props.filteredPeriodNetto >= 0;
-  const netColor = isPositive ? G_SUCCESS : G_ERROR;
+  const netColor = isPositive ? "#A7F3D0" : "#FCA5A5";
   const hasChange = props.hasFinancialData && props.filteredPeriodNetto !== 0;
 
   return (
-    <ChromaCard slideIndex={0}>
-      <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Row 1: Brand */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <LinearGradient
-              colors={[t.accent, t.accentDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
-              }}
-            >
-              <Ionicons name="wallet" size={13} color="#001A08" />
-            </LinearGradient>
-            <View>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
-                }}
-              >
-                {props.hasFinancialData ? "Total Saldo" : "My Money"}
-              </Text>
-              {props.hasFinancialData && (
-                <Text
-                  style={{
-                    color: "rgba(255,255,255,0.3)",
-                    fontSize: 8,
-                    marginTop: 1,
-                  }}
-                >
-                  Semua Dompet
-                </Text>
-              )}
-            </View>
+    <LuxeCardWrapper theme={theme}>
+      {/* Row 1: Header Brand + Netto Chip + Toggle Button */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              backgroundColor: "rgba(255,255,255,0.22)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.35)",
+            }}
+          >
+            <Ionicons name="wallet" size={15} color="#FFFFFF" />
           </View>
-          {hasChange && (
-            <GlassChip
-              icon={isPositive ? "trending-up" : "trending-down"}
-              label={`${isPositive ? "+" : "-"}${formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}`}
-              color={netColor}
-              compact
-            />
-          )}
-        </View>
-
-        {/* Row 2: Balance */}
-        <View style={{ marginTop: 2 }}>
-          {!props.hasFinancialData && (
+          <View>
             <Text
               style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 10,
-                marginBottom: 4,
+                color: G_TEXT,
+                fontSize: 13.5,
+                fontWeight: "800",
+                letterSpacing: -0.2,
               }}
             >
-              Mulai catat transaksi pertamamu
+              {props.hasFinancialData ? "Total Saldo" : "My Money"}
             </Text>
+            {props.hasFinancialData && (
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: 8.5,
+                  fontWeight: "600",
+                }}
+              >
+                Semua Dompet
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <View style={{ alignItems: "flex-end", gap: 4 }}>
+          {/* Toggle Eye Button */}
+          <TouchableOpacity
+            onPress={onToggleBalance}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "rgba(255,255,255,0.16)",
+              paddingHorizontal: 7,
+              paddingVertical: 2.5,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.24)",
+              gap: 3,
+            }}
+          >
+            <Ionicons
+              name={isBalanceHidden ? "eye-off-outline" : "eye-outline"}
+              size={11}
+              color={G_TEXT}
+            />
+            <Text style={{ color: G_TEXT, fontSize: 8.5, fontWeight: "700" }}>
+              {isBalanceHidden ? "Tampilkan" : "Sembunyikan"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Surplus / Deficit Badge placed directly UNDER the Sembunyikan button */}
+          {hasChange && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.32)",
+                paddingHorizontal: 6,
+                paddingVertical: 1.8,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.12)",
+                gap: 3,
+              }}
+            >
+              <Ionicons
+                name={isPositive ? "trending-up" : "trending-down"}
+                size={9}
+                color={netColor}
+              />
+              <Text style={{ color: netColor, fontSize: 8, fontWeight: "700" }}>
+                {isPositive ? "+" : "-"}
+                {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(Math.abs(props.filteredPeriodNetto)))}
+              </Text>
+            </View>
           )}
-          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+        </View>
+      </View>
+
+      {/* Row 2: Hero Total Balance Amount */}
+      <View style={{ marginTop: 2 }}>
+        {!props.hasFinancialData && (
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 9.5,
+              marginBottom: 2,
+            }}
+          >
+            Mulai catat transaksi pertamamu
+          </Text>
+        )}
+        <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+          {isBalanceHidden ? (
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 24,
+                fontWeight: "800",
+                letterSpacing: 3,
+                lineHeight: 30,
+              }}
+            >
+              Rp ••••••••
+            </Text>
+          ) : (
             <AnimatedNumber
               value={
                 props.hasFinancialData
@@ -694,149 +891,219 @@ const Slide1 = (props: BalanceCarouselProps) => {
                   props.hasFinancialData && props.balance < 0
                     ? G_ERROR
                     : G_TEXT,
+                fontSize: 24,
+                fontWeight: "800",
+                lineHeight: 30,
               }}
             />
-            {hasChange && (
-              <View
-                style={{
-                  marginLeft: 8,
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: netColor,
-                  opacity: 0.6,
-                }}
-              />
-            )}
-          </View>
-          {props.timeFilter !== "all" && props.openingBalance !== 0 && (
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.3)",
-                fontSize: 9,
-                marginTop: 1,
-              }}
-            >
-              Termasuk saldo awal {formatCurrency(props.openingBalance)}
-            </Text>
           )}
         </View>
 
-        {/* Row 3: Income/Expense with divider */}
-        {props.hasFinancialData && (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ flex: 1 }}>
+        {/* RESTORED: Opening Balance Note */}
+        {props.timeFilter !== "all" && props.openingBalance !== 0 && (
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.75)",
+              fontSize: 8.5,
+              marginTop: 1,
+            }}
+          >
+            Termasuk saldo awal {isBalanceHidden ? "••••••" : formatCurrency(props.openingBalance)}
+          </Text>
+        )}
+      </View>
+
+      {/* Row 3 (RESTORED PREVIOUS DETAIL): Masuk (Income) & Keluar (Expense) Columns */}
+      {props.hasFinancialData && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 10,
+            paddingVertical: 5,
+            paddingHorizontal: 8,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.12)",
+          }}
+        >
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Ionicons name="arrow-down-circle" size={10} color="#A7F3D0" />
               <Text
                 style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 9,
-                  letterSpacing: 0.5,
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: 8.5,
+                  fontWeight: "700",
                   textTransform: "uppercase",
-                  textAlign: "center",
                 }}
               >
                 Masuk
               </Text>
-              <Text
-                style={{
-                  color: G_TEXT,
-                  fontSize: 12,
-                  fontWeight: "700",
-                  textAlign: "center",
-                }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {formatCurrency(safeNumber(props.filteredIncome))}
-              </Text>
             </View>
-            <View
+            <Text
               style={{
-                width: 1,
-                height: 32,
-                backgroundColor: "rgba(255,255,255,0.1)",
-                marginHorizontal: 8,
+                color: G_TEXT,
+                fontSize: 12,
+                fontWeight: "800",
+                marginTop: 1,
               }}
-            />
-            <View style={{ flex: 1 }}>
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(props.filteredIncome))}
+            </Text>
+          </View>
+
+          {/* Vertical Divider */}
+          <View
+            style={{
+              width: 1,
+              height: 24,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              marginHorizontal: 8,
+            }}
+          />
+
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Ionicons name="arrow-up-circle" size={10} color="#FCA5A5" />
               <Text
                 style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 9,
-                  letterSpacing: 0.5,
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: 8.5,
+                  fontWeight: "700",
                   textTransform: "uppercase",
-                  textAlign: "center",
                 }}
               >
                 Keluar
               </Text>
-              <Text
-                style={{
-                  color: G_TEXT,
-                  fontSize: 12,
-                  fontWeight: "700",
-                  textAlign: "center",
-                }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {formatCurrency(safeNumber(props.filteredExpense))}
-              </Text>
             </View>
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 12,
+                fontWeight: "800",
+                marginTop: 1,
+              }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {isBalanceHidden ? "••••••" : formatCurrency(safeNumber(props.filteredExpense))}
+            </Text>
           </View>
-        )}
-
-        {/* Row 4: Period end badge only */}
-        <View
-          style={{
-            paddingTop: 4,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.06)",
-          }}
-        >
-          <PeriodEndBadge
-            timeFilter={props.timeFilter}
-            projectionData={props.projectionData}
-          />
         </View>
+      )}
+
+      {/* Row 4 (RESTORED PREVIOUS DETAIL): Period End Badge */}
+      <View
+        style={{
+          paddingTop: 5,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(255,255,255,0.15)",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <PeriodEndBadge
+          timeFilter={props.timeFilter}
+          projectionData={props.projectionData}
+        />
+        <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 8.5, fontWeight: "600" }}>
+          Seluruh Kas
+        </Text>
       </View>
-    </ChromaCard>
+    </LuxeCardWrapper>
   );
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 2 — Batas Uang & Uang Bertahan (Safe Daily Spend)
+// SLIDE 2 (Slide 3 User) — Batas Uang & Jatah Kas Harian (RESTORED ALL DETAILS)
 // ═════════════════════════════════════════════════════════════════════════════════
-const Slide2 = (props: BalanceCarouselProps) => {
-  const t = SLIDE_THEMES[2];
+const Slide2 = ({
+  props,
+  isBalanceHidden,
+}: {
+  props: BalanceCarouselProps;
+  isBalanceHidden: boolean;
+}) => {
+  const theme = FIXED_SLIDE_THEMES[2];
 
-  // Sisa hari menuju reset bulan atau siklus
-  const daysRemaining = safeNumber(props.projectionData?.daysRemaining) > 0
-    ? safeNumber(props.projectionData?.daysRemaining)
-    : (() => {
-        const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        return Math.max(1, lastDay - now.getDate());
-      })();
+  // Gunakan periode yang sudah dipilih filter Home; projectionData adalah sumber tunggalnya.
+  const cycle = props.projectionData?.activeCycle;
+  const now = new Date();
 
-  // Total hari dalam bulan ini (untuk progress bar visual)
-  const totalDaysInMonth = (() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  })();
-  const daysPassed = Math.max(1, totalDaysInMonth - daysRemaining);
-  const timeProgressPct = Math.min(100, Math.round((daysPassed / totalDaysInMonth) * 100));
+  let daysRemaining = 1;
+  let totalDays = 30;
+  let daysPassed = 1;
+  let cycleLabel = "Siklus Bulan Ini";
+  let isCustomTarget = false;
 
-  // Jatah aman harian kas operasional
+  if (cycle && cycle.hasCycle) {
+    isCustomTarget = !cycle.isPaydayCycle;
+    totalDays = Math.max(1, safeNumber(cycle.totalDays || cycle.period) || 7);
+    daysRemaining =
+      safeNumber(cycle.daysRemaining) > 0
+        ? safeNumber(cycle.daysRemaining)
+        : (() => {
+            if (cycle.endDate) {
+              const endMs = new Date(cycle.endDate).getTime();
+              return Math.max(1, Math.ceil((endMs - now.getTime()) / (1000 * 60 * 60 * 24)));
+            }
+            return 1;
+          })();
+    daysPassed = Math.max(
+      1,
+      Math.min(
+        totalDays,
+        safeNumber(cycle.daysPassed) || (totalDays - daysRemaining + 1)
+      )
+    );
+    cycleLabel = cycle.label || `Target ${totalDays} Hari`;
+  } else if (safeNumber(props.projectionData?.daysRemaining) > 0) {
+    daysRemaining = safeNumber(props.projectionData?.daysRemaining);
+    totalDays =
+      safeNumber(props.projectionData?.totalDays) ||
+      new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    daysPassed = Math.max(
+      1,
+      Math.min(
+        totalDays,
+        safeNumber(props.projectionData?.daysPassed) || (totalDays - daysRemaining)
+      )
+    );
+    cycleLabel = props.projectionData?.label
+      ? `Siklus ${props.projectionData.label}`
+      : "Siklus Pembukuan";
+  } else {
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    totalDays = lastDay;
+    daysRemaining = Math.max(1, lastDay - now.getDate());
+    daysPassed = Math.max(1, totalDays - daysRemaining);
+    cycleLabel = "Siklus Bulan Ini";
+  }
+
+  // Jatah aman harian dari rencana rekening yang aktif.
   const opBalance = safeNumber(props.operationalBalance);
-  const safeDaily = Math.max(0, Math.round(opBalance / Math.max(1, daysRemaining)));
+  const todayKey = getJakartaDateKey();
+  const { activePlans, dailyAmount: planDailyTotal, nearestDaysRemaining: planDaysRemaining } =
+    calculateDailyPlanAllowance(props.dailyPlans || [], props.allTransactions || [], todayKey);
+  const timeProgressPct = activePlans.length
+    ? Math.min(100, Math.max(0, Math.round(((30 - planDaysRemaining) / 30) * 100)))
+    : 0;
+  const safeDaily = activePlans.length ? Math.max(0, Math.round(planDailyTotal)) : 0;
 
   // Status kas
   let statusLabel = "Kas Aman";
-  let statusColor = G_SUCCESS;
+  let statusColor = "#67E8F9";
   let statusIcon = "shield-checkmark";
 
-  if (opBalance <= 0) {
+  if (!activePlans.length) {
+    statusLabel = "Belum Diatur";
+    statusColor = G_WARNING;
+    statusIcon = "settings-outline";
+  } else if (opBalance <= 0) {
     statusLabel = "Kas Habis";
     statusColor = G_ERROR;
     statusIcon = "alert-circle";
@@ -846,7 +1113,7 @@ const Slide2 = (props: BalanceCarouselProps) => {
     statusIcon = "warning";
   } else {
     statusLabel = "Kas Aman";
-    statusColor = "#00D4AA";
+    statusColor = "#67E8F9";
     statusIcon = "shield-checkmark";
   }
 
@@ -867,262 +1134,271 @@ const Slide2 = (props: BalanceCarouselProps) => {
   }));
 
   return (
-    <ChromaCard slideIndex={1}>
-      <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Row 1: Header */}
+    <LuxeCardWrapper theme={theme}>
+      {/* Row 1: Header + Status Chip */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              backgroundColor: "rgba(255,255,255,0.22)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.35)",
+            }}
+          >
+            <Ionicons name="compass" size={15} color="#FFFFFF" />
+          </View>
+          <View>
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 13.5,
+                fontWeight: "800",
+                letterSpacing: -0.2,
+              }}
+            >
+              Batas Belanja
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.75)",
+                fontSize: 8.5,
+                fontWeight: "600",
+              }}
+            >
+              Rekomendasi hari ini
+            </Text>
+          </View>
+        </View>
+
+        {/* Status Chip */}
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.25)",
+            paddingHorizontal: 7,
+            paddingVertical: 2.5,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.2)",
+            gap: 4,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <LinearGradient
-              colors={[t.accent, t.accentDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
-              }}
-            >
-              <Ionicons name="compass" size={13} color="#001A14" />
-            </LinearGradient>
-            <View>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
-                }}
-              >
-                Batas Uang
-              </Text>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.3)",
-                  fontSize: 7,
-                  marginTop: 1,
-                }}
-              >
-                Jatah Belanja Kas Harian
-              </Text>
-            </View>
-          </View>
-          <GlassChip
-            icon={statusIcon}
-            label={statusLabel}
-            color={statusColor}
-            compact
-          />
-        </View>
-
-        {/* Row 2: Hero Amount & Label */}
-        <View style={{ marginTop: 2 }}>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.4)",
-              fontSize: 8,
-              fontWeight: "600",
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              marginBottom: 2,
-            }}
-          >
-            Jatah Kas Aman Belanja
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <AnimatedNumber
-              value={formatCurrency(safeDaily)}
-              style={{
-                color: opBalance <= 0 ? G_ERROR : G_TEXT,
-                fontSize: 24,
-                lineHeight: 30,
-              }}
-            />
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: 10,
-                fontWeight: "600",
-                marginLeft: 4,
-              }}
-            >
-              /hari
-            </Text>
-          </View>
-          <Text
-            style={{
-              color: "rgba(255,255,255,0.35)",
-              fontSize: 9,
-              marginTop: 1,
-            }}
-            numberOfLines={1}
-          >
-            {`Dihitung dari kas operasional ${formatCurrency(opBalance)} ÷ sisa ${daysRemaining} hari`}
-          </Text>
-        </View>
-
-        {/* Row 3: Progress Bar Waktu Pembukuan */}
-        <View style={{ marginTop: 2 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 3,
-            }}
-          >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.45)",
-                fontSize: 8,
-                fontWeight: "600",
-                letterSpacing: 0.5,
-                textTransform: "uppercase",
-              }}
-            >
-              Siklus Pembukuan Bulan Ini
-            </Text>
-            <Text
-              style={{
-                color: t.accent,
-                fontSize: 9,
-                fontWeight: "700",
-              }}
-            >
-              Hari ke-{daysPassed} ({timeProgressPct}%)
-            </Text>
-          </View>
-          <View
-            style={{
-              height: 5,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 3,
-              overflow: "hidden",
-            }}
-          >
-            <Animated.View
-              style={[
-                {
-                  height: 5,
-                  borderRadius: 3,
-                  backgroundColor: t.accent,
-                },
-                progressAnimStyle,
-              ]}
-            />
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: 4,
-            }}
-          >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.35)",
-                fontSize: 8,
-              }}
-            >
-              Kas Bebas: {formatCurrency(opBalance)}
-            </Text>
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.35)",
-                fontSize: 8,
-              }}
-            >
-              Sisa {daysRemaining} hari
-            </Text>
-          </View>
-        </View>
-
-        {/* Row 4: Footer */}
-        <View
-          style={{
-            paddingTop: 4,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.06)",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name="hourglass-outline"
-              size={8}
-              color={daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.3)"}
-              style={{ marginRight: 4 }}
-            />
-            <Text
-              style={{
-                color:
-                  daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.35)",
-                fontSize: 8,
-                fontWeight: daysRemaining <= 3 ? "600" : "400",
-              }}
-            >
-              {daysRemaining === 1
-                ? "Reset pembukuan besok"
-                : `${daysRemaining} hari menuju reset`}
-            </Text>
-          </View>
-          <Text
-            style={{
-              color: t.accent,
-              fontSize: 9,
-              fontWeight: "600",
-            }}
-          >
-            Uang Bertahan
+          <Ionicons name={statusIcon as any} size={11} color={statusColor} />
+          <Text style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}>
+            {statusLabel}
           </Text>
         </View>
       </View>
-    </ChromaCard>
+
+      {/* Row 2: Hero Amount & (RESTORED FORMULA NOTE) */}
+      <View style={{ marginTop: 2 }}>
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.8)",
+            fontSize: 9,
+            fontWeight: "700",
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            marginBottom: 2,
+          }}
+        >
+          Batas belanja hari ini
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+          {isBalanceHidden ? (
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 24,
+                fontWeight: "800",
+                letterSpacing: 3,
+                lineHeight: 30,
+              }}
+            >
+              Rp •••••• / hari
+            </Text>
+          ) : (
+            activePlans.length ? (
+              <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+                <AnimatedNumber
+                  value={formatCurrency(safeDaily)}
+                  style={{ color: opBalance <= 0 ? G_ERROR : G_TEXT, fontSize: 24, lineHeight: 30 }}
+                />
+                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: "600", marginLeft: 4 }}>/hari</Text>
+              </View>
+            ) : (
+              <Text style={{ color: G_TEXT, fontSize: 20, fontWeight: "800" }}>Belum diatur</Text>
+            )
+          )}
+        </View>
+
+        <Text
+          style={{
+            color: "rgba(255,255,255,0.75)",
+            fontSize: 8.5,
+            marginTop: 1,
+          }}
+          numberOfLines={1}
+        >
+          {isBalanceHidden
+            ? "Rencana belanja aktif"
+            : activePlans.length
+              ? `${activePlans.length} rekening memiliki target aktif`
+              : "Belum ada target belanja aktif"}
+        </Text>
+      </View>
+
+      {/* Progress detail is intentionally hidden: one card should show one clear decision. */}
+      <View style={{ display: "none" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 3,
+          }}
+        >
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.75)",
+              fontSize: 8,
+              fontWeight: "600",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+            }}
+          >
+            {activePlans.length ? "Rencana belanja aktif" : "Belum ada rencana aktif"}
+          </Text>
+          <Text
+            style={{
+              color: "#67E8F9",
+              fontSize: 8.5,
+              fontWeight: "700",
+            }}
+          >
+            {activePlans.length ? `${planDaysRemaining} hari tersisa` : "Atur dari transaksi pemasukan"}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            height: 4.5,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            borderRadius: 2.5,
+            overflow: "hidden",
+          }}
+        >
+          <Animated.View
+            style={[
+              {
+                height: 4.5,
+                borderRadius: 2.5,
+                backgroundColor: "#22D3EE",
+              },
+              progressAnimStyle,
+            ]}
+          />
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 3,
+          }}
+        >
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+            Rekening aktif: {activePlans.length}
+          </Text>
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+            {activePlans.length ? "Berjalan" : "Menunggu target"}
+          </Text>
+        </View>
+      </View>
+
+      {/* Row 4 (RESTORED PREVIOUS DETAIL): Footer Hourglass & Status */}
+      <View
+        style={{
+          paddingTop: 5,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(255,255,255,0.15)",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Ionicons
+            name="hourglass-outline"
+            size={8}
+            color={daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.7)"}
+            style={{ marginRight: 4 }}
+          />
+          <Text
+            style={{
+              color: daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.75)",
+              fontSize: 8,
+              fontWeight: daysRemaining <= 3 ? "700" : "500",
+            }}
+          >
+            {activePlans.length
+              ? planDaysRemaining <= 1
+                ? "Target berakhir besok"
+                : `Target berakhir dalam ${planDaysRemaining} hari`
+              : "Buat target saat mencatat pemasukan"}
+          </Text>
+        </View>
+        <Text
+          style={{
+            color: "#67E8F9",
+            fontSize: 8.5,
+            fontWeight: "700",
+          }}
+        >
+          Target Harian
+        </Text>
+      </View>
+    </LuxeCardWrapper>
   );
 };
 
 // ═════════════════════════════════════════════════════════════════════════════════
-// SLIDE 3 — Kontrol Anggaran Bulanan (Category Budgets)
+// SLIDE 3 (Slide 4 User) — Kontrol Anggaran Bulanan (RESTORED ALL DETAILS)
 // ═════════════════════════════════════════════════════════════════════════════════
-const Slide3 = (props: BalanceCarouselProps) => {
-  const t = SLIDE_THEMES[3];
+const Slide3 = ({
+  props,
+  isBalanceHidden,
+}: {
+  props: BalanceCarouselProps;
+  isBalanceHidden: boolean;
+}) => {
+  const theme = FIXED_SLIDE_THEMES[3];
   const budgets = props.budgets || [];
   const hasBudgets = budgets.length > 0;
 
-  const totalLimit = budgets.reduce(
-    (sum, b) => sum + safeNumber(b.limit),
-    0
-  );
-  const totalSpent = budgets.reduce(
-    (sum, b) => sum + safeNumber(b.spent),
-    0
-  );
+  const totalLimit = budgets.reduce((sum, b) => sum + safeNumber(b.limit), 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + safeNumber(b.spent), 0);
   const remainingBudget = Math.max(0, totalLimit - totalSpent);
   const isOverbudget = totalLimit > 0 && totalSpent > totalLimit;
-  const burnRatePct = totalLimit > 0
-    ? Math.round((totalSpent / totalLimit) * 100)
-    : 0;
+  const burnRatePct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
 
   // Sisa hari menuju reset bulan
-  const daysRemaining = safeNumber(props.projectionData?.daysRemaining) > 0
-    ? safeNumber(props.projectionData?.daysRemaining)
-    : (() => {
-        const now = new Date();
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        return Math.max(1, lastDay - now.getDate());
-      })();
+  const daysRemaining =
+    safeNumber(props.projectionData?.daysRemaining) > 0
+      ? safeNumber(props.projectionData?.daysRemaining)
+      : (() => {
+          const now = new Date();
+          const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+          return Math.max(1, lastDay - now.getDate());
+        })();
 
   // Jatah harian khusus dari sisa anggaran
   const dailyBudgetQuota = hasBudgets
@@ -1131,7 +1407,7 @@ const Slide3 = (props: BalanceCarouselProps) => {
 
   // Status computation
   let statusLabel = "Terkendali";
-  let statusColor = G_SUCCESS;
+  let statusColor = "#FDE68A";
   let statusIcon = "shield-checkmark";
 
   if (hasBudgets) {
@@ -1145,7 +1421,7 @@ const Slide3 = (props: BalanceCarouselProps) => {
       statusIcon = "warning";
     } else {
       statusLabel = "Terkendali";
-      statusColor = G_SUCCESS;
+      statusColor = "#FDE68A";
       statusIcon = "shield-checkmark";
     }
   } else {
@@ -1154,10 +1430,10 @@ const Slide3 = (props: BalanceCarouselProps) => {
     statusIcon = "options-outline";
   }
 
-  const budgetBarWidth = useSharedValue(0);
+  const budgetProgress = useSharedValue(0);
 
   useEffect(() => {
-    budgetBarWidth.value = withDelay(
+    budgetProgress.value = withDelay(
       200,
       withTiming(hasBudgets ? Math.min(100, burnRatePct) : 0, {
         duration: 800,
@@ -1167,83 +1443,102 @@ const Slide3 = (props: BalanceCarouselProps) => {
   }, [hasBudgets, burnRatePct]);
 
   const budgetAnimStyle = useAnimatedStyle(() => ({
-    width: `${Math.max(budgetBarWidth.value, hasBudgets && burnRatePct > 0 ? 3 : 0)}%`,
+    width: `${Math.max(budgetProgress.value, hasBudgets && burnRatePct > 0 ? 3 : 0)}%`,
   }));
 
   return (
-    <ChromaCard slideIndex={2}>
-      <View style={{ flex: 1, justifyContent: "space-between" }}>
-        {/* Row 1: Header */}
+    <LuxeCardWrapper theme={theme}>
+      {/* Row 1: Header + Status Chip */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              backgroundColor: "rgba(255,255,255,0.22)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 8,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.35)",
+            }}
+          >
+            <Ionicons name="calculator" size={15} color="#FFFFFF" />
+          </View>
+          <View>
+            <Text
+              style={{
+                color: G_TEXT,
+                fontSize: 13.5,
+                fontWeight: "800",
+                letterSpacing: -0.2,
+              }}
+            >
+              Kontrol Anggaran
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.75)",
+                fontSize: 8.5,
+                fontWeight: "600",
+              }}
+            >
+              {hasBudgets ? "Batas Belanja Pos Kategori" : "Belum Ada Pos Anggaran"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Status Badge */}
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.25)",
+            paddingHorizontal: 7,
+            paddingVertical: 2.5,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.2)",
+            gap: 4,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <LinearGradient
-              colors={[t.accent, t.accentDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+          <Ionicons name={statusIcon as any} size={11} color={statusColor} />
+          <Text style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}>
+            {statusLabel}
+          </Text>
+        </View>
+      </View>
+
+      {/* Row 2: Hero Content & (RESTORED SUBTITLE) */}
+      <View style={{ marginTop: 2 }}>
+        {hasBudgets ? (
+          <>
+            <Text
               style={{
-                width: 26,
-                height: 26,
-                borderRadius: 8,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 8,
+                color: "rgba(255,255,255,0.8)",
+                fontSize: 9,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 2,
               }}
             >
-              <Ionicons name="calculator" size={13} color="#1A1100" />
-            </LinearGradient>
-            <View>
+              Sisa Plafon Anggaran
+            </Text>
+            {isBalanceHidden ? (
               <Text
                 style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 1.2,
-                  textTransform: "uppercase",
+                  color: G_TEXT,
+                  fontSize: 24,
+                  fontWeight: "800",
+                  letterSpacing: 3,
+                  lineHeight: 30,
                 }}
               >
-                Kontrol Anggaran
+                Rp ••••••
               </Text>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.3)",
-                  fontSize: 7,
-                  marginTop: 1,
-                }}
-              >
-                {hasBudgets ? "Batas Belanja Pos Kategori" : "Belum Ada Pos Anggaran"}
-              </Text>
-            </View>
-          </View>
-          <GlassChip
-            icon={statusIcon}
-            label={statusLabel}
-            color={statusColor}
-            compact
-          />
-        </View>
-
-        {/* Row 2: Hero Content */}
-        <View style={{ marginTop: 2 }}>
-          {hasBudgets ? (
-            <>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 0.8,
-                  textTransform: "uppercase",
-                  marginBottom: 2,
-                }}
-              >
-                Sisa Plafon Anggaran
-              </Text>
+            ) : (
               <AnimatedNumber
                 value={formatCurrency(remainingBudget)}
                 style={{
@@ -1252,210 +1547,167 @@ const Slide3 = (props: BalanceCarouselProps) => {
                   lineHeight: 30,
                 }}
               />
-              <Text
-                style={{
-                  color: isOverbudget ? G_ERROR : "rgba(255,255,255,0.35)",
-                  fontSize: 9,
-                  marginTop: 1,
-                }}
-                numberOfLines={1}
-              >
-                {isOverbudget
-                  ? `Overbudget ${formatCurrency(totalSpent - totalLimit)}!`
-                  : `Jatah belanja pos anggaran ~${formatCurrency(dailyBudgetQuota)}/hari`}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 8,
-                  fontWeight: "600",
-                  letterSpacing: 0.8,
-                  textTransform: "uppercase",
-                  marginBottom: 2,
-                }}
-              >
-                Plafon Kategori
-              </Text>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: 22,
-                  fontWeight: "700",
-                  lineHeight: 28,
-                }}
-              >
-                Belum Ada Anggaran
-              </Text>
-              <Text
-                style={{
-                  color: "rgba(255,255,255,0.35)",
-                  fontSize: 9,
-                  marginTop: 1,
-                }}
-                numberOfLines={1}
-              >
-                Pasang limit belanja bulanan per pos kategori
-              </Text>
-            </>
-          )}
-        </View>
+            )}
+            {/* RESTORED: Daily budget quota or overbudget alert */}
+            <Text
+              style={{
+                color: isOverbudget ? G_ERROR : "rgba(255,255,255,0.75)",
+                fontSize: 8.5,
+                marginTop: 1,
+              }}
+              numberOfLines={1}
+            >
+              {isOverbudget
+                ? `Overbudget ${isBalanceHidden ? "••••••" : formatCurrency(totalSpent - totalLimit)}!`
+                : `Jatah belanja pos anggaran ~${isBalanceHidden ? "••••••" : formatCurrency(dailyBudgetQuota)}/hari`}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.8)",
+                fontSize: 9,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 2,
+              }}
+            >
+              Plafon Kategori
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.85)",
+                fontSize: 20,
+                fontWeight: "700",
+                lineHeight: 26,
+              }}
+            >
+              Belum Ada Anggaran
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.75)",
+                fontSize: 8.5,
+                marginTop: 1,
+              }}
+              numberOfLines={1}
+            >
+              Pasang limit belanja bulanan per pos kategori
+            </Text>
+          </>
+        )}
+      </View>
 
-        {/* Row 3: Progress Bar & Info */}
-        <View style={{ marginTop: 2 }}>
-          {hasBudgets ? (
-            <>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 3,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "rgba(255,255,255,0.45)",
-                    fontSize: 8,
-                    fontWeight: "600",
-                    letterSpacing: 0.5,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Anggaran Terpakai
-                </Text>
-                <Text
-                  style={{
-                    color: statusColor,
-                    fontSize: 9,
-                    fontWeight: "700",
-                  }}
-                >
-                  {burnRatePct}% ({formatCurrency(totalSpent)})
-                </Text>
-              </View>
-              <View
-                style={{
-                  height: 5,
-                  backgroundColor: "rgba(255,255,255,0.06)",
-                  borderRadius: 3,
-                  overflow: "hidden",
-                }}
-              >
-                <Animated.View
-                  style={[
-                    {
-                      height: 5,
-                      borderRadius: 3,
-                      backgroundColor: statusColor,
-                    },
-                    budgetAnimStyle,
-                  ]}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "rgba(255,255,255,0.35)",
-                    fontSize: 8,
-                  }}
-                >
-                  Limit Total: {formatCurrency(totalLimit)}
-                </Text>
-                <Text
-                  style={{
-                    color: "rgba(255,255,255,0.35)",
-                    fontSize: 8,
-                  }}
-                >
-                  {budgets.length} pos aktif
-                </Text>
-              </View>
-            </>
-          ) : (
+      {/* Row 3 (RESTORED PREVIOUS DETAIL): Progress Bar & Limit Summary */}
+      <View style={{ marginTop: 2 }}>
+        {hasBudgets ? (
+          <>
             <View
               style={{
                 flexDirection: "row",
+                justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "rgba(245,166,35,0.08)",
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderWidth: 1,
-                borderColor: "rgba(245,166,35,0.15)",
+                marginBottom: 3,
               }}
             >
-              <Ionicons
-                name="bulb-outline"
-                size={13}
-                color={G_GOLD}
-                style={{ marginRight: 6 }}
-              />
               <Text
                 style={{
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: 9,
-                  fontWeight: "500",
-                  flex: 1,
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: 8,
+                  fontWeight: "600",
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase",
                 }}
-                numberOfLines={1}
               >
-                Atur Anggaran di menu untuk kunci batas belanja tiap kategori.
+                Anggaran Terpakai
+              </Text>
+              <Text
+                style={{
+                  color: statusColor,
+                  fontSize: 8.5,
+                  fontWeight: "700",
+                }}
+              >
+                {burnRatePct}% ({isBalanceHidden ? "••••••" : formatCurrency(totalSpent)})
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Row 4: Footer */}
-        <View
-          style={{
-            paddingTop: 4,
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.06)",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons
-              name={hasBudgets ? "layers-outline" : "add-circle-outline"}
-              size={8}
-              color="rgba(255,255,255,0.35)"
-              style={{ marginRight: 4 }}
-            />
-            <Text
+            <View
               style={{
-                color: "rgba(255,255,255,0.35)",
-                fontSize: 8,
+                height: 4.5,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                borderRadius: 2.5,
+                overflow: "hidden",
               }}
             >
-              {hasBudgets
-                ? `${budgets.length} pos anggaran dibuat`
-                : "Belum ada anggaran disetel"}
-            </Text>
-          </View>
-          <Text
+              <Animated.View
+                style={[
+                  {
+                    height: 4.5,
+                    borderRadius: 2.5,
+                    backgroundColor: statusColor,
+                  },
+                  budgetAnimStyle,
+                ]}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: 3,
+              }}
+            >
+              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+                Limit Total: {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
+              </Text>
+              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+                {budgets.length} pos aktif
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View
             style={{
-              color: hasBudgets ? t.accent : G_DIM,
-              fontSize: 9,
-              fontWeight: "600",
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "rgba(245,166,35,0.12)",
+              borderRadius: 8,
+              paddingHorizontal: 8,
+              paddingVertical: 5,
+              borderWidth: 1,
+              borderColor: "rgba(245,166,35,0.2)",
             }}
           >
-            {hasBudgets ? "Plafon Belanja" : "Menu Anggaran"}
-          </Text>
-        </View>
+            <Ionicons name="bulb-outline" size={12} color={theme.accent} style={{ marginRight: 5 }} />
+            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 8.5, fontWeight: "600" }}>
+              Pasang limit belanja bulanan di menu Anggaran.
+            </Text>
+          </View>
+        )}
       </View>
-    </ChromaCard>
+
+      {/* Row 4: Footer */}
+      <View
+        style={{
+          paddingTop: 5,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(255,255,255,0.15)",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 8 }}>
+          {hasBudgets ? "Evaluasi batas anggaran berkala" : "Disiplin finansial dimulai dari limit"}
+        </Text>
+        <Text style={{ color: theme.accent, fontSize: 8.5, fontWeight: "700" }}>
+          Target Plafon
+        </Text>
+      </View>
+    </LuxeCardWrapper>
   );
 };
 
@@ -1464,16 +1716,21 @@ const CarouselItem = ({
   index,
   scrollX,
   carouselProps,
+  isBalanceHidden,
+  onToggleBalance,
 }: {
   index: number;
   scrollX: SharedValue<number>;
   carouselProps: BalanceCarouselProps;
+  isBalanceHidden: boolean;
+  onToggleBalance: () => void;
 }) => {
+  const step = CARD_WIDTH + CARD_GAP;
   const animStyle = useAnimatedStyle(() => {
     const inputRange = [
-      (index - 1) * SCREEN_WIDTH,
-      index * SCREEN_WIDTH,
-      (index + 1) * SCREEN_WIDTH,
+      (index - 1) * step,
+      index * step,
+      (index + 1) * step,
     ];
     return {
       transform: [
@@ -1481,15 +1738,7 @@ const CarouselItem = ({
           scale: interpolate(
             scrollX.value,
             inputRange,
-            [0.9, 1, 0.9],
-            Extrapolation.CLAMP,
-          ),
-        },
-        {
-          translateY: interpolate(
-            scrollX.value,
-            inputRange,
-            [15, 0, 15],
+            [0.92, 1, 0.92],
             Extrapolation.CLAMP,
           ),
         },
@@ -1497,21 +1746,19 @@ const CarouselItem = ({
       opacity: interpolate(
         scrollX.value,
         inputRange,
-        [0.4, 1, 0.4],
+        [0.65, 1, 0.65],
         Extrapolation.CLAMP,
       ),
     };
   });
 
   return (
-    <View style={{ width: CARD_WIDTH, marginHorizontal: 16 }}>
-      <Animated.View style={animStyle}>
-        {index === 0 && <Slide0 {...carouselProps} />}
-        {index === 1 && <Slide1 {...carouselProps} />}
-        {index === 2 && <Slide2 {...carouselProps} />}
-        {index === 3 && <Slide3 {...carouselProps} />}
-      </Animated.View>
-    </View>
+    <Animated.View style={[{ width: CARD_WIDTH, marginRight: CARD_GAP }, animStyle]}>
+      {index === 0 && <Slide0 props={carouselProps} isBalanceHidden={isBalanceHidden} onToggleBalance={onToggleBalance} />}
+      {index === 1 && <Slide1 props={carouselProps} isBalanceHidden={isBalanceHidden} onToggleBalance={onToggleBalance} />}
+      {index === 2 && <Slide2 props={carouselProps} isBalanceHidden={isBalanceHidden} />}
+      {index === 3 && <Slide3 props={carouselProps} isBalanceHidden={isBalanceHidden} />}
+    </Animated.View>
   );
 };
 
@@ -1519,28 +1766,35 @@ const CarouselItem = ({
 const PaginationDot = ({
   index,
   scrollX,
+  walletColor,
 }: {
   index: number;
   scrollX: SharedValue<number>;
+  walletColor?: string;
 }) => {
-  const accent = SLIDE_THEMES[Math.min(index, SLIDE_THEMES.length - 1)].accent;
+  const accent =
+    index === 0
+      ? walletColor || "#3B82F6"
+      : FIXED_SLIDE_THEMES[index]?.accent || "#10B981";
+
+  const step = CARD_WIDTH + CARD_GAP;
   const dotStyle = useAnimatedStyle(() => {
     const inputRange = [
-      (index - 1) * SCREEN_WIDTH,
-      index * SCREEN_WIDTH,
-      (index + 1) * SCREEN_WIDTH,
+      (index - 1) * step,
+      index * step,
+      (index + 1) * step,
     ];
     return {
       width: interpolate(
         scrollX.value,
         inputRange,
-        [6, 28, 6],
+        [6, 26, 6],
         Extrapolation.CLAMP,
       ),
       opacity: interpolate(
         scrollX.value,
         inputRange,
-        [0.15, 1, 0.15],
+        [0.25, 1, 0.25],
         Extrapolation.CLAMP,
       ),
     };
@@ -1552,7 +1806,7 @@ const PaginationDot = ({
         {
           borderRadius: 3,
           backgroundColor: accent,
-          marginHorizontal: 4,
+          marginHorizontal: 3,
           height: 6,
         },
         dotStyle,
@@ -1561,8 +1815,10 @@ const PaginationDot = ({
   );
 };
 
-// ─── Main export ─────────────────────────────────────────────────────────────────
+// ─── Main Component Export ──────────────────────────────────────────────────────
 export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+  const handleToggleBalance = () => setIsBalanceHidden((prev) => !prev);
   const scrollX = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -1570,46 +1826,67 @@ export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
     },
   });
 
+  const snapInterval = CARD_WIDTH + CARD_GAP;
+
   return (
-    <View style={{ marginBottom: 24 }}>
+    <View style={{ marginBottom: 20 }}>
       <Animated.FlatList
         data={Array.from({ length: SLIDE_COUNT }, (_, i) => i)}
         keyExtractor={(item) => item.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
-        pagingEnabled
+        snapToInterval={snapInterval}
+        snapToAlignment="start"
+        decelerationRate="fast"
         bounces={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        decelerationRate="fast"
-        style={{ marginHorizontal: -16 }}
+        contentContainerStyle={{
+          paddingHorizontal: 0,
+        }}
         renderItem={({ index }) => (
-          <CarouselItem index={index} scrollX={scrollX} carouselProps={props} />
+          <CarouselItem
+            index={index}
+            scrollX={scrollX}
+            carouselProps={props}
+            isBalanceHidden={isBalanceHidden}
+            onToggleBalance={handleToggleBalance}
+          />
         )}
       />
+
+      {/* Dynamic Luminous Pagination Indicator */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "center",
           alignItems: "center",
-          marginTop: 16,
+          marginTop: 12,
         }}
       >
         {Array.from({ length: SLIDE_COUNT }, (_, i) => (
-          <PaginationDot key={i} index={i} scrollX={scrollX} />
+          <PaginationDot
+            key={i}
+            index={i}
+            scrollX={scrollX}
+            walletColor={props.defaultWallet?.color}
+          />
         ))}
       </View>
+
+      {/* Time Filter Subtitle */}
       <Text
         style={{
-          color: "rgba(255,255,255,0.3)",
-          fontSize: 9,
+          color: "rgba(255,255,255,0.45)",
+          fontSize: 9.5,
           textAlign: "center",
-          marginTop: 8,
+          marginTop: 5,
+          fontWeight: "600",
           letterSpacing: 0.5,
         }}
       >
         {props.timeFilter === "all"
-          ? "Seluruh riwayat"
+          ? "Seluruh riwayat keuangan"
           : props.timeFilter === "monthly"
             ? "Bulan ini"
             : props.timeFilter === "weekly"

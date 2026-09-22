@@ -12,6 +12,7 @@ import {
   CustomCategory,
   RecurringTransaction,
   Wallet,
+  DailyPlan,
 } from "../types";
 import {
   calculateTotals,
@@ -160,6 +161,11 @@ const validateBudget = (obj: any): Budget | null => {
       period: obj.period || "monthly",
       startDate,
       endDate,
+      isRecurring: obj.isRecurring !== false,
+      cycleDays:
+        typeof obj.cycleDays === "number" && obj.cycleDays > 0
+          ? obj.cycleDays
+          : undefined,
       lastResetDate: obj.lastResetDate,
       createdAt: obj.createdAt || new Date().toISOString(),
     };
@@ -393,6 +399,59 @@ const validateRecurringTransaction = (obj: any): RecurringTransaction | null => 
   }
 };
 
+const validateDailyPlan = (obj: any): DailyPlan | null => {
+  if (!obj || typeof obj !== "object") return null;
+  if (
+    typeof obj.id !== "string" ||
+    typeof obj.walletId !== "string" ||
+    !isValidDateString(obj.startDate) ||
+    !isValidDateString(obj.endDate) ||
+    obj.startDate > obj.endDate
+  ) return null;
+
+  return {
+    id: obj.id,
+    walletId: obj.walletId,
+    amount:
+      typeof obj.amount === "number" && Number.isFinite(obj.amount) && obj.amount >= 0
+        ? obj.amount
+        : undefined,
+    sourceTransactionId:
+      typeof obj.sourceTransactionId === "string" ? obj.sourceTransactionId : undefined,
+    startDate: obj.startDate,
+    endDate: obj.endDate,
+    isActive: obj.isActive !== false,
+    createdAt: typeof obj.createdAt === "string" ? obj.createdAt : new Date().toISOString(),
+    endedAt: typeof obj.endedAt === "string" ? obj.endedAt : undefined,
+  };
+};
+
+// Repair plans created before a plan stored its own income amount and source.
+const repairDailyPlans = (plans: DailyPlan[], transactions: Transaction[]): DailyPlan[] =>
+  plans.map((plan) => {
+    const source = plan.sourceTransactionId
+      ? transactions.find((transaction) => transaction.id === plan.sourceTransactionId)
+      : transactions.find(
+          (transaction) =>
+            transaction.type === "income" &&
+            transaction.walletId === plan.walletId &&
+            transaction.date.slice(0, 10) === plan.startDate &&
+            typeof transaction.cyclePeriod === "number" &&
+            transaction.cyclePeriod > 0,
+        );
+    if (!source) return plan;
+
+    const end = new Date(`${plan.startDate}T12:00:00`);
+    end.setDate(end.getDate() + Math.floor(source.cyclePeriod || 1) - 1);
+    const endDate = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+    return {
+      ...plan,
+      amount: plan.amount ?? source.amount,
+      sourceTransactionId: plan.sourceTransactionId ?? source.id,
+      endDate,
+    };
+  });
+
 export const createDefaultWallet = (initialBalance: number = 0): Wallet => ({
   id: DEFAULT_WALLET_ID,
   name: "Dompet Utama",
@@ -419,9 +478,11 @@ export const validateWallet = (obj: any): Wallet | null => {
     }
     // Graceful fallback for schema-evolved fields (backward compat with older saves)
     const validTypes = ["cash", "bank", "ewallet", "investment", "credit"];
-    const validRoles = ["operational", "savings", "credit"];
     const walletType = validTypes.includes(obj.type) ? obj.type : "cash";
-    const walletRole = validRoles.includes(obj.role) ? obj.role : "operational";
+    const walletRole =
+      typeof obj.role === "string" && obj.role.trim()
+        ? obj.role.trim()
+        : "operational";
 
     return {
       id: obj.id,
@@ -433,6 +494,7 @@ export const validateWallet = (obj: any): Wallet | null => {
       color: typeof obj.color === "string" && obj.color.startsWith("#") ? obj.color : "#10B981",
       icon: typeof obj.icon === "string" ? obj.icon : "wallet",
       accountNumber: typeof obj.accountNumber === "string" ? obj.accountNumber : undefined,
+      isLiquid: typeof obj.isLiquid === "boolean" ? obj.isLiquid : undefined,
       isDefault: Boolean(obj.isDefault),
       createdAt: obj.createdAt || new Date().toISOString(),
       updatedAt: obj.updatedAt || new Date().toISOString(),
@@ -531,6 +593,7 @@ const migrateOldData = async (): Promise<AppState | null> => {
           migratedData = {
             transactions,
             wallets: [defaultWallet],
+            dailyPlans: [],
             budgets,
             savings,
             savingsTransactions,
@@ -639,6 +702,12 @@ export const storageService = {
             .map((w) => validateWallet(w))
             .filter((w: Wallet | null): w is Wallet => w !== null)
         : [];
+      const validatedDailyPlans: DailyPlan[] = Array.isArray(data.dailyPlans)
+        ? data.dailyPlans
+            .map((p: any) => validateDailyPlan(p))
+            .filter((p: DailyPlan | null): p is DailyPlan => p !== null)
+        : [];
+      const repairedDailyPlans = repairDailyPlans(validatedDailyPlans, validatedTransactions);
 
       const effectiveWallets =
         validatedWallets.length > 0
@@ -652,6 +721,7 @@ export const storageService = {
       const appData: AppState = {
         transactions: validatedTransactions,
         wallets: updatedWallets,
+        dailyPlans: repairedDailyPlans,
         budgets: validatedBudgets,
         savings: validatedSavings,
         savingsTransactions: validatedSavingsTransactions,
@@ -706,6 +776,7 @@ export const storageService = {
         return {
           transactions: [],
           wallets: [createDefaultWallet(0)],
+          dailyPlans: [],
           budgets: [],
           savings: [],
           savingsTransactions: [],
@@ -789,6 +860,12 @@ export const storageService = {
             )
         : [];
       const dailyCheckIns = normalizeCheckIns(parsedData.dailyCheckIns);
+      const dailyPlans: DailyPlan[] = Array.isArray(parsedData.dailyPlans)
+        ? parsedData.dailyPlans
+            .map((p: any) => validateDailyPlan(p))
+            .filter((p: DailyPlan | null): p is DailyPlan => p !== null)
+        : [];
+      const repairedDailyPlans = repairDailyPlans(dailyPlans, transactions);
 
       // Cek apakah ada nilai paydayCutoff tersimpan (atau fallback ke key khusus)
       let loadedPaydayCutoff = 1;
@@ -832,6 +909,7 @@ export const storageService = {
       const appData: AppState = {
         transactions,
         wallets: updatedWallets,
+        dailyPlans: repairedDailyPlans,
         budgets,
         savings,
         savingsTransactions,
@@ -854,6 +932,7 @@ export const storageService = {
       return {
         transactions: [],
         wallets: [fallbackWallet],
+        dailyPlans: [],
         budgets: [],
         savings: [],
         savingsTransactions: [],

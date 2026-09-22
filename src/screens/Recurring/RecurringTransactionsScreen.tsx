@@ -385,32 +385,6 @@ const RecurringTransactionsScreen: React.FC = () => {
             </Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          onPress={handleTriggerSync}
-          disabled={isProcessing}
-          activeOpacity={0.7}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 20,
-            backgroundColor: `${colors.accent}18`,
-            borderWidth: 1,
-            borderColor: `${colors.accent}30`,
-          }}
-        >
-          <Ionicons
-            name="sync-outline"
-            size={14}
-            color={colors.accent}
-            style={{ marginRight: 5 }}
-          />
-          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>
-            {isProcessing ? "Memproses..." : "Cek Jadwal"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView

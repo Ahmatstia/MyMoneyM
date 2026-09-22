@@ -31,8 +31,9 @@ import {
 } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
 import { calculateFinancialHealthScore } from "../../utils/analytics";
+import { getJakartaDateKey } from "../../utils/dailyCheckIn";
 
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from "../../theme/ThemeContext";
 import { BalanceCarousel } from "./components/BalanceCarousel";
 import { WalletHorizontalList } from "./components/WalletHorizontalList";
 import ExpenseTrendChart from "./components/ExpenseTrendChart";
@@ -46,10 +47,10 @@ import { LevelUpModal } from "../../components/Gamification/LevelUpModal";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-const CARD_RADIUS  = 20;
+const CARD_RADIUS = 20;
 const INNER_RADIUS = 14;
-const CARD_PAD     = 20;
-const SECTION_GAP  = 24;
+const CARD_PAD = 20;
+const SECTION_GAP = 24;
 // --- Komponen UI\ ------------------------------------------------------------
 
 /** Spacer vertikal antar section */
@@ -68,7 +69,7 @@ const SectionHeader = ({
   onPress?: () => void;
 }) => {
   const { colors } = useTheme();
-  
+
   return (
     <View
       style={{
@@ -102,7 +103,9 @@ const SectionHeader = ({
       </View>
       {linkLabel && onPress && (
         <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
+          <Text
+            style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}
+          >
             {linkLabel}
           </Text>
         </TouchableOpacity>
@@ -166,7 +169,34 @@ const HomeScreen: React.FC = () => {
   const [guideModalVisible, setGuideModalVisible] = useState(false);
   const [guideTopic, setGuideTopic] = useState<GuideTopicId>("cycle");
 
-  const { activeCycle, filteredTransactions, filteredIncome, filteredExpense, filteredPeriodNetto, openingBalance, filteredBalance, hasFinancialData, transactionAnalytics, financialHealthScore, smartInsights, dynamicQuickActions, projectionData, goalsPreview, quickStats, getCurrentDate, resolveCategory, getPersonalizedGreeting } = useHomeData(state, timeFilter, navigation);
+  const {
+    activeCycle,
+    filteredTransactions,
+    filteredIncome,
+    filteredExpense,
+    filteredPeriodNetto,
+    openingBalance,
+    filteredBalance,
+    hasFinancialData,
+    transactionAnalytics,
+    financialHealthScore,
+    smartInsights,
+    dynamicQuickActions,
+    projectionData,
+    goalsPreview,
+    quickStats,
+    getCurrentDate,
+    resolveCategory,
+    getPersonalizedGreeting,
+  } = useHomeData(state, timeFilter, navigation);
+
+  useEffect(() => {
+    const today = getJakartaDateKey();
+    const hasActiveTarget = (state.dailyPlans || []).some(
+      (plan) => plan.isActive && plan.startDate <= today && plan.endDate >= today,
+    );
+    if (timeFilter === "target" && !hasActiveTarget) setTimeFilter("monthly");
+  }, [state.dailyPlans, timeFilter]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -240,9 +270,7 @@ const HomeScreen: React.FC = () => {
     );
 
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.background }}
-      >
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 18 }}
           showsVerticalScrollIndicator={false}
@@ -267,7 +295,12 @@ const HomeScreen: React.FC = () => {
           <Spacer size={12} />
 
           {/* Time filter skeleton */}
-          <SkeletonBox w="100%" h={40} radius={13} style={{ marginBottom: 20 }} />
+          <SkeletonBox
+            w="100%"
+            h={40}
+            radius={13}
+            style={{ marginBottom: 20 }}
+          />
 
           {/* Balance card skeleton */}
           <View
@@ -279,11 +312,26 @@ const HomeScreen: React.FC = () => {
             }}
           >
             <SkeletonBox w={60} h={10} style={{ marginBottom: 10 }} />
-            <SkeletonBox w={180} h={34} radius={10} style={{ marginBottom: 20 }} />
+            <SkeletonBox
+              w={180}
+              h={34}
+              radius={10}
+              style={{ marginBottom: 20 }}
+            />
             <View style={{ flexDirection: "row" }}>
               <SkeletonBox w="30%" h={36} radius={8} />
-              <SkeletonBox w="30%" h={36} radius={8} style={{ marginLeft: "5%" }} />
-              <SkeletonBox w="30%" h={36} radius={8} style={{ marginLeft: "5%" }} />
+              <SkeletonBox
+                w="30%"
+                h={36}
+                radius={8}
+                style={{ marginLeft: "5%" }}
+              />
+              <SkeletonBox
+                w="30%"
+                h={36}
+                radius={8}
+                style={{ marginLeft: "5%" }}
+              />
             </View>
             <SkeletonBox w="100%" h={4} radius={4} style={{ marginTop: 16 }} />
           </View>
@@ -299,7 +347,12 @@ const HomeScreen: React.FC = () => {
           >
             {[1, 2, 3, 4, 5].map((i) => (
               <View key={i} style={{ alignItems: "center", flex: 1 }}>
-                <SkeletonBox w={44} h={44} radius={14} style={{ marginBottom: 6 }} />
+                <SkeletonBox
+                  w={44}
+                  h={44}
+                  radius={14}
+                  style={{ marginBottom: 6 }}
+                />
                 <SkeletonBox w={34} h={8} radius={4} />
               </View>
             ))}
@@ -317,10 +370,7 @@ const HomeScreen: React.FC = () => {
             }}
           >
             {[1, 2, 3].map((i) => (
-              <View
-                key={i}
-                style={{ flex: 1, alignItems: "center" }}
-              >
+              <View key={i} style={{ flex: 1, alignItems: "center" }}>
                 <SkeletonBox w={50} h={8} style={{ marginBottom: 6 }} />
                 <SkeletonBox w={40} h={16} radius={6} />
               </View>
@@ -347,7 +397,12 @@ const HomeScreen: React.FC = () => {
                   borderBottomColor: `${colors.border}80`,
                 }}
               >
-                <SkeletonBox w={38} h={38} radius={12} style={{ marginRight: 12 }} />
+                <SkeletonBox
+                  w={38}
+                  h={38}
+                  radius={12}
+                  style={{ marginRight: 12 }}
+                />
                 <View style={{ flex: 1 }}>
                   <SkeletonBox w={100} h={11} style={{ marginBottom: 6 }} />
                   <SkeletonBox w={140} h={9} radius={5} />
@@ -423,11 +478,11 @@ const HomeScreen: React.FC = () => {
                   paddingVertical: 8,
                   borderRadius: 20,
                   backgroundColor: `${getScoreColor(
-                    financialHealthScore.overallScore
+                    financialHealthScore.overallScore,
                   )}14`,
                   borderWidth: 1,
                   borderColor: `${getScoreColor(
-                    financialHealthScore.overallScore
+                    financialHealthScore.overallScore,
                   )}30`,
                 }}
                 onPress={() =>
@@ -536,8 +591,11 @@ const HomeScreen: React.FC = () => {
 
         <Spacer size={14} />
 
-        {/* Contextual Cycle Hint (if user hasn't configured a cycle income) */}
-        {!activeCycle && (
+        {/* Tampilkan panduan hanya bila belum ada batas rekening yang aktif. */}
+        {!(state.dailyPlans || []).some((plan) => {
+          const today = getJakartaDateKey();
+          return plan.isActive && plan.startDate <= today && plan.endDate >= today;
+        }) && (
           <ContextualCycleHint
             onLearnMore={() => {
               setGuideTopic("cycle");
@@ -560,43 +618,72 @@ const HomeScreen: React.FC = () => {
             borderColor: `${colors.border}80`,
           }}
         >
-          {(["weekly", "monthly", "yearly", "all"] as TimeFilter[]).map(
-            (filter) => {
-              const labels: Record<string, string> = {
-                weekly: activeCycle && activeCycle.period <= 14 ? activeCycle.label : "Minggu Ini",
-                monthly: "Bulan Ini",
-                yearly: "Tahun Ini",
-                all: "Semua",
-              };
-              const isActive = timeFilter === filter;
+          {(
+            ((state.dailyPlans || []).some((plan) => {
+              const today = getJakartaDateKey();
               return (
-                <TouchableOpacity
-                  key={filter}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 8,
-                    borderRadius: 10,
-                    backgroundColor: isActive
-                      ? `${colors.accent}20`
-                      : "transparent",
-                    alignItems: "center",
-                  }}
-                  onPress={() => setTimeFilter(filter)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      color: isActive ? colors.accent : colors.gray400,
-                      fontSize: 10,
-                      fontWeight: isActive ? "700" : "500",
-                    }}
-                  >
-                    {labels[filter]}
-                  </Text>
-                </TouchableOpacity>
+                plan.isActive &&
+                plan.startDate <= today &&
+                plan.endDate >= today
               );
-            }
-          )}
+            })
+              ? ["target", "weekly", "monthly", "yearly", "all"]
+              : ["weekly", "monthly", "yearly", "all"]) as TimeFilter[]
+          ).map((filter) => {
+            const labels: Record<string, string> = {
+              target: (() => {
+                const today = getJakartaDateKey();
+                const plans = (state.dailyPlans || []).filter(
+                  (plan) =>
+                    plan.isActive &&
+                    plan.startDate <= today &&
+                    plan.endDate >= today,
+                );
+                const durations = plans.map((plan) => {
+                  const start = new Date(
+                    `${plan.startDate}T00:00:00`,
+                  ).getTime();
+                  const end = new Date(`${plan.endDate}T00:00:00`).getTime();
+                  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+                });
+                return durations.length &&
+                  durations.every((days) => days === durations[0])
+                  ? `Batas ${durations[0]} Hari`
+                  : "Batas Aktif";
+              })(),
+              weekly: "Minggu",
+              monthly: "Bulan",
+              yearly: "Tahun",
+              all: "Semua",
+            };
+            const isActive = timeFilter === filter;
+            return (
+              <TouchableOpacity
+                key={filter}
+                style={{
+                  flex: 1,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  backgroundColor: isActive
+                    ? `${colors.accent}20`
+                    : "transparent",
+                  alignItems: "center",
+                }}
+                onPress={() => setTimeFilter(filter)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={{
+                    color: isActive ? colors.accent : colors.gray400,
+                    fontSize: 10,
+                    fontWeight: isActive ? "700" : "500",
+                  }}
+                >
+                  {labels[filter]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ============================================================
@@ -617,8 +704,12 @@ const HomeScreen: React.FC = () => {
           projectionData={projectionData}
           openingBalance={openingBalance}
           filteredTransactions={filteredTransactions}
+          allTransactions={state.transactions}
           budgets={state.budgets}
           customCategories={state.customCategories}
+          dailyPlans={state.dailyPlans}
+          wallets={state.wallets}
+          activeCycle={activeCycle}
           defaultWallet={
             state.wallets?.find((w) => w.isDefault) ??
             (state.wallets?.length > 0 ? state.wallets[0] : null)
@@ -633,7 +724,9 @@ const HomeScreen: React.FC = () => {
           operationalBalance={safeNumber(state.operationalBalance)}
           savingsBalance={safeNumber(state.savingsBalance)}
           onManagePress={() => navigation.navigate("Wallets")}
-          onAddWalletPress={() => navigation.navigate("Wallets", { openAddModal: true })}
+          onAddWalletPress={() =>
+            navigation.navigate("Wallets", { openAddModal: true })
+          }
         />
 
         {/* ============================================================
@@ -772,8 +865,8 @@ const HomeScreen: React.FC = () => {
             filteredTransactions.length > 0
               ? "Transaksi Terbaru"
               : state.transactions.length > 0
-              ? "Belum Ada Transaksi"
-              : "Mulai Catat Keuangan"
+                ? "Belum Ada Transaksi"
+                : "Mulai Catat Keuangan"
           }
           linkLabel={
             state.transactions.length > 0 ? "Lihat Semua" : "Mulai Sekarang"
@@ -800,7 +893,7 @@ const HomeScreen: React.FC = () => {
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.date).getTime() - new Date(a.date).getTime()
+                  new Date(b.date).getTime() - new Date(a.date).getTime(),
               )
               .slice(0, 5)
               .map((transaction, index, arr) => (
@@ -823,9 +916,7 @@ const HomeScreen: React.FC = () => {
                   activeOpacity={0.6}
                   accessible
                   accessibilityLabel={`Transaksi ${
-                    transaction.type === "income"
-                      ? "pemasukan"
-                      : "pengeluaran"
+                    transaction.type === "income" ? "pemasukan" : "pengeluaran"
                   } di kategori ${
                     transaction.category
                   } senilai ${formatCurrency(transaction.amount)}`}
@@ -859,7 +950,13 @@ const HomeScreen: React.FC = () => {
                     >
                       {transaction.category}
                     </Text>
-                    <Text style={{ color: "rgba(148,163,184,0.6)", fontSize: 11, marginTop: 4 }}>
+                    <Text
+                      style={{
+                        color: "rgba(148,163,184,0.6)",
+                        fontSize: 11,
+                        marginTop: 4,
+                      }}
+                    >
                       {transaction.description || "Tidak ada deskripsi"} ={" "}
                       {new Date(transaction.date).toLocaleDateString("id-ID", {
                         day: "numeric",
@@ -868,7 +965,15 @@ const HomeScreen: React.FC = () => {
                       })}
                     </Text>
                   </View>
-                  <Text style={{ color: transaction.type === "income" ? "#22C55E" : "#EF4444", fontSize: 15, fontWeight: "800", letterSpacing: -0.5 }}>
+                  <Text
+                    style={{
+                      color:
+                        transaction.type === "income" ? "#22C55E" : "#EF4444",
+                      fontSize: 15,
+                      fontWeight: "800",
+                      letterSpacing: -0.5,
+                    }}
+                  >
                     {transaction.type === "income" ? "+" : "-"}
                     {formatCurrency(safeNumber(transaction.amount))}
                   </Text>
@@ -959,15 +1064,19 @@ const HomeScreen: React.FC = () => {
               >
                 Tambah transaksi pertama
               </Text>
-                <Text style={{ color: "rgba(148,163,184,0.45)", fontSize: 10, lineHeight: 16, marginTop: 4 }}>
-                  💡 Catat pemasukan atau pengeluaran = Buat anggaran = Tetapkan tabungan
-                </Text>
+              <Text
+                style={{
+                  color: "rgba(148,163,184,0.45)",
+                  fontSize: 10,
+                  lineHeight: 16,
+                  marginTop: 4,
+                }}
+              >
+                💡 Catat pemasukan atau pengeluaran = Buat anggaran = Tetapkan
+                tabungan
+              </Text>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={14}
-              color={colors.gray400}
-            />
+            <Ionicons name="chevron-forward" size={14} color={colors.gray400} />
           </TouchableOpacity>
         )}
 
@@ -1085,8 +1194,8 @@ const HomeScreen: React.FC = () => {
                         progress > 90
                           ? colors.error
                           : progress > 70
-                          ? colors.warning
-                          : colors.success;
+                            ? colors.warning
+                            : colors.success;
                       return (
                         <View key={budget.id} style={{ marginBottom: 14 }}>
                           <View
@@ -1109,9 +1218,7 @@ const HomeScreen: React.FC = () => {
                             <Text
                               style={{
                                 color:
-                                  progress > 90
-                                    ? colors.error
-                                    : colors.gray400,
+                                  progress > 90 ? colors.error : colors.gray400,
                                 fontSize: 10,
                                 fontWeight: "600",
                               }}
@@ -1133,7 +1240,7 @@ const HomeScreen: React.FC = () => {
                                 borderRadius: 4,
                                 width: `${Math.max(
                                   0,
-                                  Math.min(safeNumber(progress), 100)
+                                  Math.min(safeNumber(progress), 100),
                                 )}%`,
                                 backgroundColor: barColor,
                               }}
@@ -1179,15 +1286,13 @@ const HomeScreen: React.FC = () => {
                       const safeCurrent = safeNumber(goal.current);
                       const safeTarget = safeNumber(goal.target);
                       const progress =
-                        safeTarget > 0
-                          ? (safeCurrent / safeTarget) * 100
-                          : 0;
+                        safeTarget > 0 ? (safeCurrent / safeTarget) * 100 : 0;
                       const barColor =
                         progress >= 80
                           ? colors.success
                           : progress >= 50
-                          ? colors.warning
-                          : colors.accent;
+                            ? colors.warning
+                            : colors.accent;
                       return (
                         <TouchableOpacity
                           key={goal.id}
@@ -1237,7 +1342,7 @@ const HomeScreen: React.FC = () => {
                                 borderRadius: 4,
                                 width: `${Math.max(
                                   0,
-                                  Math.min(safeNumber(progress), 100)
+                                  Math.min(safeNumber(progress), 100),
                                 )}%`,
                                 backgroundColor: barColor,
                               }}
@@ -1262,7 +1367,7 @@ const HomeScreen: React.FC = () => {
             </>
           )}
 
-                {/* SMART INSIGHTS */}
+        {/* SMART INSIGHTS */}
         {smartInsights.length > 0 && (
           <>
             <SectionHeader

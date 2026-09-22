@@ -8,16 +8,18 @@ import { formatCurrency, safeNumber } from "./calculations";
 const csvEscape = (value: any): string => {
   if (value === null || value === undefined) return "";
   const str = String(value);
+  // Spreadsheet apps execute cells starting with these characters as formulas.
+  const safeValue = /^[=+\-@]/.test(str) ? `'${str}` : str;
   // Escape quotes and wrap in quotes if contains comma, quote, or newline
   if (
-    str.includes(",") ||
-    str.includes('"') ||
-    str.includes("\n") ||
-    str.includes("\r")
+    safeValue.includes(",") ||
+    safeValue.includes('"') ||
+    safeValue.includes("\n") ||
+    safeValue.includes("\r")
   ) {
-    return `"${str.replace(/"/g, '""')}"`;
+    return `"${safeValue.replace(/"/g, '""')}"`;
   }
-  return str;
+  return safeValue;
 };
 
 // ─── Helper: Join row ─────────────────────────────────────────────────────────
@@ -82,8 +84,8 @@ export const generateTransactionsCsv = (state: AppState): string => {
         dom >= totalDays - 2 ? 1 : 0,
         totalDays - dom,
         tx.type,
-        csvEscape(tx.category),
-        csvEscape(tx.description),
+        tx.category,
+        tx.description,
         tx.amount,
         tx.amount >= 500000 ? 1 : 0,
         txPerDay[tx.date] || 1,
@@ -118,7 +120,7 @@ export const generateBudgetsCsv = (state: AppState): string => {
 
     rows.push(
       csvRow([
-        csvEscape(b.category),
+        b.category,
         b.period,
         limit,
         spent,
@@ -173,14 +175,14 @@ export const generateSavingsCsv = (state: AppState): string => {
 
     rows.push(
       csvRow([
-        csvEscape(s.name),
+        s.name,
         target,
         current,
         progress.toFixed(1),
         remaining,
         s.deadline || "",
         daysToDeadline >= 0 ? daysToDeadline : "",
-        csvEscape(s.category),
+        s.category,
         s.priority,
         monthlyContribution,
       ]),
@@ -222,13 +224,13 @@ export const generateDebtsCsv = (state: AppState): string => {
 
     rows.push(
       csvRow([
-        csvEscape(d.name),
+        d.name,
         d.type,
         amount,
         remaining,
         paid,
         payoff.toFixed(1),
-        csvEscape(d.category),
+        d.category,
         d.status,
         d.dueDate || "",
         daysToDue,
@@ -353,8 +355,8 @@ export const generateMonthlySummaryCsv = (state: AppState): string => {
           activeDays,
           Math.round(avgDailyExpense),
           largestExpense.amount,
-          csvEscape(largestExpense.category),
-          topCategory ? csvEscape(topCategory[0]) : "",
+          largestExpense.category,
+          topCategory ? topCategory[0] : "",
           topCategory ? topCategory[1] : 0,
         ]),
       );
@@ -548,8 +550,8 @@ export const generateAllInOneCsv = (state: AppState): string => {
         dom >= totalDays - 2 ? 1 : 0,
         totalDays - dom,
         tx.type,
-        csvEscape(tx.category),
-        csvEscape(tx.description),
+        tx.category,
+        tx.description,
         tx.amount,
         tx.amount >= 500000 ? 1 : 0,
         txPerDay[tx.date] || 1,
