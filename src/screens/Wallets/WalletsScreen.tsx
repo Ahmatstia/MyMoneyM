@@ -182,21 +182,33 @@ const WalletsScreen: React.FC = () => {
     }
   }, [pendingDefaultId, wallets]);
 
-  // Filtered wallets
+  // Filtered wallets with default wallet always placed first
   const filteredWallets = useMemo(() => {
-    if (filterRole === "all") return wallets;
+    let result = wallets;
     if (filterRole === "liquid") {
-      return wallets.filter((w) =>
+      result = wallets.filter((w) =>
         w.isLiquid !== undefined ? w.isLiquid : w.role === "operational",
       );
-    }
-    if (filterRole === "nonliquid") {
-      return wallets.filter((w) =>
+    } else if (filterRole === "nonliquid") {
+      result = wallets.filter((w) =>
         w.isLiquid !== undefined ? !w.isLiquid : w.role !== "operational",
       );
+    } else if (filterRole !== "all") {
+      result = wallets.filter((w) => w.role === filterRole);
     }
-    return wallets.filter((w) => w.role === filterRole);
-  }, [wallets, filterRole]);
+
+    return [...result].sort((a, b) => {
+      const aDef = pendingDefaultId
+        ? a.id === pendingDefaultId
+        : Boolean(a.isDefault);
+      const bDef = pendingDefaultId
+        ? b.id === pendingDefaultId
+        : Boolean(b.isDefault);
+      if (aDef && !bDef) return -1;
+      if (!aDef && bDef) return 1;
+      return 0;
+    });
+  }, [wallets, filterRole, pendingDefaultId]);
 
   // Calculations for overview
   const totalBalance = safeNumber(state.balance);

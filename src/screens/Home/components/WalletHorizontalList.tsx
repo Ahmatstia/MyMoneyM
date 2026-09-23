@@ -31,6 +31,14 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
     totalPartitioned > 0 ? Math.round((opSafe / totalPartitioned) * 100) : 50;
   const svPercent = 100 - opPercent;
 
+  const sortedWallets = useMemo(() => {
+    return [...wallets].sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return 0;
+    });
+  }, [wallets]);
+
   return (
     <View style={{ marginBottom: 18 }}>
       {/* ── HEADER ROW & MANAGE LINK ── */}
@@ -153,8 +161,12 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 8, paddingRight: 4 }}
         >
-          {wallets.map((wallet) => {
+          {sortedWallets.map((wallet) => {
             const walletColor = wallet.color || colors.accent;
+            const startColor =
+              walletColor.startsWith("#") && walletColor.length === 7
+                ? `${walletColor}C7`
+                : walletColor;
             const isLiquid =
               wallet.isLiquid !== undefined
                 ? wallet.isLiquid
@@ -194,15 +206,15 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                   borderRadius: 14,
                   padding: 9,
                   borderWidth: 1,
-                  borderColor: `${walletColor}38`,
+                  borderColor: `${walletColor}45`,
                   overflow: "hidden",
                   justifyContent: "space-between",
-                  backgroundColor: colors.surface,
+                  backgroundColor: `${walletColor}18`,
                 }}
               >
-                {/* Sleek Dual-Tone Gradient Overlay */}
+                {/* Sleek ATM-style Gradient Overlay */}
                 <LinearGradient
-                  colors={[`${walletColor}24`, `${colors.surface}`]}
+                  colors={[startColor, "#06334F", "#011827"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
@@ -214,8 +226,25 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                   }}
                 />
 
+                {/* Signature leaf motif */}
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    right: -10,
+                    bottom: -35,
+                    width: 44,
+                    height: 95,
+                    borderRadius: 45,
+                    backgroundColor: walletColor,
+                    opacity: 0.32,
+                    transform: [{ rotate: "38deg" }],
+                  }}
+                />
+
                 {/* Decorative Fintech Card Holographic Rings (Out of the Box Watermark) */}
                 <View
+                  pointerEvents="none"
                   style={{
                     position: "absolute",
                     right: -10,
@@ -224,10 +253,11 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                     height: 44,
                     borderRadius: 22,
                     borderWidth: 1.2,
-                    borderColor: `${walletColor}18`,
+                    borderColor: `${walletColor}25`,
                   }}
                 />
                 <View
+                  pointerEvents="none"
                   style={{
                     position: "absolute",
                     right: 4,
@@ -236,7 +266,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                     height: 34,
                     borderRadius: 17,
                     borderWidth: 1,
-                    borderColor: `${walletColor}14`,
+                    borderColor: `${walletColor}18`,
                   }}
                 />
 
@@ -244,7 +274,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 <View style={{ marginTop: 2 }}>
                   <Text
                     style={{
-                      color: colors.textPrimary,
+                      color: "#FFFFFF",
                       fontSize: 11,
                       fontWeight: "700",
                       letterSpacing: -0.2,
@@ -255,7 +285,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                   </Text>
                   <Text
                     style={{
-                      color: colors.gray400,
+                      color: "rgba(255,255,255,0.72)",
                       fontSize: 9.5,
                       fontWeight: "500",
                       marginTop: 0.5,
@@ -267,20 +297,58 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                       : typeLabel}
                   </Text>
 
-                  {/* Bottom: Crisp Balance */}
-                  <Text
+                  {/* Bottom: Crisp Balance & UI Bulet-bulet di ujung kartu */}
+                  <View
                     style={{
-                      color: colors.textPrimary,
-                      fontSize: 12,
-                      fontWeight: "800",
-                      letterSpacing: -0.3,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
                       marginTop: 10,
                     }}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
                   >
-                    {formatCurrency(wallet.balance)}
-                  </Text>
+                    <Text
+                      style={{
+                        color: wallet.balance < 0 ? "#FCA5A5" : "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: "800",
+                        letterSpacing: -0.3,
+                        flex: 1,
+                        marginRight: 4,
+                      }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {formatCurrency(wallet.balance)}
+                    </Text>
+
+                    {/* UI Bulet-bulet di ujung kartu */}
+                    <View
+                      pointerEvents="none"
+                      style={{
+                        flexDirection: "row",
+                        opacity: 0.95,
+                        marginBottom: 1,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 13,
+                          height: 13,
+                          borderRadius: 6.5,
+                          backgroundColor: "#F0261D",
+                        }}
+                      />
+                      <View
+                        style={{
+                          width: 13,
+                          height: 13,
+                          borderRadius: 6.5,
+                          backgroundColor: "#FF9F1C",
+                          marginLeft: -4.5,
+                        }}
+                      />
+                    </View>
+                  </View>
                 </View>
               </TouchableOpacity>
             );

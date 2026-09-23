@@ -54,12 +54,14 @@ export interface SlideTheme {
 
 // ─── Dynamic Palette Generator for Primary Wallet (Slide 1) ───────────────────
 export const buildDynamicTheme = (walletColor?: string): SlideTheme => {
-  const base = walletColor || "#3B82F6";
+  const base = walletColor || "#10B981";
+  const startColor =
+    base.startsWith("#") && base.length === 7 ? `${base}C7` : base;
 
   return {
     accent: base,
-    gradientColors: ["#075071", "#032D49", "#011A2B"],
-    subtlePatternColor: "rgba(255,255,255,0.06)",
+    gradientColors: [startColor, "#06334F", "#011827"],
+    subtlePatternColor: `${base}18`,
     networkColor1: "#EF4444",
     networkColor2: "#F59E0B",
   };
