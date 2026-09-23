@@ -27,7 +27,8 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
   const opSafe = Math.max(0, safeNumber(operationalBalance));
   const svSafe = Math.max(0, safeNumber(savingsBalance));
   const totalPartitioned = opSafe + svSafe;
-  const opPercent = totalPartitioned > 0 ? Math.round((opSafe / totalPartitioned) * 100) : 50;
+  const opPercent =
+    totalPartitioned > 0 ? Math.round((opSafe / totalPartitioned) * 100) : 50;
   const svPercent = 100 - opPercent;
 
   return (
@@ -130,7 +131,13 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 backgroundColor: colors.success,
               }}
             />
-            <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
+            <Text
+              style={{
+                color: colors.gray400,
+                fontSize: 9.5,
+                fontWeight: "600",
+              }}
+            >
               Belanja:
             </Text>
             <Text
@@ -142,7 +149,9 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
             >
               {formatCurrency(operationalBalance)}
             </Text>
-            <Text style={{ color: colors.success, fontSize: 9, fontWeight: "700" }}>
+            <Text
+              style={{ color: colors.success, fontSize: 9, fontWeight: "700" }}
+            >
               ({opPercent}%)
             </Text>
           </View>
@@ -166,7 +175,13 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 backgroundColor: colors.info,
               }}
             />
-            <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
+            <Text
+              style={{
+                color: colors.gray400,
+                fontSize: 9.5,
+                fontWeight: "600",
+              }}
+            >
               Dingin:
             </Text>
             <Text
@@ -178,7 +193,9 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
             >
               {formatCurrency(savingsBalance)}
             </Text>
-            <Text style={{ color: colors.info, fontSize: 9, fontWeight: "700" }}>
+            <Text
+              style={{ color: colors.info, fontSize: 9, fontWeight: "700" }}
+            >
               ({svPercent}%)
             </Text>
           </View>
@@ -242,7 +259,13 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
             <Ionicons name="add" size={16} color={colors.accent} />
           </View>
           <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 11, fontWeight: "700" }}>
+            <Text
+              style={{
+                color: colors.textPrimary,
+                fontSize: 11,
+                fontWeight: "700",
+              }}
+            >
               Belum Ada Rekening
             </Text>
             <Text style={{ color: colors.gray400, fontSize: 9.5 }}>
@@ -268,22 +291,23 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
               wallet.type === "bank"
                 ? "Bank"
                 : wallet.type === "ewallet"
-                ? "E-Wallet"
-                : wallet.type === "investment"
-                ? "Investasi"
-                : wallet.type === "credit"
-                ? "Paylater"
-                : "Tunai";
+                  ? "E-Wallet"
+                  : wallet.type === "investment"
+                    ? "Investasi"
+                    : wallet.type === "credit"
+                      ? "Paylater"
+                      : "Tunai";
 
-            const roleDisplayName = wallet.role === "operational"
-              ? "Belanja"
-              : wallet.role
-              ? wallet.role.length > 8
-                ? wallet.role.slice(0, 7) + "…"
+            const roleDisplayName =
+              wallet.role === "operational"
+                ? "Belanja"
                 : wallet.role
-              : isLiquid
-              ? "Belanja"
-              : "Dingin";
+                  ? wallet.role.length > 8
+                    ? wallet.role.slice(0, 7) + "…"
+                    : wallet.role
+                  : isLiquid
+                    ? "Belanja"
+                    : "Dingin";
 
             return (
               <TouchableOpacity
@@ -291,8 +315,8 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                 onPress={onManagePress}
                 activeOpacity={0.75}
                 style={{
-                  width: 136,
-                  height: 84,
+                  width: 125,
+                  height: 78,
                   borderRadius: 14,
                   padding: 9,
                   borderWidth: 1,
@@ -342,38 +366,6 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                   }}
                 />
 
-                {/* Top Row: Mini Icon + Role Indicator */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 7,
-                      backgroundColor: `${walletColor}28`,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name={(wallet.icon as any) || "card"}
-                      size={12}
-                      color={walletColor}
-                    />
-                  </View>
-
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                    {wallet.isDefault && (
-                      <Ionicons name="star" size={10} color="#F59E0B" style={{ marginRight: 1 }} />
-                    )}
-                  </View>
-                </View>
-
                 {/* Middle: Wallet Name & Masked Type */}
                 <View style={{ marginTop: 2 }}>
                   <Text
@@ -390,29 +382,32 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
                   <Text
                     style={{
                       color: colors.gray400,
-                      fontSize: 8.5,
+                      fontSize: 9.5,
                       fontWeight: "500",
                       marginTop: 0.5,
                     }}
                     numberOfLines={1}
                   >
-                    {wallet.accountNumber ? `•••• ${wallet.accountNumber}` : typeLabel}
+                    {wallet.accountNumber
+                      ? `${wallet.accountNumber}`
+                      : typeLabel}
+                  </Text>
+
+                  {/* Bottom: Crisp Balance */}
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: "800",
+                      letterSpacing: -0.3,
+                      marginTop: 10,
+                    }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {formatCurrency(wallet.balance)}
                   </Text>
                 </View>
-
-                {/* Bottom: Crisp Balance */}
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: "800",
-                    letterSpacing: -0.3,
-                  }}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {formatCurrency(wallet.balance)}
-                </Text>
               </TouchableOpacity>
             );
           })}
@@ -463,4 +458,3 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
     </View>
   );
 };
-

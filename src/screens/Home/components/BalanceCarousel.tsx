@@ -474,11 +474,7 @@ const Slide0 = ({
               borderColor: "rgba(255,255,255,0.35)",
             }}
           >
-            <Ionicons
-              name="leaf"
-              size={15}
-              color="#FFFFFF"
-            />
+            <Ionicons name="leaf" size={15} color="#FFFFFF" />
           </View>
           <View>
             <Text
@@ -508,31 +504,6 @@ const Slide0 = ({
       </View>
 
       {/* ── ROW 2 (HERO SALDO - BCA Mobile Style on top) ── */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
-        <View
-          style={{
-            width: 48,
-            height: 33,
-            borderRadius: 6,
-            backgroundColor: "#E7C677",
-            borderWidth: 1,
-            borderColor: "#F6DEA1",
-            marginRight: 12,
-            overflow: "hidden",
-          }}
-        >
-          <View style={{ position: "absolute", left: 15, top: 0, bottom: 0, width: 1, backgroundColor: "#9C7835" }} />
-          <View style={{ position: "absolute", left: 31, top: 0, bottom: 0, width: 1, backgroundColor: "#9C7835" }} />
-          <View style={{ position: "absolute", top: 15, left: 0, right: 0, height: 1, backgroundColor: "#9C7835" }} />
-        </View>
-        <Ionicons
-          name="wifi-outline"
-          size={25}
-          color="rgba(255,255,255,0.88)"
-          style={{ transform: [{ rotate: "90deg" }] }}
-        />
-      </View>
-
       <View style={{ marginTop: 5 }}>
         <View
           style={{
@@ -770,24 +741,7 @@ const Slide1 = ({
         <View style={{ alignItems: "flex-end", gap: 4 }}>
           {/* Surplus / Deficit Badge placed directly UNDER the Sembunyikan button */}
           {hasChange && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "rgba(0,0,0,0.32)",
-                paddingHorizontal: 6,
-                paddingVertical: 1.8,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.12)",
-                gap: 3,
-              }}
-            >
-              <Ionicons
-                name={isPositive ? "trending-up" : "trending-down"}
-                size={9}
-                color={netColor}
-              />
+            <View>
               <Text
                 style={{ color: netColor, fontSize: 10.5, fontWeight: "700" }}
               >
@@ -873,12 +827,9 @@ const Slide1 = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.22)",
             borderRadius: 10,
             paddingVertical: 5,
             paddingHorizontal: 8,
-            borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.12)",
           }}
         >
           <View style={{ flex: 1, alignItems: "center" }}>
@@ -1592,18 +1543,6 @@ const Slide3 = ({
           </>
         ) : (
           <>
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.8)",
-                fontSize: 10.5,
-                fontWeight: "700",
-                letterSpacing: 0.8,
-                textTransform: "uppercase",
-                marginBottom: 2,
-              }}
-            >
-              Plafon Kategori
-            </Text>
             <Text
               style={{
                 color: "rgba(255,255,255,0.85)",
