@@ -291,9 +291,9 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
         },
         {
           name: "Wallets",
-          label: "Dompet & Rekening",
+          label: "Rekening",
           icon: "wallet-outline" as const,
-          color: colors.primary,
+          color: colors.success,
         },
         {
           name: "RecurringTransactions",

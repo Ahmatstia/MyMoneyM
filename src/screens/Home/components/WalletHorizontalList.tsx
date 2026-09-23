@@ -100,133 +100,7 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
 
       {/* ── OUT-OF-THE-BOX AMBIENT LIQUIDITY CAPSULE (ULTRA-COMPACT) ── */}
       {/* Replaces the old bulky 100px dual box with a sleek 26px executive strip + 2px ratio meter */}
-      <TouchableOpacity
-        onPress={onManagePress}
-        activeOpacity={0.8}
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 12,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderWidth: 1,
-          borderColor: `${colors.border}60`,
-          marginBottom: 10,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 5,
-          }}
-        >
-          {/* Liquid (Siap Belanja) */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: colors.success,
-              }}
-            />
-            <Text
-              style={{
-                color: colors.gray400,
-                fontSize: 9.5,
-                fontWeight: "600",
-              }}
-            >
-              Belanja:
-            </Text>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 10.5,
-                fontWeight: "800",
-              }}
-            >
-              {formatCurrency(operationalBalance)}
-            </Text>
-            <Text
-              style={{ color: colors.success, fontSize: 9, fontWeight: "700" }}
-            >
-              ({opPercent}%)
-            </Text>
-          </View>
-
-          {/* Thin Divider */}
-          <View
-            style={{
-              width: 1,
-              height: 11,
-              backgroundColor: `${colors.border}90`,
-            }}
-          />
-
-          {/* Cold Money (Uang Dingin) */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: colors.info,
-              }}
-            />
-            <Text
-              style={{
-                color: colors.gray400,
-                fontSize: 9.5,
-                fontWeight: "600",
-              }}
-            >
-              Dingin:
-            </Text>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 10.5,
-                fontWeight: "800",
-              }}
-            >
-              {formatCurrency(savingsBalance)}
-            </Text>
-            <Text
-              style={{ color: colors.info, fontSize: 9, fontWeight: "700" }}
-            >
-              ({svPercent}%)
-            </Text>
-          </View>
-        </View>
-
-        {/* 2-Tone Ratio Progress Track (2px high, subtle rounded indicator) */}
-        <View
-          style={{
-            height: 2.5,
-            borderRadius: 2,
-            backgroundColor: `${colors.border}40`,
-            flexDirection: "row",
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              width: `${Math.max(4, Math.min(96, opPercent))}%`,
-              backgroundColor: colors.success,
-              borderRadius: 2,
-            }}
-          />
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: colors.info,
-              borderRadius: 2,
-            }}
-          />
-        </View>
-      </TouchableOpacity>
+     
 
       {/* ── HORIZONTAL FINTECH MICRO-CARD DECK ── */}
       {wallets.length === 0 ? (
@@ -417,8 +291,8 @@ export const WalletHorizontalList: React.FC<WalletHorizontalListProps> = ({
             onPress={onAddWalletPress}
             activeOpacity={0.7}
             style={{
-              width: 136,
-              height: 84,
+              width: 125,
+              height: 78,
               backgroundColor: `${colors.surface}80`,
               borderRadius: 14,
               padding: 8,
