@@ -1,5 +1,6 @@
 // File: src/utils/calculations.ts
 import { Transaction, Budget, Savings, Wallet, DailyPlan } from "../types";
+import { getJakartaDateKey } from "./dailyCheckIn";
 
 export const DEFAULT_WALLET_ID = "w_default_cash";
 
@@ -515,14 +516,18 @@ export const filterTransactionsByTime = (
   if (timeFilter === "all" || !transactions?.length) return transactions;
 
   if (timeFilter === "target") {
-    const plans = dailyPlans.filter((plan) => plan.isActive);
+    const today = getJakartaDateKey();
+    const plans = dailyPlans.filter(
+      (plan) => plan.isActive && plan.startDate <= today && plan.endDate >= today,
+    );
+    if (!plans.length) return [];
     return transactions.filter((transaction) => {
       const date = (transaction.date || "").slice(0, 10);
       return plans.some(
         (plan) =>
           date >= plan.startDate &&
           date <= plan.endDate &&
-          (transaction.walletId === plan.walletId || transaction.toWalletId === plan.walletId),
+          (!plan.walletId || transaction.walletId === plan.walletId || transaction.toWalletId === plan.walletId),
       );
     });
   }

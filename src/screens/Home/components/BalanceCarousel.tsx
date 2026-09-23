@@ -724,7 +724,11 @@ const Slide1 = ({
                 letterSpacing: -0.2,
               }}
             >
-              {props.hasFinancialData ? "Total Saldo" : "My Money"}
+              {props.hasFinancialData
+                ? props.timeFilter === "target"
+                  ? "Saldo Batas Hari"
+                  : "Total Saldo"
+                : "My Money"}
             </Text>
             {props.hasFinancialData && (
               <Text
@@ -734,7 +738,9 @@ const Slide1 = ({
                   fontWeight: "600",
                 }}
               >
-                Semua Dompet
+                {props.timeFilter === "target"
+                  ? "Periode Target Aktif"
+                  : "Semua Dompet"}
               </Text>
             )}
           </View>
@@ -809,7 +815,9 @@ const Slide1 = ({
         </View>
 
         {/* RESTORED: Opening Balance Note */}
-        {props.timeFilter !== "all" && props.openingBalance !== 0 && (
+        {props.timeFilter !== "all" &&
+          props.timeFilter !== "target" &&
+          props.openingBalance !== 0 && (
           <Text
             style={{
               color: "rgba(255,255,255,0.75)",
@@ -1025,10 +1033,23 @@ const Slide2 = ({
     props.allTransactions || [],
     todayKey,
   );
+  const planTotalDays = activePlans.length
+    ? Math.max(
+        1,
+        (() => {
+          const p = activePlans[0];
+          const start = new Date(`${p.startDate}T00:00:00`).getTime();
+          const end = new Date(`${p.endDate}T00:00:00`).getTime();
+          return Math.max(1, Math.round((end - start) / 86400000) + 1);
+        })(),
+      )
+    : Math.max(1, totalDays);
+
+  const planDaysPassed = Math.max(0, planTotalDays - planDaysRemaining + 1);
   const timeProgressPct = activePlans.length
     ? Math.min(
         100,
-        Math.max(0, Math.round(((30 - planDaysRemaining) / 30) * 100)),
+        Math.max(0, Math.round((planDaysPassed / planTotalDays) * 100)),
       )
     : 0;
   const safeDaily = activePlans.length

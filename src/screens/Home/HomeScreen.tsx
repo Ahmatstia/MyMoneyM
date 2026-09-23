@@ -626,9 +626,11 @@ const HomeScreen: React.FC = () => {
         <BalanceCarousel
           hasFinancialData={hasFinancialData}
           balance={
-            state.wallets && state.wallets.length > 0
-              ? state.wallets.reduce((sum, w) => sum + safeNumber(w.balance), 0)
-              : safeNumber(state.balance)
+            timeFilter === "target"
+              ? filteredPeriodNetto
+              : state.wallets && state.wallets.length > 0
+                ? state.wallets.reduce((sum, w) => sum + safeNumber(w.balance), 0)
+                : safeNumber(state.balance)
           }
           operationalBalance={safeNumber(state.operationalBalance)}
           filteredIncome={filteredIncome}

@@ -53,10 +53,10 @@ export const useHomeData = (
         state.transactions,
         timeFilter,
         state.paydayCutoff,
-        state.dailyPlans,
+        activeDailyPlans,
         false,
       ),
-    [state.transactions, timeFilter, state.paydayCutoff, state.dailyPlans],
+    [state.transactions, timeFilter, state.paydayCutoff, activeDailyPlans],
   );
 
   const {
