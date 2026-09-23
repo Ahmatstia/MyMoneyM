@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import LottieView from "lottie-react-native";
 import { File, Paths } from "expo-file-system";
+import * as FileSystemLegacy from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
@@ -30,7 +31,8 @@ import { useAppContext } from "../../context/AppContext";
 import { storageService } from "../../utils/storage";
 import { exportAllCsv } from "../../utils/csvExport";
 import { useTheme } from "../../theme/ThemeContext";
-import { THEMES, ThemeId } from "../../theme/theme";
+import { THEMES, ThemeId, DEFAULT_THEME_ID } from "../../theme/theme";
+import { navigationRef } from "../../navigation/navigationRef";
 import {
   STORAGE_KEY_MASCOT_HIDDEN,
   resetSessionDismissed,
@@ -627,7 +629,7 @@ const SettingsScreen = () => {
   const { colors, themeId, setTheme } = useTheme();
   const navigation = useNavigation<any>();
   const CARD_BORDER = `${colors.border}80`;
-  const { clearAllData, refreshData, debugStorage, state, setLoading, updatePaydayCutoff } =
+  const { clearAllData, importBackupData, refreshData, debugStorage, state, setLoading, updatePaydayCutoff } =
     useAppContext();
 
   const [notificationSettings, setNotificationSettings] = useState(
@@ -860,29 +862,38 @@ const SettingsScreen = () => {
   const handleClearData = () => {
     Alert.alert(
       "Hapus Semua Data",
-      "Apakah Anda yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan.",
+      "Apakah Anda yakin ingin menghapus semua data? Seluruh transaksi, dompet, riwayat, gambar profil, preferensi, dan notifikasi akan dibersihkan total seperti baru mengunduh aplikasi pertama kali.",
       [
         { text: "Batal", style: "cancel" },
         {
-          text: "Hapus",
+          text: "Hapus Semua",
           style: "destructive",
           onPress: async () => {
-            setLoading(true, "Menghapus data...");
+            setLoading(true, "Menghapus seluruh data...");
 
-            // Beri jeda sedikit agar animasi Among Us terlihat
             setTimeout(async () => {
               try {
                 await clearAllData();
+                await setTheme(DEFAULT_THEME_ID);
                 setLoading(false);
-                // Langsung navigasi ke Onboarding tanpa reload app
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Onboarding" }],
-                });
+
+                // Reset navigasi root ke Onboarding
+                if (navigationRef.isReady()) {
+                  navigationRef.reset({
+                    index: 0,
+                    routes: [{ name: "Onboarding" }],
+                  });
+                } else {
+                  navigation.getParent()?.reset({
+                    index: 0,
+                    routes: [{ name: "Onboarding" }],
+                  });
+                }
               } catch (err) {
                 setLoading(false);
+                Alert.alert("Error", "Gagal mereset data aplikasi.");
               }
-            }, 1500);
+            }, 800);
           },
         },
       ],
@@ -1001,32 +1012,63 @@ const SettingsScreen = () => {
               onPress: async () => {
                 setLoading(true, "Memulihkan data...");
                 try {
-                  const fileContent = await new File(fileUri).text();
+                  let fileContent = "";
+                  try {
+                    fileContent = await FileSystemLegacy.readAsStringAsync(fileUri, {
+                      encoding: FileSystemLegacy.EncodingType.UTF8,
+                    });
+                  } catch (legacyErr) {
+                    try {
+                      const file = new File(fileUri);
+                      fileContent = await file.text();
+                    } catch (fileErr) {
+                      const response = await fetch(fileUri);
+                      fileContent = await response.text();
+                    }
+                  }
 
-                  const importedData = JSON.parse(fileContent);
+                  if (!fileContent || !fileContent.trim()) {
+                    throw new Error("Berkas kosong atau tidak dapat dibaca dari penyimpanan perangkat.");
+                  }
+
+                  const cleanContent = fileContent.trim().replace(/^\uFEFF/, "");
+                  const importedData = JSON.parse(cleanContent);
 
                   // Validasi sederhana
                   if (
                     typeof importedData !== "object" ||
+                    !importedData ||
                     !Array.isArray(importedData.transactions)
                   ) {
-                    throw new Error("Format file tidak valid.");
+                    throw new Error("Format file tidak valid. Riwayat transaksi tidak ditemukan.");
                   }
 
-                  // Timpa data menggunakan storageService
-                  await storageService.saveData(importedData);
-
-                  // Refresh context
-                  await refreshData();
+                  // Pulihkan data melalui AppContext: simpan, perbarui state memori secara instan, dan sync notifikasi
+                  await importBackupData(importedData);
 
                   setLoading(false);
                   setTimeout(() => {
-                    Alert.alert("Berhasil", "Data berhasil dipulihkan!");
+                    Alert.alert(
+                      "Berhasil",
+                      `Data berhasil dipulihkan! (${importedData.transactions.length} transaksi dimuat dan aktif).`,
+                      [
+                        {
+                          text: "Buka Dashboard",
+                          onPress: () => {
+                            navigation.navigate("MainTabs", { screen: "Home" });
+                          },
+                        },
+                        { text: "Tetap di Sini", style: "cancel" },
+                      ],
+                    );
                   }, 500);
-                } catch (error) {
+                } catch (error: any) {
                   setLoading(false);
                   setTimeout(() => {
-                    Alert.alert("Error", "File backup tidak valid atau rusak.");
+                    Alert.alert(
+                      "Gagal Memulihkan",
+                      error?.message || "File backup tidak valid atau rusak.",
+                    );
                   }, 500);
                 }
               },

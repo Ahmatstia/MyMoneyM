@@ -835,6 +835,9 @@ All 13 identified bugs have been surgically resolved following Safe Change Contr
 11. **BUG-011 (MEDIUM) - `GamificationContext.tsx`, `gamificationBus.ts` & `AppContext.tsx`**: Added `reset` event to `gamificationBus` and triggered it inside `clearAllData()`. `GamificationContext` now resets in-memory state to `DEFAULT_GAMIFICATION_STATE` and purges AsyncStorage on data wipe.
 12. **BUG-012 (LOW) - `WalletsScreen.tsx`**: Introduced `parseSignedBalance` helper and updated initial balance input and reconcile input to support negative numbers for credit cards and paylater liabilities. Configured `keyboardType` dynamically for iOS and Android.
 13. **BUG-013 (LOW) - `triggers.ts`**: Added upper bound `weekEndStr` filter (`t.date >= weekStartStr && t.date <= weekEndStr`) in `generateWeeklySummary` and included transfer admin fees in weekly and daily summaries.
+14. **BUG-014 (CRITICAL) - `SettingsScreen.tsx` & `storage.ts`**: Resolved backup restore failure on Android. Replaced unsupported `new File(fileUri).text()` with `FileSystemLegacy.readAsStringAsync` to read Android `content://` URIs seamlessly. Added automatic legacy backup migration in `storage.ts` to convert pre-wallet data to `Dompet Utama`, map `DEFAULT_WALLET_ID`, preserve legacy opening balance, and convert legacy `cyclePeriod` into active `DailyPlan` records.
+15. **BUG-015 (HIGH) - `AppContext.tsx` & `SettingsScreen.tsx`**: Restored data did not reflect immediately in memory without manual app reload. Added `importBackupData` directly to `AppContext` to atomically save, parse, and update `state` and `stateRef.current`, update notifications, trigger milestone checks, and provide direct navigation to Home Dashboard.
+16. **BUG-016 (CRITICAL) - `storage.ts`, `imageStorage.ts`, `AppContext.tsx` & `SettingsScreen.tsx`**: "Hapus Semua Data" (Wipe Data) only filtered specific keys, leaving settings, mascot coordinates, cached avatar/cover files, notifications, and onboarding intact. Replaced with global `AsyncStorage.clear()`, sandbox image purge (`clearAllPersistedFilesAsync`), notification alarm cancellation, theme reset, and root navigator reset to `Onboarding` via `navigationRef`.
 
 ---
 
@@ -843,6 +846,9 @@ All 13 identified bugs have been surgically resolved following Safe Change Contr
 - **Hook Lifecycle Integrity:** Verified that hook order in `AddSavingsTransactionScreen.tsx`, `SavingsDetailScreen.tsx`, and `SavingsHistoryScreen.tsx` is completely invariant and unaffected by whether `saving` is resolved or undefined.
 - **Transfer Neutrality Verification:** Verified that inter-wallet transfers do not decrease net worth or inflate calendar/opening-balance expenses; admin fees are strictly counted as real expenses.
 - **Persistence & Serialization Integrity:** Verified that saving data preserves net worth across wallet balances and recurring transaction executions without flipping to zero.
+- **Legacy Backup Compatibility Verification:** Validated user's legacy backup containing 100+ transactions, 6 custom categories, savings, budgets, and 40+ daily check-ins; verified 100% data preservation and successful schema upgrade.
+- **Real-Time Data Import Verification:** Verified that importing a backup updates memory state synchronously without requiring app reload, immediately displaying transactions and balances on the Home Dashboard.
+- **Full Factory Reset (Wipe Data) Verification:** Verified that wiping data executes `AsyncStorage.clear()`, deletes sandbox avatar/cover images, clears notifications, resets theme to default, and resets the root navigator to the Onboarding screen like a brand new app download.
 
 ---
 

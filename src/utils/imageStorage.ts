@@ -104,3 +104,20 @@ export function isImageFileExisting(uri?: string): boolean {
     return true;
   }
 }
+
+/**
+ * Menghapus seluruh berkas cache, gambar, dan dokumen yang tersimpan di direktori sandbox permanen
+ * saat pengguna melakukan wipe data / hapus semua data.
+ */
+export async function clearAllPersistedFilesAsync(): Promise<void> {
+  try {
+    const docPath = (Paths.document as any)?.uri || String(Paths.document);
+    const files = await FileSystemLegacy.readDirectoryAsync(docPath);
+    for (const fileName of files) {
+      try {
+        await FileSystemLegacy.deleteAsync(`${docPath}/${fileName}`, { idempotent: true });
+      } catch {}
+    }
+  } catch (err) {}
+}
+

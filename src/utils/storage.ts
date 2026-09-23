@@ -19,6 +19,7 @@ import {
   calculateWalletBalances,
   calculatePartitionedBalances,
   DEFAULT_WALLET_ID,
+  safeNumber,
 } from "./calculations";
 import { normalizeCheckIns } from "./dailyCheckIn";
 
@@ -707,16 +708,58 @@ export const storageService = {
             .map((p: any) => validateDailyPlan(p))
             .filter((p: DailyPlan | null): p is DailyPlan => p !== null)
         : [];
-      const repairedDailyPlans = repairDailyPlans(validatedDailyPlans, validatedTransactions);
+
+      // Migrasi DailyPlan dari transaksi pemasukan lama yang memiliki cyclePeriod
+      let initialDailyPlans = validatedDailyPlans;
+      if (initialDailyPlans.length === 0) {
+        const legacyCycleTx = validatedTransactions
+          .filter(
+            (t) =>
+              t.type === "income" &&
+              typeof t.cyclePeriod === "number" &&
+              t.cyclePeriod > 0,
+          )
+          .sort((a, b) => b.date.localeCompare(a.date));
+
+        if (legacyCycleTx.length > 0) {
+          initialDailyPlans = legacyCycleTx.map((t) => {
+            const startDate = (t.date || new Date().toISOString()).slice(0, 10);
+            const cycleDays = Math.floor(t.cyclePeriod || 1);
+            const end = new Date(`${startDate}T12:00:00`);
+            end.setDate(end.getDate() + cycleDays - 1);
+            const endDate = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+            return {
+              id: `daily_${t.id}`,
+              walletId: t.walletId || DEFAULT_WALLET_ID,
+              amount: safeNumber(t.amount),
+              sourceTransactionId: t.id,
+              startDate,
+              endDate,
+              isActive: true,
+              createdAt: t.createdAt || new Date().toISOString(),
+            };
+          });
+        }
+      }
+
+      const repairedDailyPlans = repairDailyPlans(initialDailyPlans, validatedTransactions);
+
+      const totals = calculateTotals(validatedTransactions);
+
+      // Migrasi Dompet: Jika data lama tidak memiliki wallets, buat Dompet Utama
+      // Saldo awal dompet disesuaikan jika data lama memiliki saldo selisih pembuka
+      const legacyOpeningBalance =
+        validatedWallets.length === 0 && typeof data.balance === "number"
+          ? Math.max(0, safeNumber(data.balance) - totals.balance)
+          : 0;
 
       const effectiveWallets =
         validatedWallets.length > 0
           ? validatedWallets
-          : [createDefaultWallet(0)];
+          : [createDefaultWallet(legacyOpeningBalance)];
 
       const updatedWallets = calculateWalletBalances(effectiveWallets, validatedTransactions);
       const partitioned = calculatePartitionedBalances(updatedWallets);
-      const totals = calculateTotals(validatedTransactions);
 
       const appData: AppState = {
         transactions: validatedTransactions,
@@ -743,10 +786,13 @@ export const storageService = {
         savingsBalance: partitioned.savingsBalance,
       };
 
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.APP_DATA,
-        JSON.stringify(appData),
-      );
+      await Promise.all([
+        AsyncStorage.setItem(
+          STORAGE_KEYS.APP_DATA,
+          JSON.stringify(appData),
+        ),
+        AsyncStorage.setItem(STORAGE_KEYS.MIGRATION_FLAG, "true"),
+      ]);
     } catch (error) {
       throw error;
     }
@@ -954,21 +1000,18 @@ export const storageService = {
 
   async clearData(): Promise<void> {
     try {
-      await Promise.all([
-        AsyncStorage.removeItem(STORAGE_KEYS.APP_DATA),
-        AsyncStorage.removeItem(STORAGE_KEYS.MIGRATION_FLAG),
-        AsyncStorage.removeItem("@onboarding_completed"),
-      ]);
-
-      // Hapus juga semua key lama untuk kebersihan
-      const allKeys = await AsyncStorage.getAllKeys();
-      const myMoneyKeys = allKeys.filter(
-        (key) => key.startsWith("@mymoney") || key.startsWith("mymoney"),
-      );
-
-      await Promise.all(myMoneyKeys.map((key) => AsyncStorage.removeItem(key)));
+      await AsyncStorage.clear();
+      const remainingKeys = await AsyncStorage.getAllKeys();
+      if (remainingKeys.length > 0) {
+        await AsyncStorage.multiRemove(remainingKeys);
+      }
     } catch (error) {
-      throw error;
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        await AsyncStorage.multiRemove(allKeys);
+      } catch (innerErr) {
+        throw error;
+      }
     }
   },
 

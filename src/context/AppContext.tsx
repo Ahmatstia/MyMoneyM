@@ -22,6 +22,7 @@ import {
   DailyPlan,
 } from "../types";
 import { storageService, createDefaultWallet } from "../utils/storage";
+import { clearAllPersistedFilesAsync } from "../utils/imageStorage";
 import {
   calculateTotals,
   calculateWalletBalances,
@@ -160,6 +161,7 @@ interface AppContextType {
 
   // 🔹 SYSTEM
   refreshData: () => Promise<void>;
+  importBackupData: (importedData: any) => Promise<AppState>;
   clearAllData: () => Promise<void>;
   debugStorage: () => Promise<void>;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -414,14 +416,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {}
   };
 
+  const importBackupData = async (importedData: any): Promise<AppState> => {
+    // 1. Set migration flag so loadData will never overwrite with old storage keys
+    await AsyncStorage.setItem("@mymoney_migrated_v5", "true");
+
+    // 2. Validate, calculate, and save data to storage
+    await storageService.saveData(importedData);
+
+    // 3. Load the structured, validated AppState
+    const appData = await storageService.loadData();
+    const completeAppData: AppState = {
+      ...defaultAppState,
+      ...appData,
+      notes: appData.notes || [],
+      debts: appData.debts || [],
+      recurringTransactions: appData.recurringTransactions || [],
+      customCategories: appData.customCategories || [],
+      dailyPlans: appData.dailyPlans || [],
+      userProfile: appData.userProfile || defaultAppState.userProfile,
+    };
+
+    // 4. Force synchronous update to React state and ref
+    stateRef.current = completeAppData;
+    setState(completeAppData);
+
+    // 5. Update notifications and gamification
+    await notificationService.updateNotifications(completeAppData);
+    gamificationBus.emit({ type: "check_milestones" });
+
+    return completeAppData;
+  };
+
   const clearAllData = async () => {
     try {
       await storageService.clearData();
+      await clearAllPersistedFilesAsync();
+      await notificationService.cancelAllNotifications();
       gamificationBus.reset();
+      stateRef.current = defaultAppState;
       if (isMounted.current) {
         setState(defaultAppState);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.warn("[clearAllData] error:", error);
+    }
   };
 
   const debugStorage = async () => {
@@ -1692,6 +1730,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     triggerNotificationCheck,
 
     refreshData,
+    importBackupData,
     clearAllData,
     debugStorage,
     globalLoading,

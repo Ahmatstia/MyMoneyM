@@ -856,7 +856,6 @@ const TransactionsScreen: React.FC = () => {
                 {/* Income */}
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginRight: 5 }} />
                     <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Pemasukan
                     </Text>
@@ -871,7 +870,6 @@ const TransactionsScreen: React.FC = () => {
                 {/* Expense */}
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error, marginRight: 5 }} />
                     <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Pengeluaran
                     </Text>
@@ -886,7 +884,6 @@ const TransactionsScreen: React.FC = () => {
                 {/* Net */}
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 5 }} />
                     <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Selisih
                     </Text>
