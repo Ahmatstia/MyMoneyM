@@ -17,7 +17,6 @@ import {
   calculateBudgetAnalytics,
   calculateSavingsAnalytics,
   generateFinancialInsights,
-  calculateFinancialHealthScore,
 } from "../../utils/analytics";
 import {
   formatCurrency,
@@ -154,7 +153,6 @@ const VDivider = ({ height = 36 }: { height?: number }) => {
 
 // --- Tab definitions ------------------------------------------------------------
 const TABS = [
-  { key: "health", label: "Kesehatan", icon: "heart-outline" as SafeIconName },
   {
     key: "summary",
     label: "Ringkasan",
@@ -192,8 +190,8 @@ const AnalyticsScreen: React.FC = () => {
   );
 
   const [activeTab, setActiveTab] = useState<
-    "health" | "summary" | "trends" | "categories" | "insights"
-  >("health");
+    "summary" | "trends" | "categories" | "insights"
+  >("summary");
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
   // Sinkronisasi tab saat navigasi dikirimkan dengan parameter tab spesifik (e.g. dari Beranda Smart Insights)
@@ -290,37 +288,6 @@ const AnalyticsScreen: React.FC = () => {
     }
   }, [state.savings]);
 
-  const financialHealthScore = useMemo(() => {
-    try {
-      const totalActiveDebt = (state.debts || [])
-        .filter((d) => d.type === "borrowed" && d.status !== "paid")
-        .reduce((sum, d) => sum + safeNumber(d.remaining), 0);
-      return calculateFinancialHealthScore(
-        transactionAnalytics,
-        budgetAnalytics,
-        savingsAnalytics,
-        totalActiveDebt,
-      );
-    } catch (error) {
-      return {
-        overallScore: 0,
-        category: "Belum Ada Data",
-        color: colors.gray500,
-        factors: {
-          savingsRate: { score: 0, weight: 0.3, status: "poor" },
-          budgetAdherence: { score: 0, weight: 0.3, status: "poor" },
-          expenseControl: { score: 0, weight: 0.25, status: "poor" },
-          goalProgress: { score: 0, weight: 0.15, status: "poor" },
-        },
-        recommendations: [
-          "Mulai dengan mencatat transaksi pertama Anda",
-          "Buat anggaran sederhana untuk pengeluaran utama",
-          "Tetapkan target tabungan kecil untuk memulai",
-        ],
-      };
-    }
-  }, [transactionAnalytics, budgetAnalytics, savingsAnalytics]);
-
   const insights = useMemo(() => {
     try {
       return generateFinancialInsights(
@@ -340,24 +307,6 @@ const AnalyticsScreen: React.FC = () => {
       ];
     }
   }, [transactionAnalytics, budgetAnalytics, savingsAnalytics]);
-
-  const getScoreColor = (score: number) => {
-    if (score === 0) return colors.gray500;
-    if (score >= 80) return colors.success;
-    if (score >= 60) return colors.info;
-    if (score >= 40) return colors.warning;
-    if (score >= 20) return colors.error;
-    return colors.errorDark;
-  };
-
-  const getScoreDescription = (score: number) => {
-    if (score >= 80) return "Sangat Sehat";
-    if (score >= 60) return "Sehat";
-    if (score >= 40) return "Cukup";
-    if (score >= 20) return "Perlu Perbaikan";
-    if (score === 0) return "Belum Ada Data";
-    return "Kritis";
-  };
 
   const getComparativeData = () => {
     try {
@@ -607,76 +556,9 @@ const AnalyticsScreen: React.FC = () => {
               }}
             >
               Mulai catat transaksi, buat anggaran, atau tambah target tabungan
-              untuk melihat analitik kesehatan keuangan Anda.
+              untuk melihat laporan dan analitik keuangan Anda.
             </Text>
           </View>
-
-          {/* Score placeholder - double ring */}
-          <View style={{ alignItems: "center", marginBottom: 28 }}>
-            <View
-              style={{
-                width: 144,
-                height: 144,
-                borderRadius: 72,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${colors.gray500}08`,
-                borderWidth: 2,
-                borderColor: `${colors.gray500}20`,
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{
-                  width: 116,
-                  height: 116,
-                  borderRadius: 58,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: `${colors.gray500}08`,
-                  borderWidth: 1,
-                  borderColor: `${colors.gray500}15`,
-                }}
-              >
-                <Text
-                  style={{
-                    color: colors.gray500,
-                    fontSize: 40,
-                    fontWeight: "800",
-                    letterSpacing: -2,
-                  }}
-                >
-                  0
-                </Text>
-                <Text
-                  style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}
-                >
-                  /100
-                </Text>
-              </View>
-            </View>
-            <Text
-              style={{
-                color: colors.gray500,
-                fontSize: 15,
-                fontWeight: "600",
-                marginBottom: 4,
-              }}
-            >
-              Belum Ada Data
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 12 }}>
-              Mulai catat keuangan untuk melihat skor
-            </Text>
-          </View>
-
-          <View
-            style={{
-              height: 1,
-              backgroundColor: CARD_BORDER,
-              marginBottom: SECTION_GAP,
-            }}
-          />
 
           {/* Quick start actions */}
           <SectionHeader title="Mulai Dari Sini" />
@@ -809,339 +691,6 @@ const AnalyticsScreen: React.FC = () => {
     );
   }
 
-  // ============================================================
-  // HEALTH TAB RENDERER
-  // ============================================================
-  const renderHealthScore = () => {
-    const { overallScore, factors, recommendations } = financialHealthScore;
-    const scoreColor = getScoreColor(overallScore);
-
-    return (
-      <View>
-        {/* Score hero - double ring */}
-        <View
-          style={{ alignItems: "center", paddingTop: 24, paddingBottom: 20 }}
-        >
-          <View
-            style={{
-              width: 148,
-              height: 148,
-              borderRadius: 74,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${scoreColor}08`,
-              borderWidth: 2,
-              borderColor: `${scoreColor}25`,
-              marginBottom: 14,
-            }}
-          >
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${scoreColor}12`,
-                borderWidth: 1.5,
-                borderColor: `${scoreColor}40`,
-              }}
-            >
-              <Text
-                style={{
-                  color: scoreColor,
-                  fontSize: 44,
-                  fontWeight: "800",
-                  letterSpacing: -2,
-                }}
-              >
-                {overallScore}
-              </Text>
-              <Text
-                style={{ color: colors.gray400, fontSize: 11, marginTop: -2 }}
-              >
-                /100
-              </Text>
-            </View>
-          </View>
-          <Text
-            style={{
-              color: scoreColor,
-              fontSize: 18,
-              fontWeight: "700",
-              marginBottom: 4,
-            }}
-          >
-            {getScoreDescription(overallScore)}
-          </Text>
-          <Text style={{ color: colors.gray400, fontSize: 12 }}>
-            {financialHealthScore.category}
-          </Text>
-        </View>
-
-        <Spacer size={4} />
-
-        {/* Pengeluaran & Hutang Card */}
-        {(() => {
-          const totalActiveDebt = (state.debts || [])
-            .filter((d) => d.type === "borrowed" && d.status !== "paid")
-            .reduce((sum, d) => sum + safeNumber(d.remaining), 0);
-          const totalIncome = safeNumber(transactionAnalytics.totalIncome);
-          const totalExpense = safeNumber(transactionAnalytics.totalExpense);
-
-          const debtRatio =
-            totalIncome > 0 ? (totalActiveDebt / totalIncome) * 100 : 0;
-          const expenseRatio =
-            totalIncome > 0 ? (totalExpense / totalIncome) * 100 : 0;
-          const effectiveRatio =
-            totalIncome > 0
-              ? ((totalExpense + totalActiveDebt) / totalIncome) * 100
-              : 0;
-
-          return (
-            <Card style={{ marginBottom: 16 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: `${ERROR_COLOR}15`,
-                    marginRight: 10,
-                  }}
-                >
-                  <Ionicons
-                    name="pie-chart-outline"
-                    size={15}
-                    color={ERROR_COLOR}
-                  />
-                </View>
-                <Text
-                  style={{
-                    color: TEXT_PRIMARY,
-                    fontSize: 13,
-                    fontWeight: "700",
-                    letterSpacing: 0.4,
-                  }}
-                >
-                  PENGELUARAN & HUTANG
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 6,
-                }}
-              >
-                <Text
-                  style={{
-                    color: TEXT_SECONDARY,
-                    fontSize: 12,
-                    fontWeight: "500",
-                  }}
-                >
-                  Pengeluaran
-                </Text>
-                <Text
-                  style={{
-                    color: TEXT_PRIMARY,
-                    fontSize: 12,
-                    fontWeight: "600",
-                  }}
-                >
-                  {totalIncome > 0 ? expenseRatio.toFixed(1) : 0}% dari aset
-                </Text>
-              </View>
-              <ThinBar
-                progress={Math.min(expenseRatio / 100, 1)}
-                color={
-                  expenseRatio > 60
-                    ? ERROR_COLOR
-                    : expenseRatio > 40
-                      ? WARNING_COLOR
-                      : SUCCESS_COLOR
-                }
-              />
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 6,
-                  marginTop: 16,
-                }}
-              >
-                <Text
-                  style={{
-                    color: TEXT_SECONDARY,
-                    fontSize: 12,
-                    fontWeight: "500",
-                  }}
-                >
-                  Sisa Hutang Aktif
-                </Text>
-                <Text
-                  style={{
-                    color: debtRatio > 0 ? ERROR_COLOR : SUCCESS_COLOR,
-                    fontSize: 12,
-                    fontWeight: "600",
-                  }}
-                >
-                  {totalIncome > 0 ? debtRatio.toFixed(1) : 0}% dari aset
-                </Text>
-              </View>
-              <ThinBar
-                progress={Math.min(debtRatio / 100, 1)}
-                color={debtRatio > 0 ? ERROR_COLOR : colors.gray500}
-              />
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: 16,
-                  paddingTop: 14,
-                  borderTopWidth: 1,
-                  borderTopColor: CARD_BORDER,
-                }}
-              >
-                <Text
-                  style={{
-                    color: TEXT_PRIMARY,
-                    fontSize: 13,
-                    fontWeight: "700",
-                  }}
-                >
-                  Total Beban Keuangan
-                </Text>
-                <Text
-                  style={{
-                    color:
-                      effectiveRatio >= 80
-                        ? ERROR_COLOR
-                        : effectiveRatio >= 60
-                          ? WARNING_COLOR
-                          : SUCCESS_COLOR,
-                    fontSize: 15,
-                    fontWeight: "800",
-                  }}
-                >
-                  {effectiveRatio.toFixed(1)}%
-                </Text>
-              </View>
-              <Text
-                style={{ color: colors.gray400, fontSize: 10, marginTop: 5 }}
-              >
-                Aman jika total beban berada di bawah 60%
-              </Text>
-            </Card>
-          );
-        })()}
-
-        {/* Recommendations */}
-        {recommendations.length > 0 && (
-          <>
-            <SectionHeader title="Rekomendasi Perbaikan" />
-            <Card style={{ marginBottom: 16 }}>
-              {recommendations.map((rec, index) => (
-                <View
-                  key={index}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    marginBottom: index < recommendations.length - 1 ? 14 : 0,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 12,
-                      marginTop: 1,
-                      backgroundColor: `${SUCCESS_COLOR}20`,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Ionicons
-                      name="checkmark"
-                      size={11}
-                      color={SUCCESS_COLOR}
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      color: TEXT_SECONDARY,
-                      fontSize: 12,
-                      flex: 1,
-                      lineHeight: 18,
-                    }}
-                  >
-                    {rec}
-                  </Text>
-                </View>
-              ))}
-            </Card>
-          </>
-        )}
-
-        {/* Score legend */}
-        <SectionHeader title="Keterangan Skor" />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {[
-            { range: "0", label: "Belum Ada Data", color: colors.gray500 },
-            { range: "80-100", label: "Sangat Sehat", color: SUCCESS_COLOR },
-            { range: "60-79", label: "Sehat", color: colors.info },
-            { range: "40-59", label: "Cukup", color: WARNING_COLOR },
-            { range: "20-39", label: "Perlu Perbaikan", color: ERROR_COLOR },
-            { range: "1-19", label: "Kritis", color: colors.errorDark },
-          ].map((item) => (
-            <View
-              key={item.range}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 10,
-                backgroundColor: SURFACE_COLOR,
-                borderWidth: 1,
-                borderColor: CARD_BORDER,
-              }}
-            >
-              <View
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 4,
-                  backgroundColor: item.color,
-                  marginRight: 6,
-                }}
-              />
-              <Text style={{ color: TEXT_SECONDARY, fontSize: 11 }}>
-                {item.range}: {item.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    );
-  };
 
   // ============================================================
   // MAIN RENDER
@@ -1351,10 +900,7 @@ const AnalyticsScreen: React.FC = () => {
       >
         <Spacer size={16} />
 
-        {/* ============================================================
-            HEALTH TAB
-        ============================================================ */}
-        {activeTab === "health" && renderHealthScore()}
+
 
         {/* ============================================================
             SUMMARY TAB

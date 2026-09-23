@@ -30,7 +30,6 @@ import {
   calculateOpeningBalance,
 } from "../../utils/calculations";
 import { calculateTransactionAnalytics } from "../../utils/analytics";
-import { calculateFinancialHealthScore } from "../../utils/analytics";
 import { getJakartaDateKey } from "../../utils/dailyCheckIn";
 
 import { useTheme } from "../../theme/ThemeContext";
@@ -179,7 +178,6 @@ const HomeScreen: React.FC = () => {
     filteredBalance,
     hasFinancialData,
     transactionAnalytics,
-    financialHealthScore,
     smartInsights,
     dynamicQuickActions,
     projectionData,
@@ -218,22 +216,6 @@ const HomeScreen: React.FC = () => {
       useNativeDriver: true,
       speed: 50,
     }).start();
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return colors.success;
-    if (score >= 60) return colors.info;
-    if (score >= 40) return colors.warning;
-    if (score >= 20) return colors.error;
-    return colors.errorDark;
-  };
-
-  const getScoreDescription = (score: number) => {
-    if (score >= 80) return "Sangat Sehat";
-    if (score >= 60) return "Sehat";
-    if (score >= 40) return "Cukup";
-    if (score >= 20) return "Perlu Perbaikan";
-    return "Kritis";
   };
 
   // --- Progress bar color helper ------------------------------------------------------------
@@ -467,57 +449,9 @@ const HomeScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Header Action: Health score chip + Panduan/Help button */}
+          {/* Header Action: Panduan / Bantuan */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {hasFinancialData ? (
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: `${getScoreColor(
-                    financialHealthScore.overallScore,
-                  )}14`,
-                  borderWidth: 1,
-                  borderColor: `${getScoreColor(
-                    financialHealthScore.overallScore,
-                  )}30`,
-                }}
-                onPress={() =>
-                  navigation.navigate("Analytics", { tab: "health" })
-                }
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={{
-                    color: getScoreColor(financialHealthScore.overallScore),
-                    fontSize: 16,
-                    fontWeight: "800",
-                    marginRight: 7,
-                  }}
-                >
-                  {financialHealthScore.overallScore}
-                </Text>
-                <View>
-                  <Text
-                    style={{
-                      color: getScoreColor(financialHealthScore.overallScore),
-                      fontSize: 10,
-                      fontWeight: "700",
-                    }}
-                  >
-                    {getScoreDescription(financialHealthScore.overallScore)}
-                  </Text>
-                  <Text
-                    style={{ color: colors.gray400, fontSize: 10.5, marginTop: 1 }}
-                  >
-                    Skor keuangan
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ) : (
+            {!hasFinancialData && (
               <TouchableOpacity
                 style={{
                   flexDirection: "row",

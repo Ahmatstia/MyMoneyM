@@ -690,37 +690,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         actionTarget: "Calendar",
         actionLabel: "Lihat Kalender Finansial",
       },
-      {
-        id: "health_score",
-        name: "Skor Kesehatan Finansial (Smart Insight)",
-        category: "analytics_calendar",
-        categoryLabel: "Analisis & Kalender",
-        tag: "Rapor Evaluasi Nilai",
-        icon: "ribbon-outline",
-        color: colors.success,
-        location: "Layar Analisis ➔ Kartu 'Kesehatan Finansial'",
-        analogy:
-          "Ibarat rapor nilai kenaikan kelas di sekolah. Sistem memberikan skor objektif berskala 0 s/d 100 lengkap dengan predikat (Sempurna, Baik, Waspada, Butuh Pembenahan) berdasarkan data pembukuan nyata Anda.",
-        summary:
-          "Algoritma cerdas yang mengevaluasi performa finansial Anda dari 4 pilar: Rasio Tabungan, Kendali Anggaran, Beban Hutang, dan Kedisiplinan Arus Kas.",
-        howItWorks: [
-          "Menganalisis rasio kas masuk vs kas keluar (Savings Rate).",
-          "Memeriksa apakah ada kategori yang overbudget.",
-          "Membandingkan total kewajiban hutang terhadap total likuiditas kas.",
-          "Menghasilkan skor komposit disertai saran perbaikan konkret yang bisa langsung dipraktikkan.",
-        ],
-        steps: [
-          "Buka menu 'Analisis' ➔ Gulir ke kartu 'Kesehatan Finansial'.",
-          "Lihat angka skor Anda saat ini (misal: 85/100 - Kondisi Prima).",
-          "Baca saran perbaikan praktis yang tertera di bawah skor.",
-        ],
-        impact:
-          "Memberikan tolok ukur yang jelas dan objektif apakah kondisi finansial Anda bulan ini membaik atau memburuk dibandingkan bulan lalu.",
-        proTip:
-          "Jadikan target mencapai skor di atas 80 sebagai resolusi finansial tahunan Anda.",
-        actionTarget: "Analytics",
-        actionLabel: "Cek Skor Finansial Anda",
-      },
+
 
       // ══════════════════════════════════════════════════════════════════════════
       // PILAR 6: DATA & SISTEM (PRIVASI & KEAMANAN)

@@ -82,7 +82,7 @@ type StackParamList = {
   Savings: undefined;
   Analytics:
     | {
-        tab?: "health" | "summary" | "trends" | "categories" | "insights";
+        tab?: "summary" | "trends" | "categories" | "insights";
       }
     | undefined;
   Calendar: undefined;

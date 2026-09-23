@@ -14,7 +14,6 @@ import {
 } from "../../../utils/calculations";
 import {
   calculateTransactionAnalytics,
-  calculateFinancialHealthScore,
 } from "../../../utils/analytics";
 import { Colors } from "../../../theme/theme";
 import { getJakartaDateKey } from "../../../utils/dailyCheckIn";
@@ -146,146 +145,6 @@ export const useHomeData = (
     };
   }, [state.transactions, hasFinancialData]);
 
-  const financialHealthScore = useMemo(() => {
-    try {
-      if (!hasFinancialData) {
-        return {
-          overallScore: 0,
-          category: "Belum Ada Data",
-          color: Colors.gray400,
-          factors: {
-            savingsRate: { score: 0, weight: 0.3, status: "poor" as const },
-            budgetAdherence: { score: 0, weight: 0.3, status: "poor" as const },
-            expenseControl: { score: 0, weight: 0.25, status: "poor" as const },
-            goalProgress: { score: 0, weight: 0.15, status: "poor" as const },
-          },
-          recommendations: [
-            "Mulai dengan mencatat semua transaksi secara rutin",
-            "Buat anggaran untuk kategori pengeluaran utama",
-          ],
-        };
-      }
-
-      const budgetAnalytics = {
-        hasBudgets: state.budgets.length > 0,
-        totalBudget: state.budgets.reduce(
-          (sum, b) => sum + safePositiveNumber(b.limit),
-          0,
-        ),
-        totalSpent: state.budgets.reduce(
-          (sum, b) => sum + safePositiveNumber(b.spent),
-          0,
-        ),
-        utilizationRate:
-          state.budgets.reduce(
-            (sum, b) => sum + safePositiveNumber(b.limit),
-            0,
-          ) > 0
-            ? (state.budgets.reduce(
-                (sum, b) => sum + safePositiveNumber(b.spent),
-                0,
-              ) /
-                state.budgets.reduce(
-                  (sum, b) => sum + safePositiveNumber(b.limit),
-                  0,
-                )) *
-              100
-            : 0,
-        overBudgetCount: state.budgets.filter(
-          (b) => safePositiveNumber(b.spent) > safePositiveNumber(b.limit),
-        ).length,
-        underBudgetCount: state.budgets.filter(
-          (b) => safePositiveNumber(b.spent) <= safePositiveNumber(b.limit),
-        ).length,
-        budgetsAtRisk: state.budgets.filter(
-          (b) =>
-            safePositiveNumber(b.spent) > safePositiveNumber(b.limit) * 0.8,
-        ),
-      };
-
-      const savingsAnalytics = {
-        hasSavings: state.savings.length > 0,
-        totalTarget: state.savings.reduce(
-          (sum, s) => sum + safePositiveNumber(s.target),
-          0,
-        ),
-        totalCurrent: state.savings.reduce(
-          (sum, s) => sum + safePositiveNumber(s.current),
-          0,
-        ),
-        overallProgress:
-          state.savings.reduce(
-            (sum, s) => sum + safePositiveNumber(s.target),
-            0,
-          ) > 0
-            ? (state.savings.reduce(
-                (sum, s) => sum + safePositiveNumber(s.current),
-                0,
-              ) /
-                state.savings.reduce(
-                  (sum, s) => sum + safePositiveNumber(s.target),
-                  0,
-                )) *
-              100
-            : 0,
-        completedSavings: state.savings.filter(
-          (s) => safePositiveNumber(s.current) >= safePositiveNumber(s.target),
-        ).length,
-        activeSavings: state.savings.filter(
-          (s) => safePositiveNumber(s.current) < safePositiveNumber(s.target),
-        ).length,
-        nearingCompletion: state.savings.filter((s) => {
-          const target = safePositiveNumber(s.target);
-          const current = safePositiveNumber(s.current);
-          return target > 0 && current / target >= 0.8 && current < target;
-        }),
-      };
-
-      const totalActiveDebt = (state.debts || [])
-        .filter((d) => d.type === "borrowed" && d.status !== "paid")
-        .reduce((sum, d) => sum + safePositiveNumber(d.remaining), 0);
-
-      return calculateFinancialHealthScore(
-        {
-          transactionCount: filteredTransactions.length,
-          totalIncome: filteredIncome,
-          totalExpense: filteredExpense,
-        } as any,
-        budgetAnalytics,
-        savingsAnalytics,
-        totalActiveDebt,
-      );
-    } catch (error) {
-      return {
-        overallScore: 50,
-        category: "Cukup",
-        color: Colors.warning,
-        factors: {
-          savingsRate: { score: 50, weight: 0.3, status: "warning" as const },
-          budgetAdherence: {
-            score: 50,
-            weight: 0.3,
-            status: "warning" as const,
-          },
-          expenseControl: {
-            score: 50,
-            weight: 0.25,
-            status: "warning" as const,
-          },
-          goalProgress: {
-            score: 50,
-            weight: 0.15,
-            status: "warning" as const,
-          },
-        },
-        recommendations: [
-          "Mulai dengan mencatat semua transaksi secara rutin",
-          "Buat anggaran untuk kategori pengeluaran utama",
-        ],
-      };
-    }
-  }, [state.budgets, state.savings, transactionAnalytics, hasFinancialData]);
-
   const getPersonalizedGreeting = () => {
     const hour = new Date().getHours();
     let greeting = "";
@@ -407,18 +266,6 @@ export const useHomeData = (
       }
     }
 
-    if (financialHealthScore.overallScore < 40) {
-      insights.push({
-        type: "warning",
-        title: "Kesehatan Keuangan Perlu Perhatian",
-        message: `Skor kesehatan: ${financialHealthScore.overallScore}/100`,
-        icon: "heart-outline" as SafeIconName,
-        color: Colors.error,
-        action: "Lihat Detail",
-        onPress: () => navigation.navigate("Analytics", { tab: "health" }),
-      });
-    }
-
     if (insights.length === 0) {
       insights.push({
         type: "info",
@@ -441,7 +288,6 @@ export const useHomeData = (
       transactionAnalytics,
       state.budgets,
       state.savings,
-      financialHealthScore,
     ],
   );
 
@@ -740,13 +586,6 @@ export const useHomeData = (
     );
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return Colors.success;
-    if (score >= 60) return Colors.info;
-    if (score >= 40) return Colors.warning;
-    return Colors.error;
-  };
-
   return {
     activeCycle,
     filteredTransactions,
@@ -757,7 +596,6 @@ export const useHomeData = (
     filteredBalance,
     hasFinancialData,
     transactionAnalytics,
-    financialHealthScore,
     smartInsights,
     dynamicQuickActions,
     projectionData,
@@ -765,7 +603,6 @@ export const useHomeData = (
     quickStats,
     getCurrentDate,
     resolveCategory,
-    getScoreColor,
     getPersonalizedGreeting,
   };
 };
