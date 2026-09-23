@@ -44,22 +44,6 @@ const G_ERROR = "#F43F5E";
 const G_WARNING = "#F59E0B";
 
 // ─── Helper: Hex to RGB ────────────────────────────────────────────────────────
-function hexToRgb(hex: string) {
-  const clean = (hex || "#3B82F6").replace("#", "");
-  const num = parseInt(clean, 16);
-  if (clean.length === 3) {
-    const r = (num >> 8) & 0xf;
-    const g = (num >> 4) & 0xf;
-    const b = num & 0xf;
-    return { r: r * 17, g: g * 17, b: b * 17 };
-  }
-  return {
-    r: (num >> 16) & 255,
-    g: (num >> 8) & 255,
-    b: num & 255,
-  };
-}
-
 export interface SlideTheme {
   accent: string;
   gradientColors: [string, string, string];
@@ -71,16 +55,10 @@ export interface SlideTheme {
 // ─── Dynamic Palette Generator for Primary Wallet (Slide 1) ───────────────────
 export const buildDynamicTheme = (walletColor?: string): SlideTheme => {
   const base = walletColor || "#3B82F6";
-  const { r, g, b } = hexToRgb(base);
-
-  // Muted, sophisticated matte executive card with subtle wallet tint
-  const topStop = `rgba(${Math.round(r * 0.3 + 8)}, ${Math.round(g * 0.3 + 10)}, ${Math.round(b * 0.3 + 18)}, 0.96)`;
-  const midStop = `rgba(${Math.round(r * 0.15 + 4)}, ${Math.round(g * 0.15 + 5)}, ${Math.round(b * 0.15 + 10)}, 0.98)`;
-  const botStop = "#090D14";
 
   return {
     accent: base,
-    gradientColors: [topStop, midStop, botStop],
+    gradientColors: ["#075071", "#032D49", "#011A2B"],
     subtlePatternColor: "rgba(255,255,255,0.06)",
     networkColor1: "#EF4444",
     networkColor2: "#F59E0B",
@@ -347,6 +325,35 @@ const LuxeCardWrapper = ({
             }}
           />
 
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              right: -22,
+              bottom: -96,
+              width: 118,
+              height: 250,
+              borderRadius: 118,
+              backgroundColor: theme.accent,
+              opacity: 0.28,
+              transform: [{ rotate: "38deg" }],
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              right: 48,
+              bottom: -124,
+              width: 88,
+              height: 194,
+              borderRadius: 90,
+              backgroundColor: "#74E6D0",
+              opacity: 0.15,
+              transform: [{ rotate: "40deg" }],
+            }}
+          />
+
           {/* Pola latar yang tenang. */}
           <View
             pointerEvents="none"
@@ -443,15 +450,6 @@ const Slide0 = ({
     }
   };
 
-  const walletTypeLabel =
-    {
-      bank: "Rekening Bank",
-      ewallet: "Dompet Digital",
-      cash: "Uang Tunai",
-      investment: "Investasi",
-      credit: "Kredit / Paylater",
-    }[wallet?.type || "cash"] || "Dompet";
-
   return (
     <LuxeCardWrapper theme={theme}>
       {/* ── ROW 1 (TOP): Bank Brand + Contactless + EMV Chip + Hologram ── */}
@@ -477,7 +475,7 @@ const Slide0 = ({
             }}
           >
             <Ionicons
-              name={((wallet?.icon as any) || "card") as any}
+              name="leaf"
               size={15}
               color="#FFFFFF"
             />
@@ -492,7 +490,7 @@ const Slide0 = ({
               }}
               numberOfLines={1}
             >
-              {wallet ? wallet.name : "Dompet Utama"}
+              {wallet?.name || "Dompet Utama"}
             </Text>
             <Text
               style={{
@@ -503,13 +501,38 @@ const Slide0 = ({
                 marginTop: 0.5,
               }}
             >
-              {walletTypeLabel.toUpperCase()}
+              PERSONAL FINANCE
             </Text>
           </View>
         </View>
       </View>
 
       {/* ── ROW 2 (HERO SALDO - BCA Mobile Style on top) ── */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}>
+        <View
+          style={{
+            width: 48,
+            height: 33,
+            borderRadius: 6,
+            backgroundColor: "#E7C677",
+            borderWidth: 1,
+            borderColor: "#F6DEA1",
+            marginRight: 12,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ position: "absolute", left: 15, top: 0, bottom: 0, width: 1, backgroundColor: "#9C7835" }} />
+          <View style={{ position: "absolute", left: 31, top: 0, bottom: 0, width: 1, backgroundColor: "#9C7835" }} />
+          <View style={{ position: "absolute", top: 15, left: 0, right: 0, height: 1, backgroundColor: "#9C7835" }} />
+        </View>
+        <Ionicons
+          name="wifi-outline"
+          size={25}
+          color="rgba(255,255,255,0.88)"
+          style={{ transform: [{ rotate: "90deg" }] }}
+        />
+      </View>
+
       <View style={{ marginTop: 5 }}>
         <View
           style={{

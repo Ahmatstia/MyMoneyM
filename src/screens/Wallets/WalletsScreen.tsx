@@ -28,18 +28,10 @@ type SafeIconName = keyof typeof Ionicons.glyphMap;
 const DefaultWalletToggle = ({
   active,
   walletName,
-  accent,
-  surface,
-  border,
-  textSecondary,
   onActivate,
 }: {
   active: boolean;
   walletName: string;
-  accent: string;
-  surface: string;
-  border: string;
-  textSecondary: string;
   onActivate: () => void;
 }) => {
   const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
@@ -72,20 +64,28 @@ const DefaultWalletToggle = ({
       accessibilityState={{ checked: active, disabled: active }}
       accessibilityLabel={`Jadikan ${walletName} sebagai rekening utama`}
       style={{
-        width: 72,
         height: 28,
         paddingHorizontal: 7,
         borderRadius: 14,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: active ? `${accent}20` : `${surface}CC`,
+        backgroundColor: active
+          ? "rgba(16,185,129,0.22)"
+          : "rgba(15,23,42,0.88)",
         borderWidth: 1,
-        borderColor: active ? `${accent}70` : `${border}80`,
+        borderColor: active
+          ? "rgba(110,231,183,0.65)"
+          : "rgba(255,255,255,0.3)",
       }}
     >
-      <Text style={{ color: active ? accent : textSecondary, fontSize: 9, fontWeight: "800" }}>
-        Utama
+      <Text
+        style={{
+          color: active ? "#A7F3D0" : "#FFFFFF",
+          fontSize: 9,
+          fontWeight: "800",
+        }}
+      >
+        {active ? "Default" : "Jadikan Default"}
       </Text>
       <View
         style={{
@@ -94,7 +94,8 @@ const DefaultWalletToggle = ({
           padding: 2,
           borderRadius: 9,
           justifyContent: "center",
-          backgroundColor: active ? accent : `${border}90`,
+          marginLeft: 6,
+          backgroundColor: active ? "#10B981" : "#64748B",
         }}
       >
         <Animated.View
@@ -122,7 +123,11 @@ const DefaultWalletToggle = ({
   );
 };
 
-const WALLET_TYPE_OPTIONS: { id: WalletType; label: string; icon: SafeIconName }[] = [
+const WALLET_TYPE_OPTIONS: {
+  id: WalletType;
+  label: string;
+  icon: SafeIconName;
+}[] = [
   { id: "bank", label: "Bank", icon: "card" },
   { id: "ewallet", label: "E-Wallet", icon: "phone-portrait" },
   { id: "cash", label: "Tunai", icon: "wallet" },
@@ -161,11 +166,15 @@ const WalletsScreen: React.FC = () => {
   const { state, addWallet, editWallet, deleteWallet, reconcileWallet } =
     useAppContext();
 
-  const [filterRole, setFilterRole] = useState<"all" | "liquid" | "nonliquid" | string>("all");
+  const [filterRole, setFilterRole] = useState<
+    "all" | "liquid" | "nonliquid" | string
+  >("all");
   const [modalVisible, setModalVisible] = useState(false);
   const [reconcileModalVisible, setReconcileModalVisible] = useState(false);
   const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
-  const [reconcilingWallet, setReconcilingWallet] = useState<Wallet | null>(null);
+  const [reconcilingWallet, setReconcilingWallet] = useState<Wallet | null>(
+    null,
+  );
 
   // Form states
   const [formName, setFormName] = useState("");
@@ -188,7 +197,9 @@ const WalletsScreen: React.FC = () => {
   useEffect(() => {
     if (
       pendingDefaultId &&
-      wallets.some((wallet) => wallet.id === pendingDefaultId && wallet.isDefault)
+      wallets.some(
+        (wallet) => wallet.id === pendingDefaultId && wallet.isDefault,
+      )
     ) {
       setPendingDefaultId(null);
     }
@@ -199,12 +210,12 @@ const WalletsScreen: React.FC = () => {
     if (filterRole === "all") return wallets;
     if (filterRole === "liquid") {
       return wallets.filter((w) =>
-        w.isLiquid !== undefined ? w.isLiquid : w.role === "operational"
+        w.isLiquid !== undefined ? w.isLiquid : w.role === "operational",
       );
     }
     if (filterRole === "nonliquid") {
       return wallets.filter((w) =>
-        w.isLiquid !== undefined ? !w.isLiquid : w.role !== "operational"
+        w.isLiquid !== undefined ? !w.isLiquid : w.role !== "operational",
       );
     }
     return wallets.filter((w) => w.role === filterRole);
@@ -214,8 +225,12 @@ const WalletsScreen: React.FC = () => {
   const totalBalance = safeNumber(state.balance);
   const operationalBalance = safeNumber(state.operationalBalance);
   const savingsBalance = safeNumber(state.savingsBalance);
-  const totalPart = Math.max(0, operationalBalance) + Math.max(0, savingsBalance);
-  const opPct = totalPart > 0 ? Math.round((Math.max(0, operationalBalance) / totalPart) * 100) : 50;
+  const totalPart =
+    Math.max(0, operationalBalance) + Math.max(0, savingsBalance);
+  const opPct =
+    totalPart > 0
+      ? Math.round((Math.max(0, operationalBalance) / totalPart) * 100)
+      : 50;
   const svPct = 100 - opPct;
 
   // Open Create Modal
@@ -245,9 +260,20 @@ const WalletsScreen: React.FC = () => {
     setFormName(w.name);
     setFormType(w.type);
     setFormRole(w.role);
-    setFormIsLiquid(w.isLiquid !== undefined ? w.isLiquid : w.role === "operational");
-    const presetRoles = ["operational", "savings", "credit", "investasi", "belanja", "tabungan"];
-    setFormCustomRole(!presetRoles.includes(w.role.toLowerCase()) ? w.role : "");
+    setFormIsLiquid(
+      w.isLiquid !== undefined ? w.isLiquid : w.role === "operational",
+    );
+    const presetRoles = [
+      "operational",
+      "savings",
+      "credit",
+      "investasi",
+      "belanja",
+      "tabungan",
+    ];
+    setFormCustomRole(
+      !presetRoles.includes(w.role.toLowerCase()) ? w.role : "",
+    );
     setFormInitialBalance(String(w.initialBalance || 0));
     setFormAccountNumber(w.accountNumber || "");
     setFormColor(w.color || "#10B981");
@@ -321,7 +347,7 @@ const WalletsScreen: React.FC = () => {
     if (wallets.length <= 1) {
       Alert.alert(
         "Tidak Dapat Dihapus",
-        "Anda harus memiliki minimal satu dompet utama di dalam aplikasi."
+        "Anda harus memiliki minimal satu dompet utama di dalam aplikasi.",
       );
       return;
     }
@@ -342,7 +368,7 @@ const WalletsScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -355,13 +381,18 @@ const WalletsScreen: React.FC = () => {
     const diff = actual - current;
 
     if (diff === 0) {
-      Alert.alert("Info", "Saldo aplikasi sudah cocok dengan saldo fisik Anda.");
+      Alert.alert(
+        "Info",
+        "Saldo aplikasi sudah cocok dengan saldo fisik Anda.",
+      );
       setReconcileModalVisible(false);
       return;
     }
 
     const isSurplus = diff > 0;
-    const diffLabel = isSurplus ? `+${formatCurrency(diff)}` : `-${formatCurrency(Math.abs(diff))}`;
+    const diffLabel = isSurplus
+      ? `+${formatCurrency(diff)}`
+      : `-${formatCurrency(Math.abs(diff))}`;
 
     Alert.alert(
       "Konfirmasi Pencocokan Saldo",
@@ -377,7 +408,7 @@ const WalletsScreen: React.FC = () => {
               await reconcileWallet(
                 reconcilingWallet.id,
                 actual,
-                reconcileNote.trim() || undefined
+                reconcileNote.trim() || undefined,
               );
               setReconcileModalVisible(false);
               Alert.alert("Berhasil", "Saldo rekening berhasil disinkronkan.");
@@ -386,7 +417,7 @@ const WalletsScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -401,7 +432,10 @@ const WalletsScreen: React.FC = () => {
       <View
         style={[
           tw`flex-row items-center justify-between px-4 py-2.5 border-b`,
-          { borderBottomColor: `${BORDER_COLOR}60`, backgroundColor: colors.surface },
+          {
+            borderBottomColor: `${BORDER_COLOR}60`,
+            backgroundColor: colors.surface,
+          },
         ]}
       >
         <TouchableOpacity
@@ -412,10 +446,17 @@ const WalletsScreen: React.FC = () => {
         </TouchableOpacity>
 
         <View style={tw`flex-1 mx-2.5`}>
-          <Text style={[tw`text-sm font-black`, { color: TEXT_PRIMARY, letterSpacing: -0.2 }]}>
+          <Text
+            style={[
+              tw`text-sm font-black`,
+              { color: TEXT_PRIMARY, letterSpacing: -0.2 },
+            ]}
+          >
             Dompet & Rekening
           </Text>
-          <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>
+          <Text
+            style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}
+          >
             {wallets.length} Akun Terdaftar
           </Text>
         </View>
@@ -464,8 +505,13 @@ const WalletsScreen: React.FC = () => {
           {/* Top row: Net worth total */}
           <View style={tw`flex-row items-center justify-between mb-2`}>
             <View>
-              <Text style={[tw`text-[10px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>
-                Total Kekayaan Bersih (Net Worth)
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase tracking-wider`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
+                Total Kekayaan Bersih
               </Text>
               <Text
                 style={[
@@ -500,30 +546,63 @@ const WalletsScreen: React.FC = () => {
             <View style={tw`flex-row items-center justify-between mb-1.5`}>
               {/* Belanja (Liquid) */}
               <View style={tw`flex-row items-center gap-1.5`}>
-                <View style={[tw`w-2 h-2 rounded-full`, { backgroundColor: colors.success }]} />
-                <Text style={[tw`text-[10px] font-semibold`, { color: TEXT_SECONDARY }]}>
+                <View
+                  style={[
+                    tw`w-2 h-2 rounded-full`,
+                    { backgroundColor: colors.success },
+                  ]}
+                />
+                <Text
+                  style={[
+                    tw`text-[10px] font-semibold`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                >
                   Belanja:
                 </Text>
-                <Text style={[tw`text-[11px] font-black`, { color: colors.success }]}>
+                <Text
+                  style={[
+                    tw`text-[11px] font-black`,
+                    { color: colors.success },
+                  ]}
+                >
                   {formatCurrency(operationalBalance)}
                 </Text>
-                <Text style={[tw`text-[9px] font-bold`, { color: colors.success }]}>
+                <Text
+                  style={[tw`text-[9px] font-bold`, { color: colors.success }]}
+                >
                   ({opPct}%)
                 </Text>
               </View>
 
-              <View style={[tw`w-[1px] h-3`, { backgroundColor: BORDER_COLOR }]} />
+              <View
+                style={[tw`w-[1px] h-3`, { backgroundColor: BORDER_COLOR }]}
+              />
 
               {/* Dingin (Savings) */}
               <View style={tw`flex-row items-center gap-1.5`}>
-                <View style={[tw`w-2 h-2 rounded-full`, { backgroundColor: colors.info }]} />
-                <Text style={[tw`text-[10px] font-semibold`, { color: TEXT_SECONDARY }]}>
+                <View
+                  style={[
+                    tw`w-2 h-2 rounded-full`,
+                    { backgroundColor: colors.info },
+                  ]}
+                />
+                <Text
+                  style={[
+                    tw`text-[10px] font-semibold`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                >
                   Dingin:
                 </Text>
-                <Text style={[tw`text-[11px] font-black`, { color: colors.info }]}>
+                <Text
+                  style={[tw`text-[11px] font-black`, { color: colors.info }]}
+                >
                   {formatCurrency(savingsBalance)}
                 </Text>
-                <Text style={[tw`text-[9px] font-bold`, { color: colors.info }]}>
+                <Text
+                  style={[tw`text-[9px] font-bold`, { color: colors.info }]}
+                >
                   ({svPct}%)
                 </Text>
               </View>
@@ -545,7 +624,9 @@ const WalletsScreen: React.FC = () => {
                   },
                 ]}
               />
-              <View style={[tw`h-full flex-1`, { backgroundColor: colors.info }]} />
+              <View
+                style={[tw`h-full flex-1`, { backgroundColor: colors.info }]}
+              />
             </View>
           </View>
         </View>
@@ -557,9 +638,13 @@ const WalletsScreen: React.FC = () => {
           contentContainerStyle={tw`flex-row mb-3`}
         >
           {[
-            { id: "all", label: `Semua (${wallets.length})`, color: colors.accent },
-            { id: "liquid", label: "💧 Bisa Belanja", color: colors.success },
-            { id: "nonliquid", label: "❄️ Dana Cadangan", color: colors.info },
+            {
+              id: "all",
+              label: `Semua (${wallets.length})`,
+              color: colors.accent,
+            },
+            { id: "liquid", label: "Uang Belanja", color: colors.success },
+            { id: "nonliquid", label: "Uang Dingin", color: colors.info },
           ].map((chip) => {
             const isSelected = filterRole === chip.id;
             return (
@@ -570,8 +655,14 @@ const WalletsScreen: React.FC = () => {
                 style={[
                   tw`px-3 py-1.5 rounded-xl mr-2 border flex-row items-center`,
                   isSelected
-                    ? { backgroundColor: `${chip.color}20`, borderColor: chip.color }
-                    : { backgroundColor: CARD_BG, borderColor: `${BORDER_COLOR}70` },
+                    ? {
+                        backgroundColor: `${chip.color}20`,
+                        borderColor: chip.color,
+                      }
+                    : {
+                        backgroundColor: CARD_BG,
+                        borderColor: `${BORDER_COLOR}70`,
+                      },
                 ]}
               >
                 <Text
@@ -601,7 +692,12 @@ const WalletsScreen: React.FC = () => {
             <Text style={[tw`text-xs font-bold`, { color: TEXT_PRIMARY }]}>
               Tidak ada rekening pada filter ini
             </Text>
-            <Text style={[tw`text-[10px] mt-0.5 text-center`, { color: TEXT_SECONDARY }]}>
+            <Text
+              style={[
+                tw`text-[10px] mt-0.5 text-center`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
               Tekan tombol "+ Tambah" di atas untuk membuat rekening baru.
             </Text>
           </View>
@@ -615,48 +711,56 @@ const WalletsScreen: React.FC = () => {
               wallet.isLiquid !== undefined
                 ? wallet.isLiquid
                 : wallet.role === "operational";
-            const isCredit = wallet.role === "credit" && wallet.isLiquid === false;
+            const isCredit =
+              wallet.role === "credit" && wallet.isLiquid === false;
             const roleBadgeColor = isCredit
               ? colors.error
               : isLiquid
-              ? colors.success
-              : colors.info;
+                ? colors.success
+                : colors.info;
 
-            const roleDisplayName = wallet.role === "operational"
-              ? "Belanja"
-              : wallet.role
-              ? wallet.role.length > 10
-                ? wallet.role.slice(0, 9) + "…"
+            const roleDisplayName =
+              wallet.role === "operational"
+                ? "Belanja"
                 : wallet.role
-              : isLiquid
-              ? "Belanja"
-              : "Dingin";
+                  ? wallet.role.length > 10
+                    ? wallet.role.slice(0, 9) + "…"
+                    : wallet.role
+                  : isLiquid
+                    ? "Belanja"
+                    : "Dingin";
 
             const typeLabel =
               wallet.type === "bank"
                 ? "Bank"
                 : wallet.type === "ewallet"
-                ? "E-Wallet"
-                : wallet.type === "investment"
-                ? "Investasi"
-                : wallet.type === "credit"
-                ? "Paylater"
-                : "Tunai";
+                  ? "E-Wallet"
+                  : wallet.type === "investment"
+                    ? "Investasi"
+                    : wallet.type === "credit"
+                      ? "Paylater"
+                      : "Tunai";
 
             return (
               <View
                 key={wallet.id}
                 style={[
-                  tw`rounded-2xl p-3.5 mb-2.5 border relative overflow-hidden`,
+                  tw`rounded-3xl p-4 mb-3 border relative overflow-hidden`,
                   {
-                    backgroundColor: CARD_BG,
+                    minHeight: 208,
+                    backgroundColor: `${walletColor}18`,
                     borderColor: `${walletColor}35`,
+                    shadowColor: walletColor,
+                    shadowOffset: { width: 0, height: 8 },
+                    shadowOpacity: 0.16,
+                    shadowRadius: 14,
+                    elevation: 5,
                   },
                 ]}
               >
-                {/* Dual-Tone Gradient Sheen */}
+                {/* ATM-style card surface */}
                 <LinearGradient
-                  colors={[`${walletColor}18`, `${colors.surface}`]}
+                  colors={[`${walletColor}C7`, "#06334F", "#011827"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
@@ -665,6 +769,36 @@ const WalletsScreen: React.FC = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
+                  }}
+                />
+
+                {/* Signature leaf motif */}
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    right: -26,
+                    bottom: -96,
+                    width: 102,
+                    height: 238,
+                    borderRadius: 110,
+                    backgroundColor: walletColor,
+                    opacity: 0.38,
+                    transform: [{ rotate: "38deg" }],
+                  }}
+                />
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    right: 38,
+                    bottom: -116,
+                    width: 74,
+                    height: 180,
+                    borderRadius: 90,
+                    backgroundColor: "#73E6D0",
+                    opacity: 0.18,
+                    transform: [{ rotate: "40deg" }],
                   }}
                 />
 
@@ -694,26 +828,163 @@ const WalletsScreen: React.FC = () => {
                   }}
                 />
 
+                <View style={tw`flex-row items-center justify-between mb-3`}>
+                  <View style={tw`flex-row items-center`}>
+                    <Ionicons name="leaf" size={17} color="#77E1D2" />
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontSize: 13,
+                        fontWeight: "800",
+                        marginLeft: 5,
+                      }}
+                    >
+                      MyMoney
+                    </Text>
+                  </View>
+                  <View style={tw`flex-row items-center`}>
+                    <TouchableOpacity
+                      onPress={() => handleOpenEdit(wallet)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(255,255,255,0.12)",
+                        borderWidth: 1,
+                        borderColor: "rgba(255,255,255,0.16)",
+                      }}
+                    >
+                      <Ionicons
+                        name="pencil-outline"
+                        size={13}
+                        color="#FFFFFF"
+                      />
+                    </TouchableOpacity>
+                    {!isDefault && (
+                      <TouchableOpacity
+                        onPress={() => handleDeleteWallet(wallet)}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          marginLeft: 5,
+                          borderRadius: 10,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "rgba(244,63,94,0.18)",
+                          borderWidth: 1,
+                          borderColor: "rgba(244,63,94,0.3)",
+                        }}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={13}
+                          color="#FDA4AF"
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                {/* Chip and contactless marks */}
+                <View style={tw`flex-row items-center mb-3`}>
+                  <View
+                    style={{
+                      width: 39,
+                      height: 28,
+                      borderRadius: 7,
+                      backgroundColor: "#E7C677",
+                      borderWidth: 1,
+                      borderColor: "#F6DEA1",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: 0,
+                        bottom: 0,
+                        width: 1,
+                        backgroundColor: "#9C7835",
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 24,
+                        top: 0,
+                        bottom: 0,
+                        width: 1,
+                        backgroundColor: "#9C7835",
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        top: 13,
+                        height: 1,
+                        backgroundColor: "#9C7835",
+                      }}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 13 }}>
+                    <View style={tw`flex-row items-center justify-between`}>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          color: "#FFFFFF",
+                          fontSize: 13,
+                          fontWeight: "800",
+                          flex: 1,
+                        }}
+                      >
+                        {wallet.name}
+                      </Text>
+                      <View style={{ marginLeft: 8 }}>
+                        <DefaultWalletToggle
+                          active={isDefault}
+                          walletName={wallet.name}
+                          onActivate={() => handleSetDefault(wallet)}
+                        />
+                      </View>
+                    </View>
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.7)",
+                        fontSize: 9,
+                        fontWeight: "600",
+                        marginTop: 2,
+                      }}
+                    >
+                      {typeLabel}
+                    </Text>
+                  </View>
+                </View>
+
                 {/* Card Top: Icon, Identity, and Action Buttons */}
-                <View style={tw`flex-row items-center justify-between mb-2`}>
+                <View style={{ display: "none" }}>
                   <View style={tw`flex-row items-center flex-1 pr-2`}>
                     <View
                       style={[
                         tw`w-8 h-8 rounded-xl items-center justify-center mr-2.5`,
-                        { backgroundColor: `${walletColor}25` },
+                        { backgroundColor: "rgba(255,255,255,0.16)" },
                       ]}
                     >
                       <Ionicons
                         name={(wallet.icon as SafeIconName) || "card"}
                         size={16}
-                        color={walletColor}
+                        color="#FFFFFF"
                       />
                     </View>
 
                     <View style={tw`flex-1`}>
                       <View style={tw`flex-row items-center gap-1.5`}>
                         <Text
-                          style={[tw`text-xs font-black`, { color: TEXT_PRIMARY }]}
+                          style={[tw`text-xs font-black`, { color: "#FFFFFF" }]}
                           numberOfLines={1}
                         >
                           {wallet.name}
@@ -743,9 +1014,13 @@ const WalletsScreen: React.FC = () => {
                           </View>
                         )}
                       </View>
-                      <Text style={[tw`text-[9.5px] mt-0.5`, { color: TEXT_SECONDARY }]}>
+                      <Text
+                        style={[
+                          tw`text-[9.5px] mt-0.5`,
+                          { color: "rgba(255,255,255,0.72)" },
+                        ]}
+                      >
                         {typeLabel}
-                        {wallet.accountNumber ? ` •••• ${wallet.accountNumber}` : ""}
                       </Text>
                     </View>
                   </View>
@@ -755,10 +1030,6 @@ const WalletsScreen: React.FC = () => {
                     <DefaultWalletToggle
                       active={isDefault}
                       walletName={wallet.name}
-                      accent={walletColor}
-                      surface={colors.surfaceLight}
-                      border={BORDER_COLOR}
-                      textSecondary={TEXT_SECONDARY}
                       onActivate={() => handleSetDefault(wallet)}
                     />
 
@@ -767,10 +1038,17 @@ const WalletsScreen: React.FC = () => {
                       onPress={() => handleOpenEdit(wallet)}
                       style={[
                         tw`w-7 h-7 rounded-lg items-center justify-center border`,
-                        { borderColor: `${BORDER_COLOR}70`, backgroundColor: `${colors.surface}90` },
+                        {
+                          borderColor: `${BORDER_COLOR}70`,
+                          backgroundColor: `${colors.surface}90`,
+                        },
                       ]}
                     >
-                      <Ionicons name="pencil-outline" size={12} color={TEXT_SECONDARY} />
+                      <Ionicons
+                        name="pencil-outline"
+                        size={12}
+                        color={TEXT_SECONDARY}
+                      />
                     </TouchableOpacity>
 
                     {/* Delete button (if not default) */}
@@ -781,28 +1059,78 @@ const WalletsScreen: React.FC = () => {
                           tw`w-7 h-7 rounded-lg items-center justify-center border border-red-500/20 bg-red-500/10`,
                         ]}
                       >
-                        <Ionicons name="trash-outline" size={12} color={colors.error} />
+                        <Ionicons
+                          name="trash-outline"
+                          size={12}
+                          color={colors.error}
+                        />
                       </TouchableOpacity>
                     )}
                   </View>
                 </View>
 
-                {/* Card Bottom: Balance & Compact Reconcile Pill */}
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.92)",
+                    fontSize: 15,
+                    fontWeight: "700",
+                    letterSpacing: 2.2,
+                    marginTop: 15,
+                  }}
+                >
+                  {wallet.accountNumber || "Nomor rekening belum diisi"}
+                </Text>
+
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    right: 16,
+                    bottom: 70,
+                    flexDirection: "row",
+                    opacity: 0.96,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: "#F0261D",
+                    }}
+                  />
+                  <View
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: "#FF9F1C",
+                      marginLeft: -8,
+                    }}
+                  />
+                </View>
+
+                {/* Saldo dan tombol cocokkan */}
                 <View
                   style={[
-                    tw`flex-row items-end justify-between pt-2 mt-1 border-t`,
-                    { borderTopColor: `${BORDER_COLOR}40` },
+                    tw`flex-row items-end justify-between pt-2 mt-2 border-t`,
+                    { borderTopColor: "rgba(255,255,255,0.18)" },
                   ]}
                 >
                   <View>
-                    <Text style={[tw`text-[9px] font-semibold uppercase`, { color: TEXT_SECONDARY }]}>
+                    <Text
+                      style={[
+                        tw`text-[9px] font-semibold uppercase`,
+                        { color: "rgba(255,255,255,0.72)" },
+                      ]}
+                    >
                       Saldo Rekening
                     </Text>
                     <Text
                       style={[
                         tw`text-base font-black mt-0.5 tracking-tight`,
                         {
-                          color: wallet.balance < 0 ? colors.error : TEXT_PRIMARY,
+                          color: wallet.balance < 0 ? "#FCA5A5" : "#FFFFFF",
                         },
                       ]}
                       numberOfLines={1}
@@ -811,24 +1139,19 @@ const WalletsScreen: React.FC = () => {
                     </Text>
                   </View>
 
-                  {/* Compact Reconcile Button */}
                   <TouchableOpacity
                     onPress={() => handleOpenReconcile(wallet)}
                     activeOpacity={0.7}
                     style={[
-                      tw`flex-row items-center px-2.5 py-1.2 rounded-lg`,
-                      { backgroundColor: `${colors.info}15` },
+                      tw`w-9 h-9 items-center justify-center rounded-xl`,
+                      {
+                        backgroundColor: "rgba(255,255,255,0.14)",
+                        borderWidth: 1,
+                        borderColor: "rgba(255,255,255,0.18)",
+                      },
                     ]}
                   >
-                    <Ionicons name="sync-outline" size={11} color={colors.info} />
-                    <Text
-                      style={[
-                        tw`text-[10px] font-bold ml-1`,
-                        { color: colors.info },
-                      ]}
-                    >
-                      Cocokkan Saldo
-                    </Text>
+                    <Ionicons name="sync-outline" size={16} color="#FFFFFF" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -874,7 +1197,12 @@ const WalletsScreen: React.FC = () => {
 
             <ScrollView contentContainerStyle={tw`p-4 pb-8`}>
               {/* Nama Rekening */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Nama Rekening / Dompet
               </Text>
               <TextInput
@@ -893,7 +1221,12 @@ const WalletsScreen: React.FC = () => {
               />
 
               {/* Tipe Rekening (Horizontal Scrollable Pills) */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1.5`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1.5`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Tipe Rekening
               </Text>
               <ScrollView
@@ -908,8 +1241,14 @@ const WalletsScreen: React.FC = () => {
                     style={[
                       tw`flex-row items-center px-3 py-1.5 rounded-xl mr-2 border`,
                       formType === opt.id
-                        ? { backgroundColor: colors.accent, borderColor: colors.accent }
-                        : { backgroundColor: colors.surfaceLight, borderColor: `${BORDER_COLOR}70` },
+                        ? {
+                            backgroundColor: colors.accent,
+                            borderColor: colors.accent,
+                          }
+                        : {
+                            backgroundColor: colors.surfaceLight,
+                            borderColor: `${BORDER_COLOR}70`,
+                          },
                     ]}
                   >
                     <Ionicons
@@ -920,7 +1259,9 @@ const WalletsScreen: React.FC = () => {
                     <Text
                       style={[
                         tw`text-[10.5px] font-bold ml-1.5`,
-                        { color: formType === opt.id ? "#FFFFFF" : TEXT_PRIMARY },
+                        {
+                          color: formType === opt.id ? "#FFFFFF" : TEXT_PRIMARY,
+                        },
                       ]}
                     >
                       {opt.label}
@@ -930,7 +1271,12 @@ const WalletsScreen: React.FC = () => {
               </ScrollView>
 
               {/* Peran Rekening (Horizontal Scrollable Chips) */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1.5`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1.5`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Peran Rekening
               </Text>
               <ScrollView
@@ -939,11 +1285,36 @@ const WalletsScreen: React.FC = () => {
                 contentContainerStyle={tw`flex-row mb-2`}
               >
                 {[
-                  { id: "operational", label: "Belanja", icon: "cart-outline", color: colors.success },
-                  { id: "savings", label: "Tabungan", icon: "lock-closed-outline", color: colors.info },
-                  { id: "credit", label: "Kredit", icon: "card-outline", color: colors.error },
-                  { id: "investasi", label: "Investasi", icon: "trending-up-outline", color: colors.warning },
-                  { id: "custom", label: "+ Kustom", icon: "pencil-outline", color: colors.purple },
+                  {
+                    id: "operational",
+                    label: "Belanja",
+                    icon: "cart-outline",
+                    color: colors.success,
+                  },
+                  {
+                    id: "savings",
+                    label: "Tabungan",
+                    icon: "lock-closed-outline",
+                    color: colors.info,
+                  },
+                  {
+                    id: "credit",
+                    label: "Kredit",
+                    icon: "card-outline",
+                    color: colors.error,
+                  },
+                  {
+                    id: "investasi",
+                    label: "Investasi",
+                    icon: "trending-up-outline",
+                    color: colors.warning,
+                  },
+                  {
+                    id: "custom",
+                    label: "+ Kustom",
+                    icon: "pencil-outline",
+                    color: colors.purple,
+                  },
                 ].map((opt) => {
                   const isSelected = formCustomRole.trim()
                     ? opt.id === "custom"
@@ -958,14 +1329,22 @@ const WalletsScreen: React.FC = () => {
                         } else {
                           setFormRole(opt.id);
                           setFormCustomRole("");
-                          setFormIsLiquid(opt.id === "operational" || opt.id === "investasi");
+                          setFormIsLiquid(
+                            opt.id === "operational" || opt.id === "investasi",
+                          );
                         }
                       }}
                       style={[
                         tw`flex-row items-center px-3 py-1.5 rounded-xl mr-2 border`,
                         isSelected
-                          ? { backgroundColor: `${opt.color}20`, borderColor: opt.color }
-                          : { backgroundColor: colors.surfaceLight, borderColor: `${BORDER_COLOR}70` },
+                          ? {
+                              backgroundColor: `${opt.color}20`,
+                              borderColor: opt.color,
+                            }
+                          : {
+                              backgroundColor: colors.surfaceLight,
+                              borderColor: `${BORDER_COLOR}70`,
+                            },
                       ]}
                     >
                       <Ionicons
@@ -1013,8 +1392,12 @@ const WalletsScreen: React.FC = () => {
                 style={[
                   tw`flex-row items-center justify-between p-3 rounded-xl mb-3 border`,
                   {
-                    backgroundColor: formIsLiquid ? `${colors.success}10` : `${colors.info}10`,
-                    borderColor: formIsLiquid ? `${colors.success}50` : `${colors.info}50`,
+                    backgroundColor: formIsLiquid
+                      ? `${colors.success}10`
+                      : `${colors.info}10`,
+                    borderColor: formIsLiquid
+                      ? `${colors.success}50`
+                      : `${colors.info}50`,
                   },
                 ]}
               >
@@ -1044,7 +1427,10 @@ const WalletsScreen: React.FC = () => {
                 <Switch
                   value={formIsLiquid}
                   onValueChange={setFormIsLiquid}
-                  trackColor={{ false: `${colors.info}30`, true: `${colors.success}30` }}
+                  trackColor={{
+                    false: `${colors.info}30`,
+                    true: `${colors.success}30`,
+                  }}
                   thumbColor={formIsLiquid ? colors.success : colors.info}
                 />
               </View>
@@ -1052,7 +1438,12 @@ const WalletsScreen: React.FC = () => {
               {/* Saldo Awal */}
               {!editingWallet && (
                 <>
-                  <Text style={[tw`text-[10px] font-bold uppercase mb-1`, { color: TEXT_SECONDARY }]}>
+                  <Text
+                    style={[
+                      tw`text-[10px] font-bold uppercase mb-1`,
+                      { color: TEXT_SECONDARY },
+                    ]}
+                  >
                     Saldo Saat Ini (Saldo Awal)
                   </Text>
                   <TextInput
@@ -1074,7 +1465,12 @@ const WalletsScreen: React.FC = () => {
               )}
 
               {/* Nomor Akun Opsional */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Nomor Akun / 4 Digit Kartu (Opsional)
               </Text>
               <TextInput
@@ -1094,7 +1490,12 @@ const WalletsScreen: React.FC = () => {
               />
 
               {/* Pilihan Warna (Horizontal Scrollable Swatches) */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1.5`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1.5`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Warna Kartu
               </Text>
               <ScrollView
@@ -1122,7 +1523,12 @@ const WalletsScreen: React.FC = () => {
               </ScrollView>
 
               {/* Pilihan Ikon (Horizontal Scrollable Icons) */}
-              <Text style={[tw`text-[10px] font-bold uppercase mb-1.5`, { color: TEXT_SECONDARY }]}>
+              <Text
+                style={[
+                  tw`text-[10px] font-bold uppercase mb-1.5`,
+                  { color: TEXT_SECONDARY },
+                ]}
+              >
                 Ikon Rekening
               </Text>
               <ScrollView
@@ -1138,7 +1544,10 @@ const WalletsScreen: React.FC = () => {
                       tw`w-8 h-8 rounded-xl mr-2 items-center justify-center border`,
                       formIcon === iconName
                         ? { backgroundColor: formColor, borderColor: formColor }
-                        : { backgroundColor: colors.surfaceLight, borderColor: `${BORDER_COLOR}70` },
+                        : {
+                            backgroundColor: colors.surfaceLight,
+                            borderColor: `${BORDER_COLOR}70`,
+                          },
                     ]}
                   >
                     <Ionicons
@@ -1180,10 +1589,7 @@ const WalletsScreen: React.FC = () => {
           style={tw`flex-1 bg-black/60 justify-end`}
         >
           <View
-            style={[
-              tw`rounded-t-3xl p-4 pb-6`,
-              { backgroundColor: CARD_BG },
-            ]}
+            style={[tw`rounded-t-3xl p-4 pb-6`, { backgroundColor: CARD_BG }]}
           >
             {/* Header */}
             <View
@@ -1196,7 +1602,12 @@ const WalletsScreen: React.FC = () => {
                 <Text style={[tw`text-sm font-black`, { color: TEXT_PRIMARY }]}>
                   Pencocokan Saldo
                 </Text>
-                <Text style={[tw`text-[10px] font-semibold`, { color: TEXT_SECONDARY }]}>
+                <Text
+                  style={[
+                    tw`text-[10px] font-semibold`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                >
                   {reconcilingWallet?.name}
                 </Text>
               </View>
@@ -1212,22 +1623,44 @@ const WalletsScreen: React.FC = () => {
             <View
               style={[
                 tw`p-3 rounded-xl mb-3 border flex-row items-center justify-between`,
-                { backgroundColor: colors.surfaceLight, borderColor: `${BORDER_COLOR}70` },
+                {
+                  backgroundColor: colors.surfaceLight,
+                  borderColor: `${BORDER_COLOR}70`,
+                },
               ]}
             >
               <View>
-                <Text style={[tw`text-[9.5px] font-bold uppercase`, { color: TEXT_SECONDARY }]}>
+                <Text
+                  style={[
+                    tw`text-[9.5px] font-bold uppercase`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                >
                   Saldo di Aplikasi Saat Ini
                 </Text>
-                <Text style={[tw`text-base font-black mt-0.5`, { color: TEXT_PRIMARY }]}>
+                <Text
+                  style={[
+                    tw`text-base font-black mt-0.5`,
+                    { color: TEXT_PRIMARY },
+                  ]}
+                >
                   {formatCurrency(reconcilingWallet?.balance || 0)}
                 </Text>
               </View>
-              <Ionicons name="calculator-outline" size={22} color={colors.info} />
+              <Ionicons
+                name="calculator-outline"
+                size={22}
+                color={colors.info}
+              />
             </View>
 
             {/* Input Real Balance */}
-            <Text style={[tw`text-[10px] font-bold uppercase mb-1`, { color: TEXT_SECONDARY }]}>
+            <Text
+              style={[
+                tw`text-[10px] font-bold uppercase mb-1`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
               Saldo Riil di M-Banking / Dompet Fisik
             </Text>
             <TextInput
@@ -1256,7 +1689,9 @@ const WalletsScreen: React.FC = () => {
               if (diff === 0) {
                 return (
                   <View style={tw`p-2 bg-gray-500/10 rounded-lg mb-3`}>
-                    <Text style={tw`text-[10.5px] text-gray-500 text-center font-bold`}>
+                    <Text
+                      style={tw`text-[10.5px] text-gray-500 text-center font-bold`}
+                    >
                       ✓ Saldo sudah cocok sempurna (selisih Rp 0)
                     </Text>
                   </View>
@@ -1276,16 +1711,27 @@ const WalletsScreen: React.FC = () => {
                   ]}
                 >
                   <View style={tw`flex-row items-center justify-between`}>
-                    <Text style={[tw`text-[11px] font-bold`, { color: statusColor }]}>
-                      {isSurplus ? "Selisih Masuk (Surplus):" : "Selisih Kurang (Defisit):"}
+                    <Text
+                      style={[
+                        tw`text-[11px] font-bold`,
+                        { color: statusColor },
+                      ]}
+                    >
+                      {isSurplus
+                        ? "Selisih Masuk (Surplus):"
+                        : "Selisih Kurang (Defisit):"}
                     </Text>
-                    <Text style={[tw`text-xs font-black`, { color: statusColor }]}>
+                    <Text
+                      style={[tw`text-xs font-black`, { color: statusColor }]}
+                    >
                       {isSurplus
                         ? `+${formatCurrency(diff)}`
                         : `-${formatCurrency(Math.abs(diff))}`}
                     </Text>
                   </View>
-                  <Text style={[tw`text-[9px] mt-0.5`, { color: TEXT_SECONDARY }]}>
+                  <Text
+                    style={[tw`text-[9px] mt-0.5`, { color: TEXT_SECONDARY }]}
+                  >
                     {isSurplus
                       ? "Akan otomatis dicatat sebagai pemasukan penyesuaian."
                       : "Akan otomatis dicatat sebagai pengeluaran selisih kas."}
@@ -1295,7 +1741,12 @@ const WalletsScreen: React.FC = () => {
             })()}
 
             {/* Catatan Penyesuaian */}
-            <Text style={[tw`text-[10px] font-bold uppercase mb-1`, { color: TEXT_SECONDARY }]}>
+            <Text
+              style={[
+                tw`text-[10px] font-bold uppercase mb-1`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
               Catatan Penyesuaian (Opsional)
             </Text>
             <TextInput
