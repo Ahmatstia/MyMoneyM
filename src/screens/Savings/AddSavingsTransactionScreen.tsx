@@ -23,7 +23,6 @@ import {
   getCurrentDate,
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 
 type AddSavingsTransactionScreenNavigationProp = StackNavigationProp<
@@ -229,6 +228,26 @@ const AddSavingsTransactionScreen: React.FC = () => {
   };
 
   // Handle submit
+  useEffect(() => {
+    navigation.setOptions({
+      title: type === "deposit" ? "Tambah Tabungan" : "Tarik Tabungan",
+      headerStyle: { backgroundColor: PRIMARY_COLOR },
+      headerTintColor: TEXT_PRIMARY,
+      headerTitleStyle: { fontWeight: "600" },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, type, PRIMARY_COLOR, TEXT_PRIMARY]);
+
   const handleSubmit = async () => {
     if (!validateAmount(amount)) {
       Alert.alert("Error", amountError || "Jumlah tidak valid");
@@ -358,12 +377,12 @@ const AddSavingsTransactionScreen: React.FC = () => {
                 <Ionicons
                   name="arrow-up"
                   size={14}
-                  color={transactionType === "withdrawal" ? ERROR_COLOR : currentBalance <= 0 ? Colors.gray500 : TEXT_SECONDARY}
+                  color={transactionType === "withdrawal" ? ERROR_COLOR : currentBalance <= 0 ? colors.gray500 : TEXT_SECONDARY}
                 />
                 <Text
                   style={[
                     tw`text-[11px] font-bold ml-1.5`,
-                    { color: transactionType === "withdrawal" ? ERROR_COLOR : currentBalance <= 0 ? Colors.gray500 : TEXT_SECONDARY },
+                    { color: transactionType === "withdrawal" ? ERROR_COLOR : currentBalance <= 0 ? colors.gray500 : TEXT_SECONDARY },
                   ]}
                 >
                   Penarikan
@@ -399,7 +418,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
                       onPress={() => !isDisabled && setAmount(preset.value)}
                       disabled={isDisabled || loading}
                     >
-                      <Text style={[tw`text-xs font-bold`, { color: isDisabled ? Colors.gray500 : ACCENT_COLOR }]}>
+                      <Text style={[tw`text-xs font-bold`, { color: isDisabled ? colors.gray500 : ACCENT_COLOR }]}>
                         {preset.label}
                       </Text>
                     </TouchableOpacity>
@@ -419,7 +438,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
               <TextInput
                 style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={amount}
                 onChangeText={handleAmountChange}
                 keyboardType="numeric"
@@ -481,7 +500,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
             <View style={tw`flex-1 mr-3`}>
               <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{formatDisplayDate(date)}</Text>
             </View>
-            <Ionicons name="calendar-outline" size={16} color={Colors.gray500} />
+            <Ionicons name="calendar-outline" size={16} color={colors.gray500} />
           </TouchableOpacity>
         </View>
 
@@ -489,13 +508,13 @@ const AddSavingsTransactionScreen: React.FC = () => {
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
             <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Catatan (opsional)</Text>
-            <Text style={[tw`text-[10px]`, { color: Colors.gray500 }]}>{note.length}/100</Text>
+            <Text style={[tw`text-[10px]`, { color: colors.gray500 }]}>{note.length}/100</Text>
           </View>
           <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
             <TextInput
               style={[tw`text-[13px] font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Tambahkan catatan..."
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={note}
               onChangeText={setNote}
               multiline
@@ -533,7 +552,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
               borderWidth: 1.5,
               borderColor: syncWithCash
                 ? (transactionType === "deposit" ? SUCCESS_COLOR : INFO_COLOR)
-                : Colors.gray500,
+                : colors.gray500,
               backgroundColor: syncWithCash
                 ? (transactionType === "deposit" ? SUCCESS_COLOR : INFO_COLOR)
                 : "transparent",
@@ -552,7 +571,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
                 ? "Potong dari Saldo Kas utama (Pengeluaran)"
                 : "Masukkan ke Saldo Kas utama (Pemasukan)"}
             </Text>
-            <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
               {transactionType === "deposit"
                 ? "Saldo dompet berkurang dan otomatis tercatat sebagai mutasi pengeluaran tabungan."
                 : "Saldo dompet bertambah dan otomatis tercatat sebagai mutasi pemasukan tabungan."}
@@ -628,7 +647,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
                       >
                         {w.name}
                       </Text>
-                      <Text style={{ fontSize: 10, color: Colors.gray400 }}>
+                      <Text style={{ fontSize: 10, color: colors.gray400 }}>
                         {formatCurrency(w.balance)}
                       </Text>
                     </View>

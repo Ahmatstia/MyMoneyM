@@ -1,31 +1,38 @@
-import React, { useState, useEffect } from "react";
-import FloatingDrawerHandle from "../components/FloatingDrawerHandle";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  createContext,
+  useContext,
+} from "react";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
   useNavigation,
-  DrawerActions,
 } from "@react-navigation/native";
 import { navigationRef } from "./navigationRef";
 import { createStackNavigator } from "@react-navigation/stack";
-import {
-  createDrawerNavigator,
-  DrawerContentComponentProps,
-  DrawerContentScrollView,
-  useDrawerStatus,
-} from "@react-navigation/drawer";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  Animated,
   Dimensions,
   Platform,
   Alert,
   Image,
   ImageBackground,
   StyleSheet,
+  Easing,
+  BackHandler,
+  PanResponder,
+  ScrollView,
 } from "react-native";
 import tw from "twrnc";
 import { LinearGradient } from "expo-linear-gradient";
@@ -67,6 +74,7 @@ import MoniScreen from "../screens/Gamification/MoniScreen";
 type StackParamList = {
   Onboarding: undefined;
   MainDrawer: undefined;
+  MainTabs: undefined;
   Home: undefined;
   MoniScreen: undefined;
   Transactions: undefined;
@@ -99,329 +107,698 @@ type StackParamList = {
 
 const MainStack = createStackNavigator<StackParamList>();
 const RootStack = createStackNavigator();
-const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 const { width } = Dimensions.get("window");
+const DRAWER_WIDTH = Math.min(width * 0.82, 320);
 
-// ─── Custom Drawer Content ────────────────────────────────────────────────────
+// ─── Drawer Context & Global Helpers ──────────────────────────────────────────
 
-const CustomDrawerContent = (props: DrawerContentComponentProps) => {
-  const { state } = useAppContext();
-  const { progress } = useGamification();
-  const { colors } = useTheme();
-  const { userProfile } = state;
+interface DrawerContextType {
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  isOpen: boolean;
+}
 
-  const [avatarError, setAvatarError] = useState(false);
-  const [coverError, setCoverError] = useState(false);
+export const DrawerContext = createContext<DrawerContextType>({
+  openDrawer: () => {},
+  closeDrawer: () => {},
+  isOpen: false,
+});
 
-  useEffect(() => {
-    setAvatarError(false);
-  }, [userProfile?.avatar]);
+export const useDrawer = () => useContext(DrawerContext);
 
-  useEffect(() => {
-    setCoverError(false);
-  }, [userProfile?.coverImage]);
+const drawerActionsRef: { open?: () => void; close?: () => void } = {};
 
-  if (!userProfile) return null;
+export const openAppDrawer = () => {
+  drawerActionsRef.open?.();
+};
 
-  const menuItems = [
-    {
-      name: "Home",
-      label: "Beranda",
-      icon: "home-outline" as const,
-      color: colors.accent,
-    },
-    {
-      name: "Transactions",
-      label: "Transaksi",
-      icon: "swap-horizontal-outline" as const,
-      color: colors.success,
-    },
-    {
-      name: "Calendar",
-      label: "Kalender",
-      icon: "calendar-outline" as const,
-      color: colors.info,
-    },
-    {
-      name: "Analytics",
-      label: "Analitik",
-      icon: "stats-chart-outline" as const,
-      color: colors.warning,
-    },
-    {
-      name: "Budget",
-      label: "Anggaran",
-      icon: "pie-chart-outline" as const,
-      color: colors.purple,
-    },
-    {
-      name: "Savings",
-      label: "Tabungan",
-      icon: "wallet-outline" as const,
-      color: colors.accent,
-    },
-    {
-      name: "Notes",
-      label: "Catatan",
-      icon: "document-text-outline" as const,
-      color: colors.pink,
-    },
-    {
-      name: "Debt",
-      label: "Hutang",
-      icon: "card-outline" as const,
-      color: colors.error,
-    },
-    {
-      name: "Wallets",
-      label: "Dompet & Rekening",
-      icon: "wallet-outline" as const,
-      color: colors.primary,
-    },
-    {
-      name: "RecurringTransactions",
-      label: "Transaksi Rutin",
-      icon: "repeat-outline" as const,
-      color: colors.accent,
-    },
-    {
-      name: "Tools",
-      label: "Alat Cerdas",
-      icon: "calculator-outline" as const,
-      color: colors.purple,
-    },
-    {
-      name: "MoniScreen",
-      label: "Ruang Moni 🐱",
-      icon: "sparkles-outline" as const,
-      color: colors.warning,
-    },
-    {
-      name: "Profile",
-      label: "Profil Saya",
-      icon: "person-outline" as const,
-      color: colors.accent,
-    },
-  ];
+export const closeAppDrawer = () => {
+  drawerActionsRef.close?.();
+};
 
-  const navigateToScreen = (screenName: any) => {
-    props.navigation.navigate(screenName);
-    props.navigation.closeDrawer();
-  };
+// ─── Drawer Menu Item ─────────────────────────────────────────────────────────
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <DrawerContentScrollView
-        {...props}
-        contentContainerStyle={{ paddingTop: 0, paddingBottom: 28 }}
-        showsVerticalScrollIndicator={false}
+interface DrawerMenuItemProps {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  surfaceColor: string;
+  borderColor: string;
+  textColor: string;
+  onPress: () => void;
+}
+
+const DrawerMenuItem = React.memo<DrawerMenuItemProps>(
+  ({ label, icon, color, surfaceColor, borderColor, textColor, onPress }) => (
+    <TouchableOpacity
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 11,
+        paddingHorizontal: 20,
+        marginHorizontal: 16,
+        borderRadius: 12,
+        marginBottom: 4,
+      }}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 11,
+          backgroundColor: surfaceColor,
+          borderWidth: 1,
+          borderColor: borderColor,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 12,
+        }}
       >
-          {/* Header dengan foto profil dan tombol tutup X */}
-          <View style={{ position: "relative" }}>
-            <TouchableOpacity
-              onPress={() => {
-                props.navigation.navigate("Profile");
-                props.navigation.closeDrawer();
-              }}
-              activeOpacity={0.9}
-            >
-              <ImageBackground
-                source={
-                  userProfile.coverImage && !coverError
-                    ? { uri: userProfile.coverImage }
-                    : require("../../assets/bg.png")
-                }
-                onError={() => setCoverError(true)}
-                style={{
-                  paddingTop: 56,
-                  paddingBottom: 32,
-                  paddingHorizontal: 24,
-                  marginBottom: 16,
-                }}
-                imageStyle={{ opacity: 0.4 }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <LevelAvatarBorder
-                    avatarUri={
-                      userProfile.avatar && !avatarError ? userProfile.avatar : null
-                    }
-                    name={userProfile.name}
-                    size={64}
-                    showLevelBadge={true}
-                  />
-                  <View style={{ marginLeft: 16, flex: 1, paddingRight: 36 }}>
-                    <Text
+        <Ionicons name={icon} size={20} color={color} />
+      </View>
+      <Text
+        style={{
+          color: textColor,
+          fontSize: 14,
+          fontWeight: "500",
+          flex: 1,
+        }}
+      >
+        {label}
+      </Text>
+      <Ionicons name="chevron-forward" size={16} color={borderColor} />
+    </TouchableOpacity>
+  )
+);
+
+// ─── Custom Drawer Component (Native Animated) ────────────────────────────────
+
+interface CustomDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  animProgress: Animated.Value;
+}
+
+const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
+  ({ isOpen, onClose, animProgress }) => {
+    const { state } = useAppContext();
+    const { progress } = useGamification();
+    const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
+    const { userProfile } = state;
+
+    const [avatarError, setAvatarError] = useState(false);
+    const [coverError, setCoverError] = useState(false);
+
+    useEffect(() => {
+      setAvatarError(false);
+    }, [userProfile?.avatar]);
+
+    useEffect(() => {
+      setCoverError(false);
+    }, [userProfile?.coverImage]);
+
+    const navigateTo = useCallback(
+      (screenName: string) => {
+        onClose();
+        requestAnimationFrame(() => {
+          if (screenName === "Home") {
+            navigationRef.navigate("MainTabs", { screen: "HomeTab" });
+          } else if (screenName === "Transactions") {
+            navigationRef.navigate("MainTabs", { screen: "TransactionsTab" });
+          } else if (screenName === "Budget") {
+            navigationRef.navigate("MainTabs", { screen: "BudgetTab" });
+          } else {
+            navigationRef.navigate(screenName);
+          }
+        });
+      },
+      [onClose]
+    );
+
+    const menuItems = useMemo(
+      () => [
+        {
+          name: "Home",
+          label: "Beranda",
+          icon: "home-outline" as const,
+          color: colors.accent,
+        },
+        {
+          name: "Transactions",
+          label: "Transaksi",
+          icon: "swap-horizontal-outline" as const,
+          color: colors.success,
+        },
+        {
+          name: "Calendar",
+          label: "Kalender",
+          icon: "calendar-outline" as const,
+          color: colors.info,
+        },
+        {
+          name: "Analytics",
+          label: "Analitik",
+          icon: "stats-chart-outline" as const,
+          color: colors.warning,
+        },
+        {
+          name: "Budget",
+          label: "Anggaran",
+          icon: "pie-chart-outline" as const,
+          color: colors.purple,
+        },
+        {
+          name: "Savings",
+          label: "Tabungan",
+          icon: "wallet-outline" as const,
+          color: colors.accent,
+        },
+        {
+          name: "Notes",
+          label: "Catatan",
+          icon: "document-text-outline" as const,
+          color: colors.pink,
+        },
+        {
+          name: "Debt",
+          label: "Hutang",
+          icon: "card-outline" as const,
+          color: colors.error,
+        },
+        {
+          name: "Wallets",
+          label: "Dompet & Rekening",
+          icon: "wallet-outline" as const,
+          color: colors.primary,
+        },
+        {
+          name: "RecurringTransactions",
+          label: "Transaksi Rutin",
+          icon: "repeat-outline" as const,
+          color: colors.accent,
+        },
+        {
+          name: "Tools",
+          label: "Alat Cerdas",
+          icon: "calculator-outline" as const,
+          color: colors.purple,
+        },
+        {
+          name: "MoniScreen",
+          label: "Ruang Moni 🐱",
+          icon: "sparkles-outline" as const,
+          color: colors.warning,
+        },
+        {
+          name: "Profile",
+          label: "Profil Saya",
+          icon: "person-outline" as const,
+          color: colors.accent,
+        },
+      ],
+      [colors]
+    );
+
+    const translateX = animProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-DRAWER_WIDTH, 0],
+    });
+
+    const backdropOpacity = animProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 0.55],
+    });
+
+    // Swipe left gesture on drawer to close
+    const drawerPanResponder = useMemo(
+      () =>
+        PanResponder.create({
+          onStartShouldSetPanResponder: () => false,
+          onMoveShouldSetPanResponder: (_, gs) => {
+            return gs.dx < -10 && Math.abs(gs.dy) < Math.abs(gs.dx);
+          },
+          onPanResponderMove: (_, gs) => {
+            if (gs.dx < 0) {
+              const val = Math.max(0, Math.min(1, 1 + gs.dx / DRAWER_WIDTH));
+              animProgress.setValue(val);
+            }
+          },
+          onPanResponderRelease: (_, gs) => {
+            if (gs.dx < -50 || gs.vx < -0.4) {
+              onClose();
+            } else {
+              Animated.timing(animProgress, {
+                toValue: 1,
+                duration: 150,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }).start();
+            }
+          },
+        }),
+      [animProgress, onClose]
+    );
+
+    return (
+      <View
+        pointerEvents={isOpen ? "auto" : "none"}
+        style={StyleSheet.absoluteFill}
+      >
+        {/* Backdrop Overlay */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: "#000000",
+              opacity: backdropOpacity,
+            },
+          ]}
+        >
+          <TouchableWithoutFeedback onPress={onClose}>
+            <View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+        </Animated.View>
+
+        {/* Drawer Panel */}
+        <Animated.View
+          {...drawerPanResponder.panHandlers}
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: DRAWER_WIDTH,
+            backgroundColor: colors.background,
+            borderTopRightRadius: 20,
+            borderBottomRightRadius: 20,
+            borderRightWidth: 1,
+            borderRightColor: colors.border,
+            transform: [{ translateX }],
+            shadowColor: "#000",
+            shadowOffset: { width: 4, height: 0 },
+            shadowOpacity: 0.25,
+            shadowRadius: 10,
+            elevation: Platform.OS === "android" ? 12 : 0,
+          }}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingTop: Math.max(insets.top, 16),
+              paddingBottom: Math.max(insets.bottom, 16) + 24,
+            }}
+            style={{ flex: 1 }}
+          >
+            {/* Header Profile */}
+            {userProfile && (
+              <View style={{ position: "relative" }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    onClose();
+                    requestAnimationFrame(() => {
+                      navigationRef.navigate("Profile");
+                    });
+                  }}
+                  activeOpacity={0.9}
+                >
+                  {userProfile.coverImage && !coverError ? (
+                    <ImageBackground
+                      source={{ uri: userProfile.coverImage }}
+                      onError={() => setCoverError(true)}
                       style={{
-                        color: colors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: "700",
+                        paddingTop: 48,
+                        paddingBottom: 24,
+                        paddingHorizontal: 20,
+                        marginBottom: 16,
                       }}
-                      numberOfLines={1}
+                      imageStyle={{ opacity: 0.4 }}
                     >
-                      {userProfile.name}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: 4,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: colors.accent,
-                          fontSize: 12,
-                          fontWeight: "600",
-                        }}
-                        numberOfLines={1}
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
                       >
-                        {progress.title}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
+                        <LevelAvatarBorder
+                          avatarUri={
+                            userProfile.avatar && !avatarError
+                              ? userProfile.avatar
+                              : null
+                          }
+                          name={userProfile.name}
+                          size={60}
+                          showLevelBadge={true}
+                        />
+                        <View
+                          style={{ marginLeft: 14, flex: 1, paddingRight: 36 }}
+                        >
+                          <Text
+                            style={{
+                              color: colors.textPrimary,
+                              fontSize: 17,
+                              fontWeight: "700",
+                            }}
+                            numberOfLines={1}
+                          >
+                            {userProfile.name}
+                          </Text>
+                          <Text
+                            style={{
+                              color: colors.accent,
+                              fontSize: 12,
+                              fontWeight: "600",
+                              marginTop: 3,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {progress.title}
+                          </Text>
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  ) : (
+                    <LinearGradient
+                      colors={[
+                        colors.surfaceLight,
+                        colors.surface,
+                        colors.background,
+                      ]}
+                      style={{
+                        paddingTop: 48,
+                        paddingBottom: 24,
+                        paddingHorizontal: 20,
+                        marginBottom: 16,
+                      }}
+                    >
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                      >
+                        <LevelAvatarBorder
+                          avatarUri={
+                            userProfile.avatar && !avatarError
+                              ? userProfile.avatar
+                              : null
+                          }
+                          name={userProfile.name}
+                          size={60}
+                          showLevelBadge={true}
+                        />
+                        <View
+                          style={{ marginLeft: 14, flex: 1, paddingRight: 36 }}
+                        >
+                          <Text
+                            style={{
+                              color: colors.textPrimary,
+                              fontSize: 17,
+                              fontWeight: "700",
+                            }}
+                            numberOfLines={1}
+                          >
+                            {userProfile.name}
+                          </Text>
+                          <Text
+                            style={{
+                              color: colors.accent,
+                              fontSize: 12,
+                              fontWeight: "600",
+                              marginTop: 3,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {progress.title}
+                          </Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
 
-            {/* Tombol Tutup X Eksplisit */}
-            <TouchableOpacity
-              onPress={() => props.navigation.closeDrawer()}
-              activeOpacity={0.7}
-              style={{
-                position: "absolute",
-                top: 48,
-                right: 14,
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: "rgba(0,0,0,0.45)",
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.2)",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 10,
-              }}
-            >
-              <Ionicons name="close" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+                {/* Close Button X */}
+                <TouchableOpacity
+                  onPress={onClose}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Tutup Menu"
+                  accessibilityRole="button"
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    right: 14,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "rgba(0,0,0,0.45)",
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.2)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                  }}
+                >
+                  <Ionicons name="close" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
 
-        {/* Label */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 12 }}>
-          <Text
-            style={{
-              color: colors.gray400,
-              fontSize: 10,
-              fontWeight: "700",
-              textTransform: "uppercase",
-              letterSpacing: 1.4,
-            }}
-          >
-            Menu Utama
-          </Text>
-        </View>
+            {/* Label Section */}
+            <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  textTransform: "uppercase",
+                  letterSpacing: 1.4,
+                }}
+              >
+                Menu Utama
+              </Text>
+            </View>
 
-        {/* Menu Items */}
-        {menuItems.map((item) => (
-          <TouchableOpacity
-            key={item.name}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-              marginHorizontal: 16,
-              borderRadius: 12,
-              marginBottom: 4,
-            }}
-            onPress={() => navigateToScreen(item.name as keyof StackParamList)}
-            activeOpacity={0.7}
-          >
+            {/* Menu Items */}
+            {menuItems.map((item) => (
+              <DrawerMenuItem
+                key={item.name}
+                label={item.label}
+                icon={item.icon}
+                color={item.color}
+                surfaceColor={colors.surface}
+                borderColor={colors.border}
+                textColor={colors.textPrimary}
+                onPress={() => navigateTo(item.name)}
+              />
+            ))}
+
+            {/* Divider */}
             <View
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 11,
-                backgroundColor: colors.surface,
-                borderWidth: 1,
-                borderColor: colors.border,
+                height: 1,
+                backgroundColor: colors.border,
+                marginVertical: 16,
+                marginHorizontal: 20,
+              }}
+            />
+
+            {/* Settings */}
+            <DrawerMenuItem
+              label="Pengaturan"
+              icon="settings-outline"
+              color={colors.warning}
+              surfaceColor={colors.surface}
+              borderColor={colors.border}
+              textColor={colors.textPrimary}
+              onPress={() => {
+                onClose();
+                requestAnimationFrame(() => {
+                  navigationRef.navigate("Settings");
+                });
+              }}
+            />
+          </ScrollView>
+        </Animated.View>
+      </View>
+    );
+  }
+);
+
+const EmptyComponent = () => null;
+
+const QuickAddButton = ({ onPress }: { onPress: () => void }) => {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        top: -12,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+      accessibilityLabel="Catat Transaksi Baru"
+      accessibilityRole="button"
+    >
+      <View
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          backgroundColor: colors.accent,
+          justifyContent: "center",
+          alignItems: "center",
+          shadowColor: colors.accent,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </View>
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: "600",
+          color: colors.textSecondary,
+          marginTop: 2,
+        }}
+      >
+        Catat
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const MainBottomTabs = () => {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 58 + Math.max(insets.bottom, 6),
+          paddingBottom: Math.max(insets.bottom, 6),
+          paddingTop: 6,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+        },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+          marginTop: -2,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: "Beranda",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={size || 22}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="TransactionsTab"
+        component={TransactionsScreen}
+        options={{
+          tabBarLabel: "Transaksi",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "receipt" : "receipt-outline"}
+              size={size || 22}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="QuickAdd"
+        component={EmptyComponent}
+        options={{
+          tabBarLabel: "Catat",
+          tabBarButton: () => (
+            <QuickAddButton
+              onPress={() => navigation.navigate("AddTransaction", {})}
+            />
+          ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("AddTransaction", {});
+          },
+        }}
+      />
+      <Tab.Screen
+        name="BudgetTab"
+        component={BudgetScreen}
+        options={{
+          tabBarLabel: "Anggaran",
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              name={focused ? "pie-chart" : "pie-chart-outline"}
+              size={size || 22}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="DrawerMenu"
+        component={EmptyComponent}
+        options={{
+          tabBarLabel: "Menu",
+          tabBarButton: (props) => (
+            <TouchableOpacity
+              {...props}
+              onPress={() => {
+                openAppDrawer();
+              }}
+              activeOpacity={0.7}
+              accessibilityLabel="Buka Menu"
+              accessibilityRole="button"
+              style={{
+                flex: 1,
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 12,
               }}
             >
-              <Ionicons name={item.icon} size={20} color={item.color} />
-            </View>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: 14,
-                fontWeight: "500",
-                flex: 1,
-              }}
-            >
-              {item.label}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.border} />
-          </TouchableOpacity>
-        ))}
-
-        {/* Divider */}
-        <View
-          style={{
-            height: 1,
-            backgroundColor: colors.border,
-            marginVertical: 20,
-            marginHorizontal: 24,
-          }}
-        />
-
-        {/* Settings */}
-        <TouchableOpacity
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 12,
-            paddingHorizontal: 24,
-            marginHorizontal: 16,
-            borderRadius: 12,
-            marginBottom: 8,
-          }}
-          onPress={() => props.navigation.navigate("Settings")}
-        >
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 11,
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.border,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={20}
-              color={colors.warning}
-            />
-          </View>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: 14,
-              fontWeight: "500",
-              flex: 1,
-            }}
-          >
-            Pengaturan
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.border} />
-        </TouchableOpacity>
-      </DrawerContentScrollView>
-    </View>
+              <Ionicons
+                name="menu-outline"
+                size={23}
+                color={colors.textSecondary}
+              />
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "600",
+                  color: colors.textSecondary,
+                  marginTop: -2,
+                }}
+              >
+                Menu
+              </Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+    </Tab.Navigator>
   );
 };
 
@@ -432,8 +809,11 @@ const MainStackNavigator = () => {
 
   return (
     <MainStack.Navigator
+      initialRouteName="MainTabs"
       screenOptions={({ navigation, route }) => {
-        const mainScreens = [
+        // Screens that render their own custom headers
+        const screensWithCustomHeader = [
+          "MainTabs",
           "Home",
           "Transactions",
           "Analytics",
@@ -447,13 +827,15 @@ const MainStackNavigator = () => {
           "Tools",
           "SavingsDetail",
           "SavingsHistory",
-          "AddSavings",
-          "AddSavingsTransaction",
+          "NoteDetail",
+          "RecurringTransactions",
+          "Wallets",
+          "MoniScreen",
         ];
-        const isMainScreen = mainScreens.includes(route.name);
+        const hasCustomHeader = screensWithCustomHeader.includes(route.name);
 
         return {
-          headerShown: !isMainScreen,
+          headerShown: !hasCustomHeader,
           cardStyle: { backgroundColor: colors.background },
           headerStyle: {
             backgroundColor: colors.background,
@@ -462,27 +844,29 @@ const MainStackNavigator = () => {
             borderBottomColor: colors.border,
           },
           headerTintColor: colors.textPrimary,
-          headerTitleStyle: { fontWeight: "700", fontSize: 20 },
+          headerTitleStyle: { fontWeight: "700", fontSize: 18 },
           headerTitleAlign: "center" as const,
           headerLeft: () => (
             <TouchableOpacity
-              onPress={() =>
-                route.name === "Home"
-                  ? navigation.openDrawer()
-                  : navigation.goBack()
-              }
+              onPress={() => navigation.goBack()}
               style={tw`ml-4 p-2 rounded-lg`}
+              accessibilityLabel="Kembali"
             >
               <Ionicons
-                name={route.name === "Home" ? "menu" : "arrow-back"}
-                size={26}
-                color={colors.accent}
+                name="arrow-back"
+                size={24}
+                color={colors.textPrimary}
               />
             </TouchableOpacity>
           ),
         };
       }}
     >
+      <MainStack.Screen
+        name="MainTabs"
+        component={MainBottomTabs}
+        options={{ headerShown: false }}
+      />
       <MainStack.Screen
         name="Home"
         component={HomeScreen}
@@ -622,61 +1006,64 @@ const MainStackNavigator = () => {
   );
 };
 
-const StackWithHandle: React.FC = () => {
-  const navigation = useNavigation<any>();
-  const drawerStatus = useDrawerStatus();
-  const isDrawerOpen = drawerStatus === "open";
-
-  return (
-    <View style={{ flex: 1 }}>
-      <MainStackNavigator />
-      <FloatingDrawerHandle />
-      {isDrawerOpen && (
-        <TouchableWithoutFeedback
-          onPress={() => navigation.dispatch(DrawerActions.closeDrawer())}
-        >
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              { zIndex: 100, backgroundColor: "transparent" },
-            ]}
-          />
-        </TouchableWithoutFeedback>
-      )}
-    </View>
-  );
-};
-
 // ─── Drawer Navigator ─────────────────────────────────────────────────────────
 
 const DrawerNavigator = () => {
-  const { colors } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const animProgress = useRef(new Animated.Value(0)).current;
+
+  const openDrawer = useCallback(() => {
+    setIsOpen(true);
+    Animated.timing(animProgress, {
+      toValue: 1,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [animProgress]);
+
+  const closeDrawer = useCallback(() => {
+    Animated.timing(animProgress, {
+      toValue: 0,
+      duration: 180,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setIsOpen(false);
+    });
+  }, [animProgress]);
+
+  useEffect(() => {
+    drawerActionsRef.open = openDrawer;
+    drawerActionsRef.close = closeDrawer;
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (!isOpen) return false;
+        closeDrawer();
+        return true;
+      }
+    );
+
+    return () => {
+      subscription.remove();
+      delete drawerActionsRef.open;
+      delete drawerActionsRef.close;
+    };
+  }, [closeDrawer, isOpen, openDrawer]);
 
   return (
-    <Drawer.Navigator
-      useLegacyImplementation={false}
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
-        drawerStyle: {
-          width: Math.min(width * 0.82, 340),
-          backgroundColor: colors.background,
-          borderTopRightRadius: 24,
-          borderBottomRightRadius: 24,
-          shadowColor: "#000",
-          shadowOffset: { width: 6, height: 0 },
-          shadowOpacity: 0.35,
-          shadowRadius: 16,
-          elevation: 20,
-        },
-        drawerType: "front",
-        overlayColor: "rgba(15, 23, 42, 0.65)",
-        swipeEnabled: true,
-        swipeEdgeWidth: 80,
-        headerShown: false,
-      }}
-    >
-      <Drawer.Screen name="MainStack" component={StackWithHandle} />
-    </Drawer.Navigator>
+    <DrawerContext.Provider value={{ openDrawer, closeDrawer, isOpen }}>
+      <View style={{ flex: 1 }}>
+        <MainStackNavigator />
+        <CustomDrawer
+          isOpen={isOpen}
+          onClose={closeDrawer}
+          animProgress={animProgress}
+        />
+      </View>
+    </DrawerContext.Provider>
   );
 };
 
@@ -693,17 +1080,20 @@ const AppNavigator: React.FC = () => {
   }, []);
 
   // Tema navigasi mengikuti warna tema aktif — menghindari "white flash"
-  const MyNavigationTheme = {
-    ...NavigationDarkTheme,
-    colors: {
-      ...NavigationDarkTheme.colors,
-      background: colors.background,
-      card: colors.background,
-      text: colors.textPrimary,
-      border: colors.border,
-      primary: colors.accent,
-    },
-  };
+  const MyNavigationTheme = useMemo(
+    () => ({
+      ...NavigationDarkTheme,
+      colors: {
+        ...NavigationDarkTheme.colors,
+        background: colors.background,
+        card: colors.background,
+        text: colors.textPrimary,
+        border: colors.border,
+        primary: colors.accent,
+      },
+    }),
+    [colors]
+  );
 
   if (isFirstLaunch === null) {
     return (

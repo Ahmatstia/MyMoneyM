@@ -26,16 +26,6 @@ import { useTheme } from "../../theme/ThemeContext";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
-// ─── Theme colors (konsisten dengan seluruh app) ──────────────────────────────
-const BACKGROUND_COLOR = Colors.background;
-const SURFACE_COLOR    = Colors.surface;
-const TEXT_PRIMARY     = Colors.textPrimary;
-const TEXT_SECONDARY   = Colors.textSecondary;
-const ACCENT_COLOR     = Colors.accent;
-const SUCCESS_COLOR    = Colors.success;
-const WARNING_COLOR    = Colors.warning;
-const ERROR_COLOR      = Colors.error;
-
 // ─── Design tokens (konsisten dengan seluruh app) ─────────────────────────────
 const CARD_RADIUS  = 16;
 const INNER_RADIUS = 12;
@@ -102,25 +92,28 @@ const ThinBar = ({
 }: {
   progress: number;
   color: string;
-}) => (
-  <View
-    style={{
-      height: 4,
-      backgroundColor: "rgba(255,255,255,0.07)",
-      borderRadius: 4,
-      overflow: "hidden",
-    }}
-  >
+}) => {
+  const { colors } = useTheme();
+  return (
     <View
       style={{
-        height: 4,
+        height: 8,
+        backgroundColor: `${colors.border}80`,
         borderRadius: 4,
-        width: `${Math.max(0, Math.min(progress, 100))}%`,
-        backgroundColor: color,
+        overflow: "hidden",
       }}
-    />
-  </View>
-);
+    >
+      <View
+        style={{
+          height: 8,
+          borderRadius: 4,
+          width: `${Math.max(0, Math.min(progress, 100))}%`,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -261,7 +254,7 @@ const SavingsScreen: React.FC = () => {
     totalStats.overallProgress >= 100
       ? SUCCESS_COLOR
       : totalStats.overallProgress >= 75
-      ? Colors.info
+      ? colors.info
       : totalStats.overallProgress >= 50
       ? WARNING_COLOR
       : ACCENT_COLOR;
@@ -277,13 +270,32 @@ const SavingsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Page header ─────────────────────────────────────────────── */}
-        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
-            Tabungan
-          </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
-            {savings.length} target tabungan
-          </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 20,
+          }}
+        >
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
+              Tabungan
+            </Text>
+            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
+              {savings.length} target tabungan
+            </Text>
+          </View>
         </View>
 
         {/* ── Summary hero card ─────────────────────────────────────────── */}

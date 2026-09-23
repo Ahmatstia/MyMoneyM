@@ -214,13 +214,32 @@ const DebtScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Page header ───────────────────────────────────────────────── */}
-        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
-          <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>
-            Hutang & Piutang
-          </Text>
-          <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
-            Kelola beban dan pinjaman uang Anda
-          </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 20,
+          }}
+        >
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>
+              Hutang & Piutang
+            </Text>
+            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
+              Kelola beban dan pinjaman uang Anda
+            </Text>
+          </View>
         </View>
 
         {/* ══════════════════════════════════════════

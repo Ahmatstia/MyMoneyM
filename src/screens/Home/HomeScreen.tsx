@@ -511,7 +511,7 @@ const HomeScreen: React.FC = () => {
                     {getScoreDescription(financialHealthScore.overallScore)}
                   </Text>
                   <Text
-                    style={{ color: colors.gray400, fontSize: 9, marginTop: 1 }}
+                    style={{ color: colors.gray400, fontSize: 10.5, marginTop: 1 }}
                   >
                     Skor keuangan
                   </Text>
@@ -551,7 +551,7 @@ const HomeScreen: React.FC = () => {
                   <Text
                     style={{
                       color: colors.gray400,
-                      fontSize: 9,
+                      fontSize: 10.5,
                       marginTop: 1,
                     }}
                   >
@@ -773,7 +773,7 @@ const HomeScreen: React.FC = () => {
               <Text
                 style={{
                   color: colors.gray400,
-                  fontSize: 9,
+                  fontSize: 10.5,
                   fontWeight: "600",
                   textAlign: "center",
                 }}
@@ -813,7 +813,7 @@ const HomeScreen: React.FC = () => {
                 <Text
                   style={{
                     color: colors.gray400,
-                    fontSize: 9,
+                    fontSize: 10.5,
                     textTransform: "uppercase",
                     letterSpacing: 0.8,
                     fontWeight: "600",
@@ -838,7 +838,7 @@ const HomeScreen: React.FC = () => {
                   <Text
                     style={{
                       color: colors.gray400,
-                      fontSize: 9,
+                      fontSize: 10.5,
                       marginTop: 2,
                       textAlign: "center",
                     }}
@@ -1177,7 +1177,7 @@ const HomeScreen: React.FC = () => {
                     <Text
                       style={{
                         color: colors.gray400,
-                        fontSize: 9,
+                        fontSize: 10.5,
                         textTransform: "uppercase",
                         letterSpacing: 0.8,
                         fontWeight: "600",
@@ -1237,9 +1237,7 @@ const HomeScreen: React.FC = () => {
                           >
                             <View
                               style={{
-                                height: 4,
-                                borderRadius: 4,
-                                width: `${Math.max(
+                                height: 6, borderRadius: 3, width: `${Math.max(
                                   0,
                                   Math.min(safeNumber(progress), 100),
                                 )}%`,
@@ -1250,7 +1248,7 @@ const HomeScreen: React.FC = () => {
                           <Text
                             style={{
                               color: colors.gray400,
-                              fontSize: 9,
+                              fontSize: 10.5,
                               marginTop: 4,
                             }}
                           >
@@ -1274,7 +1272,7 @@ const HomeScreen: React.FC = () => {
                     <Text
                       style={{
                         color: colors.gray400,
-                        fontSize: 9,
+                        fontSize: 10.5,
                         textTransform: "uppercase",
                         letterSpacing: 0.8,
                         fontWeight: "600",
@@ -1339,9 +1337,7 @@ const HomeScreen: React.FC = () => {
                           >
                             <View
                               style={{
-                                height: 4,
-                                borderRadius: 4,
-                                width: `${Math.max(
+                                height: 6, borderRadius: 3, width: `${Math.max(
                                   0,
                                   Math.min(safeNumber(progress), 100),
                                 )}%`,
@@ -1352,7 +1348,7 @@ const HomeScreen: React.FC = () => {
                           <Text
                             style={{
                               color: colors.gray400,
-                              fontSize: 9,
+                              fontSize: 10.5,
                               marginTop: 4,
                             }}
                           >
@@ -1524,40 +1520,6 @@ const HomeScreen: React.FC = () => {
           )}
       </ScrollView>
 
-      {/* ============================================================
-          FLOATING ADD BUTTON
-      ============================================================ */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: 24,
-          right: 20,
-          width: 54,
-          height: 54,
-          borderRadius: 17,
-          backgroundColor: colors.accent,
-          transform: [{ scale: scaleAnim }],
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: "100%",
-            height: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => navigation.navigate("AddTransaction")}
-          activeOpacity={0.8}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          accessible
-          accessibilityLabel="Tambah transaksi baru"
-          accessibilityHint="Tekan untuk menambahkan transaksi pemasukan atau pengeluaran"
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={28} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
       {/* Visual Guide Center Modal */}
       <GuideCenterModal
         visible={guideModalVisible}

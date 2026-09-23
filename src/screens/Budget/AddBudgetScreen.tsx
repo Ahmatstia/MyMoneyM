@@ -23,7 +23,6 @@ import {
   getMonthlyCycleRange,
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, { ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
@@ -498,6 +497,27 @@ const AddBudgetScreen: React.FC = () => {
   }, [category, state.customCategories]);
 
 
+  // Navigation header options
+  useEffect(() => {
+    navigation.setOptions({
+      title: isEditMode ? "Edit Anggaran" : "Tambah Anggaran",
+      headerStyle: { backgroundColor: PRIMARY_COLOR },
+      headerTintColor: TEXT_PRIMARY,
+      headerTitleStyle: { fontWeight: "600" },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isEditMode, PRIMARY_COLOR, TEXT_PRIMARY]);
+
   // Categories already in use (for budget duplicate detection)
   const usedBudgetCategories = React.useMemo(() =>
     isEditMode
@@ -600,11 +620,11 @@ const AddBudgetScreen: React.FC = () => {
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
                 {category || "Pilih kategori..."}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+            <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
 
           <CategoryPickerModal
@@ -634,13 +654,13 @@ const AddBudgetScreen: React.FC = () => {
               <Ionicons
                 name="sync-outline"
                 size={16}
-                color={isRecurring ? Colors.background : TEXT_SECONDARY}
+                color={isRecurring ? colors.background : TEXT_SECONDARY}
               />
               <View>
                 <Text
                   style={[
                     tw`text-xs font-bold`,
-                    { color: isRecurring ? Colors.background : TEXT_PRIMARY },
+                    { color: isRecurring ? colors.background : TEXT_PRIMARY },
                   ]}
                 >
                   Berulang (Rutin)
@@ -648,7 +668,7 @@ const AddBudgetScreen: React.FC = () => {
                 <Text
                   style={[
                     tw`text-[9px]`,
-                    { color: isRecurring ? `${Colors.background}CC` : TEXT_SECONDARY },
+                    { color: isRecurring ? `${colors.background}CC` : TEXT_SECONDARY },
                   ]}
                 >
                   Auto-reset tiap bulan
@@ -668,13 +688,13 @@ const AddBudgetScreen: React.FC = () => {
               <Ionicons
                 name="flag-outline"
                 size={16}
-                color={!isRecurring ? Colors.background : TEXT_SECONDARY}
+                color={!isRecurring ? colors.background : TEXT_SECONDARY}
               />
               <View>
                 <Text
                   style={[
                     tw`text-xs font-bold`,
-                    { color: !isRecurring ? Colors.background : TEXT_PRIMARY },
+                    { color: !isRecurring ? colors.background : TEXT_PRIMARY },
                   ]}
                 >
                   Sekali Pakai (Event)
@@ -682,7 +702,7 @@ const AddBudgetScreen: React.FC = () => {
                 <Text
                   style={[
                     tw`text-[9px]`,
-                    { color: !isRecurring ? `${Colors.background}CC` : TEXT_SECONDARY },
+                    { color: !isRecurring ? `${colors.background}CC` : TEXT_SECONDARY },
                   ]}
                 >
                   Liburan, mudik, renovasi
@@ -745,7 +765,7 @@ const AddBudgetScreen: React.FC = () => {
                     <TextInput
                       style={[
                         tw`text-base font-bold px-3 py-2 rounded-lg text-center`,
-                        { backgroundColor: Colors.background, color: ACCENT_COLOR, minWidth: 60 },
+                        { backgroundColor: colors.background, color: ACCENT_COLOR, minWidth: 60 },
                       ]}
                       value={customDays}
                       onChangeText={(val) => {
@@ -755,7 +775,7 @@ const AddBudgetScreen: React.FC = () => {
                       keyboardType="number-pad"
                       maxLength={3}
                       placeholder="10"
-                      placeholderTextColor={Colors.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                     />
                     <Text style={[tw`text-xs font-medium flex-1`, { color: TEXT_SECONDARY }]}>
                       hari sekali (auto-reset setiap {customDays || "10"} hari)
@@ -769,14 +789,14 @@ const AddBudgetScreen: React.FC = () => {
                           tw`px-3 py-1.5 rounded-lg`,
                           customDays === d
                             ? { backgroundColor: ACCENT_COLOR }
-                            : { backgroundColor: Colors.background },
+                            : { backgroundColor: colors.background },
                         ]}
                         onPress={() => setCustomDays(d)}
                       >
                         <Text
                           style={[
                             tw`text-[10px] font-bold`,
-                            customDays === d ? { color: Colors.background } : { color: TEXT_SECONDARY },
+                            customDays === d ? { color: colors.background } : { color: TEXT_SECONDARY },
                           ]}
                         >
                           {d} hari
@@ -791,7 +811,7 @@ const AddBudgetScreen: React.FC = () => {
             <View
               style={[
                 tw`p-3.5 rounded-xl flex-row items-start gap-2.5`,
-                { backgroundColor: `${Colors.accent}12`, borderWidth: 1, borderColor: `${Colors.accent}25` },
+                { backgroundColor: `${colors.accent}12`, borderWidth: 1, borderColor: `${colors.accent}25` },
               ]}
             >
               <Ionicons name="information-circle-outline" size={18} color={ACCENT_COLOR} style={tw`mt-0.5`} />
@@ -853,7 +873,7 @@ const AddBudgetScreen: React.FC = () => {
               <TextInput
                 style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={limit}
                 onChangeText={handleLimitChange}
                 keyboardType="decimal-pad"
@@ -889,12 +909,12 @@ const AddBudgetScreen: React.FC = () => {
 
             <Text style={[tw`text-[10px] mb-2`, { color: TEXT_SECONDARY }]}>Masukkan jumlah untuk perhitungan:</Text>
 
-            <View style={[tw`flex-row items-center rounded-xl px-4 py-3 mb-4`, { backgroundColor: Colors.background }]}>
+            <View style={[tw`flex-row items-center rounded-xl px-4 py-3 mb-4`, { backgroundColor: colors.background }]}>
               <Text style={[tw`mr-2 font-bold`, { color: TEXT_PRIMARY }]}>Rp</Text>
               <TextInput
                 style={[tw`flex-1 text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="Contoh: 200000"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={calculatorInput}
                 onChangeText={handleCalculatorInputChange}
                 keyboardType="decimal-pad"
@@ -913,7 +933,7 @@ const AddBudgetScreen: React.FC = () => {
                 <View>
                   {/* Per Hari */}
                   <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: Colors.background }]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: colors.background }]}
                     onPress={() => applyCalculatorResult("daily")}
                     disabled={loading}
                   >
@@ -926,7 +946,7 @@ const AddBudgetScreen: React.FC = () => {
 
                   {/* Per Minggu */}
                   <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: Colors.background }]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl mb-2`, { backgroundColor: colors.background }]}
                     onPress={() => applyCalculatorResult("weekly")}
                     disabled={loading}
                   >
@@ -939,7 +959,7 @@ const AddBudgetScreen: React.FC = () => {
 
                   {/* Per Bulan */}
                   <TouchableOpacity
-                    style={[tw`flex-row justify-between items-center p-3 rounded-xl`, { backgroundColor: Colors.background }]}
+                    style={[tw`flex-row justify-between items-center p-3 rounded-xl`, { backgroundColor: colors.background }]}
                     onPress={() => applyCalculatorResult("monthly")}
                     disabled={loading}
                   >
@@ -951,7 +971,7 @@ const AddBudgetScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
 
-                <Text style={[tw`text-[10px] text-center mt-3 font-medium`, { color: Colors.gray500 }]}>
+                <Text style={[tw`text-[10px] text-center mt-3 font-medium`, { color: colors.gray500 }]}>
                   Tap salah satu untuk mengatur sebagai limit
                 </Text>
               </View>

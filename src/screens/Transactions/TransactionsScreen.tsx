@@ -503,11 +503,23 @@ const TransactionsScreen: React.FC = () => {
             marginBottom: 14,
           }}
         >
-          <Text
-            style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-          >
-            Transaksi
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {navigation.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ marginRight: 10, padding: 4 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Kembali"
+              >
+                <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+              </TouchableOpacity>
+            )}
+            <Text
+              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
+            >
+              Transaksi
+            </Text>
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity
               style={{
@@ -823,10 +835,10 @@ const TransactionsScreen: React.FC = () => {
               />
 
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase" }}>
+                <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" }}>
                   Ringkasan Transaksi ({getDateFilterLabel()}{walletFilterId !== "all" ? ` · ${getWalletName(walletFilterId)}` : ""})
                 </Text>
-                <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600" }}>
+                <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "600" }}>
                   {filteredTransactions.length} transaksi
                 </Text>
               </View>
@@ -834,43 +846,43 @@ const TransactionsScreen: React.FC = () => {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {/* Income */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
-                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.success, marginRight: 4 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Pemasukan
                     </Text>
                   </View>
-                  <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
+                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     +{formatCurrency(totals.totalIncome)}
                   </Text>
                 </View>
 
-                <View style={{ width: 1, height: 22, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
+                <View style={{ width: 1, height: 26, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
 
                 {/* Expense */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
-                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.error, marginRight: 4 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.error, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Pengeluaran
                     </Text>
                   </View>
-                  <Text style={{ color: colors.error, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
+                  <Text style={{ color: colors.error, fontSize: 13, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     -{formatCurrency(totals.totalExpense)}
                   </Text>
                 </View>
 
-                <View style={{ width: 1, height: 22, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
+                <View style={{ width: 1, height: 26, backgroundColor: `${CARD_BORDER}60`, marginHorizontal: 6 }} />
 
                 {/* Net */}
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 2 }}>
-                    <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 4 }} />
-                    <Text style={{ color: colors.gray400, fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: "600" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: totals.balance >= 0 ? colors.accent : colors.warning, marginRight: 5 }} />
+                    <Text style={{ color: colors.gray400, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3, fontWeight: "600" }}>
                       Selisih
                     </Text>
                   </View>
-                  <Text style={{ color: totals.balance >= 0 ? colors.textPrimary : colors.warning, fontSize: 11.5, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
+                  <Text style={{ color: totals.balance >= 0 ? colors.textPrimary : colors.warning, fontSize: 13, fontWeight: "800", letterSpacing: -0.2 }} numberOfLines={1}>
                     {totals.balance >= 0 ? "+" : ""}{formatCurrency(totals.balance)}
                   </Text>
                 </View>

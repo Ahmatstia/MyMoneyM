@@ -22,7 +22,6 @@ import {
   getSafePercentage,
 } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 
 const CARD_RADIUS  = 16;
@@ -229,7 +228,7 @@ const SavingsDetailScreen: React.FC = () => {
 
   const formatDeadlineInfo = () => {
     if (!saving.deadline)
-      return { text: "Tanpa deadline", color: Colors.textTertiary };
+      return { text: "Tanpa deadline", color: colors.textTertiary };
     try {
       const deadlineDate = new Date(saving.deadline);
       const today        = new Date();
@@ -238,10 +237,10 @@ const SavingsDetailScreen: React.FC = () => {
       if (diffDays < 0)   return { text: "Terlambat",                              color: ERROR_COLOR };
       if (diffDays === 0) return { text: "Hari ini",                               color: ERROR_COLOR };
       if (diffDays <= 7)  return { text: `${diffDays} hari lagi`,                  color: WARNING_COLOR };
-      if (diffDays <= 30) return { text: `${Math.floor(diffDays / 7)} minggu lagi`, color: Colors.info };
+      if (diffDays <= 30) return { text: `${Math.floor(diffDays / 7)} minggu lagi`, color: colors.info };
       return              { text: `${Math.floor(diffDays / 30)} bulan lagi`,       color: SUCCESS_COLOR };
     } catch {
-      return { text: saving?.deadline || "", color: Colors.textTertiary };
+      return { text: saving?.deadline || "", color: colors.textTertiary };
     }
   };
 
@@ -334,7 +333,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             {isDeposit ? "Setoran" : "Penarikan"}
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+          <Text style={{ color: colors.gray400, fontSize: 11 }}>
             {formatDate(transaction.date)}
             {transaction.note ? ` · ${transaction.note}` : ""}
           </Text>
@@ -352,7 +351,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             {isDeposit ? "+" : "−"}{formatCurrency(transaction.amount)}
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+          <Text style={{ color: colors.gray400, fontSize: 10 }}>
             {formatCurrency(transaction.newBalance)}
           </Text>
         </View>
@@ -409,7 +408,7 @@ const SavingsDetailScreen: React.FC = () => {
               >
                 Detail Tabungan
               </Text>
-              <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
+              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 1 }}>
                 Informasi & riwayat tabungan
               </Text>
             </View>
@@ -535,7 +534,7 @@ const SavingsDetailScreen: React.FC = () => {
               </View>
               {saving.description ? (
                 <Text
-                  style={{ color: Colors.gray400, fontSize: 12, lineHeight: 17 }}
+                  style={{ color: colors.gray400, fontSize: 12, lineHeight: 17 }}
                   numberOfLines={2}
                 >
                   {saving.description}
@@ -571,7 +570,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 10,
                 fontWeight: "700",
                 letterSpacing: 1.2,
@@ -596,7 +595,7 @@ const SavingsDetailScreen: React.FC = () => {
             <View style={{ flex: 1, alignItems: "center" }}>
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 9,
                   textTransform: "uppercase",
                   letterSpacing: 0.8,
@@ -617,7 +616,7 @@ const SavingsDetailScreen: React.FC = () => {
             <View style={{ flex: 1, alignItems: "center" }}>
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 9,
                   textTransform: "uppercase",
                   letterSpacing: 0.8,
@@ -639,7 +638,7 @@ const SavingsDetailScreen: React.FC = () => {
           <View style={{ alignItems: "center" }}>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -682,7 +681,7 @@ const SavingsDetailScreen: React.FC = () => {
               </Text>
             </View>
             {saving.deadline && (
-              <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+              <Text style={{ color: colors.gray400, fontSize: 11 }}>
                 {new Date(saving.deadline).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
@@ -775,7 +774,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             <Text
               style={{
-                color: Colors.gray600,
+                color: colors.gray600,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -802,7 +801,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -829,7 +828,7 @@ const SavingsDetailScreen: React.FC = () => {
           >
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -871,11 +870,11 @@ const SavingsDetailScreen: React.FC = () => {
                 borderRadius: 20,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: `${Colors.gray400}14`,
+                backgroundColor: `${colors.gray400}14`,
                 marginBottom: 14,
               }}
             >
-              <Ionicons name="receipt-outline" size={26} color={Colors.gray400} />
+              <Ionicons name="receipt-outline" size={26} color={colors.gray400} />
             </View>
             <Text
               style={{
@@ -890,7 +889,7 @@ const SavingsDetailScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 12,
               }}
             >

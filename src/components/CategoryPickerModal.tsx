@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useAppContext } from "../context/AppContext";
-import { Colors } from "../theme/theme";
+import { useTheme } from "../theme/ThemeContext";
 import { RootStackParamList } from "../types";
 
 export {
@@ -27,12 +27,6 @@ import {
   ALL_SYSTEM_CATEGORIES,
 } from "../constants/categories";
 
-
-const SURF   = Colors.surface;
-const TP     = Colors.textPrimary;
-const TS     = Colors.textSecondary;
-const ACCENT = Colors.accent;
-
 interface CategoryPickerModalProps {
   visible: boolean;
   onClose: () => void;
@@ -44,6 +38,12 @@ interface CategoryPickerModalProps {
 const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
   visible, onClose, onSelect, selectedName = "", usedBudgetCategories = [],
 }) => {
+  const { colors } = useTheme();
+  const SURF   = colors.surface;
+  const TP     = colors.textPrimary;
+  const TS     = colors.textSecondary;
+  const ACCENT = colors.accent;
+
   const { state } = useAppContext();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
@@ -85,7 +85,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
           }}
         >
           {/* Drag handle */}
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.gray600, alignSelf: "center", marginBottom: 16 }} />
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: `${colors.border}C0`, alignSelf: "center", marginBottom: 16 }} />
 
           {/* Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -126,7 +126,7 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
               </View>
             ) : (
               <>
-                <Text style={{ color: Colors.gray500, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+                <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>
                   Kategori Saya ({customCategories.length})
                 </Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginBottom: 20 }}>
@@ -148,14 +148,14 @@ const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                           width: 44, height: 44, borderRadius: 14,
                           backgroundColor: isSelected ? cat.color : SURF,
                           alignItems: "center", justifyContent: "center", marginBottom: 6,
-                          borderWidth: 1.5, borderColor: isSelected ? cat.color : "rgba(255,255,255,0.07)",
+                          borderWidth: 1.5, borderColor: isSelected ? cat.color : `${colors.border}40`,
                         }}>
                           <Ionicons name={cat.icon as any} size={22} color={isSelected ? "#FFFFFF" : cat.color} />
                         </View>
-                        <Text style={{ color: isSelected ? cat.color : TS, fontSize: 9, fontWeight: isSelected ? "800" : "500", textAlign: "center" }} numberOfLines={1}>
+                        <Text style={{ color: isSelected ? cat.color : TS, fontSize: 11, fontWeight: isSelected ? "800" : "600", textAlign: "center" }} numberOfLines={1}>
                           {cat.name}
                         </Text>
-                        {isUsed && <Text style={{ color: Colors.gray600, fontSize: 7, marginTop: 2 }}>Terpakai</Text>}
+                        {isUsed && <Text style={{ color: colors.gray400, fontSize: 9.5, fontWeight: "600", marginTop: 2 }}>Terpakai</Text>}
                       </TouchableOpacity>
                     );
                   })}

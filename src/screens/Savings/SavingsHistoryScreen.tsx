@@ -14,7 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { formatDate } from "../../utils/formatters";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 
 const CARD_RADIUS  = 20;
@@ -272,7 +271,7 @@ const SavingsHistoryScreen: React.FC = () => {
           >
             {isDeposit ? "Setoran" : "Penarikan"}
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11 }}>
+          <Text style={{ color: colors.gray400, fontSize: 11 }}>
             {formatDate(transaction.date)}
             {transaction.note ? ` · ${transaction.note}` : ""}
           </Text>
@@ -290,7 +289,7 @@ const SavingsHistoryScreen: React.FC = () => {
           >
             {isDeposit ? "+" : "−"}{formatCurrency(transaction.amount)}
           </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 10 }}>
+          <Text style={{ color: colors.gray400, fontSize: 10 }}>
             {formatCurrency(transaction.newBalance)}
           </Text>
         </View>
@@ -349,7 +348,7 @@ const SavingsHistoryScreen: React.FC = () => {
             >
               Riwayat Transaksi
             </Text>
-            <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
+            <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 1 }}>
               {saving.name}
             </Text>
           </View>
@@ -387,7 +386,7 @@ const SavingsHistoryScreen: React.FC = () => {
               />
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 9,
                   textTransform: "uppercase",
                   letterSpacing: 0.8,
@@ -426,7 +425,7 @@ const SavingsHistoryScreen: React.FC = () => {
               />
               <Text
                 style={{
-                  color: Colors.gray400,
+                  color: colors.gray400,
                   fontSize: 9,
                   textTransform: "uppercase",
                   letterSpacing: 0.8,
@@ -449,7 +448,7 @@ const SavingsHistoryScreen: React.FC = () => {
           <View style={{ flex: 1, alignItems: "center" }}>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 9,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -515,7 +514,7 @@ const SavingsHistoryScreen: React.FC = () => {
                   style={{
                     fontSize: 11,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? tabColor : Colors.gray400,
+                    color: isActive ? tabColor : colors.gray400,
                   }}
                 >
                   {tab.label}
@@ -523,7 +522,7 @@ const SavingsHistoryScreen: React.FC = () => {
                 <Text
                   style={{
                     fontSize: 9,
-                    color: isActive ? tabColor : Colors.gray400,
+                    color: isActive ? tabColor : colors.gray400,
                     marginTop: 1,
                     fontWeight: isActive ? "700" : "400",
                   }}
@@ -554,11 +553,11 @@ const SavingsHistoryScreen: React.FC = () => {
                 borderRadius: 20,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: `${Colors.gray400}14`,
+                backgroundColor: `${colors.gray400}14`,
                 marginBottom: 14,
               }}
             >
-              <Ionicons name="receipt-outline" size={26} color={Colors.gray400} />
+              <Ionicons name="receipt-outline" size={26} color={colors.gray400} />
             </View>
             <Text
               style={{
@@ -573,7 +572,7 @@ const SavingsHistoryScreen: React.FC = () => {
             </Text>
             <Text
               style={{
-                color: Colors.gray400,
+                color: colors.gray400,
                 fontSize: 12,
                 textAlign: "center",
                 lineHeight: 18,
@@ -609,7 +608,7 @@ const SavingsHistoryScreen: React.FC = () => {
                 >
                   <Text
                     style={{
-                      color: Colors.gray400,
+                      color: colors.gray400,
                       fontSize: 11,
                       fontWeight: "700",
                       letterSpacing: 0.3,

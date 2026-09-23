@@ -23,16 +23,6 @@ const CARD_WIDTH  = (width - 36 - COLUMN_GAP) / 2; // 18px padding each side + g
 const CARD_RADIUS = 16;
 const CARD_PAD    = 14;
 
-// Warna kartu note (dikurasi, sesuai dark theme)
-const NOTE_COLORS = [
-  { bg: "rgba(34,211,238,0.10)", border: "rgba(34,211,238,0.20)", text: Colors.accent },
-  { bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.20)", text: Colors.success },
-  { bg: "rgba(139,92,246,0.10)", border: "rgba(139,92,246,0.20)", text: Colors.purple },
-  { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.20)", text: Colors.warning },
-  { bg: "rgba(236,72,153,0.10)", border: "rgba(236,72,153,0.20)", text: Colors.pink },
-  { bg: "rgba(59,130,246,0.10)", border: "rgba(59,130,246,0.20)", text: Colors.info },
-];
-
 const NotesScreen = ({ navigation }: any) => {
   const { colors } = useTheme();
   const BACKGROUND_COLOR = colors.background;
@@ -40,6 +30,15 @@ const NotesScreen = ({ navigation }: any) => {
   const TEXT_PRIMARY     = colors.textPrimary;
   const ACCENT_COLOR     = colors.accent;
   const CARD_BORDER      = `${colors.border}80`;
+
+  const notePalette = [
+    { bg: `${colors.accent}15`, border: `${colors.accent}30`, text: colors.accent },
+    { bg: `${colors.success}15`, border: `${colors.success}30`, text: colors.success },
+    { bg: `${colors.purple || "#8B5CF6"}15`, border: `${colors.purple || "#8B5CF6"}30`, text: colors.purple || "#8B5CF6" },
+    { bg: `${colors.warning}15`, border: `${colors.warning}30`, text: colors.warning },
+    { bg: `${colors.pink || "#EC4899"}15`, border: `${colors.pink || "#EC4899"}30`, text: colors.pink || "#EC4899" },
+    { bg: `${colors.info}15`, border: `${colors.info}30`, text: colors.info },
+  ];
 
   const { state }    = useAppContext();
   const { notes }    = state;
@@ -85,7 +84,7 @@ const NotesScreen = ({ navigation }: any) => {
   };
 
   const renderNoteCard = (item: any, index: number) => {
-    const colorTheme = NOTE_COLORS[index % NOTE_COLORS.length];
+    const colorTheme = notePalette[index % notePalette.length];
     return (
       <TouchableOpacity
         key={item.id}
@@ -192,13 +191,32 @@ const NotesScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Page header ──────────────────────────────────────────────── */}
-        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
-            Catatan
-          </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 3 }}>
-            {notes.length} catatan tersimpan
-          </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 20,
+          }}
+        >
+          {navigation?.canGoBack?.() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}>
+              Catatan
+            </Text>
+            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
+              {notes.length} catatan tersimpan
+            </Text>
+          </View>
         </View>
 
         {/* ── Search bar ───────────────────────────────────────────────── */}

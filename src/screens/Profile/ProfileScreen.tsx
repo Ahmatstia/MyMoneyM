@@ -317,7 +317,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
       </View>
       <Text
         style={[
-          tw`text-[9px] font-black text-center leading-tight`,
+          tw`text-[11px] font-black text-center leading-tight`,
           { color: achievement.unlocked ? C.text1 : C.text3 },
         ]}
         numberOfLines={1}
@@ -325,7 +325,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
         {achievement.label}
       </Text>
       <Text
-        style={[tw`text-[7px] text-center mt-0.5`, { color: C.text3 }]}
+        style={[tw`text-[10px] text-center mt-0.5`, { color: C.text3 }]}
         numberOfLines={2}
       >
         {achievement.desc}
@@ -870,6 +870,27 @@ const ProfileScreen: React.FC = () => {
               colors={["transparent", "transparent", C.bg]}
               style={tw`absolute inset-0`}
             />
+
+            {/* Back button */}
+            {navigation?.canGoBack?.() && (
+              <View style={tw`absolute top-4 left-4 z-10`}>
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={[
+                    tw`w-9 h-9 rounded-full items-center justify-center`,
+                    {
+                      backgroundColor: "rgba(15,23,42,0.65)",
+                      borderWidth: 1,
+                      borderColor: "rgba(255,255,255,0.18)",
+                    },
+                  ]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel="Kembali"
+                >
+                  <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Cover edit button */}
             <View style={tw`absolute top-4 right-4`}>

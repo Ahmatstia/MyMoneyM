@@ -1716,13 +1716,32 @@ const ToolsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={{ paddingTop: 16, paddingBottom: 22 }}>
-          <Text style={{ color: TP, fontSize: 22, fontWeight: "800" }}>
-            Alat Keuangan Cerdas
-          </Text>
-          <Text style={{ color: Colors.gray400, fontSize: 12, marginTop: 4 }}>
-            Simulasi & kalkulator berbasis data keuanganmu
-          </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 22,
+          }}
+        >
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={24} color={TP} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text style={{ color: TP, fontSize: 22, fontWeight: "800" }}>
+              Alat Keuangan Cerdas
+            </Text>
+            <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
+              Simulasi & kalkulator berbasis data keuanganmu
+            </Text>
+          </View>
         </View>
 
         {/* Tool cards list */}

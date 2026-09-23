@@ -115,7 +115,7 @@ const ThinBar = ({
   return (
     <View
       style={{
-        height: 4,
+        height: 8,
         backgroundColor: `${colors.border}80`,
         borderRadius: 4,
         overflow: "hidden",
@@ -123,7 +123,7 @@ const ThinBar = ({
     >
       <View
         style={{
-          height: 4,
+          height: 8,
           borderRadius: 4,
           width: `${Math.max(0, Math.min(progress, 100))}%`,
           backgroundColor: color,
@@ -313,22 +313,34 @@ const BudgetScreen: React.FC = () => {
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: "center",
             paddingTop: 16,
             paddingBottom: 20,
           }}
         >
-          <View>
-            <Text
-              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-            >
-              Anggaran
-            </Text>
-            <Text
-              style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}
-            >
-              {activeBudgets.length} anggaran aktif{completedBudgets.length > 0 ? ` • ${completedBudgets.length} selesai` : ""}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {navigation.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ marginRight: 10, padding: 4 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Kembali"
+              >
+                <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+              </TouchableOpacity>
+            )}
+            <View>
+              <Text
+                style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
+              >
+                Anggaran
+              </Text>
+              <Text
+                style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}
+              >
+                {activeBudgets.length} anggaran aktif{completedBudgets.length > 0 ? ` • ${completedBudgets.length} selesai` : ""}
+              </Text>
+            </View>
           </View>
         </View>
 

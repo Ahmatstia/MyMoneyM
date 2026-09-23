@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useNavigation } from "@react-navigation/native";
 
 import { useAppContext } from "../../context/AppContext";
 import { formatCurrency, formatToDateKey, getCurrentDate } from "../../utils/calculations";
@@ -133,6 +134,7 @@ const VDivider = ({ height = 32 }: { height?: number }) => {
 
 const CalendarScreen: React.FC = () => {
   const { colors } = useTheme();
+  const navigation = useNavigation<any>();
   const BACKGROUND_COLOR = colors.background;
   const SURFACE_COLOR    = colors.surface;
   const TEXT_PRIMARY     = colors.textPrimary;
@@ -267,24 +269,43 @@ const CalendarScreen: React.FC = () => {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 100 }}
       >
         {/* ── Page header ─────────────────────────────────────────────── */}
-        <View style={{ paddingTop: 16, paddingBottom: 20 }}>
-          <Text
-            style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
-          >
-            Kalender
-          </Text>
-          <TouchableOpacity 
-            onPress={() => setShowDatePicker(true)}
-            style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}
-          >
-            <Text style={{ color: Colors.gray400, fontSize: 11 }}>
-              {new Date(selectedDate).toLocaleDateString("id-ID", {
-                month: "long",
-                year: "numeric",
-              })}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingTop: 16,
+            paddingBottom: 20,
+          }}
+        >
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text
+              style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
+            >
+              Kalender
             </Text>
-            <Ionicons name="chevron-down" size={10} color={Colors.gray400} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => setShowDatePicker(true)}
+              style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}
+            >
+              <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                {new Date(selectedDate).toLocaleDateString("id-ID", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+              <Ionicons name="chevron-down" size={10} color={colors.gray400} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {showDatePicker && (

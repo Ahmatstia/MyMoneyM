@@ -190,14 +190,14 @@ const PeriodEndBadge = ({
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <Ionicons
         name="hourglass-outline"
-        size={9}
+        size={11}
         color={isUrgent ? "#F59E0B" : "rgba(255,255,255,0.6)"}
         style={{ marginRight: 4 }}
       />
       <Text
         style={{
           color: isUrgent ? "#F59E0B" : "rgba(255,255,255,0.75)",
-          fontSize: 8.5,
+          fontSize: 10.5,
           fontWeight: isUrgent ? "700" : "500",
         }}
       >
@@ -206,87 +206,6 @@ const PeriodEndBadge = ({
     </View>
   );
 };
-
-// ─── Realistic Gold EMV Smart Microchip (Clean Flat) ────────────────────────────
-const EMVChip = () => (
-  <View
-    style={{
-      width: 32,
-      height: 23,
-      borderRadius: 4.5,
-      padding: 1,
-      backgroundColor: "#C69634",
-    }}
-  >
-    <LinearGradient
-      colors={["#FFEBA3", "#D8A738", "#8B5E09", "#FFDA66"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{
-        flex: 1,
-        borderRadius: 3.5,
-        overflow: "hidden",
-        position: "relative",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <View
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: 0.8,
-          backgroundColor: "rgba(70, 45, 5, 0.7)",
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          height: "100%",
-          width: 0.8,
-          backgroundColor: "rgba(70, 45, 5, 0.7)",
-        }}
-      />
-      <View
-        style={{
-          width: 12,
-          height: 10,
-          borderRadius: 2,
-          borderWidth: 0.8,
-          borderColor: "rgba(70, 45, 5, 0.8)",
-          backgroundColor: "rgba(255, 235, 160, 0.35)",
-        }}
-      />
-    </LinearGradient>
-  </View>
-);
-
-// ─── Iridescent Hologram Security Seal ──────────────────────────────────────────
-const HologramSeal = () => (
-  <LinearGradient
-    colors={["#FF0080", "#7928CA", "#00DFD8", "#FFDA66"]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={{
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      padding: 1,
-    }}
-  >
-    <View
-      style={{
-        flex: 1,
-        borderRadius: 10,
-        backgroundColor: "rgba(6, 12, 24, 0.6)",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Ionicons name="shield-checkmark" size={11} color="#FFFFFF" />
-    </View>
-  </LinearGradient>
-);
 
 // ─── Dual-Circle Payment Network Emblem ─────────────────────────────────────────
 const NetworkEmblem = ({
@@ -583,7 +502,7 @@ const Slide0 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.75)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 fontWeight: "700",
                 letterSpacing: 0.5,
                 marginTop: 0.5,
@@ -595,7 +514,31 @@ const Slide0 = ({
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <EMVChip />
+          <View
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              borderRadius: 8,
+              backgroundColor: "rgba(255,255,255,0.18)",
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.25)",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Ionicons name="radio-outline" size={13} color="#FFFFFF" />
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 0.5,
+              }}
+            >
+              PRIMARY
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -622,7 +565,7 @@ const Slide0 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.85)",
-                fontSize: 9,
+                fontSize: 10.5,
                 fontWeight: "800",
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
@@ -654,9 +597,6 @@ const Slide0 = ({
               size={11}
               color={G_TEXT}
             />
-            <Text style={{ color: G_TEXT, fontSize: 8.5, fontWeight: "700" }}>
-              {isBalanceHidden ? "Tampilkan" : "Sembunyikan"}
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -748,7 +688,7 @@ const Slide0 = ({
                 <Text
                   style={{
                     color: copied ? "#10B981" : "rgba(255,255,255,0.85)",
-                    fontSize: 7.5,
+                    fontSize: 10.5,
                     fontWeight: "700",
                   }}
                 >
@@ -836,7 +776,7 @@ const Slide1 = ({
               <Text
                 style={{
                   color: "rgba(255,255,255,0.75)",
-                  fontSize: 8.5,
+                  fontSize: 10.5,
                   fontWeight: "600",
                 }}
               >
@@ -869,9 +809,6 @@ const Slide1 = ({
               size={11}
               color={G_TEXT}
             />
-            <Text style={{ color: G_TEXT, fontSize: 8.5, fontWeight: "700" }}>
-              {isBalanceHidden ? "Tampilkan" : "Sembunyikan"}
-            </Text>
           </TouchableOpacity>
 
           {/* Surplus / Deficit Badge placed directly UNDER the Sembunyikan button */}
@@ -894,7 +831,9 @@ const Slide1 = ({
                 size={9}
                 color={netColor}
               />
-              <Text style={{ color: netColor, fontSize: 8, fontWeight: "700" }}>
+              <Text
+                style={{ color: netColor, fontSize: 10.5, fontWeight: "700" }}
+              >
                 {isPositive ? "+" : "-"}
                 {isBalanceHidden
                   ? "••••••"
@@ -913,7 +852,7 @@ const Slide1 = ({
           <Text
             style={{
               color: "rgba(255,255,255,0.7)",
-              fontSize: 9.5,
+              fontSize: 11,
               marginBottom: 2,
             }}
           >
@@ -961,7 +900,7 @@ const Slide1 = ({
           <Text
             style={{
               color: "rgba(255,255,255,0.75)",
-              fontSize: 8.5,
+              fontSize: 10.5,
               marginTop: 1,
             }}
           >
@@ -993,7 +932,7 @@ const Slide1 = ({
               <Text
                 style={{
                   color: "rgba(255,255,255,0.7)",
-                  fontSize: 8.5,
+                  fontSize: 10.5,
                   fontWeight: "700",
                   textTransform: "uppercase",
                 }}
@@ -1035,7 +974,7 @@ const Slide1 = ({
               <Text
                 style={{
                   color: "rgba(255,255,255,0.7)",
-                  fontSize: 8.5,
+                  fontSize: 10.5,
                   fontWeight: "700",
                   textTransform: "uppercase",
                 }}
@@ -1079,7 +1018,7 @@ const Slide1 = ({
         <Text
           style={{
             color: "rgba(255,255,255,0.65)",
-            fontSize: 8.5,
+            fontSize: 10.5,
             fontWeight: "600",
           }}
         >
@@ -1265,7 +1204,7 @@ const Slide2 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.75)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 fontWeight: "600",
               }}
             >
@@ -1290,7 +1229,7 @@ const Slide2 = ({
         >
           <Ionicons name={statusIcon as any} size={11} color={statusColor} />
           <Text
-            style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}
+            style={{ color: statusColor, fontSize: 10.5, fontWeight: "800" }}
           >
             {statusLabel}
           </Text>
@@ -1302,7 +1241,7 @@ const Slide2 = ({
         <Text
           style={{
             color: "rgba(255,255,255,0.8)",
-            fontSize: 9,
+            fontSize: 10.5,
             fontWeight: "700",
             letterSpacing: 0.8,
             textTransform: "uppercase",
@@ -1355,7 +1294,7 @@ const Slide2 = ({
         <Text
           style={{
             color: "rgba(255,255,255,0.75)",
-            fontSize: 8.5,
+            fontSize: 10.5,
             marginTop: 1,
           }}
           numberOfLines={1}
@@ -1381,7 +1320,7 @@ const Slide2 = ({
           <Text
             style={{
               color: "rgba(255,255,255,0.75)",
-              fontSize: 8,
+              fontSize: 10.5,
               fontWeight: "600",
               letterSpacing: 0.5,
               textTransform: "uppercase",
@@ -1394,7 +1333,7 @@ const Slide2 = ({
           <Text
             style={{
               color: "#67E8F9",
-              fontSize: 8.5,
+              fontSize: 10.5,
               fontWeight: "700",
             }}
           >
@@ -1432,10 +1371,10 @@ const Slide2 = ({
             marginTop: 3,
           }}
         >
-          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
             Rekening aktif: {activePlans.length}
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
             {activePlans.length ? "Berjalan" : "Menunggu target"}
           </Text>
         </View>
@@ -1462,7 +1401,7 @@ const Slide2 = ({
           <Text
             style={{
               color: daysRemaining <= 3 ? G_WARNING : "rgba(255,255,255,0.75)",
-              fontSize: 8,
+              fontSize: 10.5,
               fontWeight: daysRemaining <= 3 ? "700" : "500",
             }}
           >
@@ -1476,7 +1415,7 @@ const Slide2 = ({
         <Text
           style={{
             color: "#67E8F9",
-            fontSize: 8.5,
+            fontSize: 10.5,
             fontWeight: "700",
           }}
         >
@@ -1608,7 +1547,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.75)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 fontWeight: "600",
               }}
             >
@@ -1635,7 +1574,7 @@ const Slide3 = ({
         >
           <Ionicons name={statusIcon as any} size={11} color={statusColor} />
           <Text
-            style={{ color: statusColor, fontSize: 8.5, fontWeight: "800" }}
+            style={{ color: statusColor, fontSize: 10.5, fontWeight: "800" }}
           >
             {statusLabel}
           </Text>
@@ -1649,7 +1588,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.8)",
-                fontSize: 9,
+                fontSize: 10.5,
                 fontWeight: "700",
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
@@ -1684,7 +1623,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: isOverbudget ? G_ERROR : "rgba(255,255,255,0.75)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 marginTop: 1,
               }}
               numberOfLines={1}
@@ -1699,7 +1638,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.8)",
-                fontSize: 9,
+                fontSize: 10.5,
                 fontWeight: "700",
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
@@ -1721,7 +1660,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.75)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 marginTop: 1,
               }}
               numberOfLines={1}
@@ -1747,7 +1686,7 @@ const Slide3 = ({
               <Text
                 style={{
                   color: "rgba(255,255,255,0.75)",
-                  fontSize: 8,
+                  fontSize: 10.5,
                   fontWeight: "600",
                   letterSpacing: 0.5,
                   textTransform: "uppercase",
@@ -1758,7 +1697,7 @@ const Slide3 = ({
               <Text
                 style={{
                   color: statusColor,
-                  fontSize: 8.5,
+                  fontSize: 10.5,
                   fontWeight: "700",
                 }}
               >
@@ -1793,11 +1732,11 @@ const Slide3 = ({
                 marginTop: 3,
               }}
             >
-              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
                 Limit Total:{" "}
                 {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
               </Text>
-              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 8 }}>
+              <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
                 {budgets.length} pos aktif
               </Text>
             </View>
@@ -1824,7 +1763,7 @@ const Slide3 = ({
             <Text
               style={{
                 color: "rgba(255,255,255,0.85)",
-                fontSize: 8.5,
+                fontSize: 10.5,
                 fontWeight: "600",
               }}
             >
@@ -1845,12 +1784,14 @@ const Slide3 = ({
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 8 }}>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5 }}>
           {hasBudgets
             ? "Evaluasi batas anggaran berkala"
             : "Disiplin finansial dimulai dari limit"}
         </Text>
-        <Text style={{ color: theme.accent, fontSize: 8.5, fontWeight: "700" }}>
+        <Text
+          style={{ color: theme.accent, fontSize: 10.5, fontWeight: "700" }}
+        >
           Target Plafon
         </Text>
       </View>
@@ -2035,7 +1976,7 @@ export const BalanceCarousel: React.FC<BalanceCarouselProps> = (props) => {
       <Text
         style={{
           color: "rgba(255,255,255,0.45)",
-          fontSize: 9.5,
+          fontSize: 11,
           textAlign: "center",
           marginTop: 5,
           fontWeight: "600",

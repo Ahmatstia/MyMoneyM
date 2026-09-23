@@ -18,7 +18,6 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { Debt, RootStackParamList } from "../../types";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 
 type AddDebtRoute = RouteProp<RootStackParamList, "AddDebt">;
@@ -52,6 +51,26 @@ const AddDebtScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   // RISK-006 FIX: Use a date picker instead of free-text input
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  React.useEffect(() => {
+    navigation.setOptions({
+      title: editMode ? "Edit Hutang / Piutang" : "Tambah Hutang / Piutang",
+      headerStyle: { backgroundColor: PRIMARY_COLOR },
+      headerTintColor: TEXT_PRIMARY,
+      headerTitleStyle: { fontWeight: "600" },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, editMode, PRIMARY_COLOR, TEXT_PRIMARY]);
 
   const SectionHeader = ({ title }: { title: string }) => (
     <Text
@@ -176,7 +195,7 @@ const AddDebtScreen: React.FC = () => {
                 onChangeText={(t) => setAmount(t.replace(/\D/g, ""))}
                 keyboardType="numeric"
                 placeholder="0"
-                placeholderTextColor={Colors.gray500}
+                placeholderTextColor={colors.gray500}
                 style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 24, fontWeight: "800", padding: 0 }}
               />
             </View>
@@ -190,7 +209,7 @@ const AddDebtScreen: React.FC = () => {
                 value={name}
                 onChangeText={setName}
                 placeholder={type === "borrowed" ? "Contoh: Budi, Bank..." : "Contoh: Andi, Teman..."}
-                placeholderTextColor={Colors.gray500}
+                placeholderTextColor={colors.gray500}
                 style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", padding: 0 }}
               />
             </View>
@@ -228,8 +247,8 @@ const AddDebtScreen: React.FC = () => {
                 style={[tw`flex-1 flex-row items-center px-4 py-3 rounded-xl`, { backgroundColor: SURFACE_COLOR }]}
                 onPress={() => setShowDatePicker(true)}
               >
-                <Ionicons name="calendar-outline" size={16} color={Colors.gray500} style={tw`mr-2`} />
-                <Text style={{ flex: 1, color: dueDate ? TEXT_PRIMARY : Colors.gray500, fontSize: 13, fontWeight: "700" }}>
+                <Ionicons name="calendar-outline" size={16} color={colors.gray500} style={tw`mr-2`} />
+                <Text style={{ flex: 1, color: dueDate ? TEXT_PRIMARY : colors.gray500, fontSize: 13, fontWeight: "700" }}>
                   {dueDate || "Pilih tanggal..."}
                 </Text>
               </TouchableOpacity>
@@ -239,7 +258,7 @@ const AddDebtScreen: React.FC = () => {
                   onPress={() => setDueDate("")}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close-circle" size={18} color={Colors.gray500} />
+                  <Ionicons name="close-circle" size={18} color={colors.gray500} />
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -273,7 +292,7 @@ const AddDebtScreen: React.FC = () => {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Tambahkan detail..."
-                placeholderTextColor={Colors.gray500}
+                placeholderTextColor={colors.gray500}
                 multiline
                 numberOfLines={2}
                 style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", minHeight: 60, textAlignVertical: "top", padding: 0 }}
@@ -303,7 +322,7 @@ const AddDebtScreen: React.FC = () => {
                   height: 22,
                   borderRadius: 6,
                   borderWidth: 1.5,
-                  borderColor: syncWithCash ? ACCENT_COLOR : Colors.gray500,
+                  borderColor: syncWithCash ? ACCENT_COLOR : colors.gray500,
                   backgroundColor: syncWithCash ? ACCENT_COLOR : "transparent",
                   alignItems: "center",
                   justifyContent: "center",
@@ -320,7 +339,7 @@ const AddDebtScreen: React.FC = () => {
                     ? "Tambah ke Saldo Kas (Pemasukan)"
                     : "Kurangi dari Saldo Kas (Pengeluaran)"}
                 </Text>
-                <Text style={{ color: Colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
+                <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 15 }}>
                   {type === "borrowed"
                     ? "Saldo dompet bertambah dan otomatis tercatat sebagai transaksi pemasukan pinjaman."
                     : "Saldo dompet berkurang dan otomatis tercatat sebagai transaksi pengeluaran pinjaman."}
@@ -331,7 +350,7 @@ const AddDebtScreen: React.FC = () => {
 
           {/* Action Buttons */}
           <TouchableOpacity
-            style={[tw`py-4 rounded-xl items-center justify-center flex-row`, { backgroundColor: isLoading ? Colors.gray600 : ACCENT_COLOR }]}
+            style={[tw`py-4 rounded-xl items-center justify-center flex-row`, { backgroundColor: isLoading ? colors.gray600 : ACCENT_COLOR }]}
             onPress={handleSave}
             disabled={isLoading}
             activeOpacity={0.8}

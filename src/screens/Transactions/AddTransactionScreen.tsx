@@ -20,7 +20,6 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber, formatCurrency, DEFAULT_WALLET_ID } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction, Wallet } from "../../types";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
@@ -210,6 +209,17 @@ const AddTransactionScreen: React.FC = () => {
   useEffect(() => {
     navigation.setOptions({
       title: isEditMode ? "Edit Transaksi" : "Tambah Transaksi",
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
       headerStyle: { backgroundColor: PRIMARY_COLOR },
       headerTintColor: TEXT_PRIMARY,
       headerTitleStyle: { fontWeight: "600" },
@@ -688,7 +698,7 @@ const AddTransactionScreen: React.FC = () => {
               <TextInput
                 style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={amount}
                 onChangeText={handleAmountChange}
                 keyboardType="decimal-pad"
@@ -731,11 +741,11 @@ const AddTransactionScreen: React.FC = () => {
                 </View>
               )}
               <View style={{ flex: 1 }}>
-                <Text style={{ color: category ? TEXT_PRIMARY : Colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
                   {category || "Pilih kategori..."}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+              <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
             </TouchableOpacity>
           </View>
         )}
@@ -757,7 +767,7 @@ const AddTransactionScreen: React.FC = () => {
             disabled={loading}
           >
             <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{getFormattedDate()}</Text>
-            <Ionicons name="calendar-outline" size={16} color={Colors.gray500} />
+            <Ionicons name="calendar-outline" size={16} color={colors.gray500} />
           </TouchableOpacity>
         </View>
 
@@ -788,7 +798,7 @@ const AddTransactionScreen: React.FC = () => {
                 <Switch
                   value={isCycleActive}
                   onValueChange={setIsCycleActive}
-                  trackColor={{ false: Colors.gray400, true: ACCENT_COLOR }}
+                  trackColor={{ false: colors.gray400, true: ACCENT_COLOR }}
                   thumbColor={"#FFFFFF"}
                 />
               </View>
@@ -801,7 +811,7 @@ const AddTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       style={[
                         tw`flex-1 py-2 items-center rounded-xl border`,
-                        cyclePreset === "weekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                        cyclePreset === "weekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: colors.surfaceLight, borderColor: BORDER_COLOR }
                       ]}
                       onPress={() => setCyclePreset("weekly")}
                     >
@@ -811,7 +821,7 @@ const AddTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       style={[
                         tw`flex-1 py-2 items-center rounded-xl border`,
-                        cyclePreset === "biweekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                        cyclePreset === "biweekly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: colors.surfaceLight, borderColor: BORDER_COLOR }
                       ]}
                       onPress={() => setCyclePreset("biweekly")}
                     >
@@ -821,7 +831,7 @@ const AddTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       style={[
                         tw`flex-1 py-2 items-center rounded-xl border`,
-                        cyclePreset === "monthly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                        cyclePreset === "monthly" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: colors.surfaceLight, borderColor: BORDER_COLOR }
                       ]}
                       onPress={() => setCyclePreset("monthly")}
                     >
@@ -831,7 +841,7 @@ const AddTransactionScreen: React.FC = () => {
                     <TouchableOpacity
                       style={[
                         tw`flex-1 py-2 items-center rounded-xl border`,
-                        cyclePreset === "custom" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: Colors.surfaceLight, borderColor: BORDER_COLOR }
+                        cyclePreset === "custom" ? { backgroundColor: ACCENT_COLOR + "20", borderColor: ACCENT_COLOR } : { backgroundColor: colors.surfaceLight, borderColor: BORDER_COLOR }
                       ]}
                       onPress={() => setCyclePreset("custom")}
                     >
@@ -847,7 +857,7 @@ const AddTransactionScreen: React.FC = () => {
                         onChangeText={setCustomDays}
                         keyboardType="number-pad"
                         placeholder="Contoh: 15"
-                        placeholderTextColor={Colors.gray400}
+                        placeholderTextColor={colors.gray400}
                         maxLength={3}
                       />
                       <Text style={[tw`text-sm font-medium`, { color: TEXT_SECONDARY }]}>Hari</Text>
@@ -881,13 +891,13 @@ const AddTransactionScreen: React.FC = () => {
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
             <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Catatan (Opsional)</Text>
-            <Text style={[tw`text-[10px]`, { color: Colors.gray500 }]}>{description.length}/200</Text>
+            <Text style={[tw`text-[10px]`, { color: colors.gray500 }]}>{description.length}/200</Text>
           </View>
           <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
             <TextInput
               style={[tw`text-[13px] font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Catat rincian atau info tambahan..."
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -922,7 +932,7 @@ const AddTransactionScreen: React.FC = () => {
                 </View>
                 <View>
                   <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700" }}>Rincian Belanja</Text>
-                  <Text style={{ color: Colors.gray400, fontSize: 10, marginTop: 1 }}>
+                  <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 1 }}>
                     {showSubItems && subItems.length > 0
                       ? `${subItems.length} item · Rp ${subItems.reduce((s, i) => s + i.amount * i.qty, 0).toLocaleString("id-ID")}`
                       : "Opsional — catat per item"}
@@ -943,11 +953,11 @@ const AddTransactionScreen: React.FC = () => {
                       </View>
                       <TextInput
                         style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600",
-                          backgroundColor: Colors.background, borderRadius: 10,
+                          backgroundColor: colors.background, borderRadius: 10,
                           paddingHorizontal: 12, paddingVertical: 7,
                           borderWidth: 1, borderColor: BORDER_COLOR }}
                         placeholder="Nama item..."
-                        placeholderTextColor={Colors.gray500}
+                        placeholderTextColor={colors.gray500}
                         value={item.name}
                         onChangeText={(v) => setSubItems((p) => p.map((s, i) => i === idx ? { ...s, name: v } : s))}
                         maxLength={50}
@@ -957,7 +967,7 @@ const AddTransactionScreen: React.FC = () => {
                       </TouchableOpacity>
                     </View>
                     <View style={{ flexDirection: "row", gap: 8, marginLeft: 36 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: Colors.background,
+                      <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.background,
                         borderRadius: 10, borderWidth: 1, borderColor: BORDER_COLOR, paddingHorizontal: 8, paddingVertical: 4 }}>
                         <TouchableOpacity
                           onPress={() => setSubItems((p) => {
@@ -967,7 +977,7 @@ const AddTransactionScreen: React.FC = () => {
                           })}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                          <Ionicons name="remove" size={16} color={Colors.gray400} />
+                          <Ionicons name="remove" size={16} color={colors.gray400} />
                         </TouchableOpacity>
                         <Text style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", marginHorizontal: 10 }}>{item.qty}x</Text>
                         <TouchableOpacity
@@ -981,13 +991,13 @@ const AddTransactionScreen: React.FC = () => {
                           <Ionicons name="add" size={16} color={ACCENT_COLOR} />
                         </TouchableOpacity>
                       </View>
-                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: Colors.background,
+                      <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: colors.background,
                         borderRadius: 10, borderWidth: 1, borderColor: BORDER_COLOR, paddingHorizontal: 10, paddingVertical: 4 }}>
-                        <Text style={{ color: Colors.gray400, fontSize: 12, marginRight: 4 }}>Rp</Text>
+                        <Text style={{ color: colors.gray400, fontSize: 12, marginRight: 4 }}>Rp</Text>
                         <TextInput
                           style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600" }}
                           placeholder="0"
-                          placeholderTextColor={Colors.gray500}
+                          placeholderTextColor={colors.gray500}
                           value={item.amount > 0 ? item.amount.toString() : ""}
                           onChangeText={(v) => {
                             const num = parseInt(v.replace(/[^0-9]/g, ""), 10) || 0;
@@ -1001,7 +1011,7 @@ const AddTransactionScreen: React.FC = () => {
                           maxLength={12}
                         />
                         {item.qty > 1 && item.amount > 0 && (
-                          <Text style={{ color: Colors.gray500, fontSize: 10 }}>={( item.amount * item.qty).toLocaleString("id-ID")}</Text>
+                          <Text style={{ color: colors.gray500, fontSize: 10 }}>={( item.amount * item.qty).toLocaleString("id-ID")}</Text>
                         )}
                       </View>
                     </View>

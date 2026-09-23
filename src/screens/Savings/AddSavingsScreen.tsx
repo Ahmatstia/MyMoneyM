@@ -28,7 +28,6 @@ import {
   getCurrentDate,
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import CategoryPickerModal, {
   ALL_SYSTEM_CATEGORIES,
@@ -250,6 +249,26 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   // Handle target change
+  useEffect(() => {
+    navigation.setOptions({
+      title: isEditMode ? "Edit Tabungan" : "Tambah Tabungan",
+      headerStyle: { backgroundColor: PRIMARY_COLOR },
+      headerTintColor: TEXT_PRIMARY,
+      headerTitleStyle: { fontWeight: "600" },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isEditMode, PRIMARY_COLOR, TEXT_PRIMARY]);
+
   const handleTargetChange = (value: string) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     setTarget(cleanValue);
@@ -599,13 +618,13 @@ const AddSavingsScreen: React.FC = () => {
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
             <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Nama Tabungan</Text>
-            <Text style={[tw`text-[10px]`, { color: nameError ? ERROR_COLOR : Colors.gray500 }]}>{name.length}/50</Text>
+            <Text style={[tw`text-[10px]`, { color: nameError ? ERROR_COLOR : colors.gray500 }]}>{name.length}/50</Text>
           </View>
           <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: nameError ? 1 : 0, borderColor: nameError ? ERROR_COLOR : "transparent" }]}>
             <TextInput
               style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Contoh: Dana Liburan ke Bali"
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={name}
               onChangeText={handleNameChange}
               maxLength={50}
@@ -647,7 +666,7 @@ const AddSavingsScreen: React.FC = () => {
               <TextInput
                 style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={target}
                 onChangeText={handleTargetChange}
                 keyboardType="numeric"
@@ -672,7 +691,7 @@ const AddSavingsScreen: React.FC = () => {
               <TextInput
                 style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={current}
                 onChangeText={handleCurrentChange}
                 keyboardType="numeric"
@@ -729,7 +748,7 @@ const AddSavingsScreen: React.FC = () => {
               <View
                 style={[
                   tw`h-2 rounded-full overflow-hidden`,
-                  { backgroundColor: Colors.surfaceLight },
+                  { backgroundColor: colors.surfaceLight },
                 ]}
               >
                 <View
@@ -811,7 +830,7 @@ const AddSavingsScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  color: category ? TEXT_PRIMARY : Colors.textTertiary,
+                  color: category ? TEXT_PRIMARY : colors.textTertiary,
                   fontSize: 13,
                   fontWeight: "600",
                 }}
@@ -825,7 +844,7 @@ const AddSavingsScreen: React.FC = () => {
               )}
             </View>
 
-            <Ionicons name="chevron-forward" size={16} color={Colors.gray500} />
+            <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
 
           <CategoryPickerModal
@@ -885,7 +904,7 @@ const AddSavingsScreen: React.FC = () => {
                 {deadline ? formatDisplayDate(deadline) : "Pilih tanggal target"}
               </Text>
             </View>
-            <Ionicons name="calendar-outline" size={16} color={Colors.gray500} />
+            <Ionicons name="calendar-outline" size={16} color={colors.gray500} />
           </TouchableOpacity>
         </View>
 
@@ -893,13 +912,13 @@ const AddSavingsScreen: React.FC = () => {
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
             <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Catatan (opsional)</Text>
-            <Text style={[tw`text-[10px]`, { color: Colors.gray500 }]}>{description.length}/200</Text>
+            <Text style={[tw`text-[10px]`, { color: colors.gray500 }]}>{description.length}/200</Text>
           </View>
           <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
             <TextInput
               style={[tw`text-[13px] font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Tambahkan catatan atau motivasi..."
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -914,7 +933,7 @@ const AddSavingsScreen: React.FC = () => {
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
             <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Gambar Impian (Opsional)</Text>
-            <Ionicons name="image-outline" size={12} color={Colors.gray500} />
+            <Ionicons name="image-outline" size={12} color={colors.gray500} />
           </View>
           
           {imageCover ? (
@@ -945,7 +964,7 @@ const AddSavingsScreen: React.FC = () => {
                 <Ionicons name="camera" size={24} color={ACCENT_COLOR} />
               </View>
               <Text style={[tw`text-[13px] font-bold mb-1`, { color: TEXT_PRIMARY }]}>Unggah Gambar Impian</Text>
-              <Text style={[tw`text-[10px] text-center px-4`, { color: Colors.gray400 }]}>Pilih foto barang atau tempat impian Anda dari galeri</Text>
+              <Text style={[tw`text-[10px] text-center px-4`, { color: colors.gray400 }]}>Pilih foto barang atau tempat impian Anda dari galeri</Text>
             </TouchableOpacity>
           )}
         </View>

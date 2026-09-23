@@ -1097,15 +1097,27 @@ const SettingsScreen = () => {
           justifyContent: "space-between",
         }}
       >
-        <View>
-          <Text
-            style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-          >
-            Pengaturan
-          </Text>
-          <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
-            Kelola preferensi dan pembukuan
-          </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginRight: 10, padding: 4 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Kembali"
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <View>
+            <Text
+              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
+            >
+              Pengaturan
+            </Text>
+            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
+              Kelola preferensi dan pembukuan
+            </Text>
+          </View>
         </View>
 
         <TouchableOpacity

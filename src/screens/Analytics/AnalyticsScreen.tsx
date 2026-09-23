@@ -517,31 +517,45 @@ const AnalyticsScreen: React.FC = () => {
             borderBottomColor: CARD_BORDER,
           }}
         >
-          <Text
-            style={{
-              color: colors.gray400,
-              fontSize: 10,
-              fontWeight: "600",
-              letterSpacing: 1.5,
-              textTransform: "uppercase",
-              marginBottom: 4,
-            }}
-          >
-            Laporan Keuangan
-          </Text>
-          <Text
-            style={{
-              color: TEXT_PRIMARY,
-              fontSize: 26,
-              fontWeight: "800",
-              letterSpacing: -0.5,
-            }}
-          >
-            Analitik
-          </Text>
-          <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
-            {getCurrentMonth()}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {navigation.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ marginRight: 12, padding: 4 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Kembali"
+              >
+                <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+              </TouchableOpacity>
+            )}
+            <View>
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 10,
+                  fontWeight: "600",
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                Laporan Keuangan
+              </Text>
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 26,
+                  fontWeight: "800",
+                  letterSpacing: -0.5,
+                }}
+              >
+                Analitik
+              </Text>
+              <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
+                {getCurrentMonth()}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <ScrollView
@@ -1153,33 +1167,45 @@ const AnalyticsScreen: React.FC = () => {
             marginBottom: 14,
           }}
         >
-          <View>
-            <Text
-              style={{
-                color: colors.gray400,
-                fontSize: 10,
-                fontWeight: "600",
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                marginBottom: 4,
-              }}
-            >
-              Laporan Keuangan
-            </Text>
-            <Text
-              style={{
-                color: TEXT_PRIMARY,
-                fontSize: 26,
-                fontWeight: "800",
-                letterSpacing: -0.5,
-                lineHeight: 30,
-              }}
-            >
-              Analitik
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
-              {getCurrentMonth()}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {navigation.canGoBack() && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{ marginRight: 12, padding: 4 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Kembali"
+              >
+                <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+              </TouchableOpacity>
+            )}
+            <View>
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 10,
+                  fontWeight: "600",
+                  letterSpacing: 1.5,
+                  textTransform: "uppercase",
+                  marginBottom: 4,
+                }}
+              >
+                Laporan Keuangan
+              </Text>
+              <Text
+                style={{
+                  color: TEXT_PRIMARY,
+                  fontSize: 26,
+                  fontWeight: "800",
+                  letterSpacing: -0.5,
+                  lineHeight: 30,
+                }}
+              >
+                Analitik
+              </Text>
+              <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
+                {getCurrentMonth()}
+              </Text>
+            </View>
           </View>
 
           {/* Export / Rapor — pill button dengan label */}
