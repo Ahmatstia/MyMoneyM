@@ -780,12 +780,16 @@ export const calculateOpeningBalance = (
       const txDateStr = (t?.date || "").slice(0, 10);
       if (!txDateStr || txDateStr.length < 10) return sum;
 
+      const getTxDelta = (tx: Transaction): number => {
+        if (tx.type === "income") return safeNumber(tx.amount);
+        if (tx.type === "expense") return -safeNumber(tx.amount);
+        if (tx.type === "transfer") return -safeNumber(tx.adminFee);
+        return 0;
+      };
+
       // 1. Jika tanggal transaksi mutlak sebelum startDate
       if (txDateStr < startStr) {
-        return (
-          sum +
-          (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))
-        );
+        return sum + getTxDelta(t);
       }
 
       // 2. Jika tanggal SAMA, tapi dicatat SEBELUM income pembuka siklus
@@ -795,10 +799,7 @@ export const calculateOpeningBalance = (
         t.id !== cycleIncomeId
       ) {
         if (t.createdAt && cycleIncome.createdAt && t.createdAt < cycleIncome.createdAt) {
-          return (
-            sum +
-            (t.type === "income" ? safeNumber(t.amount) : -safeNumber(t.amount))
-          );
+          return sum + getTxDelta(t);
         }
       }
 

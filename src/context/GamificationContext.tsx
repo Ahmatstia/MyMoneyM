@@ -326,6 +326,13 @@ export const GamificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribe = gamificationBus.subscribe(async (event) => {
       if (event.type === "award") {
         await awardXp(event.source, event.customXp, event.label);
+      } else if (event.type === "reset") {
+        setGamificationState(DEFAULT_GAMIFICATION_STATE);
+        try {
+          await AsyncStorage.removeItem(STORAGE_KEY);
+        } catch (e) {
+          console.warn("[GamificationContext] Error clearing state:", e);
+        }
       }
     });
 

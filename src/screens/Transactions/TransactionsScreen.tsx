@@ -246,8 +246,13 @@ const TransactionsScreen: React.FC = () => {
     }
 
     return filtered.sort((a, b) => {
-      try { return new Date(b.date).getTime() - new Date(a.date).getTime(); }
-      catch { return 0; }
+      try {
+        const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (timeDiff !== 0) return timeDiff;
+        const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bCreated - aCreated;
+      } catch { return 0; }
     });
   }, [state.transactions, state.wallets, filterType, walletFilterId, dateFilter, searchQuery, customStartDate, customEndDate]);
 
@@ -275,7 +280,9 @@ const TransactionsScreen: React.FC = () => {
 
     return Object.entries(groups).map(([day, transactions]) => {
       const dayIncome  = transactions.filter((t) => t.type === "income") .reduce((s, t) => s + safeNumber(t.amount), 0);
-      const dayExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
+      const dayNormalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + safeNumber(t.amount), 0);
+      const dayTransferFees = transactions.filter((t) => t.type === "transfer").reduce((s, t) => s + safeNumber(t.adminFee), 0);
+      const dayExpense = dayNormalExpense + dayTransferFees;
       const dayNet     = dayIncome - dayExpense;
       return {
         title: day,
@@ -287,7 +294,9 @@ const TransactionsScreen: React.FC = () => {
 
   const totals = useMemo(() => {
     const totalIncome  = filteredTransactions.filter((t) => t.type === "income") .reduce((sum, t) => sum + safeNumber(t.amount), 0);
-    const totalExpense = filteredTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + safeNumber(t.amount), 0);
+    const normalExpense = filteredTransactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + safeNumber(t.amount), 0);
+    const transferFees = filteredTransactions.filter((t) => t.type === "transfer").reduce((sum, t) => sum + safeNumber(t.adminFee), 0);
+    const totalExpense = normalExpense + transferFees;
     return {
       totalIncome:  safeNumber(totalIncome),
       totalExpense: safeNumber(totalExpense),

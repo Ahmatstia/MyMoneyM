@@ -100,6 +100,60 @@ const SavingsHistoryScreen: React.FC = () => {
   const saving          = state.savings.find((s) => s.id === savingsId);
   const allTransactions = getSavingsTransactions(savingsId);
 
+  const filteredTransactions = useMemo(() => {
+    return allTransactions.filter((t) => {
+      if (filter === "all")        return true;
+      if (filter === "deposit")    return t.type === "deposit" || t.type === "initial";
+      if (filter === "withdrawal") return t.type === "withdrawal";
+      return true;
+    });
+  }, [allTransactions, filter]);
+
+  const stats = useMemo(() => {
+    let totalDeposits    = 0;
+    let totalWithdrawals = 0;
+    let depositCount     = 0;
+    let withdrawalCount  = 0;
+    allTransactions.forEach((t) => {
+      if (t.type === "deposit" || t.type === "initial") {
+        totalDeposits += safeNumber(t.amount);
+        depositCount++;
+      } else if (t.type === "withdrawal") {
+        totalWithdrawals += safeNumber(t.amount);
+        withdrawalCount++;
+      }
+    });
+    return {
+      totalDeposits,
+      totalWithdrawals,
+      depositCount,
+      withdrawalCount,
+      totalTransactions: allTransactions.length,
+      netFlow: totalDeposits - totalWithdrawals,
+    };
+  }, [allTransactions]);
+
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredTransactions.forEach((transaction) => {
+      const dateKey = transaction.date;
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(transaction);
+    });
+    return Object.entries(groups)
+      .sort(
+        ([dateA], [dateB]) =>
+          new Date(dateB).getTime() - new Date(dateA).getTime()
+      )
+      .map(([date, transactions]) => ({
+        date,
+        formattedDate: formatDate(date),
+        transactions: transactions.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        ),
+      }));
+  }, [filteredTransactions]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshData();
@@ -162,60 +216,6 @@ const SavingsHistoryScreen: React.FC = () => {
       </View>
     );
   }
-
-  const filteredTransactions = useMemo(() => {
-    return allTransactions.filter((t) => {
-      if (filter === "all")        return true;
-      if (filter === "deposit")    return t.type === "deposit" || t.type === "initial";
-      if (filter === "withdrawal") return t.type === "withdrawal";
-      return true;
-    });
-  }, [allTransactions, filter]);
-
-  const stats = useMemo(() => {
-    let totalDeposits    = 0;
-    let totalWithdrawals = 0;
-    let depositCount     = 0;
-    let withdrawalCount  = 0;
-    allTransactions.forEach((t) => {
-      if (t.type === "deposit" || t.type === "initial") {
-        totalDeposits += safeNumber(t.amount);
-        depositCount++;
-      } else if (t.type === "withdrawal") {
-        totalWithdrawals += safeNumber(t.amount);
-        withdrawalCount++;
-      }
-    });
-    return {
-      totalDeposits,
-      totalWithdrawals,
-      depositCount,
-      withdrawalCount,
-      totalTransactions: allTransactions.length,
-      netFlow: totalDeposits - totalWithdrawals,
-    };
-  }, [allTransactions]);
-
-  const groupedTransactions = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    filteredTransactions.forEach((transaction) => {
-      const dateKey = transaction.date;
-      if (!groups[dateKey]) groups[dateKey] = [];
-      groups[dateKey].push(transaction);
-    });
-    return Object.entries(groups)
-      .sort(
-        ([dateA], [dateB]) =>
-          new Date(dateB).getTime() - new Date(dateA).getTime()
-      )
-      .map(([date, transactions]) => ({
-        date,
-        formattedDate: formatDate(date),
-        transactions: transactions.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        ),
-      }));
-  }, [filteredTransactions]);
 
   // ── Transaction item renderer ─────────────────────────────────────────────
   const renderTransactionItem = (

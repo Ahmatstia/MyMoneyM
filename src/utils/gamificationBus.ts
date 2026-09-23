@@ -2,7 +2,8 @@ import { XpSourceKey } from "../types/gamification";
 
 export type GamificationEvent =
   | { type: "award"; source: XpSourceKey; customXp?: number; label?: string }
-  | { type: "check_milestones" };
+  | { type: "check_milestones" }
+  | { type: "reset" };
 
 type GamificationListener = (event: GamificationEvent) => void | Promise<void>;
 
@@ -43,6 +44,13 @@ class GamificationBus {
    */
   award(source: XpSourceKey, customXp?: number, label?: string): void {
     this.emit({ type: "award", source, customXp, label });
+  }
+
+  /**
+   * Convenience helper to reset gamification state on clear all data.
+   */
+  reset(): void {
+    this.emit({ type: "reset" });
   }
 }
 

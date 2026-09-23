@@ -184,8 +184,11 @@ export const generateDailySummary = (appState: AppState): string => {
       (t) => t.date === today
     );
     const todayExpenses = todayTransactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+      .reduce((sum, t) => {
+        if (t.type === "expense") return sum + safeNumber(t.amount);
+        if (t.type === "transfer") return sum + safeNumber(t.adminFee);
+        return sum;
+      }, 0);
 
     const todayIncome = todayTransactions
       .filter((t) => t.type === "income")
@@ -229,19 +232,25 @@ export const generateWeeklySummary = (appState: AppState): string => {
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
 
     const weekStartStr = formatToDateKey(weekStart);
+    const weekEndStr = formatToDateKey(weekEnd);
 
     const weekTransactions = appState.transactions.filter(
-      (t) => t.date >= weekStartStr
+      (t) => t.date >= weekStartStr && t.date <= weekEndStr
     );
     const weekIncome = weekTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
     const weekExpense = weekTransactions
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+      .reduce((sum, t) => {
+        if (t.type === "expense") return sum + safeNumber(t.amount);
+        if (t.type === "transfer") return sum + safeNumber(t.adminFee);
+        return sum;
+      }, 0);
 
     return (
       `📈 Ringkasan Mingguan:\n` +

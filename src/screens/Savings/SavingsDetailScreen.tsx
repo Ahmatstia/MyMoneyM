@@ -139,6 +139,25 @@ const SavingsDetailScreen: React.FC = () => {
   const saving              = state.savings?.find((s) => s.id === savingsId);
   const savingsTransactions = getSavingsTransactions(savingsId);
 
+  const stats = useMemo(() => {
+    const deposits = savingsTransactions
+      .filter((t) => t.type === "deposit" || t.type === "initial")
+      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+    const withdrawals = savingsTransactions
+      .filter((t) => t.type === "withdrawal")
+      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+    const lastTransaction =
+      savingsTransactions.length > 0
+        ? savingsTransactions[savingsTransactions.length - 1]
+        : null;
+    return {
+      deposits,
+      withdrawals,
+      transactionCount: savingsTransactions.length,
+      lastTransactionDate: lastTransaction?.date,
+    };
+  }, [savingsTransactions]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refreshData();
@@ -206,25 +225,6 @@ const SavingsDetailScreen: React.FC = () => {
   const remaining   = target - current;
   const isCompleted = current >= target;
   const activeColor = isCompleted ? SUCCESS_COLOR : ACCENT_COLOR;
-
-  const stats = useMemo(() => {
-    const deposits = savingsTransactions
-      .filter((t) => t.type === "deposit" || t.type === "initial")
-      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
-    const withdrawals = savingsTransactions
-      .filter((t) => t.type === "withdrawal")
-      .reduce((sum, t) => sum + safeNumber(t.amount), 0);
-    const lastTransaction =
-      savingsTransactions.length > 0
-        ? savingsTransactions[savingsTransactions.length - 1]
-        : null;
-    return {
-      deposits,
-      withdrawals,
-      transactionCount: savingsTransactions.length,
-      lastTransactionDate: lastTransaction?.date,
-    };
-  }, [savingsTransactions]);
 
   const formatDeadlineInfo = () => {
     if (!saving.deadline)

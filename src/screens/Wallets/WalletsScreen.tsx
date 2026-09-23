@@ -289,6 +289,14 @@ const WalletsScreen: React.FC = () => {
     setReconcileModalVisible(true);
   };
 
+  const parseSignedBalance = (val: string): number => {
+    const trimmed = val.trim();
+    const isNegative = trimmed.startsWith("-");
+    const digits = trimmed.replace(/[^\d.]/g, "");
+    const num = parseFloat(digits) || 0;
+    return isNegative ? -num : num;
+  };
+
   // Save Wallet
   const handleSaveWallet = async () => {
     if (!formName.trim()) {
@@ -297,7 +305,7 @@ const WalletsScreen: React.FC = () => {
     }
 
     const finalRole = formCustomRole.trim() ? formCustomRole.trim() : formRole;
-    const numInitial = parseFloat(formInitialBalance.replace(/\D/g, "")) || 0;
+    const numInitial = parseSignedBalance(formInitialBalance);
 
     try {
       if (editingWallet) {
@@ -376,7 +384,7 @@ const WalletsScreen: React.FC = () => {
   const handleExecuteReconcile = async () => {
     if (!reconcilingWallet) return;
 
-    const actual = parseFloat(reconcileRealBalance.replace(/\D/g, "")) || 0;
+    const actual = parseSignedBalance(reconcileRealBalance);
     const current = safeNumber(reconcilingWallet.balance);
     const diff = actual - current;
 
@@ -1451,7 +1459,7 @@ const WalletsScreen: React.FC = () => {
                     onChangeText={setFormInitialBalance}
                     placeholder="Rp 0"
                     placeholderTextColor={TEXT_SECONDARY}
-                    keyboardType="numeric"
+                    keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
                     style={[
                       tw`border rounded-xl px-3.5 py-2.5 text-sm font-black mb-3`,
                       {
@@ -1668,7 +1676,7 @@ const WalletsScreen: React.FC = () => {
               onChangeText={setReconcileRealBalance}
               placeholder="Masukkan angka saldo riil"
               placeholderTextColor={TEXT_SECONDARY}
-              keyboardType="numeric"
+              keyboardType={Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric"}
               style={[
                 tw`border rounded-xl px-3.5 py-2.5 text-base font-black mb-2.5`,
                 {
@@ -1681,8 +1689,7 @@ const WalletsScreen: React.FC = () => {
 
             {/* Live Difference Box */}
             {(() => {
-              const actual =
-                parseFloat(reconcileRealBalance.replace(/\D/g, "")) || 0;
+              const actual = parseSignedBalance(reconcileRealBalance);
               const current = safeNumber(reconcilingWallet?.balance);
               const diff = actual - current;
 

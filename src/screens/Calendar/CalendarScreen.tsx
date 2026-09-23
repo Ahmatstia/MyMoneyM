@@ -15,7 +15,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAppContext } from "../../context/AppContext";
-import { formatCurrency, formatToDateKey, getCurrentDate } from "../../utils/calculations";
+import { formatCurrency, formatToDateKey, getCurrentDate, safeNumber } from "../../utils/calculations";
 import {
   getBusiestDays,
   getHighestSpendingDays,
@@ -172,7 +172,11 @@ const CalendarScreen: React.FC = () => {
         marks[date] = {
           marked: true,
           dotColor:
-            transaction.type === "income" ? SUCCESS_COLOR : ERROR_COLOR,
+            transaction.type === "income"
+              ? SUCCESS_COLOR
+              : transaction.type === "transfer"
+                ? INFO_COLOR
+                : ERROR_COLOR,
           selected: date === selectedDate,
           selectedColor: ACCENT_COLOR,
         };
@@ -185,7 +189,7 @@ const CalendarScreen: React.FC = () => {
       marks[selectedDate].selectedColor = ACCENT_COLOR;
     }
     return marks;
-  }, [state.transactions, selectedDate]);
+  }, [state.transactions, selectedDate, SUCCESS_COLOR, INFO_COLOR, ERROR_COLOR, ACCENT_COLOR, PURPLE_COLOR]);
 
   const selectedDayTransactions = useMemo(
     () => state.transactions.filter((t) => t.date === selectedDate),
@@ -196,8 +200,13 @@ const CalendarScreen: React.FC = () => {
     let income = 0;
     let expense = 0;
     selectedDayTransactions.forEach((t) => {
-      if (t.type === "income") income += t.amount;
-      else expense += t.amount;
+      if (t.type === "income") {
+        income += safeNumber(t.amount);
+      } else if (t.type === "expense") {
+        expense += safeNumber(t.amount);
+      } else if (t.type === "transfer") {
+        expense += safeNumber(t.adminFee);
+      }
     });
     return { income, expense, net: income - expense };
   }, [selectedDayTransactions]);
@@ -215,8 +224,13 @@ const CalendarScreen: React.FC = () => {
     let totalIncome = 0;
     let totalExpense = 0;
     monthTransactions.forEach((t) => {
-      if (t.type === "income") totalIncome += t.amount;
-      else totalExpense += t.amount;
+      if (t.type === "income") {
+        totalIncome += safeNumber(t.amount);
+      } else if (t.type === "expense") {
+        totalExpense += safeNumber(t.amount);
+      } else if (t.type === "transfer") {
+        totalExpense += safeNumber(t.adminFee);
+      }
     });
     return {
       totalIncome,

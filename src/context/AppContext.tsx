@@ -69,7 +69,11 @@ interface AppContextType {
     transaction: Omit<Transaction, "id" | "createdAt">,
     replaceDailyPlan?: boolean,
   ) => Promise<void>;
-  editTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+  editTransaction: (
+    id: string,
+    updates: Partial<Transaction>,
+    replaceDailyPlan?: boolean,
+  ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
 
   // 🔹 WALLETS
@@ -413,6 +417,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const clearAllData = async () => {
     try {
       await storageService.clearData();
+      gamificationBus.reset();
       if (isMounted.current) {
         setState(defaultAppState);
       }
@@ -635,7 +640,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const editTransaction = async (id: string, updates: Partial<Transaction>) => {
+  const editTransaction = async (
+    id: string,
+    updates: Partial<Transaction>,
+    replaceDailyPlan = false,
+  ) => {
     const existing = state.transactions.find((transaction) => transaction.id === id);
     if (!existing) return;
     const hasCycleUpdate = Object.prototype.hasOwnProperty.call(updates, "cyclePeriod");
@@ -672,7 +681,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             plan.endDate >= startDate &&
             plan.startDate <= endDate,
         );
-        if (conflicts.length) throw new Error("DAILY_PLAN_CONFLICT");
+        if (conflicts.length && !replaceDailyPlan) throw new Error("DAILY_PLAN_CONFLICT");
 
         const plan = {
           id: relatedPlans[0]?.id || `daily_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -684,11 +693,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           isActive: true,
           createdAt: relatedPlans[0]?.createdAt || now,
         };
+        const basePlans = replaceDailyPlan
+          ? state.dailyPlans.map((p) =>
+              conflicts.some((c) => c.id === p.id)
+                ? { ...p, isActive: false, endedAt: now }
+                : p,
+            )
+          : state.dailyPlans;
         dailyPlans = relatedPlans.length
-          ? state.dailyPlans.map((item) =>
+          ? basePlans.map((item) =>
               item.id === relatedPlans[0].id ? { ...item, ...plan, endedAt: undefined } : item,
             )
-          : [...state.dailyPlans, plan];
+          : [...basePlans, plan];
       }
     }
 
@@ -1571,14 +1587,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ========== PROVIDER VALUE ==========
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
-    setState((prevState) => {
-      const newState = {
-        ...prevState,
-        userProfile: { ...prevState.userProfile, ...updates },
-      };
-      storageService.saveData(newState).catch(console.error);
-      return newState;
-    });
+    const newState = {
+      ...state,
+      userProfile: { ...state.userProfile, ...updates },
+    };
+    setState(newState);
+    await storageService.saveData(newState);
   };
 
   const updatePaydayCutoff = async (

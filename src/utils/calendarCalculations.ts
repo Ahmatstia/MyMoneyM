@@ -1,5 +1,6 @@
 // File: src/utils/calendarCalculations.ts
 import { Transaction } from "../types";
+import { safeNumber } from "./calculations";
 
 // Get transactions by date range
 export const getTransactionsByDateRange = (
@@ -56,11 +57,17 @@ export const calculateDailyTotals = (transactions: Transaction[]) => {
     }
 
     if (transaction.type === "income") {
-      dailyTotals[date].income += transaction.amount;
-      dailyTotals[date].net += transaction.amount;
-    } else {
-      dailyTotals[date].expense += transaction.amount;
-      dailyTotals[date].net -= transaction.amount;
+      const amt = safeNumber(transaction.amount);
+      dailyTotals[date].income += amt;
+      dailyTotals[date].net += amt;
+    } else if (transaction.type === "expense") {
+      const amt = safeNumber(transaction.amount);
+      dailyTotals[date].expense += amt;
+      dailyTotals[date].net -= amt;
+    } else if (transaction.type === "transfer") {
+      const fee = safeNumber(transaction.adminFee);
+      dailyTotals[date].expense += fee;
+      dailyTotals[date].net -= fee;
     }
 
     dailyTotals[date].count += 1;
@@ -134,19 +141,27 @@ export const getMonthComparison = (
   // Calculate totals
   const currentIncome = currentMonthData
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-  const currentExpense = currentMonthData
+  const currentNormalExpense = currentMonthData
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+  const currentTransferFees = currentMonthData
+    .filter((t) => t.type === "transfer")
+    .reduce((sum, t) => sum + safeNumber(t.adminFee), 0);
+  const currentExpense = currentNormalExpense + currentTransferFees;
 
   const prevIncome = prevMonthData
     .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-  const prevExpense = prevMonthData
+  const prevNormalExpense = prevMonthData
     .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+  const prevTransferFees = prevMonthData
+    .filter((t) => t.type === "transfer")
+    .reduce((sum, t) => sum + safeNumber(t.adminFee), 0);
+  const prevExpense = prevNormalExpense + prevTransferFees;
 
   // Calculate changes
   const incomeChange =

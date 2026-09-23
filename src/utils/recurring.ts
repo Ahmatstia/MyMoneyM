@@ -229,6 +229,7 @@ export const processRecurringTransactions = (
     operationalBalance: partitioned.operationalBalance,
     savingsBalance: partitioned.savingsBalance,
     ...totals,
+    balance: updatedWallets.length > 0 ? partitioned.netWorth : totals.balance,
   };
 
   return {

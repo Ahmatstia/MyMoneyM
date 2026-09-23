@@ -738,6 +738,7 @@ export const storageService = {
             ? data.paydayCutoff
             : 1,
         ...totals,
+        balance: updatedWallets.length > 0 ? partitioned.netWorth : totals.balance,
         operationalBalance: partitioned.operationalBalance,
         savingsBalance: partitioned.savingsBalance,
       };

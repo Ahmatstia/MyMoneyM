@@ -71,6 +71,27 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [selectedWalletId, setSelectedWalletId] = useState<string>(defaultWallet?.id || "");
   const [showCalendar, setShowCalendar] = useState(false);
 
+  // Navigation header options
+  useEffect(() => {
+    navigation.setOptions({
+      title: type === "deposit" ? "Tambah Tabungan" : "Tarik Tabungan",
+      headerStyle: { backgroundColor: PRIMARY_COLOR },
+      headerTintColor: TEXT_PRIMARY,
+      headerTitleStyle: { fontWeight: "600" },
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, type, PRIMARY_COLOR, TEXT_PRIMARY]);
+
   // Temukan savings berdasarkan ID
   const saving = state.savings?.find((s) => s.id === savingsId);
 
@@ -101,18 +122,6 @@ const AddSavingsTransactionScreen: React.FC = () => {
       </View>
     );
   }
-
-
-  // Update title
-  // useEffect(() => {
-  //   navigation.setOptions({
-  //     title:
-  //       transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana",
-  //     headerStyle: { backgroundColor: PRIMARY_COLOR },
-  //     headerTintColor: TEXT_PRIMARY,
-  //     headerTitleStyle: { fontWeight: "600" },
-  //   });
-  // }, [transactionType, navigation]);
 
   // Validasi amount
   const validateAmount = (value: string): boolean => {
@@ -228,26 +237,6 @@ const AddSavingsTransactionScreen: React.FC = () => {
   };
 
   // Handle submit
-  useEffect(() => {
-    navigation.setOptions({
-      title: type === "deposit" ? "Tambah Tabungan" : "Tarik Tabungan",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, type, PRIMARY_COLOR, TEXT_PRIMARY]);
-
   const handleSubmit = async () => {
     if (!validateAmount(amount)) {
       Alert.alert("Error", amountError || "Jumlah tidak valid");

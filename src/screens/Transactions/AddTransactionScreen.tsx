@@ -373,7 +373,7 @@ const AddTransactionScreen: React.FC = () => {
     setLoading(true);
     try {
       if (isEditMode && transactionData) {
-        await editTransaction(transactionData.id, {
+        const editPayload = {
           amount: amountNum,
           type,
           category: effectiveCategory,
@@ -384,10 +384,33 @@ const AddTransactionScreen: React.FC = () => {
           adminFee: cleanAdminFee,
           ...(finalCyclePeriod ? { cyclePeriod: finalCyclePeriod } : { cyclePeriod: undefined }),
           subTransactions: finalSubItems, // always passed — undefined clears it
-        });
-        Alert.alert("Sukses", "Transaksi berhasil diperbarui", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
+        };
+        try {
+          await editTransaction(transactionData.id, editPayload);
+          Alert.alert("Sukses", "Transaksi berhasil diperbarui", [
+            { text: "OK", onPress: () => navigation.goBack() },
+          ]);
+        } catch (error: any) {
+          if (error?.message !== "DAILY_PLAN_CONFLICT") throw error;
+          Alert.alert(
+            "Target rekening masih aktif",
+            "Rekening ini masih memiliki target uang bertahan yang waktunya beririsan. Ganti target lama dengan target baru?",
+            [
+              { text: "Batal", style: "cancel" },
+              {
+                text: "Ganti target",
+                onPress: async () => {
+                  try {
+                    await editTransaction(transactionData.id, editPayload, true);
+                    navigation.goBack();
+                  } catch (retryError: any) {
+                    Alert.alert("Error", retryError?.message || "Gagal menyimpan transaksi");
+                  }
+                },
+              },
+            ],
+          );
+        }
       } else {
         try {
           await addTransaction(transactionPayload);
