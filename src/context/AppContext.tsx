@@ -83,11 +83,6 @@ interface AppContextType {
   ) => Promise<void>;
   editWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
   deleteWallet: (id: string) => Promise<void>;
-  reconcileWallet: (
-    walletId: string,
-    actualBalance: number,
-    note?: string,
-  ) => Promise<void>;
 
   // 🔹 BUDGETS
   addBudget: (
@@ -848,48 +843,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setState(newState);
     await storageService.saveData(newState);
-  };
-
-  const reconcileWallet = async (
-    walletId: string,
-    actualBalance: number,
-    note?: string,
-  ) => {
-    const targetWallet = (state.wallets || []).find((w) => w.id === walletId);
-    if (!targetWallet) return;
-
-    const currentBalance = safeNumber(targetWallet.balance);
-    const diff = safeNumber(actualBalance) - currentBalance;
-
-    if (diff === 0) return;
-
-    const isSurplus = diff > 0;
-    const defaultWalletId =
-      state.wallets?.find((w) => w.isDefault)?.id ||
-      state.wallets?.[0]?.id ||
-      DEFAULT_WALLET_ID;
-
-    const adjustmentTx: Transaction = {
-      id: generateTransactionId(),
-      amount: Math.abs(diff),
-      type: isSurplus ? "income" : "expense",
-      category: "Koreksi Saldo",
-      description:
-        note?.trim() ||
-        (isSurplus
-          ? `Penyesuaian Saldo Kas Masuk: ${targetWallet.name}`
-          : `Penyesuaian Selisih Saldo Kas: ${targetWallet.name}`),
-      date: getJakartaDateKey(),
-      createdAt: new Date().toISOString(),
-      walletId: walletId || defaultWalletId,
-    };
-
-    const updatedTransactions = [adjustmentTx, ...state.transactions];
-    const newState = computeFullState(state, updatedTransactions);
-
-    setState(newState);
-    await storageService.saveData(newState);
-    await notificationService.updateNotifications(newState);
   };
 
   // ========== BUDGETS FUNCTIONS ==========
@@ -1681,7 +1634,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addWallet,
     editWallet,
     deleteWallet,
-    reconcileWallet,
 
     addBudget,
     editBudget,

@@ -948,41 +948,6 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         actionTarget: "AddTransaction",
         actionLabel: "Coba Transfer Antar Dompet",
       },
-      {
-        id: "smart_reconcile",
-        name: "Koreksi Saldo Dompet (Smart Reconcile)",
-        category: "home",
-        categoryLabel: "Beranda & Pembukuan",
-        tag: "Kalibrasi Ulang Saldo",
-        icon: "git-compare-outline",
-        color: colors.warning,
-        location: "Layar Dompet ➔ Ketuk Kartu Dompet ➔ 'Koreksi Saldo'",
-        analogy:
-          "Ibarat kasir yang menghitung ulang uang di laci kasir setiap akhir shift. Jika uang fisik di laci ternyata Rp 5.000 lebih atau kurang dari catatan mesin kasir, kasir mencatat selisih tersebut sebagai 'koreksi' tanpa harus menelusuri satu per satu transaksi mana yang salah.",
-        summary:
-          "Menyamakan saldo tercatat di aplikasi dengan saldo fisik/rekening aktual Anda. Jika ada selisih, sistem otomatis membuat satu transaksi penyesuaian (koreksi kas masuk atau keluar) untuk merapikan perbedaan tanpa menghapus riwayat lama.",
-        howItWorks: [
-          "Input Saldo Fisik: Anda memasukkan saldo aktual yang Anda hitung secara fisik (hitung uang tunai di dompet) atau lihat di aplikasi m-banking.",
-          "Deteksi Selisih Otomatis: Sistem membandingkan saldo fisik yang Anda masukkan dengan saldo tercatat di aplikasi.",
-          "Transaksi Koreksi Otomatis: Jika ada selisih, sistem membuat satu transaksi khusus berlabel 'Koreksi Saldo' secara otomatis — surplus (selisih positif) dicatat sebagai Pemasukan Koreksi, deficit (selisih negatif) dicatat sebagai Pengeluaran Koreksi.",
-          "Zero Downtime: Semua riwayat transaksi sebelumnya tetap utuh. Hanya satu baris transaksi koreksi yang ditambahkan.",
-          "Tidak Berlaku Jika Sama: Jika saldo fisik = saldo aplikasi, tidak ada transaksi koreksi yang dibuat.",
-        ],
-        steps: [
-          "Buka layar 'Dompet' dan ketuk kartu dompet yang ingin dikoreksi.",
-          "Tekan opsi 'Koreksi Saldo' atau 'Sesuaikan Saldo'.",
-          "Hitung uang tunai di dompet fisik Anda ATAU cek saldo di aplikasi m-banking.",
-          "Masukkan angka saldo aktual yang benar (misal: Rp 237.500).",
-          "Tambahkan catatan alasan koreksi (opsional, misal: 'Uang kembalian tidak tercatat').",
-          "Konfirmasi. Transaksi 'Koreksi Saldo' otomatis muncul di riwayat dan saldo dompet langsung sinkron!",
-        ],
-        impact:
-          "Menghilangkan stres akibat selisih kecil yang tidak bisa dilacak asal-usulnya (misal: kembalian receh Rp 500 yang sering tidak dicatat). Anda bisa fokus ke gambaran besar keuangan tanpa terjebak berburu perbedaan Rp 2.000.",
-        proTip:
-          "Lakukan koreksi saldo rutin setiap awal atau akhir bulan pembukuan — khususnya untuk dompet tunai yang paling rawan selisih. Jadikan ini ritual bulanan seperti mengecek laporan rekening koran.",
-        actionTarget: "Wallets",
-        actionLabel: "Koreksi Saldo Dompet",
-      },
     ],
     [colors]
   );
