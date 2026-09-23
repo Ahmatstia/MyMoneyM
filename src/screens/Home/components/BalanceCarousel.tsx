@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Dimensions,
-  TouchableOpacity,
-  Clipboard,
-} from "react-native";
+import { View, Text, Dimensions, TouchableOpacity } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -442,7 +437,7 @@ const Slide0 = ({
 
   const handleCopy = () => {
     if (wallet?.accountNumber) {
-      Clipboard.setString(wallet.accountNumber);
+      Clipboard.setStringAsync(wallet.accountNumber);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -512,34 +507,6 @@ const Slide0 = ({
             </Text>
           </View>
         </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 8,
-              backgroundColor: "rgba(255,255,255,0.18)",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.25)",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Ionicons name="radio-outline" size={13} color="#FFFFFF" />
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: 10,
-                fontWeight: "700",
-                letterSpacing: 0.5,
-              }}
-            >
-              PRIMARY
-            </Text>
-          </View>
-        </View>
       </View>
 
       {/* ── ROW 2 (HERO SALDO - BCA Mobile Style on top) ── */}
@@ -553,15 +520,6 @@ const Slide0 = ({
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View
-              style={{
-                width: 5,
-                height: 5,
-                borderRadius: 2.5,
-                backgroundColor: "#10B981",
-                marginRight: 5,
-              }}
-            />
             <Text
               style={{
                 color: "rgba(255,255,255,0.85)",
@@ -571,7 +529,7 @@ const Slide0 = ({
                 textTransform: "uppercase",
               }}
             >
-              Saldo Rekening Ini
+              Saldo Rekening
             </Text>
           </View>
 
@@ -787,30 +745,6 @@ const Slide1 = ({
         </View>
 
         <View style={{ alignItems: "flex-end", gap: 4 }}>
-          {/* Toggle Eye Button */}
-          <TouchableOpacity
-            onPress={onToggleBalance}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={0.7}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "rgba(255,255,255,0.16)",
-              paddingHorizontal: 7,
-              paddingVertical: 2.5,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.24)",
-              gap: 3,
-            }}
-          >
-            <Ionicons
-              name={isBalanceHidden ? "eye-off-outline" : "eye-outline"}
-              size={11}
-              color={G_TEXT}
-            />
-          </TouchableOpacity>
-
           {/* Surplus / Deficit Badge placed directly UNDER the Sembunyikan button */}
           {hasChange && (
             <View

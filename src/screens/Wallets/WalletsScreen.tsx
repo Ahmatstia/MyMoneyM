@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  Animated,
   Switch,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +24,103 @@ import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
+
+const DefaultWalletToggle = ({
+  active,
+  walletName,
+  accent,
+  surface,
+  border,
+  textSecondary,
+  onActivate,
+}: {
+  active: boolean;
+  walletName: string;
+  accent: string;
+  surface: string;
+  border: string;
+  textSecondary: string;
+  onActivate: () => void;
+}) => {
+  const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  const handlePress = () => {
+    progress.stopAnimation();
+    progress.setValue(0);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+    onActivate();
+  };
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: active ? 1 : 0,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [active, progress]);
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      disabled={active}
+      activeOpacity={0.8}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: active, disabled: active }}
+      accessibilityLabel={`Jadikan ${walletName} sebagai rekening utama`}
+      style={{
+        width: 72,
+        height: 28,
+        paddingHorizontal: 7,
+        borderRadius: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        backgroundColor: active ? `${accent}20` : `${surface}CC`,
+        borderWidth: 1,
+        borderColor: active ? `${accent}70` : `${border}80`,
+      }}
+    >
+      <Text style={{ color: active ? accent : textSecondary, fontSize: 9, fontWeight: "800" }}>
+        Utama
+      </Text>
+      <View
+        style={{
+          width: 30,
+          height: 18,
+          padding: 2,
+          borderRadius: 9,
+          justifyContent: "center",
+          backgroundColor: active ? accent : `${border}90`,
+        }}
+      >
+        <Animated.View
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: 7,
+            backgroundColor: "#FFFFFF",
+            transform: [
+              {
+                translateX: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 12],
+                }),
+              },
+            ],
+            shadowColor: "#000",
+            shadowOpacity: 0.15,
+            shadowRadius: 2,
+            elevation: 2,
+          }}
+        />
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const WALLET_TYPE_OPTIONS: { id: WalletType; label: string; icon: SafeIconName }[] = [
   { id: "bank", label: "Bank", icon: "card" },
@@ -79,13 +177,22 @@ const WalletsScreen: React.FC = () => {
   const [formAccountNumber, setFormAccountNumber] = useState("");
   const [formColor, setFormColor] = useState("#10B981");
   const [formIcon, setFormIcon] = useState<SafeIconName>("card");
-  const [formIsDefault, setFormIsDefault] = useState(false);
+  const [pendingDefaultId, setPendingDefaultId] = useState<string | null>(null);
 
   // Reconcile states
   const [reconcileRealBalance, setReconcileRealBalance] = useState("");
   const [reconcileNote, setReconcileNote] = useState("");
 
   const wallets = state.wallets || [];
+
+  useEffect(() => {
+    if (
+      pendingDefaultId &&
+      wallets.some((wallet) => wallet.id === pendingDefaultId && wallet.isDefault)
+    ) {
+      setPendingDefaultId(null);
+    }
+  }, [pendingDefaultId, wallets]);
 
   // Filtered wallets
   const filteredWallets = useMemo(() => {
@@ -123,7 +230,6 @@ const WalletsScreen: React.FC = () => {
     setFormAccountNumber("");
     setFormColor("#10B981");
     setFormIcon("card");
-    setFormIsDefault(wallets.length === 0);
     setModalVisible(true);
   };
 
@@ -146,7 +252,6 @@ const WalletsScreen: React.FC = () => {
     setFormAccountNumber(w.accountNumber || "");
     setFormColor(w.color || "#10B981");
     setFormIcon((w.icon as SafeIconName) || "card");
-    setFormIsDefault(Boolean(w.isDefault));
     setModalVisible(true);
   };
 
@@ -178,7 +283,6 @@ const WalletsScreen: React.FC = () => {
           accountNumber: formAccountNumber.trim() || undefined,
           color: formColor,
           icon: formIcon,
-          isDefault: formIsDefault,
         });
       } else {
         await addWallet({
@@ -190,12 +294,25 @@ const WalletsScreen: React.FC = () => {
           accountNumber: formAccountNumber.trim() || undefined,
           color: formColor,
           icon: formIcon,
-          isDefault: formIsDefault,
+          isDefault: wallets.length === 0,
         });
       }
       setModalVisible(false);
     } catch (err: any) {
       Alert.alert("Gagal Menyimpan", err.message || "Terjadi kesalahan sistem");
+    }
+  };
+
+  const handleSetDefault = async (wallet: Wallet) => {
+    if (wallet.isDefault || pendingDefaultId === wallet.id) return;
+
+    setPendingDefaultId(wallet.id);
+
+    try {
+      await editWallet(wallet.id, { isDefault: true });
+    } catch (err: any) {
+      setPendingDefaultId(null);
+      Alert.alert("Gagal", err.message || "Gagal menjadikan rekening utama");
     }
   };
 
@@ -441,8 +558,8 @@ const WalletsScreen: React.FC = () => {
         >
           {[
             { id: "all", label: `Semua (${wallets.length})`, color: colors.accent },
-            { id: "liquid", label: "💧 Likuid", color: colors.success },
-            { id: "nonliquid", label: "❄️ Non-Likuid", color: colors.info },
+            { id: "liquid", label: "💧 Bisa Belanja", color: colors.success },
+            { id: "nonliquid", label: "❄️ Dana Cadangan", color: colors.info },
           ].map((chip) => {
             const isSelected = filterRole === chip.id;
             return (
@@ -490,6 +607,9 @@ const WalletsScreen: React.FC = () => {
           </View>
         ) : (
           filteredWallets.map((wallet) => {
+            const isDefault = pendingDefaultId
+              ? wallet.id === pendingDefaultId
+              : Boolean(wallet.isDefault);
             const walletColor = wallet.color || colors.accent;
             const isLiquid =
               wallet.isLiquid !== undefined
@@ -598,7 +718,7 @@ const WalletsScreen: React.FC = () => {
                         >
                           {wallet.name}
                         </Text>
-                        {wallet.isDefault && (
+                        {isDefault && (
                           <View
                             style={[
                               tw`px-1.5 py-0.2 rounded-md flex-row items-center`,
@@ -632,6 +752,16 @@ const WalletsScreen: React.FC = () => {
 
                   {/* Quick actions */}
                   <View style={tw`flex-row items-center gap-1.5`}>
+                    <DefaultWalletToggle
+                      active={isDefault}
+                      walletName={wallet.name}
+                      accent={walletColor}
+                      surface={colors.surfaceLight}
+                      border={BORDER_COLOR}
+                      textSecondary={TEXT_SECONDARY}
+                      onActivate={() => handleSetDefault(wallet)}
+                    />
+
                     {/* Edit button */}
                     <TouchableOpacity
                       onPress={() => handleOpenEdit(wallet)}
@@ -644,7 +774,7 @@ const WalletsScreen: React.FC = () => {
                     </TouchableOpacity>
 
                     {/* Delete button (if not default) */}
-                    {!wallet.isDefault && (
+                    {!isDefault && (
                       <TouchableOpacity
                         onPress={() => handleDeleteWallet(wallet)}
                         style={[
@@ -902,13 +1032,13 @@ const WalletsScreen: React.FC = () => {
                         { color: formIsLiquid ? colors.success : colors.info },
                       ]}
                     >
-                      {formIsLiquid ? "Uang Likuid (Bisa Belanja)" : "Uang Dingin (Non-Likuid)"}
+                      {formIsLiquid ? "Uang Belanja" : "Uang Dingin"}
                     </Text>
                   </View>
                   <Text style={[tw`text-[9.5px]`, { color: TEXT_SECONDARY }]}>
                     {formIsLiquid
                       ? "Masuk ke jatah belanja harian"
-                      : "Diisolasi dari jatah belanja harian"}
+                      : "Tidak dihitung sebagai jatah belanja harian"}
                   </Text>
                 </View>
                 <Switch
@@ -1019,29 +1149,6 @@ const WalletsScreen: React.FC = () => {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-
-              {/* Jadikan Utama Switch */}
-              <View
-                style={[
-                  tw`flex-row items-center justify-between p-3 rounded-xl mb-4 border`,
-                  { borderColor: `${BORDER_COLOR}70`, backgroundColor: colors.surfaceLight },
-                ]}
-              >
-                <View style={tw`flex-1 pr-3`}>
-                  <Text style={[tw`text-xs font-bold`, { color: TEXT_PRIMARY }]}>
-                    Jadikan Rekening Utama
-                  </Text>
-                  <Text style={[tw`text-[9.5px] mt-0.5`, { color: TEXT_SECONDARY }]}>
-                    Otomatis dipilih saat transaksi baru
-                  </Text>
-                </View>
-                <Switch
-                  value={formIsDefault}
-                  onValueChange={setFormIsDefault}
-                  trackColor={{ false: BORDER_COLOR, true: colors.accent }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
 
               {/* Tombol Simpan */}
               <TouchableOpacity
