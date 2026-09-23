@@ -114,13 +114,6 @@ export const NotificationMessages = {
     data: { type: "SUNDAY_MESSAGE" },
   }),
 
-  // NOTES REMINDERS
-  notesReminder: () => ({
-    title: "📔 Refleksi Keuangan",
-    body: "Luangkan 5 menit untuk catat refleksi finansial hari ini",
-    data: { type: "NOTES_REMINDER" },
-  }),
-
   // TRANSACTION REMINDERS
   noTransactionToday: () => ({
     title: "📝 Belum Ada Transaksi Hari Ini",

@@ -1756,13 +1756,6 @@ const SettingsScreen = () => {
                   color: colors.info,
                 },
                 {
-                  key: "notesReminders",
-                  label: "Buku Catatan Keuangan",
-                  desc: "Peringatan jadwal & refleksi catatan keuangan",
-                  icon: "document-text-outline" as const,
-                  color: colors.purple,
-                },
-                {
                   key: "weeklyReports",
                   label: "Laporan Evaluasi Mingguan",
                   desc: "Rekap data pemasukan, pengeluaran & tabungan tiap Minggu malam",

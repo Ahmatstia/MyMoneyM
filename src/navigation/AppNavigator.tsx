@@ -60,9 +60,6 @@ import OnboardingScreen from "../screens/Onboarding/OnboardingScreen";
 import SettingsScreen from "../screens/Settings/SettingsScreen";
 import ManageCategoriesScreen from "../screens/Settings/ManageCategoriesScreen";
 
-import NotesScreen from "../screens/Notes/NotesScreen";
-import NoteFormScreen from "../screens/Notes/NoteFormScreen";
-import NoteDetailScreen from "../screens/Notes/NoteDetailScreen";
 import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 import ToolsScreen from "../screens/Tools/ToolsScreen";
@@ -87,7 +84,6 @@ type StackParamList = {
     | undefined;
   Calendar: undefined;
   Profile: undefined;
-  Notes: undefined;
   Settings: undefined;
   ManageCategories: undefined;
   Debt: undefined;
@@ -100,8 +96,6 @@ type StackParamList = {
   AddBudget: { editMode?: boolean; budgetData?: any };
   AddSavings: { editMode?: boolean; savingsData?: any };
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
-  NoteForm: { noteId?: string };
-  NoteDetail: { noteId: string };
   AddDebt: { editMode?: boolean; debtData?: any };
 };
 
@@ -276,12 +270,6 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
           label: "Tabungan",
           icon: "wallet-outline" as const,
           color: colors.accent,
-        },
-        {
-          name: "Notes",
-          label: "Catatan",
-          icon: "document-text-outline" as const,
-          color: colors.pink,
         },
         {
           name: "Debt",
@@ -822,12 +810,10 @@ const MainStackNavigator = () => {
           "Savings",
           "Profile",
           "Settings",
-          "Notes",
           "Debt",
           "Tools",
           "SavingsDetail",
           "SavingsHistory",
-          "NoteDetail",
           "RecurringTransactions",
           "Wallets",
           "MoniScreen",
@@ -913,11 +899,6 @@ const MainStackNavigator = () => {
         options={{ title: "Kelola Kategori" }}
       />
       <MainStack.Screen
-        name="Notes"
-        component={NotesScreen}
-        options={{ title: "Catatan Finansial" }}
-      />
-      <MainStack.Screen
         name="SavingsDetail"
         component={SavingsDetailScreen}
         options={{ title: "Detail Tabungan" }}
@@ -926,11 +907,6 @@ const MainStackNavigator = () => {
         name="SavingsHistory"
         component={SavingsHistoryScreen}
         options={{ title: "Riwayat Transaksi" }}
-      />
-      <MainStack.Screen
-        name="NoteDetail"
-        component={NoteDetailScreen}
-        options={{ headerShown: false }}
       />
       <MainStack.Screen
         name="AddTransaction"
@@ -961,13 +937,6 @@ const MainStackNavigator = () => {
             route.params?.type === "deposit"
               ? "Tambah Setoran"
               : "Penarikan Dana",
-        })}
-      />
-      <MainStack.Screen
-        name="NoteForm"
-        component={NoteFormScreen}
-        options={({ route }: any) => ({
-          title: route.params?.noteId ? "Edit Catatan" : "Catatan Baru",
         })}
       />
       <MainStack.Screen

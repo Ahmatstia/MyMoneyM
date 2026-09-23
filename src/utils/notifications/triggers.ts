@@ -140,40 +140,8 @@ export const checkTransactionReminders = (appState: AppState): any[] => {
   return alerts;
 };
 
-export const checkNotesReminders = (appState: AppState): any[] => {
-  const alerts = [];
-  const today = getCurrentDate();
-  const currentHour = new Date().getHours();
-
-  try {
-    // Check for notes created today
-    const todayNotes = appState.notes.filter((note) => note.date === today);
-
-    // Encourage note-taking in the evening if no notes today
-    if (todayNotes.length === 0 && currentHour >= 19) {
-      alerts.push(NotificationMessages.notesReminder());
-    }
-
-    // Check for notes related to important transactions
-    const importantNotes = todayNotes.filter(
-      (note) =>
-        note.type === "financial_decision" ||
-        note.financialImpact === "negative" ||
-        (note.amount && note.amount >= 500000)
-    );
-
-    if (importantNotes.length > 0 && currentHour >= 20) {
-      alerts.push({
-        title: "📋 Catatan Penting Hari Ini",
-        body: `Anda membuat ${importantNotes.length} catatan finansial penting hari ini`,
-        data: { type: "IMPORTANT_NOTES" },
-      });
-    }
-  } catch (error) {
-
-  }
-
-  return alerts;
+export const checkNotesReminders = (_appState: AppState): any[] => {
+  return [];
 };
 
 export const generateDailySummary = (appState: AppState): string => {
@@ -201,22 +169,14 @@ export const generateDailySummary = (appState: AppState): string => {
         { amount: 0, category: "Tidak ada" } as { amount: number; category: string }
       );
 
-    const notesCount = appState.notes.filter((n) => n.date === today).length;
-
     let summary = `📊 Ringkasan Harian:\n`;
     summary += `✅ Pemasukan: ${formatCurrency(todayIncome)}\n`;
-    summary += `✅ Pengeluaran: ${formatCurrency(todayExpenses)}\n`;
+    summary += `✅ Pengeluaran: ${formatCurrency(todayExpenses)}`;
 
     if (biggestExpense.amount > 0) {
-      summary += `📈 Pengeluaran terbesar: ${
+      summary += `\n📈 Pengeluaran terbesar: ${
         biggestExpense.category
-      } (${formatCurrency(biggestExpense.amount)})\n`;
-    }
-
-    if (notesCount > 0) {
-      summary += `📝 Catatan: ${notesCount} catatan hari ini`;
-    } else {
-      summary += `📝 Belum ada catatan hari ini`;
+      } (${formatCurrency(biggestExpense.amount)})`;
     }
 
     return summary;

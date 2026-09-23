@@ -8,7 +8,6 @@ import {
   checkBudgetAlerts,
   checkSavingsProgress,
   checkTransactionReminders,
-  checkNotesReminders,
   generateDailySummary,
 } from "./triggers";
 import {
@@ -68,7 +67,7 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
   budgetAlerts: true,
   savingsProgress: true,
   transactionReminders: true,
-  notesReminders: true,
+  notesReminders: false,
   weeklyReports: true,
   financialTips: true,
   transactionRecordedConfirmations: false,
@@ -252,12 +251,6 @@ export class NotificationService {
         TRANSACTION_RECORDED: "transactionRecordedConfirmations",
         NEW_TRANSACTION: "transactionRecordedConfirmations",
         DEBT_ADDED: "transactionRecordedConfirmations",
-
-        // Notes
-        NOTES_REMINDER: "notesReminders",
-        IMPORTANT_NOTES: "notesReminders",
-        NOTE_CREATED: "transactionRecordedConfirmations",
-        NEW_NOTE: "transactionRecordedConfirmations",
 
         // Financial Tips
         FINANCIAL_TIP: "financialTips",

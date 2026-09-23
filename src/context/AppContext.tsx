@@ -109,14 +109,6 @@ interface AppContextType {
   ) => Promise<void>;
   getSavingsTransactions: (savingsId: string) => SavingsTransaction[];
 
-  // 🔹 NOTES
-  addNote: (
-    note: Omit<Note, "id" | "createdAt" | "updatedAt">,
-  ) => Promise<void>;
-  editNote: (id: string, updates: Partial<Note>) => Promise<void>;
-  deleteNote: (id: string) => Promise<void>;
-  getNote: (id: string) => Note | undefined;
-
   // 🔹 DEBTS
   addDebt: (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
@@ -1085,78 +1077,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
-  // ========== NOTES FUNCTIONS ==========
-  const addNote = async (
-    note: Omit<Note, "id" | "createdAt" | "updatedAt">,
-  ) => {
-    const newNote: Note = validateNote({
-      ...note,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    });
-
-    const updatedNotes = [newNote, ...state.notes];
-    const newState: AppState = {
-      ...state,
-      notes: updatedNotes,
-    };
-
-    setState(newState);
-    await storageService.saveData(newState);
-
-    // Send notification
-    await notificationService.updateNotifications(newState);
-    await notificationService.sendNotification({
-      title: "📔 Catatan Baru",
-      body: `Catatan "${note.title.substring(0, 30)}${
-        note.title.length > 30 ? "..." : ""
-      }" disimpan`,
-      data: { type: "NEW_NOTE", noteId: newNote.id },
-    });
-  };
-
-  const editNote = async (id: string, updates: Partial<Note>) => {
-    const noteToUpdate = state.notes.find((n) => n.id === id);
-    if (!noteToUpdate) {
-      return;
-    }
-
-    const updatedNote: Note = validateNote({
-      ...noteToUpdate,
-      ...updates,
-      id,
-    });
-
-    const updatedNotes = state.notes.map((n) =>
-      n.id === id ? updatedNote : n,
-    );
-
-    const newState: AppState = {
-      ...state,
-      notes: updatedNotes,
-    };
-
-    setState(newState);
-    await storageService.saveData(newState);
-    await notificationService.updateNotifications(newState);
-  };
-
-  const deleteNote = async (id: string) => {
-    const updatedNotes = state.notes.filter((n) => n.id !== id);
-    const newState: AppState = {
-      ...state,
-      notes: updatedNotes,
-    };
-
-    setState(newState);
-    await storageService.saveData(newState);
-    await notificationService.updateNotifications(newState);
-  };
-
-  const getNote = (id: string): Note | undefined => {
-    return state.notes.find((note) => note.id === id);
-  };
-
   // ========== DEBTS FUNCTIONS ==========
   const addDebt = async (
     debt: Omit<Debt, "id" | "createdAt" | "updatedAt">,
@@ -1643,11 +1563,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     deleteSavings,
     addSavingsTransaction,
     getSavingsTransactions,
-
-    addNote,
-    editNote,
-    deleteNote,
-    getNote,
 
     addDebt,
     editDebt,

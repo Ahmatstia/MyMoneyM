@@ -249,9 +249,6 @@ export type RootStackParamList = {
     | undefined;
   Calendar: undefined;
   SavingsDetail: { savingsId: string };
-  Notes: undefined;
-  NoteForm: { noteId?: string };
-  NoteDetail: { noteId: string };
   Debt: undefined; // NEW
   AddDebt: {
     editMode?: boolean;
