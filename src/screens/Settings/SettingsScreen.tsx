@@ -26,7 +26,12 @@ import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
 import * as Updates from "expo-updates";
 
-import { notificationService } from "../../utils/notifications";
+import {
+  notificationService,
+  DEFAULT_SETTINGS as DEFAULT_NOTIFICATION_SETTINGS,
+  NotificationSettings,
+  AdvancedNotificationSettings,
+} from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
 import { storageService } from "../../utils/storage";
 import { exportAllCsv } from "../../utils/csvExport";
@@ -41,57 +46,6 @@ import { AppGuidebookModal } from "../../components/Tutorial";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
-
-interface AdvancedNotificationSettings {
-  customSchedule?: {
-    morning?: string;
-    morningEnabled?: boolean;
-    evening?: string;
-    eveningEnabled?: boolean;
-    financialTip?: string;
-    financialTipEnabled?: boolean;
-  };
-  quietHours?: {
-    enabled?: boolean;
-    start?: string;
-    end?: string;
-    ignoreUrgent?: boolean;
-  };
-  activeDays?: number[];
-  vibrationPattern?: "light" | "medium" | "heavy";
-  soundEnabled?: boolean;
-}
-
-const DEFAULT_NOTIFICATION_SETTINGS = {
-  dailyReminders: true,
-  budgetAlerts: true,
-  savingsProgress: true,
-  transactionReminders: true,
-  notesReminders: true,
-  weeklyReports: true,
-  financialTips: true,
-  quickActionsWidget: true,
-  enabled: true,
-  advanced: {
-    customSchedule: {
-      morning: "07:30",
-      morningEnabled: true,
-      evening: "20:00",
-      eveningEnabled: true,
-      financialTip: "10:00",
-      financialTipEnabled: true,
-    },
-    quietHours: {
-      enabled: false,
-      start: "22:00",
-      end: "07:00",
-      ignoreUrgent: false,
-    },
-    activeDays: [0, 1, 2, 3, 4, 5, 6],
-    vibrationPattern: "medium" as const,
-    soundEnabled: true,
-  } as AdvancedNotificationSettings,
-};
 
 const DEFAULT_APP_SETTINGS = {
   currency: "IDR",
@@ -653,7 +607,15 @@ const SettingsScreen = () => {
   const [isMoniVisible, setIsMoniVisible] = useState(true);
   const [timePickerConfig, setTimePickerConfig] = useState<{
     visible: boolean;
-    type: "morning" | "evening" | "quietStart" | "quietEnd" | null;
+    type:
+      | "morning"
+      | "midday"
+      | "afternoon"
+      | "evening"
+      | "financialTip"
+      | "quietStart"
+      | "quietEnd"
+      | null;
   }>({ visible: false, type: null });
   const [showGuidebook, setShowGuidebook] = useState(false);
 
@@ -716,14 +678,12 @@ const SettingsScreen = () => {
     newSettings: typeof DEFAULT_NOTIFICATION_SETTINGS,
   ) => {
     try {
-      // Optimistic UI update
       setNotificationSettings(newSettings);
-
-      // Update asynchronously to prevent UI lag (especially when re-scheduling 35+ notifications)
-      notificationService
-        .updateNotificationSettings(newSettings, state)
-        .catch(() => {});
-    } catch (error) {}
+      await notificationService.updateNotificationSettings(newSettings, state);
+      await loadScheduledNotifications();
+    } catch (error) {
+      console.warn("Gagal update notifikasi:", error);
+    }
   };
 
   const saveAppSettings = async (newSettings: typeof DEFAULT_APP_SETTINGS) => {
@@ -754,6 +714,7 @@ const SettingsScreen = () => {
       setHasPermission(granted);
       if (granted) {
         await notificationService.reinitializeNotifications(state);
+        await loadScheduledNotifications();
         Alert.alert("Berhasil", "Izin notifikasi diberikan!");
       } else {
         Alert.alert(
@@ -836,28 +797,7 @@ const SettingsScreen = () => {
     await updateAdvancedSetting("activeDays", newDays.sort());
   };
 
-  const testNotification = async () => {
-    if (!notificationSettings.enabled) {
-      Alert.alert(
-        "Notifikasi Dimatikan",
-        "Aktifkan notifikasi terlebih dahulu.",
-      );
-      return;
-    }
-    await notificationService.sendNotification({
-      title: "🔔 Test Notification",
-      body: "Ini adalah notifikasi test dari MyMoney!",
-      data: { type: "TEST" },
-      urgent: true,
-    });
-    Alert.alert("Berhasil", "Notifikasi test terkirim!");
-  };
 
-  const clearAllNotifications = async () => {
-    await notificationService.cancelAllNotifications();
-    await loadScheduledNotifications();
-    Alert.alert("Berhasil", "Semua notifikasi dibersihkan");
-  };
 
   const handleClearData = () => {
     Alert.alert(
@@ -1723,13 +1663,13 @@ const SettingsScreen = () => {
                     }}
                   >
                     {notificationSettings.enabled
-                      ? "Notifikasi Aktif"
-                      : "Notifikasi Mati"}
+                      ? "Notifikasi Sistem Aktif"
+                      : "Notifikasi Dimatikan"}
                   </Text>
                   <Text style={{ color: colors.gray400, fontSize: 11 }}>
                     {hasPermission
-                      ? "Aplikasi memiliki izin mengirim push."
-                      : "Izin OS dibutuhkan."}
+                      ? "Aplikasi memiliki izin mengirim notifikasi di latar belakang."
+                      : "Izin OS dibutuhkan agar alarm dapat berbunyi."}
                   </Text>
                 </View>
                 <Switch
@@ -1761,14 +1701,14 @@ const SettingsScreen = () => {
                       fontWeight: "700",
                     }}
                   >
-                    Berikan Izin OS
+                    Berikan Izin Notifikasi OS
                   </Text>
                 </TouchableOpacity>
               ) : null}
             </View>
 
             {/* Notification Types */}
-            <SectionHeader title="Jenis Peringatan" />
+            <SectionHeader title="Jenis Peringatan & Fitur" />
             <View
               style={{
                 backgroundColor: colors.surface,
@@ -1783,51 +1723,65 @@ const SettingsScreen = () => {
                 {
                   key: "quickActionsWidget",
                   label: "Widget Layar Atas (Cepat)",
-                  desc: "Tampilkan jatah harian & tombol catat di bar status",
+                  desc: "Tampilkan saldo, jatah harian & tombol catat di bar notifikasi",
                   icon: "flash-outline" as const,
                   color: colors.accent,
                 },
                 {
                   key: "dailyReminders",
-                  label: "Pengingat Harian",
-                  desc: "Alert rutin di pagi & malam",
+                  label: "Pengingat Rutin Harian",
+                  desc: "Jadwal alarm otomatis pagi, siang, sore & malam",
                   icon: "alarm-outline" as const,
                   color: colors.info,
                 },
                 {
                   key: "budgetAlerts",
-                  label: "Peringatan Anggaran",
-                  desc: "Beritahu bila hampir capai limit",
+                  label: "Peringatan Batas Anggaran",
+                  desc: "Beritahu bila terpakai 80% & batas limit terlampaui",
                   icon: "pie-chart-outline" as const,
                   color: colors.warning,
                 },
                 {
                   key: "savingsProgress",
-                  label: "Target Tabungan",
-                  desc: "Info capaian nominal tabungan",
+                  label: "Target & Deadline Tabungan",
+                  desc: "Info capaian milestone & tenggat waktu tabungan",
                   icon: "wallet-outline" as const,
                   color: colors.success,
                 },
                 {
                   key: "transactionReminders",
-                  label: "Pencatatan",
-                  desc: "Ingatkan catat uang masuk & keluar",
+                  label: "Pengingat Pencatatan",
+                  desc: "Ingatkan bila belum ada transaksi & transaksi nominal besar",
                   icon: "receipt-outline" as const,
                   color: colors.info,
                 },
                 {
                   key: "notesReminders",
-                  label: "Buku Catatan",
-                  desc: "Jadwal tenggat catatan tersimpan",
+                  label: "Buku Catatan Keuangan",
+                  desc: "Peringatan jadwal & refleksi catatan keuangan",
                   icon: "document-text-outline" as const,
                   color: colors.purple,
                 },
                 {
                   key: "weeklyReports",
-                  label: "Laporan Mingguan",
-                  desc: "Rekap data tiap hari minggu",
+                  label: "Laporan Evaluasi Mingguan",
+                  desc: "Rekap data pemasukan, pengeluaran & tabungan tiap Minggu malam",
                   icon: "bar-chart-outline" as const,
                   color: colors.pink,
+                },
+                {
+                  key: "financialTips",
+                  label: "Tips & Edukasi Finansial",
+                  desc: "Saran praktis dan strategi mengelola keuangan harian",
+                  icon: "bulb-outline" as const,
+                  color: colors.warning,
+                },
+                {
+                  key: "transactionRecordedConfirmations",
+                  label: "Konfirmasi Aksi Pencatatan",
+                  desc: "Munculkan notifikasi banner sesaat setelah mencatat transaksi",
+                  icon: "checkmark-circle-outline" as const,
+                  color: colors.success,
                 },
               ].map(({ key, label, desc, icon, color }, idx, arr) => (
                 <SettingRow
@@ -1837,9 +1791,11 @@ const SettingsScreen = () => {
                   icon={icon}
                   iconColor={color}
                   value={
-                    notificationSettings[
-                      key as keyof typeof DEFAULT_NOTIFICATION_SETTINGS
-                    ] as boolean
+                    Boolean(
+                      notificationSettings[
+                        key as keyof typeof DEFAULT_NOTIFICATION_SETTINGS
+                      ],
+                    )
                   }
                   onValueChange={() => toggleNotificationSetting(key as any)}
                   disabled={!notificationSettings.enabled}
@@ -1848,309 +1804,608 @@ const SettingsScreen = () => {
               ))}
             </View>
 
-            {/* Advanced Trigger */}
-            <TouchableOpacity
+            {/* 1. Routine Schedule */}
+            <SectionHeader title="Jadwal Pengingat Harian" />
+            <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
                 backgroundColor: colors.surface,
-                borderRadius: 16,
+                borderRadius: CARD_RADIUS,
                 borderWidth: 1,
                 borderColor: CARD_BORDER,
-                padding: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 4,
                 marginBottom: 20,
               }}
-              onPress={() => setShowAdvanced(!showAdvanced)}
-              activeOpacity={0.7}
             >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    backgroundColor: `${colors.gray400}15`,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 14,
-                  }}
-                >
-                  <Ionicons
-                    name="options-outline"
-                    size={18}
-                    color={colors.gray400}
-                  />
-                </View>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: 13,
-                    fontWeight: "600",
-                  }}
-                >
-                  Pengaturan Jadwal Tepat
-                </Text>
-              </View>
-              <Ionicons
-                name={showAdvanced ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={colors.gray400}
-              />
-            </TouchableOpacity>
+              {[
+                {
+                  key: "morning",
+                  enabledKey: "morningEnabled",
+                  title: "Pengingat Pagi",
+                  desc: "Awali hari dengan mencatat anggaran",
+                  icon: "sunny-outline" as const,
+                  color: colors.warning,
+                  defaultTime: "07:30",
+                },
+                {
+                  key: "midday",
+                  enabledKey: "middayEnabled",
+                  title: "Cek Pengeluaran Siang",
+                  desc: "Pengingat makan siang dan belanja",
+                  icon: "restaurant-outline" as const,
+                  color: colors.info,
+                  defaultTime: "12:00",
+                },
+                {
+                  key: "afternoon",
+                  enabledKey: "afternoonEnabled",
+                  title: "Pengingat Sore",
+                  desc: "Catat transaksi sore sebelum malam",
+                  icon: "time-outline" as const,
+                  color: colors.purple,
+                  defaultTime: "15:00",
+                },
+                {
+                  key: "evening",
+                  enabledKey: "eveningEnabled",
+                  title: "Evaluasi & Rekap Malam",
+                  desc: "Rangkuman pengeluaran hari ini",
+                  icon: "moon-outline" as const,
+                  color: colors.pink,
+                  defaultTime: "20:00",
+                },
+                {
+                  key: "financialTip",
+                  enabledKey: "financialTipEnabled",
+                  title: "Tips Finansial Harian",
+                  desc: "Edukasi strategi keuangan bergilir",
+                  icon: "bulb-outline" as const,
+                  color: colors.accent,
+                  defaultTime: "10:00",
+                },
+              ].map((routine, idx, arr) => {
+                const timeValue =
+                  (notificationSettings.advanced?.customSchedule as any)?.[
+                    routine.key
+                  ] || routine.defaultTime;
+                const isRoutineEnabled =
+                  (notificationSettings.advanced?.customSchedule as any)?.[
+                    routine.enabledKey
+                  ] !== false;
 
-            {/* Advanced Section */}
-            {showAdvanced && (
-              <>
-                <SectionHeader title="Jadwal & Waktu" />
-                <View
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: CARD_RADIUS,
-                    borderWidth: 1,
-                    borderColor: CARD_BORDER,
-                    paddingHorizontal: 16,
-                    marginBottom: 20,
-                  }}
-                >
-                  {/* Morning Routine */}
+                return (
                   <View
+                    key={routine.key}
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingVertical: 14,
-                      borderBottomWidth: 1,
+                      paddingVertical: 12,
+                      borderBottomWidth: idx < arr.length - 1 ? 1 : 0,
                       borderBottomColor: CARD_BORDER,
                     }}
                   >
                     <View
                       style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        backgroundColor: `${colors.warning}15`,
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 14,
+                        justifyContent: "space-between",
                       }}
                     >
-                      <Ionicons
-                        name="sunny-outline"
-                        size={18}
-                        color={colors.warning}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
+                      <View
                         style={{
-                          color: colors.textPrimary,
-                          fontSize: 13,
-                          fontWeight: "600",
-                          marginBottom: 4,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          flex: 1,
+                          marginRight: 10,
                         }}
-                      >
-                        Notifikasi Pagi
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          setTimePickerConfig({
-                            visible: true,
-                            type: "morning",
-                          })
-                        }
                       >
                         <View
                           style={{
-                            alignSelf: "flex-start",
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                            backgroundColor: `${colors.accent}15`,
+                            width: 38,
+                            height: 38,
+                            borderRadius: 12,
+                            backgroundColor: `${routine.color}15`,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 12,
+                          }}
+                        >
+                          <Ionicons
+                            name={routine.icon}
+                            size={19}
+                            color={routine.color}
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              color: colors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: "700",
+                              marginBottom: 2,
+                            }}
+                          >
+                            {routine.title}
+                          </Text>
+                          <Text
+                            style={{
+                              color: colors.gray400,
+                              fontSize: 11,
+                            }}
+                          >
+                            {routine.desc}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <TouchableOpacity
+                          onPress={() =>
+                            setTimePickerConfig({
+                              visible: true,
+                              type: routine.key as any,
+                            })
+                          }
+                          disabled={
+                            !notificationSettings.enabled || !isRoutineEnabled
+                          }
+                          activeOpacity={0.7}
+                          style={{
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 8,
+                            backgroundColor: isRoutineEnabled
+                              ? `${colors.accent}15`
+                              : colors.surfaceLight,
+                            borderWidth: 1,
+                            borderColor: isRoutineEnabled
+                              ? `${colors.accent}40`
+                              : CARD_BORDER,
                           }}
                         >
                           <Text
                             style={{
-                              color: colors.accent,
-                              fontSize: 11,
+                              color: isRoutineEnabled
+                                ? colors.accent
+                                : colors.gray500,
+                              fontSize: 12,
                               fontWeight: "700",
                             }}
                           >
-                            {formatTime(
-                              notificationSettings.advanced?.customSchedule
-                                ?.morning || "07:30",
-                            )}
+                            {formatTime(timeValue)}
                           </Text>
-                        </View>
-                      </TouchableOpacity>
+                        </TouchableOpacity>
+
+                        <Switch
+                          value={isRoutineEnabled}
+                          onValueChange={(v) =>
+                            updateCustomSchedule(routine.enabledKey, v)
+                          }
+                          disabled={!notificationSettings.enabled}
+                          trackColor={{
+                            false: colors.surfaceLight,
+                            true: colors.accent,
+                          }}
+                          thumbColor="#FFFFFF"
+                        />
+                      </View>
                     </View>
-                    <Switch
-                      value={
-                        notificationSettings.advanced?.customSchedule
-                          ?.morningEnabled !== false
-                      }
-                      onValueChange={(v) =>
-                        updateCustomSchedule("morningEnabled", v)
-                      }
-                      trackColor={{
-                        false: colors.surfaceLight,
-                        true: colors.accent,
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* 2. Quiet Hours (Jam Tenang) */}
+            <SectionHeader title="Jam Tenang (Quiet Hours)" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: CARD_PAD,
+                marginBottom: 20,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: notificationSettings.advanced?.quietHours
+                    ?.enabled
+                    ? 14
+                    : 0,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: "700",
+                      marginBottom: 2,
+                    }}
+                  >
+                    Aktifkan Jam Tenang
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11 }}>
+                    Bisukan notifikasi pada jam tidur & istirahat Anda
+                  </Text>
+                </View>
+                <Switch
+                  value={Boolean(
+                    notificationSettings.advanced?.quietHours?.enabled,
+                  )}
+                  onValueChange={(v) => updateQuietHours("enabled", v)}
+                  disabled={!notificationSettings.enabled}
+                  trackColor={{
+                    false: colors.surfaceLight,
+                    true: colors.accent,
+                  }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {notificationSettings.advanced?.quietHours?.enabled && (
+                <View
+                  style={{
+                    paddingTop: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: CARD_BORDER,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {/* Start Time */}
+                    <TouchableOpacity
+                      style={{
+                        flex: 1,
+                        backgroundColor: colors.surfaceLight,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: INNER_RADIUS,
+                        borderWidth: 1,
+                        borderColor: CARD_BORDER,
                       }}
-                      thumbColor="#FFFFFF"
-                      style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
-                    />
+                      onPress={() =>
+                        setTimePickerConfig({
+                          visible: true,
+                          type: "quietStart",
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 10,
+                          fontWeight: "600",
+                          marginBottom: 3,
+                        }}
+                      >
+                        MULAI DIBISUKAN
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.accent,
+                          fontSize: 15,
+                          fontWeight: "700",
+                        }}
+                      >
+                        🌙{" "}
+                        {formatTime(
+                          notificationSettings.advanced?.quietHours?.start ||
+                            "22:00",
+                        )}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* End Time */}
+                    <TouchableOpacity
+                      style={{
+                        flex: 1,
+                        backgroundColor: colors.surfaceLight,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: INNER_RADIUS,
+                        borderWidth: 1,
+                        borderColor: CARD_BORDER,
+                      }}
+                      onPress={() =>
+                        setTimePickerConfig({
+                          visible: true,
+                          type: "quietEnd",
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 10,
+                          fontWeight: "600",
+                          marginBottom: 3,
+                        }}
+                      >
+                        SELESAI DIBISUKAN
+                      </Text>
+                      <Text
+                        style={{
+                          color: colors.accent,
+                          fontSize: 15,
+                          fontWeight: "700",
+                        }}
+                      >
+                        ☀️{" "}
+                        {formatTime(
+                          notificationSettings.advanced?.quietHours?.end ||
+                            "07:00",
+                        )}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
 
-                  {/* Evening Routine */}
+                  {/* Ignore Urgent Toggle */}
                   <View
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      paddingVertical: 14,
+                      justifyContent: "space-between",
+                      backgroundColor: `${colors.warning}0a`,
+                      padding: 10,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: `${colors.warning}20`,
                     }}
                   >
-                    <View
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        backgroundColor: `${colors.purple}15`,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 14,
-                      }}
-                    >
-                      <Ionicons
-                        name="moon-outline"
-                        size={18}
-                        color={colors.purple}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
                       <Text
                         style={{
                           color: colors.textPrimary,
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: "600",
-                          marginBottom: 4,
                         }}
                       >
-                        Rekapitulasi Malam
+                        Pengecualian Limit Jebol
                       </Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          setTimePickerConfig({
-                            visible: true,
-                            type: "evening",
-                          })
-                        }
+                      <Text
+                        style={{
+                          color: colors.gray400,
+                          fontSize: 10,
+                          marginTop: 1,
+                        }}
                       >
-                        <View
-                          style={{
-                            alignSelf: "flex-start",
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 6,
-                            backgroundColor: `${colors.accent}15`,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: colors.accent,
-                              fontSize: 11,
-                              fontWeight: "700",
-                            }}
-                          >
-                            {formatTime(
-                              notificationSettings.advanced?.customSchedule
-                                ?.evening || "20:00",
-                            )}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
+                        Alarm anggaran overlimit 100% tetap berbunyi
+                      </Text>
                     </View>
                     <Switch
                       value={
-                        notificationSettings.advanced?.customSchedule
-                          ?.eveningEnabled !== false
+                        notificationSettings.advanced?.quietHours
+                          ?.ignoreUrgent !== false
                       }
                       onValueChange={(v) =>
-                        updateCustomSchedule("eveningEnabled", v)
+                        updateQuietHours("ignoreUrgent", v)
                       }
                       trackColor={{
                         false: colors.surfaceLight,
-                        true: colors.accent,
+                        true: colors.warning,
                       }}
                       thumbColor="#FFFFFF"
-                      style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                      style={{
+                        transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
+                      }}
                     />
                   </View>
                 </View>
+              )}
+            </View>
 
-                {/* Days Active */}
-                <SectionHeader title="Hari Aktif" />
-                <View
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: CARD_RADIUS,
-                    borderWidth: 1,
-                    borderColor: CARD_BORDER,
-                    padding: CARD_PAD,
-                    marginBottom: 20,
-                  }}
-                >
+            {/* 3. Days Active */}
+            <SectionHeader title="Hari Notifikasi Aktif" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: CARD_PAD,
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.gray400,
+                  fontSize: 11,
+                  marginBottom: 12,
+                }}
+              >
+                Pilih hari di mana alarm pengingat rutin diizinkan berbunyi
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
+                  const isActive =
+                    notificationSettings.advanced?.activeDays?.includes(
+                      dayIndex,
+                    );
+                  return (
+                    <TouchableOpacity
+                      key={dayIndex}
+                      style={{
+                        flex: 1,
+                        marginHorizontal: 2,
+                        paddingVertical: 9,
+                        borderRadius: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isActive
+                          ? colors.accent
+                          : colors.surfaceLight,
+                        borderWidth: 1,
+                        borderColor: isActive ? colors.accent : CARD_BORDER,
+                      }}
+                      onPress={() => toggleActiveDay(dayIndex)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "700",
+                          color: isActive
+                            ? colors.background
+                            : colors.gray400,
+                        }}
+                      >
+                        {getDayName(dayIndex)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 4. Sound & Vibration */}
+            <SectionHeader title="Suara & Getaran" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: CARD_RADIUS,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                padding: CARD_PAD,
+                marginBottom: 20,
+              }}
+            >
+              {/* Sound Toggle */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Bunyi Notifikasi
+                  </Text>
                   <Text
                     style={{
                       color: colors.gray400,
                       fontSize: 11,
-                      marginBottom: 12,
+                      marginTop: 2,
                     }}
                   >
-                    Filter notifikasi diabaikan pasca tidak diceklis
+                    Gunakan nada dering default sistem saat ada pesan masuk
                   </Text>
-                  <View
-                    style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
-                  >
-                    {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => {
-                      const isActive =
-                        notificationSettings.advanced?.activeDays?.includes(
-                          dayIndex,
-                        );
-                      return (
-                        <TouchableOpacity
-                          key={dayIndex}
-                          style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 10,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: isActive
-                              ? colors.accent
-                              : "transparent",
-                            borderWidth: 1,
-                            borderColor: isActive ? colors.accent : CARD_BORDER,
-                          }}
-                          onPress={() => toggleActiveDay(dayIndex)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 11,
-                              fontWeight: "700",
-                              color: isActive
-                                ? colors.background
-                                : colors.gray400,
-                            }}
-                          >
-                            {getDayName(dayIndex)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
                 </View>
-              </>
-            )}
+                <Switch
+                  value={
+                    notificationSettings.advanced?.soundEnabled !== false
+                  }
+                  onValueChange={(v) =>
+                    updateAdvancedSetting("soundEnabled", v)
+                  }
+                  disabled={!notificationSettings.enabled}
+                  trackColor={{
+                    false: colors.surfaceLight,
+                    true: colors.accent,
+                  }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              {/* Vibration Pattern */}
+              <View
+                style={{
+                  paddingTop: 14,
+                  borderTopWidth: 1,
+                  borderTopColor: CARD_BORDER,
+                }}
+              >
+                <Text
+                  style={{
+                    color: colors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: "600",
+                    marginBottom: 10,
+                  }}
+                >
+                  Kekuatan Getaran
+                </Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {(
+                    [
+                      { key: "light", label: "Ringan" },
+                      { key: "medium", label: "Sedang" },
+                      { key: "heavy", label: "Kuat" },
+                    ] as const
+                  ).map((item) => {
+                    const isSelected =
+                      (notificationSettings.advanced?.vibrationPattern ||
+                        "medium") === item.key;
+                    return (
+                      <TouchableOpacity
+                        key={item.key}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 10,
+                          borderRadius: 10,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: isSelected
+                            ? `${colors.accent}20`
+                            : colors.surfaceLight,
+                          borderWidth: 1,
+                          borderColor: isSelected
+                            ? colors.accent
+                            : CARD_BORDER,
+                        }}
+                        onPress={() =>
+                          updateAdvancedSetting(
+                            "vibrationPattern",
+                            item.key,
+                          )
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={{
+                            color: isSelected
+                              ? colors.accent
+                              : colors.gray400,
+                            fontSize: 12,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
           </>
         )}
 
@@ -2485,10 +2740,10 @@ const SettingsScreen = () => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "700" }}>
-                    MyMoney Mobile
+                    MyMoney 
                   </Text>
                   <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600", marginTop: 1 }}>
-                    Versi 1.0.4 • Offline-First Edition
+                    Versi 1.0.8
                   </Text>
                 </View>
               </View>
@@ -2496,7 +2751,6 @@ const SettingsScreen = () => {
               <View style={{ backgroundColor: `${colors.border}40`, height: 1, marginBottom: 12 }} />
 
               <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-                <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} style={{ marginRight: 8, marginTop: 1 }} />
                 <Text style={{ color: colors.gray400, fontSize: 11, flex: 1, lineHeight: 16 }}>
                   Seluruh data keuangan disimpan secara lokal di perangkat Anda. Tidak ada data yang dikirim ke server pihak ketiga demi keamanan dan privasi finansial maksimal.
                 </Text>
@@ -2564,8 +2818,14 @@ const SettingsScreen = () => {
         onTimeSelected={(time) => {
           if (timePickerConfig.type === "morning")
             updateCustomSchedule("morning", time);
+          if (timePickerConfig.type === "midday")
+            updateCustomSchedule("midday", time);
+          if (timePickerConfig.type === "afternoon")
+            updateCustomSchedule("afternoon", time);
           if (timePickerConfig.type === "evening")
             updateCustomSchedule("evening", time);
+          if (timePickerConfig.type === "financialTip")
+            updateCustomSchedule("financialTip", time);
           if (timePickerConfig.type === "quietStart")
             updateQuietHours("start", time);
           if (timePickerConfig.type === "quietEnd")
@@ -2575,21 +2835,32 @@ const SettingsScreen = () => {
         initialTime={
           timePickerConfig.type === "morning"
             ? notificationSettings.advanced?.customSchedule?.morning || "07:30"
-            : timePickerConfig.type === "evening"
-              ? notificationSettings.advanced?.customSchedule?.evening ||
-                "20:00"
-              : timePickerConfig.type === "quietStart"
-                ? notificationSettings.advanced?.quietHours?.start || "22:00"
-                : notificationSettings.advanced?.quietHours?.end || "07:00"
+            : timePickerConfig.type === "midday"
+              ? notificationSettings.advanced?.customSchedule?.midday || "12:00"
+              : timePickerConfig.type === "afternoon"
+                ? notificationSettings.advanced?.customSchedule?.afternoon || "15:00"
+                : timePickerConfig.type === "evening"
+                  ? notificationSettings.advanced?.customSchedule?.evening || "20:00"
+                  : timePickerConfig.type === "financialTip"
+                    ? notificationSettings.advanced?.customSchedule?.financialTip || "10:00"
+                    : timePickerConfig.type === "quietStart"
+                      ? notificationSettings.advanced?.quietHours?.start || "22:00"
+                      : notificationSettings.advanced?.quietHours?.end || "07:00"
         }
         title={
           timePickerConfig.type === "morning"
             ? "Notifikasi Pagi"
-            : timePickerConfig.type === "evening"
-              ? "Rekapitulasi Malam"
-              : timePickerConfig.type === "quietStart"
-                ? "Mulai Quiet Hours"
-                : "Akhir Quiet Hours"
+            : timePickerConfig.type === "midday"
+              ? "Pengingat Siang"
+              : timePickerConfig.type === "afternoon"
+                ? "Pengingat Sore"
+                : timePickerConfig.type === "evening"
+                  ? "Rekapitulasi Malam"
+                  : timePickerConfig.type === "financialTip"
+                    ? "Tips Finansial"
+                    : timePickerConfig.type === "quietStart"
+                      ? "Mulai Jam Tenang"
+                      : "Selesai Jam Tenang"
         }
       />
 

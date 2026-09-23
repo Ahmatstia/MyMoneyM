@@ -526,7 +526,7 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
                             }}
                             numberOfLines={1}
                           >
-                            {progress.title}
+                            MyMoney
                           </Text>
                         </View>
                       </View>
