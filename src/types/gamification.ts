@@ -271,7 +271,7 @@ export const MILESTONES: MilestoneDefinition[] = [
   {
     id: "m_report_pdf",
     title: "Rapor Eksekutif 📊",
-    description: "Ekspor laporan transaksi PDF atau CSV.",
+    description: "Ekspor laporan transaksi PDF.",
     icon: "document-text-outline",
     iconFamily: "Ionicons",
     category: "discipline",

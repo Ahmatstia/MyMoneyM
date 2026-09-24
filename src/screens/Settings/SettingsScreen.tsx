@@ -34,7 +34,6 @@ import {
 } from "../../utils/notifications";
 import { useAppContext } from "../../context/AppContext";
 import { storageService } from "../../utils/storage";
-import { exportAllCsv } from "../../utils/csvExport";
 import { useTheme } from "../../theme/ThemeContext";
 import { THEMES, ThemeId, DEFAULT_THEME_ID } from "../../theme/theme";
 import { navigationRef } from "../../navigation/navigationRef";
@@ -834,70 +833,6 @@ const SettingsScreen = () => {
     } catch (error) {
       setLoading(false);
       Alert.alert("Error", "Gagal melakukan ekspor data.");
-    }
-  };
-
-  const handleExportCsv = async () => {
-    try {
-      setLoading(true, "Menyiapkan data CSV untuk Machine Learning...");
-
-      const csvFiles = exportAllCsv(state);
-      let exportedCount = 0;
-
-      for (const { filename, content } of csvFiles) {
-        const file = new File(Paths.join(Paths.document, filename));
-        await file.write(content);
-        exportedCount++;
-      }
-
-      setLoading(false);
-
-      // Opsi berbagi file CSV (All-in-One gabungan atau Transaksi)
-      if (csvFiles.length > 0 && (await Sharing.isAvailableAsync())) {
-        Alert.alert(
-          "Ekspor CSV Selesai",
-          `${exportedCount} berkas CSV tersimpan di memori lokal. Pilih berkas yang ingin dibagikan:`,
-          [
-            {
-              text: "Semua Data (All-in-One)",
-              onPress: async () => {
-                const target =
-                  csvFiles.find((f) => f.filename === "mymoney_all_in_one.csv") ||
-                  csvFiles[0];
-                const fileUri = Paths.join(Paths.document, target.filename);
-                await Sharing.shareAsync(fileUri, {
-                  mimeType: "text/csv",
-                  dialogTitle: "Bagikan Ekspor Semua Data MyMoney",
-                  UTI: "public.comma-separated-values-text",
-                });
-              },
-            },
-            {
-              text: "Transaksi Saja",
-              onPress: async () => {
-                const target =
-                  csvFiles.find((f) => f.filename === "mymoney_transactions.csv") ||
-                  csvFiles[0];
-                const fileUri = Paths.join(Paths.document, target.filename);
-                await Sharing.shareAsync(fileUri, {
-                  mimeType: "text/csv",
-                  dialogTitle: "Bagikan Riwayat Transaksi CSV",
-                  UTI: "public.comma-separated-values-text",
-                });
-              },
-            },
-            { text: "Tutup", style: "cancel" },
-          ],
-        );
-      } else {
-        Alert.alert(
-          "CSV Siap",
-          `${exportedCount} file CSV berhasil dibuat di penyimpanan lokal:\n${csvFiles.map((f) => f.filename).join("\n")}`,
-        );
-      }
-    } catch (error) {
-      setLoading(false);
-      Alert.alert("Error", "Gagal melakukan ekspor CSV.");
     }
   };
 
@@ -2531,59 +2466,6 @@ const SettingsScreen = () => {
                     numberOfLines={2}
                   >
                     Simpan seluruh data menjadi file .json
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.gray500}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                  borderBottomWidth: 1,
-                  borderBottomColor: CARD_BORDER,
-                }}
-                onPress={handleExportCsv}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    backgroundColor: `${colors.info}15`,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 14,
-                  }}
-                >
-                  <Ionicons name="grid-outline" size={18} color={colors.info} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: colors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: "600",
-                      marginBottom: 2,
-                    }}
-                  >
-                    Ekspor Data CSV (ML Ready)
-                  </Text>
-                  <Text
-                    style={{
-                      color: colors.gray400,
-                      fontSize: 11,
-                      paddingRight: 8,
-                    }}
-                    numberOfLines={2}
-                  >
-                    6 file CSV siap olah untuk Machine Learning
                   </Text>
                 </View>
                 <Ionicons
