@@ -60,7 +60,7 @@ const DEFAULT_APP_SETTINGS = {
 const CARD_RADIUS = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD = 20;
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppHeader } from "../../components/common";
 
 const SettingRow = ({
   label,
@@ -1038,71 +1038,44 @@ const SettingsScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* ── Page Header ─────────────────────────────────────────────── */}
-      <View
-        style={{
-          paddingHorizontal: 18,
-          paddingTop: 16,
-          paddingBottom: 18,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          {navigation.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 10, padding: 4 }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Kembali"
-            >
-              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-          )}
-          <View>
-            <Text
-              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-            >
-              Pengaturan
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
-              Kelola preferensi dan pembukuan
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => setShowGuidebook(true)}
-          activeOpacity={0.7}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: `${colors.accent}15`,
-            borderWidth: 1,
-            borderColor: `${colors.accent}40`,
-            paddingHorizontal: 12,
-            paddingVertical: 7,
-            borderRadius: 20,
-          }}
-        >
-          <Ionicons
-            name="book-outline"
-            size={14}
-            color={colors.accent}
-            style={{ marginRight: 6 }}
-          />
-          <Text
+      {/* ── Standardized AppHeader ── */}
+      <AppHeader
+        title="Pengaturan"
+        subtitle="Kelola preferensi dan pembukuan"
+        showBack={navigation.canGoBack()}
+        rightComponent={
+          <TouchableOpacity
+            onPress={() => setShowGuidebook(true)}
+            activeOpacity={0.7}
             style={{
-              color: colors.accent,
-              fontSize: 11,
-              fontWeight: "700",
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: `${colors.accent}15`,
+              borderWidth: 1,
+              borderColor: `${colors.accent}40`,
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              borderRadius: 20,
             }}
           >
-            Buku Panduan
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Ionicons
+              name="book-outline"
+              size={14}
+              color={colors.accent}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={{
+                color: colors.accent,
+                fontSize: 11,
+                fontWeight: "700",
+              }}
+            >
+              Buku Panduan
+            </Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* ── Tab Control ─────────────────────────────────────────────── */}
       <View style={{ paddingHorizontal: 18, marginBottom: 20 }}>

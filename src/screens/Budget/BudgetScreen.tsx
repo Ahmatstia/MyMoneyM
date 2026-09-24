@@ -22,7 +22,7 @@ const CARD_PAD     = 13;
 const SECTION_GAP  = 16;
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppFAB, AppHeader } from "../../components/common";
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
@@ -91,12 +91,6 @@ const BudgetScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { state, deleteBudget } = useAppContext();
   const [filter, setFilter] = useState<"all" | "over" | "warning" | "safe">("all");
-  const [fabScaleAnim] = useState(new Animated.Value(1));
-
-  const fabPressIn  = () =>
-    Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
-  const fabPressOut = () =>
-    Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
   // ── Tanggal hari ini untuk deteksi status selesai ─────────────────────────
   const today = formatToDateKey(new Date());
@@ -253,46 +247,17 @@ const BudgetScreen: React.FC = () => {
       : colors.success;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Anggaran"
+        subtitle={`${activeBudgets.length} anggaran aktif${completedBudgets.length > 0 ? ` • ${completedBudgets.length} selesai` : ""}`}
+      />
+
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Page header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingTop: 16,
-            paddingBottom: 20,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {navigation.canGoBack() && (
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{ marginRight: 10, padding: 4 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityLabel="Kembali"
-              >
-                <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-              </TouchableOpacity>
-            )}
-            <View>
-              <Text
-                style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-              >
-                Anggaran
-              </Text>
-              <Text
-                style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}
-              >
-                {activeBudgets.length} anggaran aktif{completedBudgets.length > 0 ? ` • ${completedBudgets.length} selesai` : ""}
-              </Text>
-            </View>
-          </View>
-        </View>
 
         {/* ── Summary hero card ────────────────────────────────────────── */}
         {activeBudgets.length > 0 && (
@@ -946,36 +911,11 @@ const BudgetScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* ── FAB ─────────────────────────────────────────────────────────── */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: 24,
-          right: 20,
-          width: 54,
-          height: 54,
-          borderRadius: 17,
-          backgroundColor: colors.accent,
-          shadowColor: colors.accent,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.45,
-          shadowRadius: 14,
-          elevation: 12,
-          transform: [{ scale: fabScaleAnim }],
-        }}
-      >
-        <TouchableOpacity
-          style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
-          onPress={() => navigation.navigate("AddBudget")}
-          activeOpacity={0.8}
-          onPressIn={fabPressIn}
-          onPressOut={fabPressOut}
-          accessibilityLabel="Tambah anggaran baru"
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={28} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* ── Standardized Squircle FAB ── */}
+      <AppFAB
+        onPress={() => navigation.navigate("AddBudget")}
+        accessibilityLabel="Tambah anggaran baru"
+      />
     </SafeAreaView>
   );
 };

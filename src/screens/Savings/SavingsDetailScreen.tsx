@@ -30,7 +30,7 @@ const CARD_PAD     = 14;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppHeader } from "../../components/common";
 
 const Spacer = ({ size = 20 }: { size?: number }) => (
   <View style={{ height: size }} />
@@ -314,56 +314,11 @@ const SavingsDetailScreen: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[ACCENT_COLOR]}
-            tintColor={ACCENT_COLOR}
-          />
-        }
-      >
-        {/* ── Page Header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingTop: 16,
-            paddingBottom: 12,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <TouchableOpacity
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ACCENT_COLOR}15`,
-              }}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={20} color={ACCENT_COLOR} />
-            </TouchableOpacity>
-            <View>
-              <Text
-                style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
-              >
-                Detail Tabungan
-              </Text>
-              <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 1 }}>
-                Informasi & riwayat tabungan
-              </Text>
-            </View>
-          </View>
-
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title={saving.name}
+        subtitle="Detail & Target Tabungan"
+        rightComponent={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity
               style={{
@@ -383,6 +338,7 @@ const SavingsDetailScreen: React.FC = () => {
                 })
               }
               activeOpacity={0.7}
+              accessibilityLabel="Edit Tabungan"
             >
               <Ionicons name="pencil-outline" size={16} color={ACCENT_COLOR} />
             </TouchableOpacity>
@@ -399,12 +355,27 @@ const SavingsDetailScreen: React.FC = () => {
               }}
               onPress={handleDelete}
               activeOpacity={0.7}
+              accessibilityLabel="Hapus Tabungan"
             >
               <Ionicons name="trash-outline" size={16} color={ERROR_COLOR} />
             </TouchableOpacity>
           </View>
-        </View>
-        <Spacer size={18} />
+        }
+      />
+
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 110 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[ACCENT_COLOR]}
+            tintColor={ACCENT_COLOR}
+          />
+        }
+      >
 
         {/* ── Hero identity card ───────────────────────────────────────── */}
         <ImageBackground

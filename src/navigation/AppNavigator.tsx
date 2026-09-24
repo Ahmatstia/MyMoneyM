@@ -810,6 +810,7 @@ const MainStackNavigator = () => {
           "Savings",
           "Profile",
           "Settings",
+          "ManageCategories",
           "Debt",
           "Tools",
           "SavingsDetail",
@@ -818,6 +819,10 @@ const MainStackNavigator = () => {
           "Wallets",
           "MoniScreen",
           "AddSavings",
+          "AddTransaction",
+          "AddBudget",
+          "AddDebt",
+          "AddSavingsTransaction",
         ];
         const hasCustomHeader = screensWithCustomHeader.includes(route.name);
 

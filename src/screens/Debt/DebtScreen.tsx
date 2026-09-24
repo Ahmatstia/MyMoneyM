@@ -48,7 +48,7 @@ const STATUS_LABEL: Record<Debt["status"], string> = {
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppFAB, AppHeader } from "../../components/common";
 
 /** Progress bar — terima height agar bisa dipakai di summary (4px) & debt card (6px) */
 const ProgressBar = ({
@@ -87,12 +87,6 @@ const DebtScreen: React.FC = () => {
     debt: null,
   });
   const [payAmount, setPayAmount] = useState("");
-  const [fabScaleAnim]            = useState(new Animated.Value(1));
-
-  const fabPressIn  = () =>
-    Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
-  const fabPressOut = () =>
-    Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
   const allDebts = state.debts || [];
 
@@ -183,39 +177,17 @@ const DebtScreen: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Hutang & Piutang"
+        subtitle="Kelola pinjaman dan tagihan Anda"
+      />
+
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Page header ───────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingTop: 16,
-            paddingBottom: 20,
-          }}
-        >
-          {navigation.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 10, padding: 4 }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Kembali"
-            >
-              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-          )}
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}>
-              Hutang & Piutang
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 3 }}>
-              Kelola beban dan pinjaman uang Anda
-            </Text>
-          </View>
-        </View>
 
         {/* ══════════════════════════════════════════
             SUMMARY HERO CARD (REDESIGNED NEO-FINTECH)
@@ -932,41 +904,11 @@ const DebtScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* ══════════════════════════════════════════
-          FAB
-      ══════════════════════════════════════════ */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: 24,
-          right: 18,
-          width: 52,
-          height: 52,
-          borderRadius: 16,
-          backgroundColor: colors.accent,
-          shadowColor: colors.accent,
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.4,
-          shadowRadius: 10,
-          elevation: 10,
-          transform: [{ scale: fabScaleAnim }],
-        }}
-      >
-        <TouchableOpacity
-          style={{
-            width: "100%",
-            height: "100%",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onPress={() => navigation.navigate("AddDebt")}
-          onPressIn={fabPressIn}
-          onPressOut={fabPressOut}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={26} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* ── Standardized Squircle FAB ── */}
+      <AppFAB
+        onPress={() => navigation.navigate("AddDebt")}
+        accessibilityLabel="Tambah hutang atau piutang baru"
+      />
 
       {/* ══════════════════════════════════════════
           PAY MODAL

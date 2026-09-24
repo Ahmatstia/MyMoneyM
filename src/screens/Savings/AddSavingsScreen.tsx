@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import tw from "twrnc";
+import { AppHeader } from "../../components/common";
 
 import { useAppContext } from "../../context/AppContext";
 import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorage";
@@ -249,25 +250,7 @@ const AddSavingsScreen: React.FC = () => {
   };
 
   // Handle target change
-  useEffect(() => {
-    navigation.setOptions({
-      title: isEditMode ? "Edit Tabungan" : "Tambah Tabungan",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, isEditMode, PRIMARY_COLOR, TEXT_PRIMARY]);
+
 
   const handleTargetChange = (value: string) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
@@ -492,65 +475,43 @@ const AddSavingsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['top', 'bottom']}>
+      {/* ── Standardized AppHeader ── */}
+      <AppHeader
+        title={isEditMode ? "Edit Tabungan" : "Tabungan Baru"}
+        subtitle={isEditMode ? "Ubah target dan preferensi" : "Tentukan target finansial impianmu"}
+        showBack={true}
+        rightComponent={
+          isEditMode ? (
+            <TouchableOpacity
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${ERROR_COLOR}15`,
+                borderWidth: 1,
+                borderColor: `${ERROR_COLOR}30`,
+              }}
+              onPress={showDeleteConfirmation}
+              activeOpacity={0.7}
+              accessibilityLabel="Hapus Tabungan"
+            >
+              <Ionicons name="trash-outline" size={18} color={ERROR_COLOR} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={tw`flex-1`}
       >
         <ScrollView
           style={tw`flex-1`}
-          contentContainerStyle={[tw`px-4 pt-2`, { paddingBottom: 60 }]}
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: 60 }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-        {/* ── Page Header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 24,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <TouchableOpacity
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ACCENT_COLOR}15`,
-                marginRight: 12,
-              }}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={20} color={ACCENT_COLOR} />
-            </TouchableOpacity>
-            <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
-            >
-              {isEditMode ? "Edit Tabungan" : "Tabungan Baru"}
-            </Text>
-          </View>
-
-          {isEditMode && (
-            <TouchableOpacity
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: `${ERROR_COLOR}15`,
-              }}
-              onPress={showDeleteConfirmation}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="trash-outline" size={18} color={ERROR_COLOR} />
-            </TouchableOpacity>
-          )}
-        </View>
         {/* Info jika edit mode */}
         {isEditMode && savingsData && (
           <View

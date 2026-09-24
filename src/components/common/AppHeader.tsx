@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../../theme/ThemeContext";
 
-interface AppHeaderProps {
+export interface AppHeaderProps {
   title: string;
   subtitle?: string;
   showBack?: boolean;
@@ -16,8 +16,13 @@ interface AppHeaderProps {
 }
 
 /**
- * Standard Screen Header Bar
- * Unified 56px pattern across all non-dashboard and push screens.
+ * Standard Compact Fintech Header Bar
+ * Formatted exactly according to the WalletsScreen compact header design:
+ * - Surface background with subtle border bottom
+ * - 40x40 circular arrow-back button (44+ touch target with hitSlop)
+ * - 18px 700 title with -0.3 letter-spacing
+ * - 11px 500 subtitle with textSecondary color
+ * - Flexible rightComponent slot
  */
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
@@ -25,7 +30,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   showBack = true,
   onBackPress,
   rightComponent,
-  showBorderBottom = false,
+  showBorderBottom = true,
   style,
 }) => {
   const { colors } = useTheme();
@@ -46,45 +51,41 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: colors.background,
-          borderBottomColor: `${colors.border}80`,
+          backgroundColor: colors.surface,
+          borderBottomColor: `${colors.border}60`,
           borderBottomWidth: showBorderBottom ? 1 : 0,
         },
         style,
       ]}
     >
-      <View style={styles.leftRow}>
-        {canGoBack && (
-          <TouchableOpacity
-            onPress={handleBack}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.backButton,
-              { backgroundColor: `${colors.surfaceLight}80` },
-            ]}
-            accessibilityLabel="Kembali"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-        )}
-        <View style={styles.titleWrapper}>
+      {canGoBack && (
+        <TouchableOpacity
+          onPress={handleBack}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.backButton}
+          accessibilityLabel="Kembali"
+          accessibilityRole="button"
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+      )}
+
+      <View style={[styles.titleWrapper, { marginLeft: canGoBack ? 12 : 0, marginRight: rightComponent ? 8 : 0 }]}>
+        <Text
+          style={[styles.title, { color: colors.textPrimary }]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        {subtitle ? (
           <Text
-            style={[styles.title, { color: colors.textPrimary }]}
+            style={[styles.subtitle, { color: colors.textSecondary }]}
             numberOfLines={1}
           >
-            {title}
+            {subtitle}
           </Text>
-          {subtitle ? (
-            <Text
-              style={[styles.subtitle, { color: colors.gray400 }]}
-              numberOfLines={1}
-            >
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
+        ) : null}
       </View>
 
       {rightComponent && (
@@ -102,40 +103,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-  },
-  leftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
+    paddingVertical: 10,
+    minHeight: 56,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
   titleWrapper: {
     flex: 1,
     justifyContent: "center",
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 11,
     fontWeight: "500",
-    marginTop: 2,
+    marginTop: 1,
   },
   rightWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 12,
   },
 });
 

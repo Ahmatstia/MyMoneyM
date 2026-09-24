@@ -41,7 +41,7 @@ const SECTION_GAP = 20;
 
 // --- UI Components ------------------------------------------------------------
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppHeader } from "../../components/common";
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
@@ -657,90 +657,50 @@ const AnalyticsScreen: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
       {/* =-=- Fixed Header (redesigned) =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}
-      <View
-        style={{
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 14,
-          borderBottomWidth: 1,
-          borderBottomColor: CARD_BORDER,
-        }}
-      >
-        {/* Title row + Export button */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: 14,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {navigation.canGoBack() && (
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{ marginRight: 12, padding: 4 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityLabel="Kembali"
-              >
-                <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-              </TouchableOpacity>
-            )}
-            <View>
-              <Text
-                style={{
-                  color: colors.gray400,
-                  fontSize: 10,
-                  fontWeight: "600",
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase",
-                  marginBottom: 4,
-                }}
-              >
-                Laporan Keuangan
-              </Text>
-              <Text
-                style={{
-                  color: TEXT_PRIMARY,
-                  fontSize: 26,
-                  fontWeight: "800",
-                  letterSpacing: -0.5,
-                  lineHeight: 30,
-                }}
-              >
-                Analitik
-              </Text>
-              <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
-                {getCurrentMonth()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Export / Rapor — pill button dengan label */}
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Analitik"
+        subtitle={`Laporan Keuangan • ${getCurrentMonth()}`}
+        showBack={navigation.canGoBack()}
+        showBorderBottom={false}
+        rightComponent={
           <TouchableOpacity
             style={{
               flexDirection: "row",
               alignItems: "center",
               gap: 6,
-              paddingHorizontal: 14,
-              paddingVertical: 9,
-              borderRadius: 22,
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              borderRadius: 20,
               backgroundColor: `${ACCENT_COLOR}15`,
               borderWidth: 1,
               borderColor: `${ACCENT_COLOR}28`,
-              marginTop: 2,
             }}
             onPress={handleExport}
             activeOpacity={0.7}
+            accessibilityLabel="Rapor Bulanan"
           >
             <Ionicons name="document-text-outline" size={14} color={ACCENT_COLOR} />
             <Text
-              style={{ color: ACCENT_COLOR, fontSize: 12, fontWeight: "700" }}
+              style={{ color: ACCENT_COLOR, fontSize: 11, fontWeight: "700" }}
             >
-              Rapor Bulanan
+              Rapor
             </Text>
           </TouchableOpacity>
-        </View>
+        }
+      />
+
+      {/* ── Sub-header: Time Range Segmented Control ── */}
+      <View
+        style={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: CARD_BORDER,
+          backgroundColor: colors.background,
+        }}
+      >
 
         {/* Time range - segmented control, sekarang di header (fixed) */}
         <View

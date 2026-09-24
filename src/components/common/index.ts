@@ -5,3 +5,4 @@ export { AppEmptyState } from "./AppEmptyState";
 export { Button } from "./Button";
 export { Card } from "./Card";
 export { Input } from "./Input";
+export { AppFAB } from "./AppFAB";

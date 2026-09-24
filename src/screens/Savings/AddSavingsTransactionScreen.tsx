@@ -24,6 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
+import { AppHeader } from "../../components/common";
 
 type AddSavingsTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -71,26 +72,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const [selectedWalletId, setSelectedWalletId] = useState<string>(defaultWallet?.id || "");
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Navigation header options
-  useEffect(() => {
-    navigation.setOptions({
-      title: type === "deposit" ? "Tambah Tabungan" : "Tarik Tabungan",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, type, PRIMARY_COLOR, TEXT_PRIMARY]);
+
 
   // Temukan savings berdasarkan ID
   const saving = state.savings?.find((s) => s.id === savingsId);
@@ -285,39 +267,18 @@ const AddSavingsTransactionScreen: React.FC = () => {
     : currentBalance;
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title={transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana"}
+        subtitle={saving.name}
+        showBack={true}
+      />
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-2`}
+        contentContainerStyle={tw`px-4 pt-4 pb-12`}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Page Header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${ACCENT_COLOR}15`,
-              marginRight: 12,
-            }}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
-          </TouchableOpacity>
-          <Text style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}>
-            {transactionType === "deposit" ? "Tambah Setoran" : "Penarikan Dana"}
-          </Text>
-        </View>
         {/* Savings Info */}
         <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: SURFACE_COLOR }]}>
           <View style={tw`flex-row items-center mb-4`}>

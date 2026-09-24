@@ -22,6 +22,7 @@ import { useAppContext } from "../../context/AppContext";
 import { Wallet, WalletType, WalletRole } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { AppHeader, AppFAB } from "../../components/common";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -379,58 +380,10 @@ const WalletsScreen: React.FC = () => {
   return (
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: colors.background }]}>
       {/* ── COMPACT HEADER BAR ── */}
-      <View
-        style={[
-          tw`flex-row items-center justify-between px-4 py-2.5 border-b`,
-          {
-            borderBottomColor: `${BORDER_COLOR}60`,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={tw`w-10 h-10 rounded-full items-center justify-center`}
-        >
-          <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-
-        <View style={tw`flex-1 mx-3`}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: TEXT_PRIMARY,
-              letterSpacing: -0.3,
-            }}
-          >
-            Dompet & Rekening
-          </Text>
-          <Text
-            style={{
-              fontSize: 11,
-              fontWeight: "500",
-              color: TEXT_SECONDARY,
-              marginTop: 1,
-            }}
-          >
-            {wallets.length} Akun Terdaftar
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={handleOpenCreate}
-          activeOpacity={0.8}
-          style={[
-            tw`flex-row items-center px-3 py-1.5 rounded-xl`,
-            { backgroundColor: colors.accent },
-          ]}
-        >
-          <Ionicons name="add" size={15} color="#FFFFFF" />
-          <Text style={tw`text-white text-xs font-bold ml-1`}>Tambah</Text>
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        title="Dompet & Rekening"
+        subtitle={`${wallets.length} Akun Terdaftar`}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -656,7 +609,7 @@ const WalletsScreen: React.FC = () => {
                 { color: TEXT_SECONDARY },
               ]}
             >
-              Tekan tombol "+ Tambah" di atas untuk membuat rekening baru.
+              Tekan tombol "+" di kanan bawah untuk membuat rekening baru.
             </Text>
           </View>
         ) : (
@@ -1031,42 +984,29 @@ const WalletsScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* ── MODAL CREATE / EDIT WALLET (COMPACT FORM) ── */}
+      {/* ── FULL SCREEN MODAL CREATE / EDIT WALLET ── */}
       <Modal
         visible={modalVisible}
         animationType="slide"
-        transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={tw`flex-1 bg-black/60 justify-end`}
-        >
-          <View
-            style={[
-              tw`rounded-t-3xl max-h-[88%]`,
-              { backgroundColor: CARD_BG },
-            ]}
-          >
-            {/* Modal Header */}
-            <View
-              style={[
-                tw`flex-row items-center justify-between px-4 py-3 border-b`,
-                { borderBottomColor: `${BORDER_COLOR}60` },
-              ]}
-            >
-              <Text style={[tw`text-sm font-black`, { color: TEXT_PRIMARY }]}>
-                {editingWallet ? "Edit Rekening" : "Tambah Rekening Baru"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={tw`w-7 h-7 rounded-full items-center justify-center`}
-              >
-                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
-              </TouchableOpacity>
-            </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          {/* ── Standard AppHeader ── */}
+          <AppHeader
+            title={editingWallet ? "Edit Rekening" : "Tambah Rekening Baru"}
+            subtitle="Kelola detail dan saldo rekening"
+            showBack={true}
+            onBackPress={() => setModalVisible(false)}
+          />
 
-            <ScrollView contentContainerStyle={tw`p-4 pb-8`}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={{ flex: 1 }}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={tw`p-4 pb-12`}
+            >
               {/* Nama Rekening */}
               <Text
                 style={[
@@ -1408,9 +1348,15 @@ const WalletsScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
+
+      {/* ── Standardized Bottom-Right Squircle FAB ── */}
+      <AppFAB
+        onPress={handleOpenCreate}
+        accessibilityLabel="Tambah Dompet atau Rekening Baru"
+      />
     </SafeAreaView>
   );
 };

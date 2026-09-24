@@ -34,7 +34,7 @@ const SECTION_GAP  = 24;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppHeader } from "../../components/common";
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
@@ -228,49 +228,20 @@ const CalendarScreen: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Kalender"
+        subtitle={new Date(selectedDate).toLocaleDateString("id-ID", {
+          month: "long",
+          year: "numeric",
+        })}
+        showBack={navigation.canGoBack()}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 100 }}
       >
-        {/* ── Page header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingTop: 16,
-            paddingBottom: 20,
-          }}
-        >
-          {navigation.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 10, padding: 4 }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Kembali"
-            >
-              <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
-            </TouchableOpacity>
-          )}
-          <View>
-            <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 20, fontWeight: "700" }}
-            >
-              Kalender
-            </Text>
-            <TouchableOpacity 
-              onPress={() => setShowDatePicker(true)}
-              style={{ flexDirection: "row", alignItems: "center", marginTop: 3 }}
-            >
-              <Text style={{ color: colors.gray400, fontSize: 11 }}>
-                {new Date(selectedDate).toLocaleDateString("id-ID", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </Text>
-              <Ionicons name="chevron-down" size={10} color={colors.gray400} style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {showDatePicker && (
           <DateTimePicker

@@ -21,6 +21,7 @@ import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber, formatCurrency, DEFAULT_WALLET_ID } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction, Wallet } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
+import { AppHeader } from "../../components/common";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
@@ -205,44 +206,7 @@ const AddTransactionScreen: React.FC = () => {
     }
   }, [params.type, isEditMode]);
 
-  // ── Navigation header — re-run when loading or edit mode changes ──────────
-  useEffect(() => {
-    navigation.setOptions({
-      title: isEditMode ? "Edit Transaksi" : "Tambah Transaksi",
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={showDeleteConfirmation}
-          style={tw`mr-4 ${isEditMode ? "opacity-100" : "opacity-0"}`}
-          disabled={!isEditMode || loading}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={22}
-            color={isEditMode && !loading ? TEXT_PRIMARY : "transparent"}
-          />
-        </TouchableOpacity>
-      ),
-    });
-  }, [
-    isEditMode,
-    navigation,
-    loading,
-    showDeleteConfirmation,
-  ]);
+
 
   const validateAmount = (value: string): boolean => {
     setAmountError("");
@@ -479,10 +443,43 @@ const AddTransactionScreen: React.FC = () => {
   }, [category, state.customCategories]);
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title={isEditMode ? "Edit Transaksi" : "Tambah Transaksi"}
+        subtitle={
+          type === "expense"
+            ? "Catat pengeluaran baru"
+            : type === "income"
+            ? "Catat pemasukan baru"
+            : "Transfer antar rekening"
+        }
+        showBack={true}
+        rightComponent={
+          isEditMode ? (
+            <TouchableOpacity
+              onPress={showDeleteConfirmation}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${colors.error}15`,
+                borderWidth: 1,
+                borderColor: `${colors.error}30`,
+              }}
+              disabled={loading}
+              accessibilityLabel="Hapus Transaksi"
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-2`}
+        contentContainerStyle={tw`px-4 pt-4 pb-12`}
         showsVerticalScrollIndicator={false}
       >
         {/* Transaction Type - 2 Columns Compact */}

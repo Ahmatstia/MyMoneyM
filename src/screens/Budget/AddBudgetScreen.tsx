@@ -24,6 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
+import { AppHeader } from "../../components/common";
 import CategoryPickerModal, { ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 
@@ -152,28 +153,7 @@ const AddBudgetScreen: React.FC = () => {
     { label: "2jt", value: "2000000" },
   ];
 
-  // Update title dan header
-  useEffect(() => {
-    navigation.setOptions({
-      title: isEditMode ? "Edit Anggaran" : "Tambah Anggaran",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={showDeleteConfirmation}
-          style={tw`mr-4 ${isEditMode ? "opacity-100" : "opacity-0"}`}
-          disabled={!isEditMode || loading}
-        >
-          <Ionicons
-            name="trash-outline"
-            size={22}
-            color={isEditMode && !loading ? TEXT_PRIMARY : "transparent"}
-          />
-        </TouchableOpacity>
-      ),
-    });
-  }, [isEditMode, navigation, loading]);
+
 
   // Update end date berdasarkan model anggaran & periode
   useEffect(() => {
@@ -497,27 +477,6 @@ const AddBudgetScreen: React.FC = () => {
   }, [category, state.customCategories]);
 
 
-  // Navigation header options
-  useEffect(() => {
-    navigation.setOptions({
-      title: isEditMode ? "Edit Anggaran" : "Tambah Anggaran",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, isEditMode, PRIMARY_COLOR, TEXT_PRIMARY]);
-
   // Categories already in use (for budget duplicate detection)
   const usedBudgetCategories = React.useMemo(() =>
     isEditMode
@@ -527,10 +486,37 @@ const AddBudgetScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title={isEditMode ? "Edit Anggaran" : "Tambah Anggaran"}
+        subtitle={category ? `Batas pengeluaran untuk ${category}` : "Tetapkan batas pengeluaran kategori"}
+        showBack={true}
+        rightComponent={
+          isEditMode ? (
+            <TouchableOpacity
+              onPress={showDeleteConfirmation}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: `${colors.error}15`,
+                borderWidth: 1,
+                borderColor: `${colors.error}30`,
+              }}
+              disabled={loading}
+              accessibilityLabel="Hapus Anggaran"
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-2`}
+        contentContainerStyle={tw`px-4 pt-4 pb-12`}
         showsVerticalScrollIndicator={false}
       >
         {/* Info jika edit mode - STYLE KONSISTEN */}

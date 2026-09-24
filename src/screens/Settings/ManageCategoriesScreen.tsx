@@ -19,6 +19,7 @@ import { useAppContext } from "../../context/AppContext";
 import { CustomCategory } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
+import { AppFAB, AppHeader } from "../../components/common";
 
 const ICON_GROUPS = [
   { label: "🍔 Makanan",     icons: ["restaurant-outline","cafe-outline","pizza-outline","beer-outline","wine-outline","ice-cream-outline","fast-food-outline","nutrition-outline","fish-outline","leaf-outline"] },
@@ -316,7 +317,31 @@ export default function ManageCategoriesScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={['bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+      {/* ── Standardized AppHeader ── */}
+      <AppHeader
+        title={
+          view === "create"
+            ? "Kategori Baru"
+            : view === "edit"
+            ? "Edit Kategori"
+            : view === "delete"
+            ? "Hapus Kategori"
+            : "Kelola Kategori"
+        }
+        subtitle={
+          view === "create"
+            ? "Tambahkan kategori kustom"
+            : view === "edit"
+            ? editTarget?.name || "Ubah rincian kategori"
+            : view === "delete"
+            ? "Konfirmasi penghapusan"
+            : `${customCategories.length} kategori kustom`
+        }
+        showBack={true}
+        onBackPress={view !== "list" ? () => setView("list") : undefined}
+      />
+
       {/* ─── LIST VIEW ─── */}
       {view === "list" && (
         <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -397,13 +422,17 @@ export default function ManageCategoriesScreen() {
         </ScrollView>
       )}
 
+      {/* ── Standardized Bottom-Right Squircle FAB ── */}
+      {view === "list" && (
+        <AppFAB
+          onPress={handleCreateNew}
+          accessibilityLabel="Buat Kategori Baru"
+        />
+      )}
+
       {/* ─── CREATE / EDIT VIEW ─── */}
       {(view === "create" || view === "edit") && (
         <ScrollView contentContainerStyle={{ padding: 20 }}>
-          <Text style={{ color: TP, fontSize: 20, fontWeight: "800", marginBottom: 24 }}>
-            {view === "create" ? "Kategori Baru" : `Edit Kategori`}
-          </Text>
-
           <View style={{ alignItems: "center", marginBottom: 24 }}>
             <View style={{
               width: 80, height: 80, borderRadius: 24,

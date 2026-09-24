@@ -22,6 +22,7 @@ import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { getFrequencyLabel, formatDateString, calculateInitialRunDate } from "../../utils/recurring";
 import { getJakartaDateKey } from "../../utils/dailyCheckIn";
+import { AppHeader, AppFAB } from "../../components/common";
 import CategoryPickerModal, {
   ALL_SYSTEM_CATEGORIES,
   CategoryItem,
@@ -349,43 +350,10 @@ const RecurringTransactionsScreen: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 18,
-          paddingTop: 14,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: `${colors.border}80`,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              backgroundColor: colors.surface,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}
-          >
-            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "800" }}>
-              Transaksi Rutin
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 1 }}>
-              Pemasukan & Pengeluaran Otomatis
-            </Text>
-          </View>
-        </View>
-      </View>
+      <AppHeader
+        title="Transaksi Rutin"
+        subtitle="Pemasukan & Pengeluaran Otomatis"
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -964,90 +932,29 @@ const RecurringTransactionsScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* ── Floating Add Button ─────────────────────────────────────────────── */}
-      <TouchableOpacity
-        onPress={handleOpenAdd}
-        activeOpacity={0.85}
-        style={{
-          position: "absolute",
-          bottom: 24,
-          right: 20,
-          backgroundColor: colors.accent,
-          flexDirection: "row",
-          alignItems: "center",
-          paddingHorizontal: 20,
-          paddingVertical: 14,
-          borderRadius: 30,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 6,
-        }}
-      >
-        <Ionicons name="add" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
-        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
-          Jadwal Baru
-        </Text>
-      </TouchableOpacity>
-
       {/* ── Add / Edit Modal ────────────────────────────────────────────────── */}
       <Modal
         visible={modalVisible}
-        transparent
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}
-        >
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              maxHeight: "90%",
-              paddingHorizontal: 20,
-              paddingTop: 18,
-              paddingBottom: Platform.OS === "ios" ? 36 : 24,
-              borderTopWidth: 1,
-              borderTopColor: `${colors.border}80`,
-            }}
-          >
-            {/* Modal Header */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 16,
-              }}
-            >
-              <View>
-                <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "800" }}>
-                  {editingItem ? "Ubah Transaksi Rutin" : "Tambah Transaksi Rutin"}
-                </Text>
-                <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2 }}>
-                  Tentukan jadwal otomatis dan frekuensi
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: colors.background,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="close" size={20} color={colors.gray400} />
-              </TouchableOpacity>
-            </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          {/* ── Standard AppHeader ── */}
+          <AppHeader
+            title={editingItem ? "Ubah Transaksi Rutin" : "Tambah Transaksi Rutin"}
+            subtitle="Tentukan jadwal otomatis dan frekuensi"
+            showBack={true}
+            onBackPress={() => setModalVisible(false)}
+          />
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={{ flex: 1 }}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 40 }}
+            >
               {/* Type Switcher */}
               <View
                 style={{
@@ -1954,8 +1861,8 @@ const RecurringTransactionsScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
 
       {/* CategoryPickerModal for Recurring Screen */}
@@ -1964,6 +1871,12 @@ const RecurringTransactionsScreen: React.FC = () => {
         onClose={() => setShowCategoryPicker(false)}
         onSelect={(name) => setFormCategory(name)}
         selectedName={formCategory}
+      />
+
+      {/* ── Standardized Bottom-Right Squircle FAB ── */}
+      <AppFAB
+        onPress={handleOpenAdd}
+        accessibilityLabel="Tambah Transaksi Rutin Baru"
       />
     </SafeAreaView>
   );

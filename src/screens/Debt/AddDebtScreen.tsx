@@ -19,6 +19,7 @@ import tw from "twrnc";
 import { useAppContext } from "../../context/AppContext";
 import { Debt, RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
+import { AppHeader } from "../../components/common";
 
 type AddDebtRoute = RouteProp<RootStackParamList, "AddDebt">;
 
@@ -52,25 +53,7 @@ const AddDebtScreen: React.FC = () => {
   // RISK-006 FIX: Use a date picker instead of free-text input
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  React.useEffect(() => {
-    navigation.setOptions({
-      title: editMode ? "Edit Hutang / Piutang" : "Tambah Hutang / Piutang",
-      headerStyle: { backgroundColor: PRIMARY_COLOR },
-      headerTintColor: TEXT_PRIMARY,
-      headerTitleStyle: { fontWeight: "600" },
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ paddingLeft: 16, paddingRight: 8, paddingVertical: 8 }}
-          accessibilityLabel="Kembali"
-          accessibilityRole="button"
-        >
-          <Ionicons name="arrow-back" size={24} color={TEXT_PRIMARY} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, editMode, PRIMARY_COLOR, TEXT_PRIMARY]);
+
 
   const SectionHeader = ({ title }: { title: string }) => (
     <Text
@@ -138,12 +121,22 @@ const AddDebtScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]} edges={['bottom']}>
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title={editMode ? "Edit Hutang / Piutang" : "Tambah Hutang / Piutang"}
+        subtitle={
+          type === "borrowed"
+            ? "Catat pinjaman yang harus kamu bayar"
+            : "Catat uang yang kamu pinjamkan"
+        }
+        showBack={true}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={tw`flex-1`}
       >
-        <ScrollView contentContainerStyle={tw`px-4 pt-4 pb-2`} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={tw`px-4 pt-4 pb-12`} showsVerticalScrollIndicator={false}>
           {/* Type Selector */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Jenis Transaksi" />

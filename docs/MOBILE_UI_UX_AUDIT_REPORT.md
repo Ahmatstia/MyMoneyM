@@ -1085,4 +1085,52 @@ Use this checklist before and after implementing design system standardization:
      - `AnalyticsScreen.tsx` (standardized with accent bar)
      - `SettingsScreen.tsx`
    - [x] Standardized `WalletsScreen.tsx` header typography (upgraded 14px `text-sm font-black` to standard 18px 700 title, 11px 500 subtitle, and 40x40 touch target with hitSlop).
-   - [x] Verified zero TypeScript regressions (`tsc --noEmit` exited with code 0).
+5. **Phase 5: Floating Action Button (FAB) Standardization & System-Wide Deduplication (Completed)**
+   - [x] Created `src/components/common/AppFAB.tsx` (standard 54x54 petak/squircle, `r: 17`, spring scale feedback, dynamic theme accent background, elevation 12, bottom-right placement).
+   - [x] Exported `AppFAB` via central barrel `src/components/common/index.ts`.
+   - [x] **Eliminated Duplications & Inconsistencies Across Screens**:
+     - `RecurringTransactionsScreen.tsx`: Removed the old custom floating capsule pill button (`lines 968-994`), preventing duplicate overlapping buttons; standard `AppFAB` now handles adding schedules cleanly.
+     - `WalletsScreen.tsx`: Removed the top-right header `+ Tambah` button; added standard `AppFAB` at bottom-right; updated empty-state instructions.
+     - `ManageCategoriesScreen.tsx`: Integrated standard `AppFAB` into the categories list view for consistent bottom-right category creation.
+     - `TransactionsScreen.tsx`: Removed local animated state and inline FAB block; now consumes shared `AppFAB`.
+     - `BudgetScreen.tsx`: Removed local animated state and inline FAB block; now consumes shared `AppFAB`.
+     - `SavingsScreen.tsx`: Removed local animated state and inline FAB block; now consumes shared `AppFAB`.
+     - `DebtScreen.tsx`: Removed local animated state and inline FAB block; now consumes shared `AppFAB`.
+   - [x] Verified zero TypeScript regressions across the entire codebase (`tsc --noEmit` exited with code 0).
+
+6. **Phase 6: Universal Header Component (`AppHeader`) Standardization (Completed)**
+   - [x] Standardized `src/components/common/AppHeader.tsx` modeled directly from the `WalletsScreen.tsx` compact fintech aesthetic:
+     - `colors.surface` container with subtle `colors.border + "60"` bottom border.
+     - 40x40 circular `arrow-back` button with generous `hitSlop`.
+     - 18px `fontWeight: 700`, `letterSpacing: -0.3` title with `colors.textPrimary`.
+     - 11px `fontWeight: 500` subtitle with `colors.textSecondary`.
+     - Flexible `rightComponent` slot for screen-specific actions (e.g., date filters, export reports, guidebook triggers).
+   - [x] Applied unified `AppHeader` across all major application screens:
+     - `WalletsScreen.tsx`: "Dompet & Rekening" with account count subtitle.
+     - `TransactionsScreen.tsx`: "Transaksi" with cash flow subtitle and Rutin/Kalender quick actions.
+     - `AnalyticsScreen.tsx`: "Analitik" with month badge and Rapor button.
+     - `BudgetScreen.tsx`: "Anggaran" with active budget count and utilization subtitle.
+     - `SavingsScreen.tsx`: "Tabungan" with goal count subtitle.
+     - `SavingsDetailScreen.tsx`: Savings goal name with Edit/Delete action buttons.
+     - `SavingsHistoryScreen.tsx`: "Riwayat Transaksi" with savings goal subtitle.
+     - `AddSavingsScreen.tsx`: Form header with dynamic Edit/Create title and delete action.
+     - `DebtScreen.tsx`: "Hutang & Piutang" with debt management subtitle.
+     - `CalendarScreen.tsx`: "Kalender" with active date subtitle.
+     - `RecurringTransactionsScreen.tsx`: "Transaksi Rutin" with auto income/expense subtitle.
+     - `SettingsScreen.tsx`: "Pengaturan" with Buku Panduan trigger button.
+     - `ManageCategoriesScreen.tsx`: "Kelola Kategori" with custom category count and sub-view navigation.
+     - `ToolsScreen.tsx`: "Alat Finansial" with intelligent calculator subtitle.
+   - [x] Configured `src/navigation/AppNavigator.tsx` `screensWithCustomHeader` array to cleanly render `AppHeader` without dual header conflicts.
+   - [x] Validated zero TypeScript compilation errors (`tsc --noEmit` code 0).
+
+7. **Phase 7: Full-Screen Form Standardization with Universal `AppHeader` (Completed)**
+   - [x] Converted modal half-screen bottom sheets into immersive **full-screen forms**:
+     - `RecurringTransactionsScreen.tsx`: Converted 90% half-screen bottom sheet with small close icon into a full-screen form modal with standard `AppHeader` ("Ubah/Tambah Transaksi Rutin") and smooth slide transition.
+     - `WalletsScreen.tsx`: Converted 88% bottom sheet with small close icon into a full-screen form modal with standard `AppHeader` ("Edit/Tambah Rekening Baru").
+   - [x] Standardized all stack form screens to render full-screen with unified `AppHeader`:
+     - `AddTransactionScreen.tsx`: Removed native stack header, added `AppHeader` ("Tambah/Edit Transaksi" + contextual subtitle + delete button in edit mode).
+     - `AddBudgetScreen.tsx`: Removed native stack header, added `AppHeader` ("Tambah/Edit Anggaran" + category budget subtitle + delete button in edit mode).
+     - `AddDebtScreen.tsx`: Removed native stack header, added `AppHeader` ("Tambah/Edit Hutang / Piutang" + dynamic borrowed/lent subtitle).
+     - `AddSavingsTransactionScreen.tsx`: Removed native stack header and old in-screen header, added unified `AppHeader` ("Tambah Setoran / Penarikan Dana" + goal name subtitle).
+   - [x] Updated `src/navigation/AppNavigator.tsx` to disable stack headers for all form screens (`AddTransaction`, `AddBudget`, `AddDebt`, `AddSavingsTransaction`) to prevent dual headers.
+   - [x] Validated zero TypeScript compilation errors (`tsc --noEmit` code 0).

@@ -45,7 +45,7 @@ const CARD_PAD     = 14;
 const SECTION_GAP  = 16;
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppFAB, AppHeader } from "../../components/common";
 
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
@@ -72,7 +72,6 @@ const TransactionsScreen: React.FC = () => {
   const [selectedReceiptTx, setSelectedReceiptTx] = useState<Transaction | null>(null);
 
   const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
-  const [fabScaleAnim] = useState(new Animated.Value(1));
 
   // ── Semua logika di bawah ini TIDAK DIUBAH ────────────────────────────────
 
@@ -84,11 +83,6 @@ const TransactionsScreen: React.FC = () => {
       swipeableRefs.current = {};
     };
   }, []);
-
-  const fabPressIn  = () =>
-    Animated.spring(fabScaleAnim, { toValue: 0.94, useNativeDriver: true, speed: 50 }).start();
-  const fabPressOut = () =>
-    Animated.spring(fabScaleAnim, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
 
   const getSafeIcon = (iconName: string): SafeIconName => {
     const defaultIcon: SafeIconName = "receipt-outline";
@@ -442,43 +436,13 @@ const TransactionsScreen: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
 
-      {/* ── Sticky header ───────────────────────────────────────────────── */}
-      <View
-        style={{
-          backgroundColor: colors.background,
-          paddingHorizontal: 18,
-          paddingTop: 14,
-          paddingBottom: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: CARD_BORDER,
-        }}
-      >
-        {/* Page title row */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 14,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {navigation.canGoBack() && (
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={{ marginRight: 10, padding: 4 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityLabel="Kembali"
-              >
-                <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-              </TouchableOpacity>
-            )}
-            <Text
-              style={{ color: colors.textPrimary, fontSize: 20, fontWeight: "700" }}
-            >
-              Transaksi
-            </Text>
-          </View>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Transaksi"
+        subtitle="Catatan arus kas keuangan"
+        showBack={navigation.canGoBack()}
+        showBorderBottom={false}
+        rightComponent={
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity
               style={{
@@ -494,6 +458,7 @@ const TransactionsScreen: React.FC = () => {
               }}
               onPress={() => navigation.navigate("RecurringTransactions")}
               activeOpacity={0.7}
+              accessibilityLabel="Transaksi Rutin"
             >
               <Ionicons
                 name="repeat-outline"
@@ -519,16 +484,15 @@ const TransactionsScreen: React.FC = () => {
                 paddingHorizontal: 12,
                 paddingVertical: 7,
                 borderRadius: 20,
-                backgroundColor: dateFilter !== "all"
-                  ? `${colors.accent}18`
-                  : colors.surface,
+                backgroundColor:
+                  dateFilter !== "all" ? `${colors.accent}18` : colors.surface,
                 borderWidth: 1,
-                borderColor: dateFilter !== "all"
-                  ? `${colors.accent}30`
-                  : "transparent",
+                borderColor:
+                  dateFilter !== "all" ? `${colors.accent}30` : `${colors.border}60`,
               }}
               onPress={() => setShowFilterModal(true)}
               activeOpacity={0.7}
+              accessibilityLabel="Filter Kalender"
             >
               <Ionicons
                 name="calendar-outline"
@@ -539,7 +503,8 @@ const TransactionsScreen: React.FC = () => {
                 style={{
                   fontSize: 11,
                   fontWeight: dateFilter !== "all" ? "700" : "500",
-                  color: dateFilter !== "all" ? colors.accent : colors.gray400,
+                  color:
+                    dateFilter !== "all" ? colors.accent : colors.textPrimary,
                   marginLeft: 5,
                 }}
               >
@@ -556,7 +521,20 @@ const TransactionsScreen: React.FC = () => {
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        }
+      />
+
+      {/* ── Sub-header: Search & Filter Tabs ── */}
+      <View
+        style={{
+          backgroundColor: colors.background,
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: CARD_BORDER,
+        }}
+      >
 
         {/* Search bar */}
         <View
@@ -1205,36 +1183,11 @@ const TransactionsScreen: React.FC = () => {
         }
       />
 
-      {/* ── FAB ─────────────────────────────────────────────────────────── */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: 24,
-          right: 20,
-          width: 54,
-          height: 54,
-          borderRadius: 17,
-          backgroundColor: colors.accent,
-          shadowColor: colors.accent,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.45,
-          shadowRadius: 14,
-          elevation: 12,
-          transform: [{ scale: fabScaleAnim }],
-        }}
-      >
-        <TouchableOpacity
-          style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
-          onPress={() => navigation.navigate("AddTransaction")}
-          activeOpacity={0.8}
-          onPressIn={fabPressIn}
-          onPressOut={fabPressOut}
-          accessibilityLabel="Tambah transaksi baru"
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={28} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* ── Standardized Squircle FAB ── */}
+      <AppFAB
+        onPress={() => navigation.navigate("AddTransaction")}
+        accessibilityLabel="Tambah transaksi baru"
+      />
 
       {/* ═══════════════════════════════════════════════════════════════════
           FILTER MODAL

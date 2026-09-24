@@ -20,6 +20,7 @@ import { useAppContext } from "../../context/AppContext";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { AppHeader } from "../../components/common";
 
 // ── Design tokens & Dynamic Theme ────────────────────────────────────────────
 const useToolsTheme = () => {
@@ -2602,40 +2603,17 @@ const ToolsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+      {/* ── Standardized AppHeader ── */}
+      <AppHeader
+        title="Alat Finansial"
+        subtitle="Simulasi & kalkulator berbasis data keuanganmu"
+        showBack={navigation.canGoBack()}
+      />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingTop: 16,
-            paddingBottom: 22,
-          }}
-        >
-          {navigation.canGoBack() && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={{ marginRight: 10, padding: 4 }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityLabel="Kembali"
-            >
-              <Ionicons name="arrow-back" size={24} color={TP} />
-            </TouchableOpacity>
-          )}
-          <View>
-            <Text style={{ color: TP, fontSize: 22, fontWeight: "800" }}>
-              Alat Keuangan Cerdas
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 12, marginTop: 4 }}>
-              Simulasi & kalkulator berbasis data keuanganmu
-            </Text>
-          </View>
-        </View>
-
         {/* Tool cards list */}
         <View style={{ gap: 14 }}>
           {tools.map((tool) => (

@@ -22,7 +22,7 @@ const CARD_PAD     = 20;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
-import { AppSectionHeader as SectionHeader } from "../../components/common";
+import { AppSectionHeader as SectionHeader, AppHeader } from "../../components/common";
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -252,6 +252,12 @@ const SavingsHistoryScreen: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BACKGROUND_COLOR }}>
+      {/* ── Standard AppHeader ── */}
+      <AppHeader
+        title="Riwayat Transaksi"
+        subtitle={saving.name}
+      />
+
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
@@ -269,40 +275,6 @@ const SavingsHistoryScreen: React.FC = () => {
           />
         }
       >
-        {/* ── Page Header ─────────────────────────────────────────────── */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: `${ACCENT_COLOR}15`,
-              marginRight: 12,
-            }}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-back" size={20} color={ACCENT_COLOR} />
-          </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}
-            >
-              Riwayat Transaksi
-            </Text>
-            <Text style={{ color: colors.gray400, fontSize: 10, marginTop: 1 }}>
-              {saving.name}
-            </Text>
-          </View>
-        </View>
 
         {/* Stats row */}
         <View
