@@ -376,20 +376,20 @@ export class NotificationService {
           console.warn("[Notif] Gagal membuat channel 'urgent_alerts':", channelErr);
         }
 
-        // Channel 3: Widget Layar Atas (Sticky - LOW importance agar tetap tampil di tray)
+        // Channel 3: Widget Layar Atas (Sticky - LOW importance otomatis senyap di Android tanpa butuh sound: null)
         try {
           await Notifications.setNotificationChannelAsync("quick_widget", {
             name: "Widget Cepat Layar Atas",
             description: "Status jatah belanja harian & akses catat transaksi cepat",
             importance: Notifications.AndroidImportance.LOW,
-            sound: null,
             enableVibrate: false,
             showBadge: false,
             lockscreenVisibility:
               Notifications.AndroidNotificationVisibility.PUBLIC,
           });
         } catch (channelErr) {
-          console.warn("[Notif] Gagal membuat channel 'quick_widget':", channelErr);
+          // Non-fatal: jika channel quick_widget gagal di lingkungan Expo Go, Android akan otomatis fallback ke default channel
+          console.log("[Notif] Channel 'quick_widget' dilewati (fallback ke default):", (channelErr as any)?.message || channelErr);
         }
       }
 

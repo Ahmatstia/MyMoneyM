@@ -431,113 +431,72 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
                   }}
                   activeOpacity={0.9}
                 >
-                  {userProfile.coverImage && !coverError ? (
-                    <ImageBackground
-                      source={{ uri: userProfile.coverImage }}
-                      onError={() => setCoverError(true)}
-                      style={{
-                        paddingTop: 48,
-                        paddingBottom: 24,
-                        paddingHorizontal: 20,
-                        marginBottom: 16,
-                      }}
-                      imageStyle={{ opacity: 0.4 }}
-                    >
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                      >
-                        <LevelAvatarBorder
-                          avatarUri={
-                            userProfile.avatar && !avatarError
-                              ? userProfile.avatar
-                              : null
-                          }
-                          name={userProfile.name}
-                          size={60}
-                          showLevelBadge={true}
-                        />
-                        <View
-                          style={{ marginLeft: 14, flex: 1, paddingRight: 36 }}
-                        >
-                          <Text
-                            style={{
-                              color: colors.textPrimary,
-                              fontSize: 17,
-                              fontWeight: "700",
-                            }}
-                            numberOfLines={1}
-                          >
-                            {userProfile.name}
-                          </Text>
-                          <Text
-                            style={{
-                              color: colors.accent,
-                              fontSize: 12,
-                              fontWeight: "600",
-                              marginTop: 3,
-                            }}
-                            numberOfLines={1}
-                          >
-                            {progress.title}
-                          </Text>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  ) : (
+                  <ImageBackground
+                    source={
+                      userProfile.coverImage && !coverError
+                        ? { uri: userProfile.coverImage }
+                        : require("../../assets/bg.png")
+                    }
+                    onError={() => setCoverError(true)}
+                    style={{
+                      paddingTop: 48,
+                      paddingBottom: 24,
+                      paddingHorizontal: 20,
+                      marginBottom: 16,
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                    imageStyle={{ opacity: 0.45 }}
+                  >
+                    {/* Dark gradient overlay for high contrast and readability */}
                     <LinearGradient
                       colors={[
-                        colors.surfaceLight,
-                        colors.surface,
-                        colors.background,
+                        "rgba(15,23,42,0.45)",
+                        "rgba(15,23,42,0.85)",
                       ]}
-                      style={{
-                        paddingTop: 48,
-                        paddingBottom: 24,
-                        paddingHorizontal: 20,
-                        marginBottom: 16,
-                      }}
+                      style={StyleSheet.absoluteFill}
+                    />
+
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
                     >
+                      <LevelAvatarBorder
+                        avatarUri={
+                          userProfile.avatar && !avatarError
+                            ? userProfile.avatar
+                            : null
+                        }
+                        name={userProfile.name}
+                        size={60}
+                        showLevelBadge={true}
+                      />
                       <View
-                        style={{ flexDirection: "row", alignItems: "center" }}
+                        style={{ marginLeft: 14, flex: 1, paddingRight: 40 }}
                       >
-                        <LevelAvatarBorder
-                          avatarUri={
-                            userProfile.avatar && !avatarError
-                              ? userProfile.avatar
-                              : null
-                          }
-                          name={userProfile.name}
-                          size={60}
-                          showLevelBadge={true}
-                        />
-                        <View
-                          style={{ marginLeft: 14, flex: 1, paddingRight: 36 }}
+                        <Text
+                          style={{
+                            color: colors.textPrimary,
+                            fontSize: 17,
+                            fontWeight: "700",
+                          }}
+                          numberOfLines={1}
                         >
-                          <Text
-                            style={{
-                              color: colors.textPrimary,
-                              fontSize: 17,
-                              fontWeight: "700",
-                            }}
-                            numberOfLines={1}
-                          >
-                            {userProfile.name}
-                          </Text>
-                          <Text
-                            style={{
-                              color: colors.accent,
-                              fontSize: 12,
-                              fontWeight: "600",
-                              marginTop: 3,
-                            }}
-                            numberOfLines={1}
-                          >
-                            MyMoney
-                          </Text>
-                        </View>
+                          {userProfile.name}
+                        </Text>
+                        <Text
+                          style={{
+                            color: colors.accent,
+                            fontSize: 12,
+                            fontWeight: "600",
+                            marginTop: 3,
+                          }}
+                          numberOfLines={1}
+                        >
+                          {progress.title || "MyMoney"}
+                        </Text>
                       </View>
-                    </LinearGradient>
-                  )}
+                    </View>
+                  </ImageBackground>
                 </TouchableOpacity>
 
                 {/* Close Button X */}

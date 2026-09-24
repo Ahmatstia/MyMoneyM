@@ -349,7 +349,7 @@ const HomeScreen: React.FC = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1037,7 +1037,7 @@ const HomeScreen: React.FC = () => {
                   borderWidth: 1,
                   borderColor: `${colors.border}80`,
                   padding: CARD_PAD,
-                  marginBottom: 20,
+                  marginBottom: 8,
                 }}
               >
                 {/* LEFT - Budget */}
