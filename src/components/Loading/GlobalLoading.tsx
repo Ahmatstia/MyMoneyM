@@ -14,7 +14,7 @@ const GlobalLoading: React.FC<GlobalLoadingProps> = ({ visible, message = "Memua
   const { colors } = useTheme();
 
   return (
-    <Modal transparent visible={visible} animationType="fade">
+    <Modal transparent visible={visible} animationType="fade" statusBarTranslucent={true}>
       <View style={styles.container}>
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.border}80` }]}>
           <LottieView
@@ -33,7 +33,7 @@ const GlobalLoading: React.FC<GlobalLoadingProps> = ({ visible, message = "Memua
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(2, 6, 23, 0.8)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
   },

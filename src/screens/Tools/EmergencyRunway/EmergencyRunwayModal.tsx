@@ -67,6 +67,7 @@ export const RunwayCalc = ({
   return (
     <Modal
       visible={visible}
+      statusBarTranslucent={true}
       transparent
       animationType="slide"
       onRequestClose={onClose}
@@ -75,7 +76,7 @@ export const RunwayCalc = ({
         style={{
           flex: 1,
           justifyContent: "flex-end",
-          backgroundColor: "rgba(2,6,23,0.88)",
+          backgroundColor: "transparent",
         }}
       >
         <TouchableOpacity

@@ -23,6 +23,7 @@ import { AppHeader } from "../../components/common";
 
 import { useAppContext } from "../../context/AppContext";
 import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorage";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 import {
   formatCurrency,
   safeNumber,
@@ -72,6 +73,7 @@ const AddSavingsScreen: React.FC = () => {
   const TEXT_PRIMARY = colors.textPrimary;
   const TEXT_SECONDARY = colors.textSecondary;
   const BORDER_COLOR = colors.border;
+  const keyboardInset = useKeyboardBottomInset(24);
   const SUCCESS_COLOR = colors.success;
   const WARNING_COLOR = colors.warning;
   const ERROR_COLOR = colors.error;
@@ -513,7 +515,7 @@ const AddSavingsScreen: React.FC = () => {
       >
         <ScrollView
           style={tw`flex-1`}
-          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: 60 }]}
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: keyboardInset }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >

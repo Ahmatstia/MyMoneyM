@@ -2060,7 +2060,7 @@ const AnalyticsScreen: React.FC = () => {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.7)",
+            backgroundColor: "transparent",
             justifyContent: "center",
             alignItems: "center",
             padding: 24,

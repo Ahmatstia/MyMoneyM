@@ -113,6 +113,7 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
         visible={visible}
         transparent
         animationType="fade"
+        statusBarTranslucent={true}
         onRequestClose={() => {
           if (alertState.options?.cancelable !== false) {
             handleClose();
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: "transparent",
     paddingHorizontal: width * 0.1,
   },
   alertBox: {

@@ -1044,7 +1044,7 @@ const styles = StyleSheet.create({
   },
   backdropTint: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.82)",
+    backgroundColor: "transparent",
   },
   rewardWrap: {
     width: "100%",

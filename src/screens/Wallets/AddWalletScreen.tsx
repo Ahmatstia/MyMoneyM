@@ -19,6 +19,7 @@ import { useAppContext } from "../../context/AppContext";
 import { Wallet, WalletType, WalletRole, RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader } from "../../components/common";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -90,6 +91,7 @@ export const AddWalletScreen: React.FC = () => {
   );
   const [formColor, setFormColor] = useState(editingWallet?.color || "#10B981");
   const [loading, setLoading] = useState(false);
+  const keyboardInset = useKeyboardBottomInset(24);
 
   const parseSignedBalance = (val: string): number => {
     const trimmed = val.trim();
@@ -224,7 +226,8 @@ export const AddWalletScreen: React.FC = () => {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={tw`p-4 pb-16`}
+          contentContainerStyle={[tw`p-4`, { paddingBottom: keyboardInset }]}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Nama Rekening */}
           <Text

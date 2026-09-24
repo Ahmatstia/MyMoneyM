@@ -20,6 +20,7 @@ import { useAppContext } from "../../context/AppContext";
 import { Debt, RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader } from "../../components/common";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 
 type AddDebtRoute = RouteProp<RootStackParamList, "AddDebt">;
 
@@ -38,6 +39,7 @@ const AddDebtScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<AddDebtRoute>();
   const { addDebt, editDebt } = useAppContext();
+  const keyboardInset = useKeyboardBottomInset(24);
 
   const editMode = route.params?.editMode ?? false;
   const existingDebt = route.params?.debtData;
@@ -137,7 +139,11 @@ const AddDebtScreen: React.FC = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={tw`flex-1`}
       >
-        <ScrollView contentContainerStyle={tw`px-4 pt-4 pb-12`} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: keyboardInset }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Type Selector */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Jenis Transaksi" />

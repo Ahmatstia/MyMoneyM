@@ -770,6 +770,7 @@ const CalendarScreen: React.FC = () => {
         visible={showDayDetail}
         animationType="slide"
         transparent
+        statusBarTranslucent={true}
         onRequestClose={() => setShowDayDetail(false)}
       >
         <View
@@ -780,7 +781,7 @@ const CalendarScreen: React.FC = () => {
           <TouchableOpacity
             style={{
               position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.55)",
+              backgroundColor: "transparent",
             }}
             activeOpacity={1}
             onPress={() => setShowDayDetail(false)}

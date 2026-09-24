@@ -10,6 +10,8 @@ import {
   Dimensions,
   Modal,
   Pressable,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +22,7 @@ import { CustomCategory } from "../../types";
 import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppFAB, AppHeader } from "../../components/common";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 
 const ICON_GROUPS = [
   { label: "🍔 Makanan",     icons: ["restaurant-outline","cafe-outline","pizza-outline","beer-outline","wine-outline","ice-cream-outline","fast-food-outline","nutrition-outline","fish-outline","leaf-outline",] },
@@ -240,6 +243,7 @@ export default function ManageCategoriesScreen() {
   const [icon, setIcon] = useState("star-outline");
   const [color, setColor] = useState("#8B5CF6");
   const [iconGroup, setIconGroup] = useState(0);
+  const keyboardInset = useKeyboardBottomInset(24);
 
   const resetForm = () => {
     setName("");
@@ -432,7 +436,14 @@ export default function ManageCategoriesScreen() {
 
       {/* ─── CREATE / EDIT VIEW ─── */}
       {(view === "create" || view === "edit") && (
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={{ padding: 20, paddingBottom: keyboardInset }}
+            keyboardShouldPersistTaps="handled"
+          >
           <View style={{ alignItems: "center", marginBottom: 24 }}>
             <View style={{
               width: 80, height: 80, borderRadius: 24,
@@ -508,6 +519,7 @@ export default function ManageCategoriesScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        </KeyboardAvoidingView>
       )}
 
       {/* ─── DELETE VIEW ─── */}
@@ -535,8 +547,8 @@ export default function ManageCategoriesScreen() {
         )}
 
         {/* ─── OPTIONS MODAL ─── */}
-        <Modal visible={optionsVisible} transparent animationType="fade" onRequestClose={() => setOptionsVisible(false)}>
-          <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 }} onPress={() => setOptionsVisible(false)}>
+        <Modal visible={optionsVisible} transparent animationType="fade" statusBarTranslucent={true} onRequestClose={() => setOptionsVisible(false)}>
+          <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 24 }} onPress={() => setOptionsVisible(false)}>
             <Pressable onPress={() => {}} style={{ backgroundColor: SURF, borderRadius: 24, padding: 24 }}>
               <Text style={{ color: TP, fontSize: 18, fontWeight: "800", marginBottom: 8, textAlign: "center" }}>Kategori Kustom</Text>
               <Text style={{ color: TS, fontSize: 14, textAlign: "center", marginBottom: 24 }}>

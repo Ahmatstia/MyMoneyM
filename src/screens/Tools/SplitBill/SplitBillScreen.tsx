@@ -27,6 +27,7 @@ import {
   InputBox,
   ResultRow,
 } from "../common";
+import { useKeyboardBottomInset } from "../../../utils/keyboard";
 
 // ── Reusable DualModeInput for Split Bill (Persen vs Nominal) ───────────────
 interface DualModeInputProps {
@@ -296,6 +297,7 @@ interface SplitPerson {
 export const SplitBillScreen: React.FC = () => {
   const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const navigation = useNavigation<any>();
+  const keyboardBottomInset = useKeyboardBottomInset(24);
   const [mode, setMode] = useState<"equal" | "itemized">("equal");
 
   // Mode 1: Bagi Rata
@@ -643,7 +645,7 @@ export const SplitBillScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: keyboardBottomInset }}
         >
             {/* ════════════ MODE 1: BAGI RATA ════════════ */}
             {mode === "equal" && (

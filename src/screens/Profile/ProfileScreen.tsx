@@ -12,6 +12,8 @@ import {
   Modal,
   Dimensions,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -1359,13 +1361,17 @@ const ProfileScreen: React.FC = () => {
       </ScrollView>
 
       {/* ── EDIT NAME MODAL ───────────────────────────────────────────── */}
-      <Modal visible={isEditModalVisible} transparent animationType="slide">
-        <View
-          style={[
-            tw`flex-1 justify-end`,
-            { backgroundColor: "rgba(0,0,0,0.75)" },
-          ]}
+      <Modal visible={isEditModalVisible} transparent animationType="slide" statusBarTranslucent={true}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={tw`flex-1`}
         >
+          <View
+            style={[
+              tw`flex-1 justify-end`,
+              { backgroundColor: "transparent" },
+            ]}
+          >
           <View
             style={[
               tw`rounded-t-[40px] p-8`,
@@ -1449,6 +1455,7 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── PUSAT PANDUAN MODAL ───────────────────────────────────────── */}

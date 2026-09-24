@@ -74,13 +74,14 @@ export const BuyOrWaitCalc = ({
   return (
     <Modal
       visible={visible}
+      statusBarTranslucent={true}
       transparent
       animationType="slide"
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, backgroundColor: "rgba(2,6,23,0.88)" }}
+        style={{ flex: 1, backgroundColor: "transparent" }}
       >
         <TouchableOpacity
           style={{ flex: 1 }}

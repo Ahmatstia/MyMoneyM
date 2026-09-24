@@ -213,6 +213,7 @@ const TimePickerModal = ({
         visible={visible}
         transparent
         animationType="slide"
+        statusBarTranslucent={true}
         onRequestClose={onClose}
       >
         <View
@@ -226,7 +227,7 @@ const TimePickerModal = ({
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: "rgba(0,0,0,0.6)",
+              backgroundColor: "transparent",
             }}
             activeOpacity={1}
             onPress={onClose}
@@ -365,6 +366,7 @@ const TimePickerModal = ({
       visible={visible}
       transparent
       animationType="fade"
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
       <View
@@ -383,7 +385,7 @@ const TimePickerModal = ({
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: "transparent",
           }}
           activeOpacity={1}
           onPress={onClose}
@@ -2560,11 +2562,12 @@ const SettingsScreen = () => {
         visible={showPaydayModal}
         transparent
         animationType="slide"
+        statusBarTranslucent={true}
         onRequestClose={() => setShowPaydayModal(false)}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" }}
+          style={{ flex: 1, backgroundColor: "transparent", justifyContent: "flex-end" }}
         >
           <TouchableOpacity
             style={{ flex: 1 }}

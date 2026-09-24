@@ -9,6 +9,7 @@ import {
   TextInput,
   Switch,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -19,6 +20,7 @@ import tw from "twrnc";
 
 import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber, formatCurrency, DEFAULT_WALLET_ID } from "../../utils/calculations";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 import { RootStackParamList, TransactionType, SubTransaction, Wallet } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader, WalletSelectCard } from "../../components/common";
@@ -57,6 +59,7 @@ const AddTransactionScreen: React.FC = () => {
 
   const wallets = state.wallets || [];
   const defaultWallet = wallets.find((w) => w.isDefault) || wallets[0];
+  const keyboardInset = useKeyboardBottomInset(24);
 
   const [type, setType] = useState<TransactionType>("expense");
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
@@ -477,11 +480,16 @@ const AddTransactionScreen: React.FC = () => {
           ) : undefined
         }
       />
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-12`}
-        showsVerticalScrollIndicator={false}
       >
+        <ScrollView
+          style={tw`flex-1`}
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: keyboardInset }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Transaction Type - 2 Columns Compact */}
         <View style={tw`mb-4`}>
           <Text
@@ -1051,7 +1059,8 @@ const AddTransactionScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* DateTime Picker Modal */}
       {showCalendar && (

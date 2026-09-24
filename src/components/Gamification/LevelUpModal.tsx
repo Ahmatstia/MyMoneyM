@@ -77,6 +77,7 @@ export const LevelUpModal: React.FC = () => {
       visible={!!pending}
       transparent
       animationType="fade"
+      statusBarTranslucent={true}
       onRequestClose={dismissLevelUp}
     >
       <View style={styles.backdrop}>
@@ -180,7 +181,7 @@ export const LevelUpModal: React.FC = () => {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.82)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,

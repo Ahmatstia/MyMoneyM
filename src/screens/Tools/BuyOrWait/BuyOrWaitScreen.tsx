@@ -24,10 +24,12 @@ import {
   Label,
   InputBox,
 } from "../common";
+import { useKeyboardBottomInset } from "../../../utils/keyboard";
 
 export const BuyOrWaitScreen: React.FC = () => {
   const { BG, TP, TS, BORDER, colors } = useToolsTheme();
   const navigation = useNavigation<any>();
+  const keyboardBottomInset = useKeyboardBottomInset(24);
   const { state } = useAppContext();
 
   const balance = safeNumber(state.balance);
@@ -86,7 +88,7 @@ export const BuyOrWaitScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: keyboardBottomInset }}
         >
           <Label text="Dana yang Tersedia (Bisa Diubah)" />
           <InputBox

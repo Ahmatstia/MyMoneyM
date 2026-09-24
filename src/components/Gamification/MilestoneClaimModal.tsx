@@ -474,7 +474,7 @@ export const MilestoneClaimModal: React.FC<MilestoneClaimModalProps> = ({
 
         {/* ─── Just Claimed Congratulation Popup ─────────────────────── */}
         {justClaimedReward && (
-          <Modal transparent animationType="fade" visible={!!justClaimedReward}>
+          <Modal transparent animationType="fade" visible={!!justClaimedReward} statusBarTranslucent={true}>
             <View style={styles.rewardBackdrop}>
               <View
                 style={[
@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   },
   rewardBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,

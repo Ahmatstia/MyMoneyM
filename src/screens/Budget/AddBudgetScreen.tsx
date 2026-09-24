@@ -7,6 +7,8 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -26,6 +28,7 @@ import { RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader } from "../../components/common";
 import CategoryPickerModal, { ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 
 
 type AddBudgetScreenNavigationProp = StackNavigationProp<
@@ -485,6 +488,8 @@ const AddBudgetScreen: React.FC = () => {
     [state.budgets, isEditMode, budgetData]
   );
 
+  const keyboardInset = useKeyboardBottomInset(24);
+
   return (
     <SafeAreaView style={[tw`flex-1`, { backgroundColor: BACKGROUND_COLOR }]}>
       {/* ── Standard AppHeader ── */}
@@ -514,11 +519,16 @@ const AddBudgetScreen: React.FC = () => {
           ) : undefined
         }
       />
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-12`}
-        showsVerticalScrollIndicator={false}
       >
+        <ScrollView
+          style={tw`flex-1`}
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: keyboardInset }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Info jika edit mode - STYLE KONSISTEN */}
         {isEditMode && budgetData && (
           <View
@@ -1131,7 +1141,8 @@ const AddBudgetScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* DateTime Picker Modal */}
       {showCalendar && (

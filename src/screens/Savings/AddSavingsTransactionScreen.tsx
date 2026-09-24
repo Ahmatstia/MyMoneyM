@@ -8,6 +8,8 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -25,6 +27,7 @@ import {
 import { RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader, WalletSelectCard } from "../../components/common";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 
 type AddSavingsTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -57,6 +60,7 @@ const AddSavingsTransactionScreen: React.FC = () => {
   const type = params.type || "deposit";
 
   const { state, addSavingsTransaction } = useAppContext();
+  const keyboardInset = useKeyboardBottomInset(24);
   const [loading, setLoading] = useState(false);
   const [amountError, setAmountError] = useState("");
 
@@ -274,11 +278,16 @@ const AddSavingsTransactionScreen: React.FC = () => {
         subtitle={saving.name}
         showBack={true}
       />
-      <ScrollView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={tw`flex-1`}
-        contentContainerStyle={tw`px-4 pt-4 pb-12`}
-        showsVerticalScrollIndicator={false}
       >
+        <ScrollView
+          style={tw`flex-1`}
+          contentContainerStyle={[tw`px-4 pt-4`, { paddingBottom: keyboardInset }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Savings Info */}
         <View style={[tw`rounded-xl p-4 mb-4`, { backgroundColor: SURFACE_COLOR }]}>
           <View style={tw`flex-row items-center mb-4`}>
@@ -599,7 +608,8 @@ const AddSavingsTransactionScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* DateTime Picker Modal */}
       {showCalendar && (

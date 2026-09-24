@@ -21,6 +21,8 @@ import {
   TextInput,
   Modal,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -921,17 +923,22 @@ const DebtScreen: React.FC = () => {
         visible={payModal.visible}
         transparent
         animationType="fade"
+        statusBarTranslucent={true}
         onRequestClose={() => setPayModal({ visible: false, debt: null })}
       >
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 24,
-            backgroundColor: "rgba(2, 6, 23, 0.85)",
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
         >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 24,
+              backgroundColor: "transparent",
+            }}
+          >
           <View
             style={{
               width: "100%",
@@ -1094,6 +1101,7 @@ const DebtScreen: React.FC = () => {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

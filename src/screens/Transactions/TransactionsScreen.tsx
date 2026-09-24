@@ -1201,7 +1201,7 @@ const TransactionsScreen: React.FC = () => {
       >
         <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
           <TouchableOpacity
-            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" }}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "transparent" }}
             activeOpacity={1}
             onPress={() => setShowFilterModal(false)}
           />
@@ -1482,7 +1482,7 @@ const TransactionsScreen: React.FC = () => {
       >
         <View style={{ flex: 1, justifyContent: "flex-end" }} pointerEvents="box-none">
           <TouchableOpacity
-            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)" }}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "transparent" }}
             activeOpacity={1}
             onPress={() => setShowCalendar(null)}
           />
@@ -1603,7 +1603,7 @@ const TransactionsScreen: React.FC = () => {
         onRequestClose={() => setSelectedReceiptTx(null)}
         statusBarTranslucent={true}
       >
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(2,6,23,0.75)" }}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "transparent" }}>
           <TouchableOpacity
             style={{ flex: 1 }}
             activeOpacity={1}

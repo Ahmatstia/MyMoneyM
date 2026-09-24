@@ -21,6 +21,7 @@ import { RecurringTransaction, RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
 import { AppHeader, WalletSelectCard } from "../../components/common";
 import CategoryPickerModal from "../../components/CategoryPickerModal";
+import { useKeyboardBottomInset } from "../../utils/keyboard";
 import {
   calculateInitialRunDate,
   formatDisplayDate,
@@ -111,6 +112,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
 
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const keyboardInset = useKeyboardBottomInset(24);
 
   // Live execution date calculation
   const previewFirstRunDateStr = useMemo(() => {
@@ -261,7 +263,8 @@ export const AddRecurringTransactionScreen: React.FC = () => {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: keyboardInset }}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Section Label Helper */}
           {(() => null)()}
