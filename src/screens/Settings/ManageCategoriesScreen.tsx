@@ -22,7 +22,7 @@ import { useTheme } from "../../theme/ThemeContext";
 import { AppFAB, AppHeader } from "../../components/common";
 
 const ICON_GROUPS = [
-  { label: "🍔 Makanan",     icons: ["restaurant-outline","cafe-outline","pizza-outline","beer-outline","wine-outline","ice-cream-outline","fast-food-outline","nutrition-outline","fish-outline","leaf-outline"] },
+  { label: "🍔 Makanan",     icons: ["restaurant-outline","cafe-outline","pizza-outline","beer-outline","wine-outline","ice-cream-outline","fast-food-outline","nutrition-outline","fish-outline","leaf-outline",] },
   { label: "🚗 Transportasi", icons: ["car-outline","bus-outline","train-outline","airplane-outline","bicycle-outline","boat-outline","car-sport-outline","rocket-outline","walk-outline","navigate-outline"] },
   { label: "💰 Keuangan",    icons: ["cash-outline","card-outline","wallet-outline","trending-up-outline","trending-down-outline","bar-chart-outline","pie-chart-outline","calculator-outline","receipt-outline","pricetag-outline"] },
   { label: "🛒 Belanja",     icons: ["cart-outline","bag-outline","gift-outline","basket-outline","storefront-outline","shirt-outline","diamond-outline","watch-outline","glasses-outline","headset-outline"] },
@@ -37,7 +37,7 @@ const COLOR_PALETTE = [
   "#EF4444","#F97316","#F59E0B","#EAB308",
   "#84CC16","#22C55E","#10B981","#14B8A6",
   "#06B6D4","#3B82F6","#6366F1","#8B5CF6",
-  "#A855F7","#EC4899","#F43F5E","#94A3B8",
+  "#A855F7","#EC4899",
 ];
 
 // ─── HSV ↔ HEX helpers ────────────────────────────────────────────────────────
