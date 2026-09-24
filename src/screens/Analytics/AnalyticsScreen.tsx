@@ -11,6 +11,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -2053,17 +2054,23 @@ const AnalyticsScreen: React.FC = () => {
         transparent
         animationType="fade"
         onRequestClose={() => setIsCustomDaysModalVisible(false)}
+        statusBarTranslucent={true}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.65)",
+            backgroundColor: "rgba(0,0,0,0.7)",
             justifyContent: "center",
             alignItems: "center",
             padding: 24,
           }}
         >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setIsCustomDaysModalVisible(false)}
+          />
           <View
             style={{
               backgroundColor: SURFACE_COLOR,
@@ -2073,6 +2080,7 @@ const AnalyticsScreen: React.FC = () => {
               maxWidth: 340,
               borderWidth: 1,
               borderColor: CARD_BORDER,
+              zIndex: 1,
             }}
           >
             <View

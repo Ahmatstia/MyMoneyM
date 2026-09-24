@@ -294,11 +294,11 @@ export const useHomeData = (
   const getDynamicQuickActions = () => {
     return [
       {
-        id: "transactions",
-        title: "Transaksi",
-        icon: "receipt-outline" as SafeIconName,
+        id: "wallets",
+        title: "Rekening",
+        icon: "albums-outline" as SafeIconName,
         color: Colors.accent,
-        onPress: () => navigation.navigate("Transactions"),
+        onPress: () => navigation.navigate("Wallets"),
       },
       {
         id: "budget",

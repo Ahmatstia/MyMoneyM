@@ -839,13 +839,9 @@ const HomeScreen: React.FC = () => {
                         fontSize: 11,
                         marginTop: 4,
                       }}
+                      numberOfLines={1}
                     >
-                      {transaction.description || "Tidak ada deskripsi"} ={" "}
-                      {new Date(transaction.date).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {transaction.description || "Tidak ada deskripsi"}
                     </Text>
                   </View>
                   <Text
