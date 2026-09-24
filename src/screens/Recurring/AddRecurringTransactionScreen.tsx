@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -709,6 +710,170 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               </Text>
             )}
           </View>
+
+          {/* Khusus Pemasukan: Target Uang Bertahan Otomatis (Batas Hari) */}
+          {formType === "income" && (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: `${colors.accent}40`,
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "700" }}>
+                    Target Bertahan Otomatis (Batas Siklus)
+                  </Text>
+                  <Text style={{ color: colors.gray400, fontSize: 11, marginTop: 2, lineHeight: 16 }}>
+                    Otomatis atur batas hari uang bertahan & jatah belanja harian di Beranda setiap pemasukan ini tercatat.
+                  </Text>
+                </View>
+                <Switch
+                  value={formAutoCycle}
+                  onValueChange={setFormAutoCycle}
+                  trackColor={{
+                    false: colors.surfaceLight || "#334155",
+                    true: `${colors.accent}70`,
+                  }}
+                  thumbColor={formAutoCycle ? colors.accent : "#94A3B8"}
+                />
+              </View>
+
+              {formAutoCycle && (
+                <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: `${colors.border}50` }}>
+                  <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", marginBottom: 6 }}>
+                    TARGET BERTAHAN (HARI):
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 6 }}>
+                    {[
+                      { id: "weekly", label: "7 hr" },
+                      { id: "biweekly", label: "14 hr" },
+                      { id: "monthly", label: "30 hr" },
+                      { id: "custom", label: "Kustom" },
+                    ].map((p) => {
+                      const isSelected = cyclePreset === p.id;
+                      return (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={{
+                            flex: 1,
+                            paddingVertical: 8,
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: isSelected ? `${colors.accent}20` : colors.background,
+                            borderWidth: 1,
+                            borderColor: isSelected ? colors.accent : `${colors.border}60`,
+                          }}
+                          onPress={() => setCyclePreset(p.id as any)}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: "700",
+                              color: isSelected ? colors.accent : colors.gray400,
+                            }}
+                          >
+                            {p.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {cyclePreset === "custom" && (
+                    <View
+                      style={{
+                        marginTop: 10,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: colors.background,
+                        borderRadius: 12,
+                        paddingHorizontal: 14,
+                        paddingVertical: 4,
+                        borderWidth: 1,
+                        borderColor: `${colors.border}80`,
+                      }}
+                    >
+                      <TextInput
+                        style={{
+                          flex: 1,
+                          paddingVertical: 8,
+                          fontSize: 14,
+                          fontWeight: "600",
+                          color: colors.textPrimary,
+                        }}
+                        value={customDays}
+                        onChangeText={(t) => setCustomDays(t.replace(/\D/g, ""))}
+                        keyboardType="number-pad"
+                        placeholder="Berapa hari? Contoh: 15"
+                        placeholderTextColor={colors.gray500}
+                        maxLength={3}
+                      />
+                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.gray400 }}>
+                        Hari
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Live Simulation Preview */}
+                  {(() => {
+                    const cleanAmount = parseFloat(formAmount.replace(/\D/g, ""));
+                    const days =
+                      cyclePreset === "weekly"
+                        ? 7
+                        : cyclePreset === "biweekly"
+                        ? 14
+                        : cyclePreset === "monthly"
+                        ? 30
+                        : Math.max(1, parseInt(customDays, 10) || 7);
+                    if (cleanAmount > 0) {
+                      const dailyRate = Math.round(cleanAmount / days);
+                      return (
+                        <View
+                          style={{
+                            marginTop: 10,
+                            padding: 10,
+                            borderRadius: 12,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: `${colors.accent}12`,
+                            borderWidth: 1,
+                            borderColor: `${colors.accent}30`,
+                          }}
+                        >
+                          <Ionicons
+                            name="speedometer-outline"
+                            size={16}
+                            color={colors.accent}
+                            style={{ marginRight: 8 }}
+                          />
+                          <Text style={{ color: colors.textPrimary, fontSize: 11, flex: 1, lineHeight: 16 }}>
+                            Simulasi jatah:{" "}
+                            <Text style={{ fontWeight: "700", color: colors.accent }}>
+                              Rp {dailyRate.toLocaleString("id-ID")}
+                            </Text>{" "}
+                            / hari selama{" "}
+                            <Text style={{ fontWeight: "700" }}>{days} hari</Text>
+                          </Text>
+                        </View>
+                      );
+                    }
+                    return null;
+                  })()}
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Catatan / Keterangan */}
           <View style={{ marginBottom: 16 }}>

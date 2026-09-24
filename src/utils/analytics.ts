@@ -14,53 +14,79 @@ import {
 // Calculate analytics data for transactions with safe defaults
 export const calculateTransactionAnalytics = (
   transactions: Transaction[] = [],
-  timeRange: "week" | "month" | "year" = "month",
+  timeRange: "custom_days" | "week" | "month" | "year" | "all" = "month",
   paydayCutoff: number = 1,
+  customDaysCount: number = 30,
 ) => {
   try {
-    // Filter transactions by date range / cycle using the shared utility
-    const filteredTransactions = filterTransactionsByTime(
-      transactions,
-      timeRange === "week"
-        ? "weekly"
-        : timeRange === "month"
-          ? "monthly"
-          : timeRange === "year"
-            ? "yearly"
-            : "all",
-      paydayCutoff,
-    );
-
-    // Tetap ambil startDate dan endDate statis untuk fallback metadata
+    let filteredTransactions: Transaction[] = [];
     let startDate = new Date();
     let endDate = new Date();
-    try {
+
+    if (timeRange === "custom_days") {
+      const past = new Date();
+      past.setDate(past.getDate() - Math.max(1, customDaysCount - 1));
+      past.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      startDate = past;
+      const pastStr = past.toISOString().slice(0, 10);
+      const nowStr = endDate.toISOString().slice(0, 10);
+      filteredTransactions = transactions.filter((t) => {
+        const d = (t.date || "").slice(0, 10);
+        return d >= pastStr && d <= nowStr;
+      });
+    } else if (timeRange === "all") {
+      filteredTransactions = filterTransactionsByTime(
+        transactions,
+        "all",
+        paydayCutoff,
+      );
       if (filteredTransactions.length > 0) {
-        // Ambil range dari transaksi termuda & tertua atau ikuti week/month range asli
-        if (timeRange === "week") {
-          const cycle = getActiveCycleInfo(transactions, paydayCutoff);
-          if (cycle) {
-            startDate = cycle.startDate;
-            endDate = cycle.endDate;
-          } else {
-            startDate = getWeekRange().start;
-            endDate = getWeekRange().end;
-          }
-        } else if (timeRange === "month") {
-          if (paydayCutoff > 1) {
-            const cycleRange = getMonthlyCycleRange(paydayCutoff);
-            startDate = cycleRange.startDate;
-            endDate = cycleRange.endDate;
-          } else {
-            startDate = getMonthRange().start;
-            endDate = getMonthRange().end;
-          }
-        } else if (timeRange === "year") {
-          startDate = getYearRange().start;
-          endDate = getYearRange().end;
-        }
+        const sorted = [...filteredTransactions].sort((a, b) =>
+          (a.date || "").localeCompare(b.date || ""),
+        );
+        startDate = new Date(sorted[0].date || new Date());
+        endDate = new Date(sorted[sorted.length - 1].date || new Date());
       }
-    } catch {}
+    } else {
+      // Filter transactions by date range / cycle using the shared utility
+      filteredTransactions = filterTransactionsByTime(
+        transactions,
+        timeRange === "week"
+          ? "weekly"
+          : timeRange === "month"
+            ? "monthly"
+            : "yearly",
+        paydayCutoff,
+      );
+
+      try {
+        if (filteredTransactions.length > 0) {
+          if (timeRange === "week") {
+            const cycle = getActiveCycleInfo(transactions, paydayCutoff);
+            if (cycle) {
+              startDate = cycle.startDate;
+              endDate = cycle.endDate;
+            } else {
+              startDate = getWeekRange().start;
+              endDate = getWeekRange().end;
+            }
+          } else if (timeRange === "month") {
+            if (paydayCutoff > 1) {
+              const cycleRange = getMonthlyCycleRange(paydayCutoff);
+              startDate = cycleRange.startDate;
+              endDate = cycleRange.endDate;
+            } else {
+              startDate = getMonthRange().start;
+              endDate = getMonthRange().end;
+            }
+          } else if (timeRange === "year") {
+            startDate = getYearRange().start;
+            endDate = getYearRange().end;
+          }
+        }
+      } catch {}
+    }
 
     // Calculate totals with safeNumber
     const totalIncome = filteredTransactions

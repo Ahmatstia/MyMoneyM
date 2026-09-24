@@ -296,7 +296,7 @@ export const useHomeData = (
       {
         id: "transactions",
         title: "Transaksi",
-        icon: "swap-horizontal-outline" as SafeIconName,
+        icon: "receipt-outline" as SafeIconName,
         color: Colors.accent,
         onPress: () => navigation.navigate("Transactions"),
       },

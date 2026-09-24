@@ -1,7 +1,17 @@
 // File: src/screens/Analytics/AnalyticsScreen.tsx
 import React, { useState, useMemo, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, ScrollView, TouchableOpacity, Share, Alert } from "react-native";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Share,
+  Alert,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Text, ProgressBar, Divider } from "react-native-paper";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -144,9 +154,12 @@ const AnalyticsScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "Analytics">>();
   const { state } = useAppContext();
 
-  const [timeRange, setTimeRange] = useState<"week" | "month" | "year">(
-    "month",
-  );
+  const [timeRange, setTimeRange] = useState<
+    "custom_days" | "week" | "month" | "year" | "all"
+  >("month");
+  const [customDays, setCustomDays] = useState<number>(30);
+  const [isCustomDaysModalVisible, setIsCustomDaysModalVisible] = useState(false);
+  const [customDaysInput, setCustomDaysInput] = useState("30");
 
   const [activeTab, setActiveTab] = useState<
     "summary" | "trends" | "categories" | "insights"
@@ -182,6 +195,7 @@ const AnalyticsScreen: React.FC = () => {
         state.transactions || [],
         timeRange,
         state.paydayCutoff,
+        customDays,
       );
       return {
         ...analytics,
@@ -213,7 +227,7 @@ const AnalyticsScreen: React.FC = () => {
         endDate: new Date(),
       };
     }
-  }, [state.transactions, timeRange, state.paydayCutoff]);
+  }, [state.transactions, timeRange, customDays, state.paydayCutoff]);
 
   const budgetAnalytics = useMemo(() => {
     try {
@@ -330,7 +344,12 @@ const AnalyticsScreen: React.FC = () => {
       startDate.setHours(0, 0, 0, 0);
       let cycleIncomeId: string | undefined;
 
-      if (timeRange === "week") {
+      if (timeRange === "custom_days") {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - customDays);
+      } else if (timeRange === "all") {
+        startDate = new Date(2000, 0, 1);
+      } else if (timeRange === "week") {
         const cycle = getActiveCycleInfo(state.transactions, state.paydayCutoff);
         if (cycle && cycle.period <= 14) {
           startDate = cycle.startDate;
@@ -379,7 +398,7 @@ const AnalyticsScreen: React.FC = () => {
     } catch (error) {
       return { dailyAvg: 0, daysRemaining: 0, forecast: 0, status: "safe" };
     }
-  }, [transactionAnalytics, state.transactions, timeRange, state.paydayCutoff]);
+  }, [transactionAnalytics, state.transactions, timeRange, customDays, state.paydayCutoff]);
 
   const handleExport = () => {
     setIsReportModalVisible(true);
@@ -714,9 +733,14 @@ const AnalyticsScreen: React.FC = () => {
           }}
         >
           {[
+            {
+              key: "custom_days",
+              label: timeRange === "custom_days" ? `${customDays}h` : "X Hari",
+            },
             { key: "week", label: "Minggu" },
             { key: "month", label: "Bulan" },
             { key: "year", label: "Tahun" },
+            { key: "all", label: "Semua" },
           ].map((tab) => {
             const isActive = timeRange === tab.key;
             return (
@@ -724,22 +748,39 @@ const AnalyticsScreen: React.FC = () => {
                 key={tab.key}
                 style={{
                   flex: 1,
-                  paddingVertical: 8,
+                  paddingVertical: 7,
                   borderRadius: 9,
                   backgroundColor: isActive
                     ? `${ACCENT_COLOR}22`
                     : "transparent",
                   alignItems: "center",
+                  justifyContent: "center",
                 }}
-                onPress={() => setTimeRange(tab.key as any)}
+                onPress={() => {
+                  if (tab.key === "custom_days") {
+                    if (timeRange === "custom_days") {
+                      setIsCustomDaysModalVisible(true);
+                    } else {
+                      setTimeRange("custom_days");
+                    }
+                  } else {
+                    setTimeRange(tab.key as any);
+                  }
+                }}
+                onLongPress={() => {
+                  if (tab.key === "custom_days") {
+                    setIsCustomDaysModalVisible(true);
+                  }
+                }}
                 activeOpacity={0.7}
               >
                 <Text
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: isActive ? "700" : "500",
                     color: isActive ? ACCENT_COLOR : colors.gray400,
                   }}
+                  numberOfLines={1}
                 >
                   {tab.label}
                 </Text>
@@ -750,7 +791,7 @@ const AnalyticsScreen: React.FC = () => {
       </View>
 
       {/* =-=- Tab navigation (redesigned) =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */}
-      {/*   Fixed row, icon + label + bottom indicator - tidak perlu scroll   */}
+      {/*   Fixed row, icon + label + bottom indicator - kompak & kecil   */}
       <View
         style={{
           backgroundColor: BACKGROUND_COLOR,
@@ -767,8 +808,8 @@ const AnalyticsScreen: React.FC = () => {
                 style={{
                   flex: 1,
                   alignItems: "center",
-                  paddingTop: 11,
-                  paddingBottom: 10,
+                  paddingTop: 8,
+                  paddingBottom: 7,
                   position: "relative",
                 }}
                 onPress={() => setActiveTab(tab.key as any)}
@@ -776,15 +817,15 @@ const AnalyticsScreen: React.FC = () => {
               >
                 <Ionicons
                   name={tab.icon}
-                  size={18}
+                  size={15}
                   color={isActive ? ACCENT_COLOR : colors.gray500}
                 />
                 <Text
                   style={{
                     color: isActive ? ACCENT_COLOR : colors.gray500,
-                    fontSize: 9,
+                    fontSize: 8.5,
                     fontWeight: isActive ? "700" : "500",
-                    marginTop: 4,
+                    marginTop: 3,
                     letterSpacing: 0.1,
                   }}
                 >
@@ -1416,7 +1457,19 @@ const AnalyticsScreen: React.FC = () => {
         ============================================================ */}
         {activeTab === "trends" && (
           <>
-            <SectionHeader title={`Tren ${timeRange}`} />
+            <SectionHeader
+              title={`Tren ${
+                timeRange === "custom_days"
+                  ? `${customDays} Hari`
+                  : timeRange === "week"
+                  ? "Mingguan"
+                  : timeRange === "month"
+                  ? "Bulanan"
+                  : timeRange === "year"
+                  ? "Tahunan"
+                  : "Semua Waktu"
+              }`}
+            />
             <ExpenseTrendChart transactions={state.transactions} />
 
             {/* Daily average + comparison card */}
@@ -1570,14 +1623,26 @@ const AnalyticsScreen: React.FC = () => {
 
             {transactionAnalytics.topCategories.length > 0 ? (
               <>
-                <Card style={{ marginBottom: 16 }}>
+                <View
+                  style={{
+                    backgroundColor: SURFACE_COLOR,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: CARD_BORDER,
+                    padding: 14,
+                    marginBottom: 14,
+                  }}
+                >
                   {/* Summary header */}
                   <View
                     style={{
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 16,
+                      marginBottom: 10,
+                      paddingBottom: 6,
+                      borderBottomWidth: 1,
+                      borderBottomColor: `${CARD_BORDER}60`,
                     }}
                   >
                     <Text
@@ -1586,17 +1651,19 @@ const AnalyticsScreen: React.FC = () => {
                         fontSize: 9,
                         textTransform: "uppercase",
                         letterSpacing: 0.8,
+                        fontWeight: "700",
                       }}
                     >
                       Kategori
                     </Text>
-                    <View style={{ flexDirection: "row", gap: 16 }}>
+                    <View style={{ flexDirection: "row", gap: 14 }}>
                       <Text
                         style={{
                           color: colors.gray400,
                           fontSize: 9,
                           textTransform: "uppercase",
                           letterSpacing: 0.8,
+                          fontWeight: "700",
                         }}
                       >
                         Jumlah
@@ -1607,7 +1674,8 @@ const AnalyticsScreen: React.FC = () => {
                           fontSize: 9,
                           textTransform: "uppercase",
                           letterSpacing: 0.8,
-                          width: 36,
+                          fontWeight: "700",
+                          width: 32,
                           textAlign: "right",
                         }}
                       >
@@ -1630,7 +1698,7 @@ const AnalyticsScreen: React.FC = () => {
                             marginBottom:
                               index <
                               transactionAnalytics.topCategories.length - 1
-                                ? 14
+                                ? 8
                                 : 0,
                           }}
                         >
@@ -1639,7 +1707,7 @@ const AnalyticsScreen: React.FC = () => {
                               flexDirection: "row",
                               justifyContent: "space-between",
                               alignItems: "center",
-                              marginBottom: 5,
+                              marginBottom: 3,
                             }}
                           >
                             <View
@@ -1647,12 +1715,13 @@ const AnalyticsScreen: React.FC = () => {
                                 flexDirection: "row",
                                 alignItems: "center",
                                 flex: 1,
+                                marginRight: 8,
                               }}
                             >
                               <Text
                                 style={{
                                   color: TEXT_PRIMARY,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: "600",
                                 }}
                                 numberOfLines={1}
@@ -1664,15 +1733,15 @@ const AnalyticsScreen: React.FC = () => {
                               style={{
                                 flexDirection: "row",
                                 alignItems: "center",
-                                gap: 12,
+                                gap: 10,
                               }}
                             >
                               <Text
                                 style={{
                                   color: TEXT_PRIMARY,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: "700",
-                                  minWidth: 80,
+                                  minWidth: 70,
                                   textAlign: "right",
                                 }}
                               >
@@ -1681,9 +1750,9 @@ const AnalyticsScreen: React.FC = () => {
                               <Text
                                 style={{
                                   color: barColor,
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   fontWeight: "700",
-                                  width: 36,
+                                  width: 32,
                                   textAlign: "right",
                                 }}
                               >
@@ -1696,7 +1765,7 @@ const AnalyticsScreen: React.FC = () => {
                       );
                     },
                   )}
-                </Card>
+                </View>
 
                 {/* Concentration warning */}
                 {transactionAnalytics.topCategories[0] &&
@@ -1977,6 +2046,202 @@ const AnalyticsScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+
+      {/* ── Modal Batas X Hari Kustom ── */}
+      <Modal
+        visible={isCustomDaysModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCustomDaysModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.65)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: SURFACE_COLOR,
+              borderRadius: 20,
+              padding: 20,
+              width: "100%",
+              maxWidth: 340,
+              borderWidth: 1,
+              borderColor: CARD_BORDER,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 14,
+              }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: `${ACCENT_COLOR}20`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 10,
+                }}
+              >
+                <Ionicons name="calendar-outline" size={18} color={ACCENT_COLOR} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "700" }}>
+                  Batas Waktu X Hari
+                </Text>
+                <Text style={{ color: TEXT_SECONDARY, fontSize: 11 }}>
+                  Tentukan rentang hari untuk analisis
+                </Text>
+              </View>
+            </View>
+
+            {/* Quick Preset Buttons */}
+            <Text
+              style={{
+                color: colors.gray400,
+                fontSize: 9,
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 6,
+              }}
+            >
+              Pilihan Cepat
+            </Text>
+            <View style={{ flexDirection: "row", gap: 6, marginBottom: 14 }}>
+              {[7, 14, 30, 60, 90].map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  onPress={() => setCustomDaysInput(String(d))}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    alignItems: "center",
+                    backgroundColor:
+                      customDaysInput === String(d)
+                        ? `${ACCENT_COLOR}25`
+                        : colors.background,
+                    borderWidth: 1,
+                    borderColor:
+                      customDaysInput === String(d)
+                        ? ACCENT_COLOR
+                        : `${colors.border}60`,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color:
+                        customDaysInput === String(d)
+                          ? ACCENT_COLOR
+                          : colors.gray400,
+                    }}
+                  >
+                    {d}h
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Custom Input */}
+            <Text
+              style={{
+                color: colors.gray400,
+                fontSize: 9,
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+                marginBottom: 6,
+              }}
+            >
+              Atau Masukkan Hari Custom
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: colors.background,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                borderWidth: 1,
+                borderColor: CARD_BORDER,
+                marginBottom: 16,
+              }}
+            >
+              <TextInput
+                value={customDaysInput}
+                onChangeText={(t) => setCustomDaysInput(t.replace(/\D/g, ""))}
+                placeholder="Misal: 45"
+                placeholderTextColor={colors.gray500}
+                keyboardType="numeric"
+                maxLength={4}
+                style={{
+                  flex: 1,
+                  paddingVertical: 9,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: TEXT_PRIMARY,
+                }}
+              />
+              <Text style={{ color: colors.gray400, fontSize: 12, fontWeight: "600" }}>
+                Hari Terakhir
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setIsCustomDaysModalVisible(false)}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: CARD_BORDER,
+                }}
+              >
+                <Text style={{ color: colors.gray400, fontSize: 12, fontWeight: "700" }}>
+                  Batal
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  const num = parseInt(customDaysInput, 10);
+                  if (num && num > 0) {
+                    setCustomDays(num);
+                    setTimeRange("custom_days");
+                  }
+                  setIsCustomDaysModalVisible(false);
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  backgroundColor: ACCENT_COLOR,
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>
+                  Terapkan
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Monthly Financial Report Modal (Estetik & PDF) */}
       <MonthlyReportModal
