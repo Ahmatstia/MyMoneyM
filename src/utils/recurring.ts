@@ -27,6 +27,35 @@ export const formatDateString = (date: Date): string => {
   return `${y}-${m}-${d}`;
 };
 
+export const DAYS_OF_WEEK = [
+  { id: 1, name: "Senin" },
+  { id: 2, name: "Selasa" },
+  { id: 3, name: "Rabu" },
+  { id: 4, name: "Kamis" },
+  { id: 5, name: "Jumat" },
+  { id: 6, name: "Sabtu" },
+  { id: 7, name: "Minggu" },
+];
+
+export function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "-";
+  try {
+    const parts = dateStr.split("-").map(Number);
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      return d.toLocaleDateString("id-ID", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+    return dateStr;
+  } catch {
+    return dateStr;
+  }
+}
+
 /**
  * Menghitung tanggal eksekusi berikutnya berdasarkan frekuensi
  */

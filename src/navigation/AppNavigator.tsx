@@ -64,8 +64,17 @@ import DebtScreen from "../screens/Debt/DebtScreen";
 import AddDebtScreen from "../screens/Debt/AddDebtScreen";
 import ToolsScreen from "../screens/Tools/ToolsScreen";
 import RecurringTransactionsScreen from "../screens/Recurring/RecurringTransactionsScreen";
+import AddRecurringTransactionScreen from "../screens/Recurring/AddRecurringTransactionScreen";
 import WalletsScreen from "../screens/Wallets/WalletsScreen";
+import AddWalletScreen from "../screens/Wallets/AddWalletScreen";
 import MoniScreen from "../screens/Gamification/MoniScreen";
+
+import { DailyLimitScreen } from "../screens/Tools/DailyLimit";
+import { SalaryAllocatorScreen } from "../screens/Tools/SalaryAllocator";
+import { BuyOrWaitScreen } from "../screens/Tools/BuyOrWait";
+import { EmergencyRunwayScreen } from "../screens/Tools/EmergencyRunway";
+import { FinancialCalculatorScreen } from "../screens/Tools/FinancialCalculator";
+import { SplitBillScreen } from "../screens/Tools/SplitBill";
 
 // Types
 type StackParamList = {
@@ -97,6 +106,14 @@ type StackParamList = {
   AddSavings: { editMode?: boolean; savingsData?: any };
   AddSavingsTransaction: { savingsId: string; type?: "deposit" | "withdrawal" };
   AddDebt: { editMode?: boolean; debtData?: any };
+  AddWallet: { editMode?: boolean; walletData?: any };
+  AddRecurringTransaction: { editMode?: boolean; recurringData?: any };
+  SplitBill: undefined;
+  DailyLimit: undefined;
+  SalaryAllocator: undefined;
+  BuyOrWait: undefined;
+  EmergencyRunway: undefined;
+  FinancialCalculator: undefined;
 };
 
 const MainStack = createStackNavigator<StackParamList>();
@@ -823,6 +840,14 @@ const MainStackNavigator = () => {
           "AddBudget",
           "AddDebt",
           "AddSavingsTransaction",
+          "AddWallet",
+          "AddRecurringTransaction",
+          "SplitBill",
+          "DailyLimit",
+          "SalaryAllocator",
+          "BuyOrWait",
+          "EmergencyRunway",
+          "FinancialCalculator",
         ];
         const hasCustomHeader = screensWithCustomHeader.includes(route.name);
 
@@ -973,8 +998,48 @@ const MainStackNavigator = () => {
         options={{ headerShown: false }}
       />
       <MainStack.Screen
+        name="AddWallet"
+        component={AddWalletScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="AddRecurringTransaction"
+        component={AddRecurringTransactionScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
         name="MoniScreen"
         component={MoniScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SplitBill"
+        component={SplitBillScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="DailyLimit"
+        component={DailyLimitScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="SalaryAllocator"
+        component={SalaryAllocatorScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="BuyOrWait"
+        component={BuyOrWaitScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="EmergencyRunway"
+        component={EmergencyRunwayScreen}
+        options={{ headerShown: false }}
+      />
+      <MainStack.Screen
+        name="FinancialCalculator"
+        component={FinancialCalculatorScreen}
         options={{ headerShown: false }}
       />
     </MainStack.Navigator>

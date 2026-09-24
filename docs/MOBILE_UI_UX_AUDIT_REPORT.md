@@ -1134,3 +1134,29 @@ Use this checklist before and after implementing design system standardization:
      - `AddSavingsTransactionScreen.tsx`: Removed native stack header and old in-screen header, added unified `AppHeader` ("Tambah Setoran / Penarikan Dana" + goal name subtitle).
    - [x] Updated `src/navigation/AppNavigator.tsx` to disable stack headers for all form screens (`AddTransaction`, `AddBudget`, `AddDebt`, `AddSavingsTransaction`) to prevent dual headers.
    - [x] Validated zero TypeScript compilation errors (`tsc --noEmit` code 0).
+
+8. **Phase 8: Dedicated Form Screens for Wallets & Recurring Transactions + Tools Modularization (Completed)**
+   - [x] **Dedicated Form Screen: `AddWalletScreen.tsx`**
+     - Created independent, full-screen form file in `src/screens/Wallets/AddWalletScreen.tsx`.
+     - Standardized with `AppHeader` (Title: "Tambah/Edit Rekening", Subtitle: "Kelola saldo & detail akun dompet").
+     - Cleanly handles create & edit mode, default wallet toggling, auto-delete button with confirmation, and smooth navigation back.
+     - Registered in `src/navigation/AppNavigator.tsx` stack with custom header support.
+     - Removed obsolete inline modal and states from `WalletsScreen.tsx`.
+   - [x] **Dedicated Form Screen: `AddRecurringTransactionScreen.tsx`**
+     - Created independent, full-screen form file in `src/screens/Recurring/AddRecurringTransactionScreen.tsx`.
+     - Standardized with `AppHeader` (Title: "Tambah/Ubah Transaksi Rutin", Subtitle: "Atur jadwal transaksi otomatis").
+     - Full support for frequency preview (`calculateInitialRunDate`), cycle period targets, weekly day picker, wallet selector, and category picker.
+     - Registered in `src/navigation/AppNavigator.tsx` stack with custom header support.
+     - Removed obsolete form states and handlers from `RecurringTransactionsScreen.tsx`.
+   - [x] **Modularization of Tools Features (`src/screens/Tools/`)**
+     - Completely removed "Transaksi Rutin" (`recurring`) from Tools per user requirement.
+     - Partitioned massive `ToolsScreen.tsx` (formerly 2,808 lines) into dedicated, self-contained feature folders:
+       - `src/screens/Tools/common/`: Shared tools design tokens (`useToolsTheme`), typography components (`Label`, `InputBox`, `ResultRow`), and helper functions (`fmt`, `daysLeftInMonth`).
+       - `src/screens/Tools/SplitBill/`: `SplitBillModal.tsx` + `index.ts` with custom `DualModeInput` component for percentage/nominal split.
+       - `src/screens/Tools/DailyLimit/`: `DailyLimitModal.tsx` + `index.ts` for safe daily allowance calculation.
+       - `src/screens/Tools/SalaryAllocator/`: `SalaryAllocatorModal.tsx` + `index.ts` for 50/30/20 budget allocation.
+       - `src/screens/Tools/BuyOrWait/`: `BuyOrWaitModal.tsx` + `index.ts` for impulse purchase financial simulation.
+       - `src/screens/Tools/EmergencyRunway/`: `EmergencyRunwayModal.tsx` + `index.ts` for runway & emergency survival estimation.
+       - `src/screens/Tools/FinancialCalculator/`: `FinancialCalculatorModal.tsx` + `index.ts` for standalone arithmetic calculations.
+     - Refactored `ToolsScreen.tsx` into a lean, elegant orchestrator screen (~300 lines) with standard `AppHeader`.
+   - [x] Validated zero TypeScript compilation errors (`tsc --noEmit` code 0).

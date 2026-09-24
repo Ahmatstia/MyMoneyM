@@ -275,6 +275,14 @@ export type RootStackParamList = {
   ManageCategories: undefined;
   RecurringTransactions: undefined; // NEW: Transaksi Berulang
   Wallets: undefined; // NEW: Kelola Dompet & Rekening
+  AddWallet: { editMode?: boolean; walletData?: Wallet };
+  AddRecurringTransaction: { editMode?: boolean; recurringData?: RecurringTransaction };
+  SplitBill: undefined;
+  DailyLimit: undefined;
+  SalaryAllocator: undefined;
+  BuyOrWait: undefined;
+  EmergencyRunway: undefined;
+  FinancialCalculator: undefined;
 };
 
 declare global {
