@@ -1342,19 +1342,11 @@ const ProfileScreen: React.FC = () => {
           <View style={tw`items-center mt-10 mb-2`}>
             <Text
               style={[
-                tw`text-[9px] font-bold uppercase tracking-widest`,
+                tw`text-[10px] font-bold uppercase tracking-widest`,
                 { color: C.text3 },
               ]}
             >
               MyMoney
-            </Text>
-            <Text
-              style={[
-                tw`text-[9px] font-bold uppercase tracking-widest`,
-                { color: C.text3 },
-              ]}
-            >
-              Version 1.0.7
             </Text>
           </View>
         </View>

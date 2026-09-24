@@ -22,6 +22,8 @@ export type ThemeId =
   | "indigo"
   | "deep_purple"
   | "teal_calm"
+  | "rose_pink"
+  | "ruby_red"
   | "light_clean";
 
 export const DEFAULT_THEME_ID: ThemeId = "emerald";
@@ -495,6 +497,138 @@ const lightClean: AppColors = {
   transparent: "transparent",
 };
 
+// ─── Tema: Rose Pink ──────────────────────────────────────────────────────────
+// Manis, estetik, dan elegan dengan sentuhan merah muda mawar modern.
+
+const rosePink: AppColors = {
+  background:   "#120A14",
+  surface:      "#1C1220",
+  surfaceLight: "#2E1E34",
+  surfaceDark:  "#0A050C",
+
+  accent:      "#F43F5E",
+  accentDark:  "#E11D48",
+  accentLight: "#FB7185",
+
+  primary:      "#120A14",
+  primaryDark:  "#0A050C",
+  primaryLight: "#1C1220",
+
+  textPrimary:   "#FFF1F2",
+  textSecondary: "#FECDD3",
+  textTertiary:  "#FDA4AF",
+  textDisabled:  "#9F1239",
+
+  border:      "#2E1E34",
+  borderLight: "#4C2B57",
+  borderDark:  "#1C1220",
+
+  success:      "#22C55E",
+  successLight: "#4ADE80",
+  successDark:  "#16A34A",
+
+  warning:      "#F59E0B",
+  warningLight: "#FBBF24",
+  warningDark:  "#D97706",
+
+  error:      "#EF4444",
+  errorLight: "#F87171",
+  errorDark:  "#DC2626",
+
+  info:      "#38BDF8",
+  infoLight: "#7DD3FC",
+  infoDark:  "#0284C7",
+
+  purple:      "#C084FC",
+  purpleLight: "#D8B4FE",
+  purpleDark:  "#9333EA",
+
+  pink:      "#F43F5E",
+  pinkLight: "#FB7185",
+  pinkDark:  "#E11D48",
+
+  gray50:  "#FFF1F2",
+  gray100: "#FFE4E6",
+  gray200: "#FECDD3",
+  gray300: "#FDA4AF",
+  gray400: "#FB7185",
+  gray500: "#F43F5E",
+  gray600: "#E11D48",
+  gray700: "#BE123C",
+  gray800: "#2E1E34",
+  gray900: "#1C1220",
+
+  white:       "#FFFFFF",
+  black:       "#000000",
+  transparent: "transparent",
+};
+
+// ─── Tema: Ruby Red ───────────────────────────────────────────────────────────
+// Berani, berenergi, dan dinamis dengan nuansa merah rubi mewah.
+
+const rubyRed: AppColors = {
+  background:   "#120608",
+  surface:      "#1C0C10",
+  surfaceLight: "#2E161C",
+  surfaceDark:  "#0A0304",
+
+  accent:      "#EF4444",
+  accentDark:  "#DC2626",
+  accentLight: "#F87171",
+
+  primary:      "#120608",
+  primaryDark:  "#0A0304",
+  primaryLight: "#1C0C10",
+
+  textPrimary:   "#FEF2F2",
+  textSecondary: "#FEE2E2",
+  textTertiary:  "#FCA5A5",
+  textDisabled:  "#991B1B",
+
+  border:      "#2E161C",
+  borderLight: "#48202A",
+  borderDark:  "#1C0C10",
+
+  success:      "#22C55E",
+  successLight: "#4ADE80",
+  successDark:  "#16A34A",
+
+  warning:      "#F59E0B",
+  warningLight: "#FBBF24",
+  warningDark:  "#D97706",
+
+  error:      "#EF4444",
+  errorLight: "#F87171",
+  errorDark:  "#DC2626",
+
+  info:      "#38BDF8",
+  infoLight: "#7DD3FC",
+  infoDark:  "#0284C7",
+
+  purple:      "#A855F7",
+  purpleLight: "#C084FC",
+  purpleDark:  "#7E22CE",
+
+  pink:      "#FB7185",
+  pinkLight: "#FDA4AF",
+  pinkDark:  "#E11D48",
+
+  gray50:  "#FEF2F2",
+  gray100: "#FEE2E2",
+  gray200: "#FECACA",
+  gray300: "#FCA5A5",
+  gray400: "#F87171",
+  gray500: "#EF4444",
+  gray600: "#DC2626",
+  gray700: "#B91C1C",
+  gray800: "#2E161C",
+  gray900: "#1C0C10",
+
+  white:       "#FFFFFF",
+  black:       "#000000",
+  transparent: "transparent",
+};
+
 // ─── THEMES Registry ─────────────────────────────────────────────────────────
 
 export const THEMES: Record<ThemeId, AppColors> = {
@@ -503,6 +637,8 @@ export const THEMES: Record<ThemeId, AppColors> = {
   indigo:       indigoModern,
   deep_purple:  deepPurple,
   teal_calm:    tealCalm,
+  rose_pink:    rosePink,
+  ruby_red:     rubyRed,
   light_clean:  lightClean,
 };
 
@@ -536,6 +672,18 @@ export const THEME_META: Record<ThemeId, { name: string; emoji: string; descript
     emoji:       "🍃",
     description: "Tenang, profesional, nyaman dipakai harian.",
     swatches:    ["#081A1A", "#102526", "#14B8A6", "#22C55E", "#F87171"],
+  },
+  rose_pink: {
+    name:        "Rose Pink",
+    emoji:       "🌸",
+    description: "Manis, estetik, dan elegan dengan sentuhan merah muda mawar.",
+    swatches:    ["#120A14", "#1C1220", "#F43F5E", "#22C55E", "#FB7185"],
+  },
+  ruby_red: {
+    name:        "Ruby Red",
+    emoji:       "❤️",
+    description: "Berani, berenergi, dan dinamis dengan nuansa merah rubi mewah.",
+    swatches:    ["#120608", "#1C0C10", "#EF4444", "#22C55E", "#F87171"],
   },
   light_clean: {
     name:        "Light Clean",

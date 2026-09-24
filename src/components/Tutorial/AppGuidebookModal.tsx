@@ -33,7 +33,8 @@ export type GuideCategory =
   | "budget_savings"
   | "recurring_debt"
   | "analytics_calendar"
-  | "data_system";
+  | "data_system"
+  | "tools";
 
 export interface FeatureGuideItem {
   id: string;
@@ -79,7 +80,8 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
     { id: "budget_savings", label: "Anggaran & Tabungan", icon: "pie-chart-outline" },
     { id: "recurring_debt", label: "Rutin & Hutang", icon: "repeat-outline" },
     { id: "analytics_calendar", label: "Analisis & Kalender", icon: "bar-chart-outline" },
-    { id: "data_system", label: "Data & Sistem", icon: "shield-checkmark-outline" },
+    { id: "tools", label: "Alat & Kalkulator", icon: "calculator-outline" },
+    { id: "data_system", label: "Data & Keamanan", icon: "shield-checkmark-outline" },
   ];
 
   // Daftar Panduan Lengkap Seluruh 27 Fitur MyMoney (Nama 100% Sesuai Aplikasi + Analogi Nyata)
@@ -817,7 +819,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
       },
       {
         id: "app_theme",
-        name: "Tema Aplikasi (6 Palet Eksklusif)",
+        name: "Tema Aplikasi (8 Palet Eksklusif)",
         category: "data_system",
         categoryLabel: "Data & Sistem",
         tag: "Nuansa Interior Mata",
@@ -827,7 +829,7 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
         analogy:
           "Ibarat mengganti warna cat dinding kamar kerja dan memasang pencahayaan lampu baru. Suasana ruangan yang segar membuat Anda betah berlama-lama merapikan meja kerja tanpa merasa jenuh.",
         summary:
-          "Mengubah seluruh skema warna visual aplikasi ke dalam 6 pilihan tema eksklusif: Emerald (Zamrud), Sapphire (Safir), Ruby (Merah), Amethyst (Ungu), Cyberpunk, dan Midnight (Hitam Murni).",
+          "Mengubah seluruh skema warna visual aplikasi ke dalam 8 pilihan tema eksklusif: Emerald Finance (Hijau), Navy Gold (Emas), Indigo Modern (Biru), Deep Purple (Ungu), Teal Calm (Toska), Rose Pink (Merah Muda), Ruby Red (Merah), dan Light Clean (Terang).",
         howItWorks: [
           "Menerapkan palet warna terstandarisasi ke seluruh tombol, gradien, kartu, dan teks secara instan tanpa perlu memuat ulang aplikasi.",
           "Mendukung kontras tinggi untuk kenyamanan membaca di bawah terik sinar matahari maupun di ruangan gelap.",
@@ -947,6 +949,280 @@ export const AppGuidebookModal: React.FC<AppGuidebookModalProps> = ({
           "Setelah gajian, gunakan fitur Transfer untuk memindahkan sebagian gaji ke dompet 'BCA Tabungan' secara instan. Prinsip 'Bayar Diri Sendiri Dulu' (Pay Yourself First) terlaksana hanya dalam 3 ketukan!",
         actionTarget: "AddTransaction",
         actionLabel: "Coba Transfer Antar Dompet",
+      },
+
+      // ══════════════════════════════════════════════════════════════════════════
+      // PILAR 8: ALAT & KALKULATOR FINANSIAL PINTAR
+      // ══════════════════════════════════════════════════════════════════════════
+      {
+        id: "tool_split_bill",
+        name: "Kalkulator Patungan (Split Bill)",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Anti Boncos Nongkrong",
+        icon: "people-outline",
+        color: "#EC4899",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Patungan (Split Bill)",
+        analogy:
+          "Ibarat membagi selembar struk restoran panjang ke teman-teman tanpa perlu pusing menghitung pajak 10%, biaya servis restoran, dan siapa yang pesan es teh manis vs steak mahal secara manual dengan kalkulator HP biasa.",
+        summary:
+          "Membantu Anda membagi tagihan makan bersama secara adil dan akurat. Mendukung dua mode: Bagi Rata (Equal) untuk patungan simpel, dan Per Orang (Itemized) untuk tagihan makanan yang berbeda-beda.",
+        howItWorks: [
+          "Dukungan Pajak (Tax), Servis, & Diskon: Otomatis mendistribusikan pajak dan biaya layanan secara proporsional sesuai nominal pesanan masing-masing orang.",
+          "Opsi Salin & Bagikan ke WhatsApp: Menghasilkan pesan teks rincian patungan yang rapi dan siap dikirim ke grup WhatsApp teman lengkap dengan nomor rekening/e-wallet Anda.",
+          "Catat Bagian Saya Otomatis: Satu ketukan tombol untuk langsung mencatat bagian makanan Anda sendiri ke mutasi pengeluaran Beranda.",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ Pilih 'Patungan (Split Bill)'.",
+          "Pilih mode: 'Bagi Rata' atau 'Per Orang'.",
+          "Masukkan nominal pesanan, pajak restoran, dan diskon promo jika ada.",
+          "Tekan 'Bagikan Rincian' untuk mengirim ke grup WhatsApp teman!",
+        ],
+        impact:
+          "Menghindari rasa tidak enak hati saat menagih teman dan memastikan Anda tidak pernah menombok uang pajak/servis saat nongkrong bersama.",
+        proTip:
+          "Gunakan tombol 'Catat Pengeluaran Saya' agar jatah harian Beranda Anda langsung mencatat porsi makanan Anda sendiri secara otomatis!",
+        actionTarget: "SplitBill",
+        actionLabel: "Buka Kalkulator Patungan",
+      },
+      {
+        id: "tool_salary_allocator",
+        name: "Alokator Gaji 50/30/20",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Formula Finansial Emas",
+        icon: "pie-chart-outline",
+        color: "#10B981",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Alokasi Gaji 50/30/20",
+        analogy:
+          "Ibarat membagi piring makan gizi seimbang: 50% karbohidrat pokok (kebutuhan wajib), 30% lauk pauk lezat (keinginan & hiburan), dan 20% suplemen vitamin jangka panjang (tabungan & investasi).",
+        summary:
+          "Membagi pemasukan bulanan Anda ke dalam 3 kantong ideal berdasarkan metode perencanaan keuangan dunia (50% Kebutuhan Pokok, 30% Keinginan & Hiburan, 20% Tabungan/Investasi Masa Depan).",
+        howItWorks: [
+          "50% Kebutuhan (Needs): Biaya sewa kost/rumah, makan pokok harian, tagihan listrik, air, kuota internet, dan bensin.",
+          "30% Keinginan (Wants): Ngopi santai di kafe, nonton bioskop, belanja hobi, dan liburan.",
+          "20% Tabungan (Savings): Dana darurat, investasi reksadana/saham, dan tabungan impian.",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ 'Alokasi Gaji 50/30/20'.",
+          "Masukkan nominal gaji atau pemasukan bulanan Anda.",
+          "Aplikasi akan langsung merinci batas maksimal uang yang boleh Anda habiskan untuk tiap kantong.",
+        ],
+        impact:
+          "Memberikan rasa aman psikologis karena Anda tahu persis berapa nominal yang BOLEH dihabiskan untuk senang-senang tanpa rasa bersalah.",
+        proTip:
+          "Gunakan angka 50/30/20 ini sebagai patokan saat Anda membuat batas Anggaran di menu Anggaran!",
+        actionTarget: "SalaryAllocator",
+        actionLabel: "Coba Alokator Gaji",
+      },
+      {
+        id: "tool_buy_or_wait",
+        name: "Simulasi Beli atau Tunda?",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Penyelamat Impulsif",
+        icon: "time-outline",
+        color: "#F59E0B",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Beli atau Tunda?",
+        analogy:
+          "Ibarat rem darurat kendaraan saat Anda melihat barang diskon menarik di etalase toko. Alat ini menghitung apakah membeli barang tersebut hari ini akan membuat Anda makan mie instan di akhir bulan atau tidak.",
+        summary:
+          "Alat simulasi cerdas untuk menguji kelayakan belanja barang idaman sebelum Anda mentransfer uang. Menunjukkan sisa jatah makan harian Anda jika barang tersebut jadi dibeli.",
+        howItWorks: [
+          "Kalkulasi Dampak Realtime: Menghitung (Saldo Kas - Harga Barang) ÷ Sisa Hari Pembukuan.",
+          "Status Aman vs Tunda: Jika sisa jatah harian setelah beli masih di atas Rp 30.000/hari, sistem memberi sinyal hijau 'AMAN DIBELI'. Jika di bawah itu, sistem memberi sinyal merah 'SEBAIKNYA DITUNDA'.",
+          "Rencana Menabung Alternatif: Jika sebaiknya ditunda, sistem otomatis menghitungkan berapa hari Anda perlu menabung Rp 50.000/hari agar barang terbeli tanpa mengorbankan uang makan.",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ 'Beli atau Tunda?'.",
+          "Ketik harga barang yang sedang Anda incar.",
+          "Lihat vonis sistem dan perhatikan jatah makan harian Anda setelah pembelian.",
+        ],
+        impact:
+          "Membasmi 90% penyesalan belanja impulsif (buyer remorse) dan melatih disiplin finansial tanpa rasa tersiksa.",
+        proTip:
+          "Jika barang dinyatakan 'Tunda', buatlah Celengan Impian di menu Tabungan dan transfer uangnya sedikit demi sedikit!",
+        actionTarget: "BuyOrWait",
+        actionLabel: "Uji Simulasi Belanja",
+      },
+      {
+        id: "tool_emergency_runway",
+        name: "Runway Dana Darurat",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Ketahanan Krisis",
+        icon: "shield-outline",
+        color: "#06B6D4",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Runway Dana Darurat",
+        analogy:
+          "Ibarat mengukur berapa lama Anda bisa bertahan hidup di pulau terpencil dengan persediaan makanan yang ada di ransel jika mendadak tidak ada bantuan kiriman baru.",
+        summary:
+          "Menghitung berapa bulan Anda bisa bertahan hidup memenuhi kebutuhan pokok jika mendadak kehilangan pekerjaan, sakit, atau mengalami penurunan omzet bisnis secara drastis.",
+        howItWorks: [
+          "Rumus Runway: Total Saldo Simpanan Kas ÷ Rata-rata Pengeluaran Pokok Bulanan.",
+          "Evaluasi Tingkat Ketahanan: 1-2 Bulan (Kritis/Waspada), 3-5 Bulan (Cukup Aman), 6+ Bulan (Sangat Aman/Bebas Finansial).",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ 'Runway Dana Darurat'.",
+          "Masukkan total dana darurat/tabungan cair dan pengeluaran bulanan pokok Anda.",
+          "Ketahui berapa bulan napas bertahan hidup Anda dan tips memperpanjang masa runway tersebut.",
+        ],
+        impact:
+          "Memberikan ketenangan batin yang luar biasa karena Anda mengetahui tingkat keamanan finansial keluarga Anda saat menghadapi krisis tak terduga.",
+        proTip:
+          "Bagi lajang, targetkan minimal 3 bulan runway. Bagi yang sudah berkeluarga, targetkan 6 hingga 12 bulan runway.",
+        actionTarget: "EmergencyRunway",
+        actionLabel: "Hitung Daya Tahan Kas",
+      },
+      {
+        id: "tool_financial_calc",
+        name: "Kalkulator Bunga & Investasi",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Proyeksi Masa Depan",
+        icon: "trending-up-outline",
+        color: "#8B5CF6",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Kalkulator Finansial",
+        analogy:
+          "Ibarat mesin waktu finansial yang memperlihatkan pohon uang Anda 5 hingga 10 tahun ke depan jika Anda rutin menanam bibit modal setiap bulan.",
+        summary:
+          "Menghitung pertumbuhan investasi dengan bunga majemuk (compound interest) atau menghitung estimasi cicilan bulanan pinjaman secara akurat.",
+        howItWorks: [
+          "Simulasi Investasi: Modal awal + setoran rutin bulanan + estimasi imbal hasil tahunan (%).",
+          "Menampilkan grafik pertumbuhan uang dan total bunga yang berhasil Anda peroleh secara akumulatif.",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ 'Kalkulator Finansial'.",
+          "Pilih mode Investasi atau Pinjaman.",
+          "Isi modal awal, setoran bulanan, jangka waktu (tahun), dan persentase imbal hasil.",
+        ],
+        impact:
+          "Membuka mata Anda akan kekuatan 'Bunga Berbunga' (Compound Interest) sehingga Anda lebih termotivasi untuk berinvestasi sejak dini.",
+        proTip:
+          "Waktu adalah sahabat terbaik investasi. Menabung Rp 500rb/bulan selama 10 tahun memberikan hasil jauh lebih besar daripada menabung Rp 1jt/bulan selama 3 tahun!",
+        actionTarget: "FinancialCalculator",
+        actionLabel: "Buka Kalkulator Investasi",
+      },
+      {
+        id: "tool_daily_limit",
+        name: "Kalkulator Limit Harian Fleksibel",
+        category: "tools",
+        categoryLabel: "Alat & Kalkulator",
+        tag: "Alokasi Cepat",
+        icon: "speedometer-outline",
+        color: "#6366F1",
+        location: "Sidebar Menu ➔ Alat Keuangan ➔ Limit Harian",
+        analogy:
+          "Ibarat membagi jatah uang saku liburan: 'Saya punya Rp 1.000.000 untuk liburan 4 hari, berarti jatah belanja per hari adalah Rp 250.000'.",
+        summary:
+          "Kalkulator cepat untuk membagi sejumlah dana kustom ke dalam durasi hari tertentu di luar siklus pembukuan utama.",
+        howItWorks: [
+          "Menghitung pembagian nominal dana bebas terhadap jumlah hari pilihan Anda.",
+          "Menampilkan rekomendasi pengeluaran per hari agar anggaran tidak jebol sebelum acara selesai.",
+        ],
+        steps: [
+          "Buka Menu Samping ➔ Alat Keuangan ➔ 'Limit Harian'.",
+          "Ketik total dana dan jumlah hari target.",
+          "Dapatkan angka batas belanja per hari secara instan.",
+        ],
+        impact:
+          "Sangat cocok untuk anggaran event khusus seperti mudik, liburan akhir pekan, atau proyek jangka pendek.",
+        proTip:
+          "Gunakan kalkulator ini saat Anda berpergian ke luar kota agar budget liburan Anda tidak bocor!",
+        actionTarget: "DailyLimit",
+        actionLabel: "Coba Limit Harian",
+      },
+
+      // ══════════════════════════════════════════════════════════════════════════
+      // FITUR TAMBAHAN: KEAMANAN & EVALUASI BULANAN
+      // ══════════════════════════════════════════════════════════════════════════
+      {
+        id: "monthly_report",
+        name: "Laporan & Evaluasi Bulanan",
+        category: "analytics_calendar",
+        categoryLabel: "Analisis & Kalender",
+        tag: "Rapor Finansial",
+        icon: "newspaper-outline",
+        color: colors.accent,
+        location: "Tab Analisis ➔ Tombol 'Laporan Bulanan' / Halaman Profil",
+        analogy:
+          "Ibarat menerima buku rapor bulanan di sekolah. Anda bisa melihat mata pelajaran apa yang nilainya sangat memuaskan (berhasil hemat) dan pos mana yang nilainya merah (boros).",
+        summary:
+          "Rangkuman komprehensif kinerja keuangan satu bulan penuh. Menampilkan rasio tabungan, surplus/defisit bersih, dan kategori paling boros.",
+        howItWorks: [
+          "Evaluasi Otomatis: Membandingkan total pemasukan dan total pengeluaran siklus berjalan.",
+          "Peringkat Pengeluaran Terbesar: Menampilkan top kategori yang paling banyak menguras kantong.",
+          "Skor Kesehatan Keuangan: Memberikan penilaian apakah keuangan Anda dalam kondisi Sehat, Waspada, atau Kritis.",
+        ],
+        steps: [
+          "Buka Tab Analisis di bilah menu bawah.",
+          "Ketuk kartu 'Laporan Bulanan' di bagian atas.",
+          "Baca evaluasi dan saran penghematan untuk bulan berikutnya.",
+        ],
+        impact:
+          "Memberikan kesadaran penuh (mindfulness) tentang ke mana perginya uang Anda setiap bulan sehingga Anda bisa terus memperbaiki diri.",
+        proTip:
+          "Jadikan membaca Laporan Bulanan sebagai ritual rutin bersama pasangan atau diri sendiri setiap tanggal gajian tiba!",
+        actionTarget: "Analytics",
+        actionLabel: "Cek Analisis & Laporan",
+      },
+      {
+        id: "app_security",
+        name: "Kunci Aplikasi (PIN & Biometrik)",
+        category: "data_system",
+        categoryLabel: "Data & Sistem",
+        tag: "Privasi 100% Terjaga",
+        icon: "lock-closed-outline",
+        color: "#10B981",
+        location: "Pengaturan ➔ Tab 'Keamanan' ➔ Kunci Aplikasi",
+        analogy:
+          "Ibarat brankas baja berpintu ganda di rumah Anda. Hanya pemilik sidik jari atau yang tahu kombinasi angka rahasia yang bisa membuka isinya.",
+        summary:
+          "Mengunci aplikasi MyMoney dengan PIN 4 digit dan sensor sidik jari / Face Unlock agar catatan finansial Anda tidak bisa diintip orang lain saat HP dipinjam.",
+        howItWorks: [
+          "Proteksi Instan Saat Minimize: Aplikasi otomatis terkunci saat Anda berpindah ke aplikasi lain atau mematikan layar HP.",
+          "Dukungan Sensor Biometrik: Terintegrasi langsung dengan hardware fingerprint scanner dan Face ID perangkat Android Anda.",
+        ],
+        steps: [
+          "Buka Pengaturan ➔ Tab 'Keamanan'.",
+          "Aktifkan tombol 'Kunci Aplikasi'.",
+          "Masukkan 4 digit PIN rahasia Anda dan izinkan sensor sidik jari.",
+        ],
+        impact:
+          "Anda merasa tenang 100% meminjamkan HP ke teman, anak, atau rekan kerja tanpa khawatir data saldo dan hutang Anda terbaca.",
+        proTip:
+          "Jangan gunakan tanggal lahir Anda sebagai PIN agar tidak mudah ditebak oleh orang terdekat!",
+        actionTarget: "Settings",
+        actionLabel: "Atur Kunci Keamanan",
+      },
+      {
+        id: "smart_reminders",
+        name: "Pengingat Harian & Notifikasi Cerdas",
+        category: "data_system",
+        categoryLabel: "Data & Sistem",
+        tag: "Asisten Pribadi",
+        icon: "notifications-outline",
+        color: "#F59E0B",
+        location: "Pengaturan ➔ Tab 'Pengingat' ➔ Notifikasi Harian",
+        analogy:
+          "Ibarat asisten pribadi yang ramah menepuk pundak Anda di malam hari sambil bertanya lembut: 'Sudah catat jajan kopi dan makan siang hari ini belum?'.",
+        summary:
+          "Notifikasi otomatis di waktu malam hari untuk mengingatkan Anda mencatat pengeluaran sebelum tidur agar tidak ada transaksi yang terlupakan.",
+        howItWorks: [
+          "Waktu Kustom: Anda bebas menyetel jam pengingat (misal pukul 20:00 atau 21:00 malam).",
+          "Peringatan Anggaran: Memberi notifikasi alarm jika pengeluaran kategori mendekati 80% atau melebihi batas batas anggaran.",
+        ],
+        steps: [
+          "Buka Pengaturan ➔ Tab 'Pengingat'.",
+          "Aktifkan 'Notifikasi Harian'.",
+          "Tentukan jam pengingat sesuai waktu senggang Anda di malam hari.",
+        ],
+        impact:
+          "Menjaga konsistensi streak harian Anda dan memastikan catatan kas selalu up-to-date tanpa ada bon yang tertinggal.",
+        proTip:
+          "Setel jam pengingat 30 menit sebelum Anda biasanya tidur malam saat suasana santai.",
+        actionTarget: "Settings",
+        actionLabel: "Atur Jam Pengingat",
       },
     ],
     [colors]

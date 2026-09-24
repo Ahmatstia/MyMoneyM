@@ -35,13 +35,14 @@ import {
 import { useAppContext } from "../../context/AppContext";
 import { storageService } from "../../utils/storage";
 import { useTheme } from "../../theme/ThemeContext";
-import { THEMES, ThemeId, DEFAULT_THEME_ID } from "../../theme/theme";
+import { THEMES, ThemeId, DEFAULT_THEME_ID, THEME_META } from "../../theme/theme";
 import { navigationRef } from "../../navigation/navigationRef";
 import {
   STORAGE_KEY_MASCOT_HIDDEN,
   resetSessionDismissed,
 } from "../../components/Mascot/FloatingMascotBubble";
 import { AppGuidebookModal } from "../../components/Tutorial";
+import { APP_VERSION, APP_NAME } from "../../constants/appVersion";
 
 // ─── Konstanta ───────────────────────────────────────────────────────────────
 const APP_SETTINGS_KEY = "@mymoney_app_settings";
@@ -1423,7 +1424,7 @@ const SettingsScreen = () => {
                           }}
                         />
                       </View>
-                      <View>
+                      <View style={{ flex: 1 }}>
                         <Text
                           style={{
                             color: colors.textPrimary,
@@ -1431,10 +1432,12 @@ const SettingsScreen = () => {
                             fontWeight: isSelected ? "700" : "600",
                           }}
                         >
-                          {id
-                            .split("-")
-                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                            .join(" ")}
+                          {THEME_META[id as ThemeId]?.emoji ? `${THEME_META[id as ThemeId].emoji} ` : ""}
+                          {THEME_META[id as ThemeId]?.name ||
+                            id
+                              .split("_")
+                              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                              .join(" ")}
                         </Text>
                         <Text
                           style={{
@@ -1443,17 +1446,7 @@ const SettingsScreen = () => {
                             marginTop: 2,
                           }}
                         >
-                          {id === "emerald"
-                            ? "Tema default (Hijau zamrud)"
-                            : id === "sapphire"
-                              ? "Elegan (Biru safir)"
-                              : id === "ruby"
-                                ? "Berani (Merah rubi)"
-                                : id === "amethyst"
-                                  ? "Mewah (Ungu ametis)"
-                                  : id === "midnight"
-                                    ? "Gelap murni (Midnight)"
-                                    : "Tema kustom"}
+                          {THEME_META[id as ThemeId]?.description || "Tema kustom"}
                         </Text>
                       </View>
                     </View>
@@ -2433,10 +2426,10 @@ const SettingsScreen = () => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "700" }}>
-                    MyMoney 
+                    {APP_NAME} 
                   </Text>
                   <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600", marginTop: 1 }}>
-                    Versi 1.0.8
+                    Versi {APP_VERSION}
                   </Text>
                 </View>
               </View>

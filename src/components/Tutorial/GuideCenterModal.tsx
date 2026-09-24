@@ -16,7 +16,7 @@ import { useTheme } from "../../theme/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
-export type GuideTopicId = "cycle" | "recurring" | "budget" | "privacy";
+export type GuideTopicId = "cycle" | "wallets" | "transactions" | "budget" | "moni";
 
 interface GuideCenterModalProps {
   visible: boolean;
@@ -68,230 +68,285 @@ export const GuideCenterModal: React.FC<GuideCenterModalProps> = ({
   const topics: GuideContent[] = [
     {
       id: "cycle",
-      title: "Aturan Pembukuan & Batas Belanja",
-      badge: "Fitur Unggulan",
+      title: "Awal Pembukuan & Batas Belanja",
+      badge: "Kunci Beranda",
       icon: "shield-checkmark-outline",
       color: colors.accent,
       summary:
-        "Bebaskan diri dari stres akhir bulan. Ketahui jatah belanja aman harian berdasarkan sisa hari bulan pembukuan Anda.",
-      diagramTitle: "Cara Kerja Jatah Belanja Aman:",
+        "Ketahui jatah belanja aman harian agar uang Anda bertahan sampai tanggal pembukuan/gajian berikutnya tanpa tekor di akhir bulan.",
+      diagramTitle: "Cara Kerja Jatah Belanja Harian:",
       diagramSteps: [
         {
-          label: "Pemasukan Masuk",
-          sublabel: "Misal: Rp 3.000.000 (30 Hari)",
+          label: "Total Saldo Kas",
+          sublabel: "Seluruh uang Anda yang tersedia saat ini",
           icon: "wallet-outline",
           color: colors.success,
         },
         {
           label: "Hitung Sisa Hari",
-          sublabel: "Berjalan otomatis setiap hari",
+          sublabel: "Mundur menuju tanggal awal pembukuan",
           icon: "hourglass-outline",
           color: colors.info,
         },
         {
           label: "Jatah Belanja Aman",
-          sublabel: "Sisa Uang ÷ Sisa Hari = Aman!",
+          sublabel: "Sisa Uang ÷ Sisa Hari = Angka Aman!",
           icon: "shield-checkmark-outline",
           color: colors.accent,
         },
       ],
       whyItMatters:
-        "Banyak orang tekor bukan karena boros sekali belanja, tapi karena tidak sadar menghabiskan uang terlalu cepat di awal bulan. Dengan fitur ini, Anda tahu persis berapa batas belanja maksimal hari ini.",
+        "Banyak orang kehabisan uang bukan karena boros sekali belanja, melainkan tidak sadar menghabiskan uang terlalu cepat di awal bulan. Angka jatah belanja harian di Beranda memberi kompas yang jelas: jika hari ini hemat, jatah belanja hari esok otomatis bertambah!",
       steps: [
         {
           number: "1",
-          title: "Catat Pemasukan",
+          title: "Setel Tanggal Pembukuan Anda",
           description:
-            "Klik tombol (+) ➔ Pilih Pemasukan (uang saku, honor, jatah belanja, atau pemasukan lainnya).",
+            "Buka Pengaturan ➔ Awal Pembukuan Bulanan. Sesuaikan dengan tanggal gajian atau tanggal uang saku Anda masuk (misal tanggal 25 atau 1).",
         },
         {
           number: "2",
-          title: "Atur Target Uang Bertahan",
+          title: "Cek 'Jatah Hari Ini' di Beranda",
           description:
-            "Pilih jangka waktu uang ini harus bertahan (misal: 7 hari untuk mingguan, 30 hari untuk bulanan).",
+            "Setiap pagi, lihat kartu Jatah Hari Ini di Beranda sebelum Anda mulai membelanjakan uang.",
         },
         {
           number: "3",
-          title: "Pantau di Beranda",
+          title: "Catat Pengeluaran",
           description:
-            "Kartu di Beranda akan langsung memandu jatah belanja harian Anda dan sisa hari menuju bulan berikutnya.",
+            "Setiap kali belanja, catat nominalnya. Sisa jatah hari ini akan otomatis diperbarui secara realtime!",
         },
       ],
       proTip:
-        "Jika Anda belanja di bawah jatah hari ini, sisa uang otomatis menambah jatah belanja hari-hari berikutnya!",
-      actionText: "Catat Pemasukan Sekarang",
-      actionTarget: "AddTransaction",
+        "Jika Anda belanja di bawah jatah hari ini, sisa uang yang belum terpakai otomatis menambah jatah belanja hari-hari berikutnya!",
+      actionText: "Atur Awal Pembukuan",
+      actionTarget: "Settings",
     },
     {
-      id: "recurring",
-      title: "Pemasukan Rutin Otomatis",
-      badge: "Otomatisasi",
-      icon: "repeat-outline",
+      id: "wallets",
+      title: "Dompet, Bank & E-Wallet",
+      badge: "Fitur Baru",
+      icon: "card-outline",
       color: colors.purple,
       summary:
-        "Menerima uang saku, kiriman bulanan, atau pemasukan rutin berkala? Biarkan MyMoney mencatatnya secara otomatis tanpa perlu Anda ketik berulang.",
-      diagramTitle: "Alur Pemasukan Rutin:",
+        "Kelola banyak rekening sekaligus. Kartu pertama adalah Total Saldo, dan geser ke samping untuk melihat rincian per dompet (BCA, Mandiri, GoPay, Tunai).",
+      diagramTitle: "Alur Manajemen Multi-Dompet:",
       diagramSteps: [
         {
-          label: "Atur Jadwal",
-          sublabel: "Pilih tanggal & frekuensi rutin",
-          icon: "calendar-outline",
+          label: "Geser Kartu Saldo",
+          sublabel: "Pilih Dompet Tunai, Bank, atau E-Wallet",
+          icon: "swap-horizontal-outline",
           color: colors.purple,
         },
         {
-          label: "Saat Jatuh Tempo",
-          sublabel: "Sistem mendeteksi tanggal aktif",
-          icon: "alarm-outline",
-          color: colors.warning,
+          label: "Transfer Saldo",
+          sublabel: "Pindah dana tanpa memengaruhi pengeluaran",
+          icon: "git-compare-outline",
+          color: colors.info,
         },
         {
-          label: "Otomatis Tercatat",
-          sublabel: "Saldo & Jatah harian langsung update",
+          label: "Pilih Saat Transaksi",
+          sublabel: "Saldo dompet terpotong akurat & rapi",
           icon: "checkmark-circle-outline",
           color: colors.success,
         },
       ],
       whyItMatters:
-        "Anda tidak perlu mengingat tanggal atau repot mengetik ulang pemasukan setiap bulan. Aplikasi akan otomatis menambahkan transaksi saat tanggal jatuh tempo tiba.",
+        "Uang kita tersebar di berbagai tempat: uang tunai di dompet fisik, tabungan di rekening bank, dan saldo di aplikasi e-wallet. Fitur ini memisahkan pencatatan saldo tiap kantong tanpa merusak total kekayaan Anda.",
       steps: [
         {
           number: "1",
-          title: "Buka Menu Transaksi Rutin",
+          title: "Geser Kartu Saldo di Beranda",
           description:
-            "Buka sidebar kiri (geser layar) ➔ Pilih menu Transaksi Rutin.",
+            "Di bagian atas Beranda, geser kartu ke kiri/kanan untuk berpindah antara Total Semua Dompet dengan masing-masing rekening.",
         },
         {
           number: "2",
-          title: "Buat Pemasukan Rutin",
+          title: "Tambah Dompet / Rekening Baru",
           description:
-            "Masukkan nama (misal: Uang Bulanan / Tagihan), nominal, dan pilih frekuensi (Mingguan / Bulanan / Kustom hari).",
+            "Buka menu samping ➔ Rekening & Dompet ➔ Tekan (+) untuk menambahkan rekening bank atau e-wallet baru beserta warna & saldo awal.",
         },
         {
           number: "3",
-          title: "Hubungkan dengan Target Bertahan",
+          title: "Pindahkan Dana (Transfer)",
           description:
-            "Saat jatuh tempo, pemasukan otomatis tercatat dan memperbarui jatah belanja harian Anda di Beranda!",
+            "Tarik tunai dari ATM atau top up e-wallet? Gunakan tombol 'Transfer' di bawah kartu saldo agar perpindahan dana tidak terhitung pengeluaran palsu.",
         },
       ],
       proTip:
-        "Transaksi rutin juga bisa digunakan untuk tagihan tetap seperti Kost, WiFi, atau BPJS agar tidak lupa bayar!",
-      actionText: "Buka Transaksi Rutin",
-      actionTarget: "RecurringTransactions",
+        "Saat mencatat transaksi dengan tombol (+), pilih dompet yang sesuai agar saldo kas Anda selalu cocok 100% dengan saldo rekening bank aslinya.",
+      actionText: "Kelola Rekening & Dompet",
+      actionTarget: "Wallets",
+    },
+    {
+      id: "transactions",
+      title: "Catat Transaksi & Pecah Struk",
+      badge: "Pencatatan Cepat",
+      icon: "receipt-outline",
+      color: colors.info,
+      summary:
+        "Catat pemasukan & pengeluaran hanya dalam 5 detik. Manfaatkan fitur 'Pecah Struk' untuk merinci struk belanjaan minimarket/supermarket.",
+      diagramTitle: "Alur Pencatatan Transaksi:",
+      diagramSteps: [
+        {
+          label: "Tekan Tombol (+)",
+          sublabel: "Tombol mengambang di tengah bawah",
+          icon: "add-circle-outline",
+          color: colors.accent,
+        },
+        {
+          label: "Pecah Struk / Item",
+          sublabel: "Rinci barang belanjaan & kuantitas",
+          icon: "list-outline",
+          color: colors.info,
+        },
+        {
+          label: "Mutasi & Saldo Update",
+          sublabel: "Saldo kas & riwayat langsung tercatat",
+          icon: "checkmark-done-circle-outline",
+          color: colors.success,
+        },
+      ],
+      whyItMatters:
+        "Sering kali kita belanja di minimarket dan membayar 1 total struk (misal Rp 150.000) yang berisi makanan, sabun mandi, dan camilan. Dengan fitur Pecah Struk, Anda bisa membagi item belanjaan ke pos yang tepat tanpa ribet mencatat berkali-kali.",
+      steps: [
+        {
+          number: "1",
+          title: "Tekan Tombol Tambah (+)",
+          description:
+            "Pilih jenis Transaksi (Pengeluaran atau Pemasukan), ketik nominal, dan pilih kategori.",
+        },
+        {
+          number: "2",
+          title: "Pilih Dompet Sumber Dana",
+          description:
+            "Tentukan pembayaran via Tunai, Rekening Bank, atau E-Wallet agar saldo rekening terpotong otomatis.",
+        },
+        {
+          number: "3",
+          title: "Aktifkan Rincian Struk (Opsional)",
+          description:
+            "Centang 'Rincian Struk / Item Belanja' untuk menambahkan daftar nama barang, harga satuan, dan jumlah item belanjaan Anda.",
+        },
+      ],
+      proTip:
+        "Anda juga dapat melampirkan foto struk fisik atau bukti transfer bank dengan kamera/galeri sebagai arsip digital permanen!",
+      actionText: "Catat Transaksi Baru",
+      actionTarget: "AddTransaction",
     },
     {
       id: "budget",
-      title: "Anggaran & Batas Kategori",
-      badge: "Kendali Belanja",
+      title: "Pagar Anggaran & Peringatan",
+      badge: "Rem Belanja",
       icon: "pie-chart-outline",
       color: colors.warning,
       summary:
-        "Kendalikan pos-pos rawan boncos seperti Makan Luar, Kopi, atau Belanja Online dengan batas maksimal bulanan.",
+        "Kendalikan pos-pos rawan boncos seperti Makan Luar, Ngopi, atau Belanja Online dengan batas maksimal bulanan.",
       diagramTitle: "Sistem Peringatan Anggaran:",
       diagramSteps: [
         {
-          label: "Tetapkan Target",
-          sublabel: "Misal: Makan Rp 1.500.000",
+          label: "Pasang Batas Kuota",
+          sublabel: "Misal: Makanan Rp 1.500.000",
           icon: "flag-outline",
           color: colors.info,
         },
         {
-          label: "Peringatan Dini",
-          sublabel: "Warna berubah saat capai 80%",
+          label: "Peringatan Dini (80%)",
+          sublabel: "Bar berubah kuning saat mendekati batas",
           icon: "alert-circle-outline",
           color: colors.warning,
         },
         {
           label: "Alarm Overbudget",
-          sublabel: "Notifikasi saat budget terlampaui",
+          sublabel: "Warna merah & notifikasi saat terlampaui",
           icon: "notifications-outline",
           color: colors.error,
         },
       ],
       whyItMatters:
-        "Uang sering habis bukan pada hal besar, melainkan pengeluaran kecil harian yang tidak disadari. Anggaran memberi Anda 'lampu kuning' sebelum dompet jebol.",
+        "Uang sering habis bukan pada hal besar, melainkan pengeluaran kecil harian yang tidak disadari. Anggaran memberi Anda 'lampu kuning' sebelum dompet Anda benar-benar kosong.",
       steps: [
         {
           number: "1",
-          title: "Pilih Menu Anggaran",
+          title: "Buka Menu Anggaran",
           description:
-            "Masuk ke tab Anggaran di menu utama atau sidebar navigasi.",
+            "Masuk ke tab Anggaran dari bilah menu bawah atau sidebar samping.",
         },
         {
           number: "2",
           title: "Tentukan Batas Kategori",
           description:
-            "Pilih kategori yang ingin dibatasi (misal Makanan) dan isi nominal batas maksimalnya.",
+            "Pilih kategori yang ingin dibatasi (misal: Makanan / Jajan) dan isi nominal batas maksimalnya.",
         },
         {
           number: "3",
-          title: "Cek Bar Progres",
+          title: "Pantau Bar Progres",
           description:
-            "Setiap mencatat pengeluaran, bar progres akan terisi otomatis. Warna merah berarti Anda mendekati batas!",
+            "Setiap mencatat pengeluaran di kategori tersebut, bar progres terisi otomatis. Warna merah berarti Anda wajib mengerem belanja!",
         },
       ],
       proTip:
-        "Aktifkan notifikasi Anggaran di menu Pengaturan untuk mendapatkan pengingat saat anggaran hampir habis.",
-      actionText: "Atur Anggaran",
+        "Anggaran otomatis di-reset mengikuti siklus 'Awal Pembukuan Bulanan' Anda, sehingga tidak perlu membuat ulang setiap bulan.",
+      actionText: "Atur Anggaran Kategori",
       actionTarget: "Budget",
     },
     {
-      id: "privacy",
-      title: "100% Privat & Cadangan Data",
-      badge: "Keamanan Data",
-      icon: "shield-checkmark-outline",
-      color: colors.success,
+      id: "moni",
+      title: "Maskot Moni & Kebiasaan Streak",
+      badge: "Gamifikasi",
+      icon: "paw-outline",
+      color: "#F59E0B",
       summary:
-        "Data finansial Anda adalah milik pribadi Anda. Tersimpan 100% offline di HP tanpa ada server yang mengintip.",
-      diagramTitle: "Keamanan Finansial Anda:",
+        "Bangun kebiasaan finansial positif bersama Kucing Moni! Kumpulkan streak harian, naikkan level finansial, dan buka kostum eksklusif.",
+      diagramTitle: "Siklus Kebiasaan Moni:",
       diagramSteps: [
         {
-          label: "Lokal di HP",
-          sublabel: "Database terenkripsi di sandbox HP",
-          icon: "phone-portrait-outline",
-          color: colors.success,
+          label: "Catat Tiap Hari",
+          sublabel: "Jaga api streak harian tidak padam",
+          icon: "flame-outline",
+          color: "#EF4444",
         },
         {
-          label: "Kunci Biometrik",
-          sublabel: "Buka via Sidik Jari / PIN",
-          icon: "finger-print-outline",
+          label: "Dapatkan XP & Koin",
+          sublabel: "Naik level dari Pemula hingga Sultan",
+          icon: "trophy-outline",
+          color: "#F59E0B",
+        },
+        {
+          label: "Buka Hadiah Moni",
+          sublabel: "Topi koki, mahkota & baju eksklusif",
+          icon: "sparkles-outline",
           color: colors.accent,
-        },
-        {
-          label: "Ekspor & Backup",
-          sublabel: "Simpan file JSON / CSV mandiri",
-          icon: "download-outline",
-          color: colors.purple,
         },
       ],
       whyItMatters:
-        "Banyak aplikasi finansial menjual atau menganalisis kebiasaan belanja Anda ke pihak ketiga. MyMoney menjamin 100% privasi: tidak butuh email/akun dan tidak ada iklan pelacak.",
+        "Mencatat keuangan sering terasa membosankan jika hanya berisi angka. Kehadiran maskot kucing Moni mengubah pencatatan harian menjadi petualangan gamifikasi yang seru dan memotivasi Anda untuk konsisten.",
       steps: [
         {
           number: "1",
-          title: "Aktifkan Kunci Sidik Jari",
+          title: "Jaga Streak Harian",
           description:
-            "Masuk ke Pengaturan ➔ Keamanan ➔ Aktifkan Kunci Aplikasi untuk privasi penuh saat HP dipinjam teman.",
+            "Catat minimal satu transaksi setiap hari. Angka streak di Beranda akan terus bertambah selama Anda tidak melewatkan satu hari pun.",
         },
         {
           number: "2",
-          title: "Cadangkan Data Berkala",
+          title: "Kunjungi Halaman Moni",
           description:
-            "Di menu Pengaturan ➔ Backup & Ekspor ➔ Klik 'Ekspor Data'. Simpan filenya ke Google Drive atau WhatsApp sendiri.",
+            "Ketuk gelembung kucing Moni di pojok kanan bawah Beranda untuk mengecek status level, mood, dan koleksi pencapaian Anda.",
         },
         {
           number: "3",
-          title: "Pulihkan Kapan Saja",
+          title: "Klaim Kostum & Aksesoris",
           description:
-            "Jika ganti HP, cukup unduh MyMoney dan klik 'Impor Data' untuk mengembalikan seluruh catatan dalam 2 detik.",
+            "Setiap mencapai level baru, Anda mendapatkan koin untuk membuka topi koki, kacamata, dan kostum lucu di Lemari Moni!",
         },
       ],
       proTip:
-        "Anda juga bisa mengekspor data ke format CSV untuk diolah di Microsoft Excel atau Google Sheets!",
-      actionText: "Buka Pengaturan Keamanan",
-      actionTarget: "Settings",
+        "Ketuk kucing Moni di Beranda untuk melihat celoteh dan reaksi lucunya saat Anda rajin berhemat!",
+      actionText: "Kunjungi Kucing Moni",
+      actionTarget: "MoniScreen",
     },
   ];
-
   const currentContent =
     topics.find((t) => t.id === activeTopic) || topics[0];
 
