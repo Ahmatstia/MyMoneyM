@@ -229,7 +229,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Nama Rekening */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-1.5`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -241,7 +241,7 @@ export const AddWalletScreen: React.FC = () => {
             placeholder="Misal: BCA Utama, Gopay, Dompet Fisik"
             placeholderTextColor={TEXT_SECONDARY}
             style={[
-              tw`border rounded-xl px-3.5 py-3 text-sm mb-4 font-semibold`,
+              tw`border rounded-xl px-4 py-3 text-sm mb-4 font-semibold`,
               {
                 color: TEXT_PRIMARY,
                 borderColor: `${BORDER_COLOR}80`,
@@ -253,7 +253,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Jenis Rekening - horizontal scroll */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-1.5`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -308,10 +308,10 @@ export const AddWalletScreen: React.FC = () => {
           </ScrollView>
 
           {/* Saldo Awal / Rekonsiliasi Saldo */}
-          <View style={[tw`flex-row mb-1.5 items-center justify-between`]}>
+          <View style={[tw`flex-row mb-1.5 items-center justify-between ml-0.5`]}>
             <Text
               style={[
-                tw`text-[11px] font-bold uppercase`,
+                tw`text-[11px] font-bold uppercase tracking-wider`,
                 { color: TEXT_SECONDARY },
               ]}
             >
@@ -357,21 +357,41 @@ export const AddWalletScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           </View>
-          <TextInput
-            value={formInitialBalance}
-            onChangeText={setFormInitialBalance}
-            placeholder="0"
-            placeholderTextColor={TEXT_SECONDARY}
-            keyboardType="numeric"
+          <View
             style={[
-              tw`border rounded-xl px-3.5 py-3 text-sm mb-1.5 font-semibold`,
+              tw`border rounded-xl px-4 py-3 flex-row items-center mb-1.5`,
               {
-                color: balanceSign === "-" ? colors.error : TEXT_PRIMARY,
                 borderColor: `${BORDER_COLOR}80`,
                 backgroundColor: SURFACE_COLOR,
+                minHeight: 56,
               },
             ]}
-          />
+          >
+            <Text
+              style={{
+                color: balanceSign === "-" ? colors.error : TEXT_SECONDARY,
+                fontSize: 18,
+                fontWeight: "700",
+                marginRight: 8,
+              }}
+            >
+              {balanceSign === "-" ? "- Rp" : "Rp"}
+            </Text>
+            <TextInput
+              value={formInitialBalance}
+              onChangeText={setFormInitialBalance}
+              placeholder="0"
+              placeholderTextColor={TEXT_SECONDARY}
+              keyboardType="numeric"
+              style={{
+                flex: 1,
+                color: balanceSign === "-" ? colors.error : TEXT_PRIMARY,
+                fontSize: 22,
+                fontWeight: "800",
+                padding: 0,
+              }}
+            />
+          </View>
           {isEditMode && (
             <Text
               style={[
@@ -389,7 +409,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Peruntukan / Pos Dana - horizontal scroll */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-1.5`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -458,7 +478,7 @@ export const AddWalletScreen: React.FC = () => {
               placeholder="Tulis nama pos dana kustom..."
               placeholderTextColor={TEXT_SECONDARY}
               style={[
-                tw`border rounded-xl px-3.5 py-2.5 text-xs mb-3 font-semibold`,
+                tw`border rounded-xl px-4 py-2.5 text-xs mb-3 font-semibold`,
                 {
                   color: TEXT_PRIMARY,
                   borderColor: `${colors.accent}80`,
@@ -471,7 +491,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Kategori Aliran Dana (Pilihan: Uang Belanja vs Uang Dingin) */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-1.5`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -604,7 +624,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Nomor Rekening (Opsional) */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-1.5`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -617,7 +637,7 @@ export const AddWalletScreen: React.FC = () => {
             placeholderTextColor={TEXT_SECONDARY}
             maxLength={25}
             style={[
-              tw`border rounded-xl px-3.5 py-3 text-sm mb-4 font-semibold`,
+              tw`border rounded-xl px-4 py-3 text-sm mb-4 font-semibold`,
               {
                 color: TEXT_PRIMARY,
                 borderColor: `${BORDER_COLOR}80`,
@@ -629,7 +649,7 @@ export const AddWalletScreen: React.FC = () => {
           {/* Pilihan Warna Kartu */}
           <Text
             style={[
-              tw`text-[11px] font-bold uppercase mb-2`,
+              tw`text-[11px] font-bold uppercase tracking-wider mb-2 ml-0.5`,
               { color: TEXT_SECONDARY },
             ]}
           >
@@ -660,7 +680,7 @@ export const AddWalletScreen: React.FC = () => {
           </ScrollView>
 
           {/* Tombol Simpan & Batal */}
-          <View style={tw`flex-row gap-3`}>
+          <View style={tw`flex-row gap-3 mt-2`}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               activeOpacity={0.8}
@@ -672,7 +692,7 @@ export const AddWalletScreen: React.FC = () => {
                 },
               ]}
             >
-              <Text style={[tw`text-xs font-bold`, { color: TEXT_SECONDARY }]}>
+              <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>
                 Batal
               </Text>
             </TouchableOpacity>
@@ -682,15 +702,15 @@ export const AddWalletScreen: React.FC = () => {
               disabled={loading}
               activeOpacity={0.8}
               style={[
-                tw`flex-2 py-3.5 rounded-xl items-center shadow-sm`,
+                tw`flex-1 py-3.5 rounded-xl items-center shadow-sm`,
                 { backgroundColor: colors.accent },
               ]}
             >
-              <Text style={tw`text-white text-xs font-black`}>
+              <Text style={tw`text-white text-sm font-bold`}>
                 {loading
                   ? "Menyimpan..."
                   : isEditMode
-                  ? "Simpan Perubahan"
+                  ? "Simpan"
                   : "Buat Rekening"}
               </Text>
             </TouchableOpacity>

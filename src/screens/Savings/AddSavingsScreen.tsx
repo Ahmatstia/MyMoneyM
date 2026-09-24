@@ -582,13 +582,13 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Name Input */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Nama Tabungan</Text>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>Nama Tabungan</Text>
             <Text style={[tw`text-[10px]`, { color: nameError ? ERROR_COLOR : colors.gray500 }]}>{name.length}/50</Text>
           </View>
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: nameError ? 1 : 0, borderColor: nameError ? ERROR_COLOR : "transparent" }]}>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: nameError ? ERROR_COLOR : `${BORDER_COLOR}80` }]}>
             <TextInput
-              style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
+              style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Contoh: Dana Liburan ke Bali"
               placeholderTextColor={colors.textTertiary}
               value={name}
@@ -603,13 +603,13 @@ const AddSavingsScreen: React.FC = () => {
         {/* Quick Target Suggestions */}
         {!target && (
           <View style={tw`mb-4`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>💡 Target Cepat</Text>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>💡 Target Cepat</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
               <View style={tw`flex-row px-1`}>
                 {[1000000, 3000000, 5000000, 10000000, 20000000, 50000000].map((value) => (
                   <TouchableOpacity
                     key={value}
-                    style={[tw`rounded-xl px-4 py-2 mr-2`, { backgroundColor: SURFACE_COLOR }]}
+                    style={[tw`rounded-xl px-4 py-2 mr-2 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
                     onPress={() => setTarget(value.toString())}
                   >
                     <Text style={[tw`text-xs font-bold`, { color: ACCENT_COLOR }]}>
@@ -625,12 +625,12 @@ const AddSavingsScreen: React.FC = () => {
         {/* Amount Inputs */}
         <View style={tw`mb-4`}>
           {/* Target Input */}
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Target Tabungan</Text>
-          <View style={[tw`rounded-xl px-4 py-3 mb-4`, { backgroundColor: SURFACE_COLOR, borderWidth: targetError ? 1 : 0, borderColor: targetError ? ERROR_COLOR : "transparent" }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>Target Tabungan</Text>
+          <View style={[tw`rounded-xl px-4 py-3 mb-4 border`, { backgroundColor: SURFACE_COLOR, borderColor: targetError ? ERROR_COLOR : `${BORDER_COLOR}80`, minHeight: 56 }]}>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-lg font-bold mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
               <TextInput
-                style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
+                style={[tw`flex-1 text-[22px] font-extrabold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
                 placeholderTextColor={colors.textTertiary}
                 value={target}
@@ -650,12 +650,12 @@ const AddSavingsScreen: React.FC = () => {
           </View>
 
           {/* Current Amount Input */}
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Jumlah Saat Ini</Text>
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>Jumlah Saat Ini</Text>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 56 }]}>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-lg font-bold mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
               <TextInput
-                style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
+                style={[tw`flex-1 text-[22px] font-extrabold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
                 placeholderTextColor={colors.textTertiary}
                 value={current}
@@ -740,12 +740,12 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Category Selection */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>
               Kategori Tabungan
             </Text>
             {category ? (
-              <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>
+              <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>
                 ✓ Terpilih
               </Text>
             ) : null}
@@ -755,15 +755,15 @@ const AddSavingsScreen: React.FC = () => {
             onPress={() => setShowCategoryPicker(true)}
             disabled={loading}
             style={[
-              tw`rounded-xl px-4 py-3 flex-row items-center`,
-              { backgroundColor: SURFACE_COLOR },
+              tw`rounded-xl px-4 py-3 flex-row items-center border`,
+              { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 48 },
             ]}
           >
             {resolvedCategory ? (
               <View
                 style={{
-                  width: 34,
-                  height: 34,
+                  width: 32,
+                  height: 32,
                   borderRadius: 10,
                   backgroundColor: `${resolvedCategory.color}20`,
                   alignItems: "center",
@@ -773,15 +773,15 @@ const AddSavingsScreen: React.FC = () => {
               >
                 <Ionicons
                   name={resolvedCategory.icon as any}
-                  size={18}
+                  size={16}
                   color={resolvedCategory.color}
                 />
               </View>
             ) : (
               <View
                 style={{
-                  width: 34,
-                  height: 34,
+                  width: 32,
+                  height: 32,
                   borderRadius: 10,
                   backgroundColor: `${ACCENT_COLOR}12`,
                   alignItems: "center",
@@ -789,7 +789,7 @@ const AddSavingsScreen: React.FC = () => {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="grid-outline" size={18} color={ACCENT_COLOR} />
+                <Ionicons name="grid-outline" size={16} color={ACCENT_COLOR} />
               </View>
             )}
 
@@ -797,7 +797,7 @@ const AddSavingsScreen: React.FC = () => {
               <Text
                 style={{
                   color: category ? TEXT_PRIMARY : colors.textTertiary,
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: "600",
                 }}
               >
@@ -823,7 +823,7 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Priority Selection */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
             Prioritas
           </Text>
           <View style={tw`flex-row gap-3`}>
@@ -835,10 +835,10 @@ const AddSavingsScreen: React.FC = () => {
                 <TouchableOpacity
                   key={p.id}
                   style={[
-                    tw`flex-1 rounded-xl px-3 py-3`,
+                    tw`flex-1 rounded-xl px-3 py-3 border`,
                     isSelected
-                      ? { backgroundColor: priColor + "15" }
-                      : { backgroundColor: SURFACE_COLOR },
+                      ? { backgroundColor: priColor + "15", borderColor: priColor }
+                      : { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` },
                   ]}
                   onPress={() => setPriority(p.id)}
                   disabled={loading}
@@ -857,16 +857,16 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Deadline Selection */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
             Deadline (Opsional)
           </Text>
           <TouchableOpacity
-            style={[tw`rounded-xl p-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`rounded-xl px-4 py-3 flex-row justify-between items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 48 }]}
             onPress={() => setShowCalendar(true)}
             disabled={loading}
           >
             <View style={tw`flex-1 mr-3`}>
-              <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>
+              <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>
                 {deadline ? formatDisplayDate(deadline) : "Pilih tanggal target"}
               </Text>
             </View>
@@ -876,13 +876,13 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Description */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Catatan (opsional)</Text>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>Catatan (opsional)</Text>
             <Text style={[tw`text-[10px]`, { color: colors.gray500 }]}>{description.length}/200</Text>
           </View>
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
             <TextInput
-              style={[tw`text-[13px] font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
+              style={[tw`text-sm font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Tambahkan catatan atau motivasi..."
               placeholderTextColor={colors.textTertiary}
               value={description}
@@ -897,8 +897,8 @@ const AddSavingsScreen: React.FC = () => {
 
         {/* Image Cover Pick (Poster Style) */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Gambar Impian (Opsional)</Text>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>Gambar Impian (Opsional)</Text>
             <Ionicons name="image-outline" size={12} color={colors.gray500} />
           </View>
           
@@ -1005,21 +1005,21 @@ const AddSavingsScreen: React.FC = () => {
         </View>
 
         {/* Action Buttons */}
-        <View style={tw`flex-row gap-3 mt-2`}>
+        <View style={tw`flex-row gap-3 mt-4`}>
           <TouchableOpacity
-            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
+            <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: ACCENT_COLOR, opacity: (!name || !target || loading) ? 0.7 : 1 }]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center shadow-sm`, { backgroundColor: ACCENT_COLOR, opacity: (!name || !target || loading) ? 0.7 : 1 }]}
             onPress={handleSubmit}
             disabled={!name || !target || loading}
           >
-            <Text style={tw`text-white text-[13px] font-bold`}>
+            <Text style={tw`text-white text-sm font-bold`}>
               {loading ? "Menyimpan..." : isEditMode ? "Simpan" : "Tambah"}
             </Text>
           </TouchableOpacity>

@@ -586,15 +586,15 @@ const AddBudgetScreen: React.FC = () => {
 
         {/* Category Selection */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Kategori</Text>
-            {category ? <Text style={[tw`text-[10px] font-bold`, { color: ACCENT_COLOR }]}>✓ Terpilih</Text> : null}
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+            {category ? <Text style={[tw`text-[11px] font-bold`, { color: ACCENT_COLOR }]}>✓ Terpilih</Text> : null}
           </View>
 
           <TouchableOpacity
             onPress={() => setShowCategoryPicker(true)}
             disabled={loading}
-            style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`rounded-xl px-4 py-3 flex-row items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 48 }]}
           >
             {resolvedCategory ? (
               <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
@@ -606,7 +606,7 @@ const AddBudgetScreen: React.FC = () => {
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+              <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 14, fontWeight: "600" }}>
                 {category || "Pilih kategori..."}
               </Text>
             </View>
@@ -624,10 +624,10 @@ const AddBudgetScreen: React.FC = () => {
 
         {/* Model & Jenis Periode Anggaran */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-2 ml-1`, { color: TEXT_SECONDARY }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-2 ml-0.5`, { color: TEXT_SECONDARY }]}>
             Model Anggaran
           </Text>
-          <View style={[tw`flex-row p-1 rounded-2xl mb-3`, { backgroundColor: SURFACE_COLOR }]}>
+          <View style={[tw`flex-row p-1 rounded-2xl mb-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
             <TouchableOpacity
               style={[
                 tw`flex-1 flex-row items-center justify-center py-2.5 px-3 rounded-xl gap-2`,
@@ -837,8 +837,8 @@ const AddBudgetScreen: React.FC = () => {
 
         {/* Limit Input */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row justify-between items-center mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>
+          <View style={tw`flex-row justify-between items-center mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>
               Limit Anggaran
             </Text>
             <TouchableOpacity
@@ -853,11 +853,11 @@ const AddBudgetScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: limitError ? 1 : 0, borderColor: limitError ? ERROR_COLOR : "transparent" }]}>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: limitError ? ERROR_COLOR : `${BORDER_COLOR}80`, minHeight: 56 }]}>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-lg font-bold mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
               <TextInput
-                style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
+                style={[tw`flex-1 text-[22px] font-extrabold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
                 placeholderTextColor={colors.textTertiary}
                 value={limit}
@@ -1112,13 +1112,13 @@ const AddBudgetScreen: React.FC = () => {
         </View>
 
         {/* Action Buttons */}
-        <View style={tw`flex-row gap-3 mt-2`}>
+        <View style={tw`flex-row gap-3 mt-4`}>
           <TouchableOpacity
-            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
+            <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1126,7 +1126,7 @@ const AddBudgetScreen: React.FC = () => {
             onPress={handleSubmit}
             disabled={!category || !limit || loading}
           >
-            <Text style={tw`text-white text-[13px] font-bold`}>
+            <Text style={tw`text-white text-sm font-bold`}>
               {loading ? "Menyimpan..." : isEditMode ? "Simpan" : "Tambah"}
             </Text>
           </TouchableOpacity>

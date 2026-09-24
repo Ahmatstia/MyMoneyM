@@ -261,102 +261,159 @@ export const AddRecurringTransactionScreen: React.FC = () => {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 48 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 48 }}
         >
+          {/* Section Label Helper */}
+          {(() => null)()}
+
           {/* Type Switcher */}
-          <View
-            style={{
-              flexDirection: "row",
-              backgroundColor: colors.surface,
-              borderRadius: 12,
-              padding: 4,
-              marginBottom: 16,
-              borderWidth: 1,
-              borderColor: `${colors.border}80`,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setFormType("income");
-              }}
-              activeOpacity={0.7}
+          <View style={{ marginBottom: 16 }}>
+            <Text
               style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: "center",
-                borderRadius: 9,
-                backgroundColor: formType === "income" ? colors.success : "transparent",
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
               }}
             >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: formType === "income" ? "#FFFFFF" : colors.gray400,
-                }}
-              >
-                Pemasukan
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setFormType("expense");
-              }}
-              activeOpacity={0.7}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: "center",
-                borderRadius: 9,
-                backgroundColor: formType === "expense" ? colors.error : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: formType === "expense" ? "#FFFFFF" : colors.gray400,
-                }}
-              >
-                Pengeluaran
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Nominal */}
-          <View style={{ marginBottom: 14 }}>
-            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-              NOMINAL (RP)
+              Tipe Transaksi
             </Text>
-            <TextInput
-              value={
-                formAmount
-                  ? `Rp ${parseInt(formAmount.replace(/\D/g, ""), 10).toLocaleString("id-ID")}`
-                  : ""
-              }
-              onChangeText={(t) => setFormAmount(t.replace(/\D/g, ""))}
-              keyboardType="numeric"
-              placeholder="Rp 0"
-              placeholderTextColor={colors.gray500}
+            <View
               style={{
+                flexDirection: "row",
                 backgroundColor: colors.surface,
                 borderRadius: 14,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                color: formType === "income" ? colors.success : colors.error,
-                fontSize: 18,
-                fontWeight: "800",
+                padding: 4,
                 borderWidth: 1,
                 borderColor: `${colors.border}80`,
               }}
-            />
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setFormType("income");
+                }}
+                activeOpacity={0.7}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                  borderRadius: 10,
+                  backgroundColor: formType === "income" ? colors.success : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: formType === "income" ? "#FFFFFF" : colors.textSecondary,
+                  }}
+                >
+                  Pemasukan
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setFormType("expense");
+                }}
+                activeOpacity={0.7}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: "center",
+                  borderRadius: 10,
+                  backgroundColor: formType === "expense" ? colors.error : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: formType === "expense" ? "#FFFFFF" : colors.textSecondary,
+                  }}
+                >
+                  Pengeluaran
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Nominal */}
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
+              }}
+            >
+              Nominal
+            </Text>
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                minHeight: 56,
+                borderWidth: 1,
+                borderColor: `${colors.border}80`,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 18,
+                  fontWeight: "700",
+                  marginRight: 8,
+                }}
+              >
+                Rp
+              </Text>
+              <TextInput
+                value={
+                  formAmount
+                    ? parseInt(formAmount.replace(/\D/g, ""), 10).toLocaleString("id-ID")
+                    : ""
+                }
+                onChangeText={(t) => setFormAmount(t.replace(/\D/g, ""))}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={colors.gray500}
+                style={{
+                  flex: 1,
+                  color: formType === "income" ? colors.success : colors.error,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  padding: 0,
+                }}
+              />
+            </View>
           </View>
 
           {/* Kategori Selector */}
-          <View style={{ marginBottom: 14 }}>
-            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-              KATEGORI
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
+              }}
+            >
+              Kategori
             </Text>
             <TouchableOpacity
               onPress={() => setShowCategoryPicker(true)}
@@ -364,8 +421,9 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 14,
-                paddingHorizontal: 14,
-                paddingVertical: 13,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                minHeight: 48,
                 borderWidth: 1,
                 borderColor: `${colors.border}80`,
                 flexDirection: "row",
@@ -382,15 +440,25 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               >
                 {formCategory || "Pilih Kategori..."}
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.gray400} />
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Dompet / Rekening Selector */}
           {wallets.length > 0 && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                DOMPET / REKENING EKSEKUSI
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                  marginLeft: 2,
+                }}
+              >
+                Dompet / Rekening Eksekusi
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={{ flexDirection: "row", gap: 8 }}>
@@ -404,8 +472,8 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                         style={{
                           flexDirection: "row",
                           alignItems: "center",
-                          paddingHorizontal: 12,
-                          paddingVertical: 9,
+                          paddingHorizontal: 14,
+                          paddingVertical: 10,
                           borderRadius: 12,
                           backgroundColor: isSelected ? `${colors.accent}20` : colors.surface,
                           borderWidth: 1,
@@ -415,7 +483,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                         <Ionicons
                           name={(w.icon as any) || "card-outline"}
                           size={14}
-                          color={isSelected ? colors.accent : colors.gray400}
+                          color={isSelected ? colors.accent : colors.textSecondary}
                           style={{ marginRight: 6 }}
                         />
                         <Text
@@ -436,9 +504,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
           )}
 
           {/* Frekuensi Selector */}
-          <View style={{ marginBottom: 14 }}>
-            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-              FREKUENSI EKSEKUSI
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
+              }}
+            >
+              Frekuensi Eksekusi
             </Text>
             <View style={{ flexDirection: "row", gap: 8 }}>
               {[
@@ -479,9 +557,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
 
           {/* Conditional Schedule Options */}
           {formFrequency === "weekly" && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                HARI EKSEKUSI SETIAP MINGGU
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                  marginLeft: 2,
+                }}
+              >
+                Hari Eksekusi Setiap Minggu
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={{ flexDirection: "row", gap: 6 }}>
@@ -493,7 +581,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                         onPress={() => setFormDayOfWeek(d.id)}
                         activeOpacity={0.7}
                         style={{
-                          paddingHorizontal: 12,
+                          paddingHorizontal: 14,
                           paddingVertical: 8,
                           borderRadius: 10,
                           backgroundColor: isSelected ? colors.accent : colors.surface,
@@ -519,10 +607,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
           )}
 
           {formFrequency === "monthly" && (
-            <View style={{ marginBottom: 14 }}>
+            <View style={{ marginBottom: 16 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700" }}>
-                  TANGGAL SETIAP BULAN (1 - 31)
+                <Text
+                  style={{
+                    color: colors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: "700",
+                    letterSpacing: 0.8,
+                    textTransform: "uppercase",
+                    marginLeft: 2,
+                  }}
+                >
+                  Tanggal Setiap Bulan (1 - 31)
                 </Text>
                 {state.paydayCutoff && state.paydayCutoff > 1 && (
                   <TouchableOpacity
@@ -606,7 +703,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                           onPress={() => setFormDayOfMonth(dayNum)}
                           activeOpacity={0.7}
                           style={{
-                            paddingHorizontal: 12,
+                            paddingHorizontal: 14,
                             paddingVertical: 8,
                             borderRadius: 10,
                             backgroundColor: isSelected ? colors.accent : colors.surface,
@@ -616,7 +713,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                         >
                           <Text
                             style={{
-                              color: isSelected ? "#FFFFFF" : colors.gray400,
+                              color: isSelected ? "#FFFFFF" : colors.textSecondary,
                               fontSize: 12,
                               fontWeight: "700",
                             }}
@@ -632,9 +729,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
           )}
 
           {formFrequency === "custom_days" && (
-            <View style={{ marginBottom: 14 }}>
-              <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-                INTERVAL HARI EKSEKUSI
+            <View style={{ marginBottom: 16 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                  marginLeft: 2,
+                }}
+              >
+                Interval Hari Eksekusi
               </Text>
               <TextInput
                 value={formIntervalDays}
@@ -645,11 +752,11 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 style={{
                   backgroundColor: colors.surface,
                   borderRadius: 14,
-                  paddingHorizontal: 14,
+                  paddingHorizontal: 16,
                   paddingVertical: 12,
                   color: colors.textPrimary,
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontWeight: "600",
                   borderWidth: 1,
                   borderColor: `${colors.border}80`,
                 }}
@@ -658,9 +765,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
           )}
 
           {/* Mulai Dari Tanggal */}
-          <View style={{ marginBottom: 14 }}>
-            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-              MULAI DARI TANGGAL
+          <View style={{ marginBottom: 16 }}>
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
+              }}
+            >
+              Mulai Dari Tanggal
             </Text>
             <TouchableOpacity
               onPress={() => setShowDatePicker(true)}
@@ -670,8 +787,9 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 alignItems: "center",
                 backgroundColor: colors.surface,
                 borderRadius: 14,
-                paddingHorizontal: 14,
+                paddingHorizontal: 16,
                 paddingVertical: 12,
+                minHeight: 48,
                 borderWidth: 1,
                 borderColor: `${colors.border}80`,
               }}
@@ -686,7 +804,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 style={{
                   color: colors.textPrimary,
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontWeight: "600",
                   flex: 1,
                 }}
               >
@@ -695,7 +813,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               <Ionicons
                 name="chevron-forward"
                 size={16}
-                color={colors.gray400}
+                color={colors.textSecondary}
               />
             </TouchableOpacity>
             {showDatePicker && (
@@ -762,7 +880,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
 
               {formAutoCycle && (
                 <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: `${colors.border}50` }}>
-                  <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", marginBottom: 6 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: "700", marginBottom: 6 }}>
                     TARGET BERTAHAN (HARI):
                   </Text>
                   <View style={{ flexDirection: "row", gap: 6 }}>
@@ -888,8 +1006,18 @@ export const AddRecurringTransactionScreen: React.FC = () => {
 
           {/* Catatan / Keterangan */}
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
-              CATATAN / KETERANGAN (OPSIONAL)
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                marginBottom: 6,
+                marginLeft: 2,
+              }}
+            >
+              Catatan / Keterangan (Opsional)
             </Text>
             <TextInput
               value={formDescription}
@@ -903,10 +1031,11 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               style={{
                 backgroundColor: colors.surface,
                 borderRadius: 14,
-                paddingHorizontal: 14,
+                paddingHorizontal: 16,
                 paddingVertical: 12,
                 color: colors.textPrimary,
                 fontSize: 14,
+                fontWeight: "600",
                 borderWidth: 1,
                 borderColor: `${colors.border}80`,
               }}
@@ -960,7 +1089,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
           </View>
 
           {/* Tombol Aksi */}
-          <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               activeOpacity={0.7}
@@ -974,7 +1103,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 borderColor: `${colors.border}80`,
               }}
             >
-              <Text style={{ color: colors.gray400, fontSize: 14, fontWeight: "700" }}>
+              <Text style={{ color: colors.textPrimary, fontSize: 14, fontWeight: "700" }}>
                 Batal
               </Text>
             </TouchableOpacity>
@@ -984,19 +1113,19 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               disabled={loading}
               activeOpacity={0.8}
               style={{
-                flex: 2,
+                flex: 1,
                 backgroundColor: colors.accent,
                 paddingVertical: 14,
                 borderRadius: 14,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "800" }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>
                 {loading
                   ? "Menyimpan..."
                   : isEditMode
-                  ? "Simpan Perubahan"
-                  : "Buat Jadwal Rutin"}
+                  ? "Simpan"
+                  : "Buat Jadwal"}
               </Text>
             </TouchableOpacity>
           </View>

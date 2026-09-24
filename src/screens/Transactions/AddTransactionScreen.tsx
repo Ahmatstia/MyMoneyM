@@ -485,18 +485,18 @@ const AddTransactionScreen: React.FC = () => {
         {/* Transaction Type - 2 Columns Compact */}
         <View style={tw`mb-4`}>
           <Text
-            style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}
+            style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}
           >
             Tipe Transaksi
           </Text>
-          <View style={tw`flex-row gap-2`}>
+          <View style={[tw`flex-row gap-2 rounded-xl p-1 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
             {/* Pengeluaran */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-2 py-3`,
+                tw`flex-1 rounded-lg px-2 py-2.5`,
                 type === "expense"
                   ? { backgroundColor: ERROR_COLOR + "15" }
-                  : { backgroundColor: SURFACE_COLOR },
+                  : { backgroundColor: "transparent" },
               ]}
               onPress={() => handleTypeChange("expense")}
               disabled={loading}
@@ -512,10 +512,10 @@ const AddTransactionScreen: React.FC = () => {
             {/* Pemasukan */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-2 py-3`,
+                tw`flex-1 rounded-lg px-2 py-2.5`,
                 type === "income"
                   ? { backgroundColor: SUCCESS_COLOR + "15" }
-                  : { backgroundColor: SURFACE_COLOR },
+                  : { backgroundColor: "transparent" },
               ]}
               onPress={() => handleTypeChange("income")}
               disabled={loading}
@@ -531,10 +531,10 @@ const AddTransactionScreen: React.FC = () => {
             {/* Transfer */}
             <TouchableOpacity
               style={[
-                tw`flex-1 rounded-xl px-2 py-3`,
+                tw`flex-1 rounded-lg px-2 py-2.5`,
                 type === "transfer"
                   ? { backgroundColor: ACCENT_COLOR + "20" }
-                  : { backgroundColor: SURFACE_COLOR },
+                  : { backgroundColor: "transparent" },
               ]}
               onPress={() => handleTypeChange("transfer")}
               disabled={loading}
@@ -552,7 +552,7 @@ const AddTransactionScreen: React.FC = () => {
         {/* ── WALLET SELECTION SECTION ── */}
         <View style={tw`mb-4`}>
           <View style={tw`flex-row items-center justify-between mb-2`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest ml-1`, { color: TEXT_SECONDARY }]}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider ml-0.5`, { color: TEXT_SECONDARY }]}>
               {type === "transfer"
                 ? "Dari Rekening (Sumber)"
                 : type === "income"
@@ -666,7 +666,7 @@ const AddTransactionScreen: React.FC = () => {
         {/* ── BIAYA ADMIN INPUT (TRANSFER ONLY) ── */}
         {type === "transfer" && (
           <View style={tw`mb-4`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
               Biaya Admin / Transfer (Opsional)
             </Text>
             <TextInput
@@ -676,8 +676,8 @@ const AddTransactionScreen: React.FC = () => {
               placeholderTextColor={TEXT_SECONDARY}
               keyboardType="numeric"
               style={[
-                tw`rounded-xl px-4 py-3 text-xs font-semibold`,
-                { backgroundColor: SURFACE_COLOR, color: TEXT_PRIMARY },
+                tw`border rounded-xl px-4 py-3 text-sm font-semibold`,
+                { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, color: TEXT_PRIMARY },
               ]}
             />
           </View>
@@ -686,7 +686,7 @@ const AddTransactionScreen: React.FC = () => {
         {/* Quick Amount Suggestions */}
         {!amount && (
           <View style={tw`mb-4`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
               💡 Jumlah Cepat
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
@@ -694,7 +694,7 @@ const AddTransactionScreen: React.FC = () => {
                 {[10000, 25000, 50000, 100000, 250000, 500000].map((value) => (
                   <TouchableOpacity
                     key={value}
-                    style={[tw`rounded-xl px-4 py-2 mr-2`, { backgroundColor: SURFACE_COLOR }]}
+                    style={[tw`rounded-xl px-4 py-2 mr-2 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
                     onPress={() => setAmount(value.toString())}
                   >
                     <Text style={[tw`text-xs font-bold`, { color: ACCENT_COLOR }]}>
@@ -709,14 +709,14 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Amount Input */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
             Jumlah
           </Text>
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR, borderWidth: amountError ? 1 : 0, borderColor: amountError ? ERROR_COLOR : "transparent" }]}>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: amountError ? ERROR_COLOR : `${BORDER_COLOR}80`, minHeight: 56 }]}>
             <View style={tw`flex-row items-center`}>
               <Text style={[tw`text-lg font-bold mr-2`, { color: TEXT_SECONDARY }]}>Rp</Text>
               <TextInput
-                style={[tw`flex-1 text-xl font-bold`, { color: TEXT_PRIMARY, padding: 0 }]}
+                style={[tw`flex-1 text-[22px] font-extrabold`, { color: TEXT_PRIMARY, padding: 0 }]}
                 placeholder="0"
                 placeholderTextColor={colors.textTertiary}
                 value={amount}
@@ -745,11 +745,11 @@ const AddTransactionScreen: React.FC = () => {
         {/* Category Selection (Expense and Income only) */}
         {type !== "transfer" && (
           <View style={tw`mb-4`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Kategori</Text>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>Kategori</Text>
             <TouchableOpacity
               onPress={() => setShowCategoryPicker(true)}
               disabled={loading}
-              style={[tw`rounded-xl px-4 py-3 flex-row items-center`, { backgroundColor: SURFACE_COLOR }]}
+              style={[tw`rounded-xl px-4 py-3 flex-row items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 48 }]}
             >
               {resolvedCategory ? (
                 <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: `${resolvedCategory.color}20`, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
@@ -761,7 +761,7 @@ const AddTransactionScreen: React.FC = () => {
                 </View>
               )}
               <View style={{ flex: 1 }}>
-                <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 13, fontWeight: "600" }}>
+                <Text style={{ color: category ? TEXT_PRIMARY : colors.textTertiary, fontSize: 14, fontWeight: "600" }}>
                   {category || "Pilih kategori..."}
                 </Text>
               </View>
@@ -780,13 +780,13 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Date Selection */}
         <View style={tw`mb-4`}>
-          <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}>Tanggal</Text>
+          <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>Tanggal</Text>
           <TouchableOpacity
-            style={[tw`rounded-xl px-4 py-3 flex-row justify-between items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`rounded-xl px-4 py-3 flex-row justify-between items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 48 }]}
             onPress={() => setShowCalendar(true)}
             disabled={loading}
           >
-            <Text style={[tw`text-[13px] font-semibold`, { color: TEXT_PRIMARY }]}>{getFormattedDate()}</Text>
+            <Text style={[tw`text-sm font-semibold`, { color: TEXT_PRIMARY }]}>{getFormattedDate()}</Text>
             <Ionicons name="calendar-outline" size={16} color={colors.gray500} />
           </TouchableOpacity>
         </View>
@@ -909,13 +909,13 @@ const AddTransactionScreen: React.FC = () => {
 
         {/* Description Input */}
         <View style={tw`mb-4`}>
-          <View style={tw`flex-row items-center justify-between mb-1.5 ml-1`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest`, { color: TEXT_SECONDARY }]}>Catatan (Opsional)</Text>
+          <View style={tw`flex-row items-center justify-between mb-1.5 ml-0.5`}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider`, { color: TEXT_SECONDARY }]}>Catatan (Opsional)</Text>
             <Text style={[tw`text-[10px]`, { color: colors.gray500 }]}>{description.length}/200</Text>
           </View>
-          <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
+          <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
             <TextInput
-              style={[tw`text-[13px] font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
+              style={[tw`text-sm font-medium min-h-[60px]`, { color: TEXT_PRIMARY, padding: 0 }]}
               placeholder="Catat rincian atau info tambahan..."
               placeholderTextColor={colors.textTertiary}
               value={description}
@@ -1094,11 +1094,11 @@ const AddTransactionScreen: React.FC = () => {
         {/* Action Buttons */}
         <View style={tw`flex-row gap-3 mt-4`}>
           <TouchableOpacity
-            style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
+            style={[tw`flex-1 rounded-xl py-3.5 items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
+            <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1106,7 +1106,7 @@ const AddTransactionScreen: React.FC = () => {
             onPress={handleSubmit}
             disabled={loading}
           >
-            <Text style={tw`text-white text-[13px] font-bold`}>
+            <Text style={tw`text-white text-sm font-bold`}>
               {loading ? "Menyimpan..." : isEditMode ? "Simpan" : "Tambah"}
             </Text>
           </TouchableOpacity>

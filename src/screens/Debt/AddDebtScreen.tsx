@@ -57,7 +57,7 @@ const AddDebtScreen: React.FC = () => {
 
   const SectionHeader = ({ title }: { title: string }) => (
     <Text
-      style={[tw`text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1`, { color: TEXT_SECONDARY }]}
+      style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}
     >
       {title}
     </Text>
@@ -141,13 +141,13 @@ const AddDebtScreen: React.FC = () => {
           {/* Type Selector */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Jenis Transaksi" />
-            <View style={[tw`flex-row rounded-xl p-1`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={[tw`flex-row rounded-xl p-1 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
               {(["borrowed", "lent"] as const).map((t) => {
                 const isActive = type === t;
                 return (
                   <TouchableOpacity
                     key={t}
-                    style={[tw`flex-1 py-3 rounded-lg items-center justify-center`, isActive ? { backgroundColor: ACCENT_COLOR } : null]}
+                    style={[tw`flex-1 py-2.5 rounded-lg items-center justify-center`, isActive ? { backgroundColor: ACCENT_COLOR } : null]}
                     onPress={() => setType(t)}
                     activeOpacity={0.7}
                   >
@@ -165,7 +165,7 @@ const AddDebtScreen: React.FC = () => {
             flexDirection: "row",
             alignItems: "center",
             backgroundColor: `${ACCENT_COLOR}12`,
-            borderRadius: 12,
+            borderRadius: 14,
             padding: 12,
             marginBottom: 16,
             borderWidth: 1,
@@ -182,7 +182,7 @@ const AddDebtScreen: React.FC = () => {
           {/* Amount Input */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Nominal" />
-            <View style={[tw`flex-row items-center px-4 py-3 rounded-xl`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={[tw`flex-row items-center px-4 py-3 rounded-xl border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80`, minHeight: 56 }]}>
               <Text style={{ color: TEXT_SECONDARY, fontSize: 18, fontWeight: "700", marginRight: 8 }}>Rp</Text>
               <TextInput
                 value={amount}
@@ -190,7 +190,7 @@ const AddDebtScreen: React.FC = () => {
                 keyboardType="numeric"
                 placeholder="0"
                 placeholderTextColor={colors.gray500}
-                style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 24, fontWeight: "800", padding: 0 }}
+                style={{ flex: 1, color: TEXT_PRIMARY, fontSize: 22, fontWeight: "800", padding: 0 }}
               />
             </View>
           </View>
@@ -198,13 +198,13 @@ const AddDebtScreen: React.FC = () => {
           {/* Name Input */}
           <View style={tw`mb-4`}>
             <SectionHeader title={type === "borrowed" ? "Pemberi Hutang" : "Peminjam"} />
-            <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
               <TextInput
                 value={name}
                 onChangeText={setName}
                 placeholder={type === "borrowed" ? "Contoh: Budi, Bank..." : "Contoh: Andi, Teman..."}
                 placeholderTextColor={colors.gray500}
-                style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "700", padding: 0 }}
+                style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600", padding: 0 }}
               />
             </View>
           </View>
@@ -218,11 +218,16 @@ const AddDebtScreen: React.FC = () => {
                 return (
                   <TouchableOpacity
                     key={cat}
-                    style={[tw`px-3.5 py-2 rounded-xl`, isActive ? { backgroundColor: ACCENT_COLOR } : { backgroundColor: SURFACE_COLOR }]}
+                    style={[
+                      tw`px-4 py-2.5 rounded-xl border`,
+                      isActive
+                        ? { backgroundColor: `${ACCENT_COLOR}20`, borderColor: ACCENT_COLOR }
+                        : { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` },
+                    ]}
                     onPress={() => setCategory(cat)}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ color: isActive ? BACKGROUND_COLOR : TEXT_SECONDARY, fontSize: 11, fontWeight: "700" }}>
+                    <Text style={{ color: isActive ? ACCENT_COLOR : TEXT_SECONDARY, fontSize: 12, fontWeight: "700" }}>
                       {cat}
                     </Text>
                   </TouchableOpacity>
@@ -238,17 +243,17 @@ const AddDebtScreen: React.FC = () => {
             <View style={tw`flex-row gap-2`}>
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={[tw`flex-1 flex-row items-center px-4 py-3 rounded-xl`, { backgroundColor: SURFACE_COLOR }]}
+                style={[tw`flex-1 flex-row items-center px-4 py-3 rounded-xl border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
                 onPress={() => setShowDatePicker(true)}
               >
                 <Ionicons name="calendar-outline" size={16} color={colors.gray500} style={tw`mr-2`} />
-                <Text style={{ flex: 1, color: dueDate ? TEXT_PRIMARY : colors.gray500, fontSize: 13, fontWeight: "700" }}>
+                <Text style={{ flex: 1, color: dueDate ? TEXT_PRIMARY : colors.gray500, fontSize: 14, fontWeight: "600" }}>
                   {dueDate || "Pilih tanggal..."}
                 </Text>
               </TouchableOpacity>
               {dueDate ? (
                 <TouchableOpacity
-                  style={[tw`px-3 rounded-xl items-center justify-center`, { backgroundColor: SURFACE_COLOR }]}
+                  style={[tw`px-3 rounded-xl items-center justify-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
                   onPress={() => setDueDate("")}
                   activeOpacity={0.7}
                 >
@@ -281,7 +286,7 @@ const AddDebtScreen: React.FC = () => {
           {/* Description */}
           <View style={tw`mb-4`}>
             <SectionHeader title="Keterangan" />
-            <View style={[tw`rounded-xl px-4 py-3`, { backgroundColor: SURFACE_COLOR }]}>
+            <View style={[tw`rounded-xl px-4 py-3 border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
@@ -289,7 +294,7 @@ const AddDebtScreen: React.FC = () => {
                 placeholderTextColor={colors.gray500}
                 multiline
                 numberOfLines={2}
-                style={{ color: TEXT_PRIMARY, fontSize: 13, fontWeight: "600", minHeight: 60, textAlignVertical: "top", padding: 0 }}
+                style={{ color: TEXT_PRIMARY, fontSize: 14, fontWeight: "600", minHeight: 60, textAlignVertical: "top", padding: 0 }}
               />
             </View>
           </View>
@@ -345,11 +350,11 @@ const AddDebtScreen: React.FC = () => {
           {/* Action Buttons */}
           <View style={tw`flex-row gap-3 mt-4`}>
             <TouchableOpacity
-              style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
+              style={[tw`flex-1 rounded-xl py-3.5 items-center border`, { backgroundColor: SURFACE_COLOR, borderColor: `${BORDER_COLOR}80` }]}
               onPress={() => navigation.goBack()}
               disabled={isLoading}
             >
-              <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
+              <Text style={[tw`text-sm font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -363,7 +368,7 @@ const AddDebtScreen: React.FC = () => {
               ) : (
                 <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" style={tw`mr-2`} />
               )}
-              <Text style={tw`text-white text-[13px] font-bold`}>
+              <Text style={tw`text-white text-sm font-bold`}>
                 {isLoading ? "Menyimpan..." : editMode ? "Simpan" : "Tambah"}
               </Text>
             </TouchableOpacity>
