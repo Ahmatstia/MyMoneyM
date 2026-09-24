@@ -374,6 +374,11 @@ const AddSavingsScreen: React.FC = () => {
       return;
     }
 
+    if (!category.trim()) {
+      Alert.alert("Perhatian", "Silakan pilih kategori tabungan terlebih dahulu");
+      return;
+    }
+
     if (!validateTarget(target)) {
       Alert.alert("Error", targetError || "Target tidak valid");
       return;

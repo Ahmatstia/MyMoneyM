@@ -54,7 +54,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
     editingItem?.amount ? String(editingItem.amount) : ""
   );
   const [formCategory, setFormCategory] = useState(
-    editingItem?.category || (editingItem?.type === "income" ? "Uang Bulanan" : "Tagihan")
+    editingItem?.category || ""
   );
   const [formFrequency, setFormFrequency] = useState<"weekly" | "monthly" | "custom_days">(
     editingItem?.frequency || "monthly"
@@ -84,7 +84,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
   const [startDateError, setStartDateError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [formAutoCycle, setFormAutoCycle] = useState<boolean>(
-    editingItem?.autoStartNewCycle ?? true
+    editingItem?.autoStartNewCycle ?? false
   );
 
   const initialCyclePreset = (): "weekly" | "biweekly" | "monthly" | "custom" => {
@@ -133,7 +133,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
 
   const handleSave = async () => {
     if (!formCategory.trim()) {
-      Alert.alert("Perhatian", "Silakan pilih atau buat kategori terlebih dahulu");
+      Alert.alert("Perhatian", "Silakan pilih kategori terlebih dahulu");
       return;
     }
 
@@ -278,9 +278,6 @@ export const AddRecurringTransactionScreen: React.FC = () => {
             <TouchableOpacity
               onPress={() => {
                 setFormType("income");
-                if (formCategory === "Makanan" || formCategory === "Transportasi") {
-                  setFormCategory("Uang Bulanan");
-                }
               }}
               activeOpacity={0.7}
               style={{
@@ -305,14 +302,6 @@ export const AddRecurringTransactionScreen: React.FC = () => {
             <TouchableOpacity
               onPress={() => {
                 setFormType("expense");
-                if (
-                  formCategory === "Uang Bulanan" ||
-                  formCategory === "Pemasukan Rutin" ||
-                  formCategory === "Investasi" ||
-                  formCategory === "Gaji"
-                ) {
-                  setFormCategory("Tagihan");
-                }
               }}
               activeOpacity={0.7}
               style={{

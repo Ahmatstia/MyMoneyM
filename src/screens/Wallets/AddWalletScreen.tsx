@@ -271,18 +271,8 @@ export const AddWalletScreen: React.FC = () => {
                   key={t.id}
                   onPress={() => {
                     setFormType(t.id);
-                    if (t.id === "credit") {
-                      setFormRole("credit");
-                      setFormIsLiquid(false);
-                      if (!formInitialBalance) {
-                        setBalanceSign("-");
-                      }
-                    } else if (t.id === "investment") {
-                      setFormRole("investasi");
-                      setFormIsLiquid(false);
-                    } else if (formRole === "credit" || formRole === "investasi") {
-                      setFormRole("operational");
-                      setFormIsLiquid(true);
+                    if (t.id === "credit" && !formInitialBalance) {
+                      setBalanceSign("-");
                     }
                   }}
                   style={[

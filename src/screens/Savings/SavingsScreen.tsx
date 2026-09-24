@@ -325,24 +325,6 @@ const SavingsScreen: React.FC = () => {
           </View>
         )}
 
-        {/* ── Helper Concept Hint ─────────────────────────────────────── */}
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: `${ACCENT_COLOR}10`,
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 9,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: `${ACCENT_COLOR}20`,
-        }}>
-          <Ionicons name="bulb-outline" size={14} color={ACCENT_COLOR} style={{ marginRight: 8 }} />
-          <Text style={{ flex: 1, color: TEXT_SECONDARY, fontSize: 11, lineHeight: 16 }}>
-            Tabungan mencatat target impianmu secara mandiri tanpa memotong saldo kas harian secara otomatis.
-          </Text>
-        </View>
-
         {/* ── Filter — segmented control ────────────────────────────────── */}
         <View
           style={{

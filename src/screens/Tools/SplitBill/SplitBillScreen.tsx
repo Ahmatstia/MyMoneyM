@@ -295,6 +295,7 @@ interface SplitPerson {
 
 export const SplitBillScreen: React.FC = () => {
   const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
+  const navigation = useNavigation<any>();
   const [mode, setMode] = useState<"equal" | "itemized">("equal");
 
   // Mode 1: Bagi Rata
@@ -502,7 +503,6 @@ export const SplitBillScreen: React.FC = () => {
         type: "expense",
         initialAmount: perPersonFinal,
         initialDescription: "Patungan (Bagi Rata)",
-        initialCategory: "Makanan & Minuman",
       } as never);
     } else {
       const myShare = peopleResults[0]?.finalAmount || 0;
@@ -514,7 +514,6 @@ export const SplitBillScreen: React.FC = () => {
         type: "expense",
         initialAmount: myShare,
         initialDescription: `Patungan (${peopleResults[0]?.name || "Saya"})`,
-        initialCategory: "Makanan & Minuman",
       } as never);
     }
   };

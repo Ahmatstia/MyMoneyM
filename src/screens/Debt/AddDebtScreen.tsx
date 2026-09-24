@@ -45,7 +45,7 @@ const AddDebtScreen: React.FC = () => {
   const [type, setType] = useState<"borrowed" | "lent">(existingDebt?.type ?? "borrowed");
   const [name, setName] = useState(existingDebt?.name ?? "");
   const [amount, setAmount] = useState(existingDebt?.amount ? String(existingDebt.amount) : "");
-  const [category, setCategory] = useState(existingDebt?.category ?? "Lainnya");
+  const [category, setCategory] = useState(existingDebt?.category ?? "");
   const [description, setDescription] = useState(existingDebt?.description ?? "");
   const [dueDate, setDueDate] = useState(existingDebt?.dueDate ?? "");
   const [syncWithCash, setSyncWithCash] = useState(false);
@@ -67,6 +67,7 @@ const AddDebtScreen: React.FC = () => {
     if (!name.trim()) { Alert.alert("Error", "Nama wajib diisi"); return false; }
     const amt = parseFloat(amount.replace(/\D/g, ""));
     if (!amt || amt <= 0) { Alert.alert("Error", "Nominal hutang wajib diisi"); return false; }
+    if (!category.trim()) { Alert.alert("Error", "Kategori wajib dipilih"); return false; }
     // dueDate is set via date picker so format is always valid — no regex check needed
     return true;
   };
