@@ -612,7 +612,7 @@ const AddTransactionScreen: React.FC = () => {
             <TextInput
               value={adminFee}
               onChangeText={setAdminFee}
-              placeholder="Rp 0 (misal: 1000 atau 2500)"
+              placeholder="Masukan Biaya Admin"
               placeholderTextColor={TEXT_SECONDARY}
               keyboardType="numeric"
               style={[
