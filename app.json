@@ -44,7 +44,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/logo.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#22D3EE",
           "defaultChannel": "default",
           "androidMode": "default"

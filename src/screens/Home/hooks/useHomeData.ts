@@ -154,10 +154,10 @@ export const useHomeData = (
     else greeting = "Selamat Malam";
 
     if (state.userProfile?.name) {
-      return `${greeting}, ${state.userProfile.name} 👋`;
+      return `${greeting}, ${state.userProfile.name}`;
     }
 
-    return `${greeting} 👋`;
+    return greeting;
   };
 
   const getSmartInsights = () => {

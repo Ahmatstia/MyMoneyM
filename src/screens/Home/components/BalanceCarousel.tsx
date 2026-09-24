@@ -1482,9 +1482,7 @@ const Slide3 = ({
                 fontWeight: "600",
               }}
             >
-              {hasBudgets
-                ? "Batas Belanja Pos Kategori"
-                : "Belum Ada Pos Anggaran"}
+              {hasBudgets ? "Anggaran Bulan Ini" : "Belum Ada Pos Anggaran"}
             </Text>
           </View>
         </View>
@@ -1512,7 +1510,7 @@ const Slide3 = ({
         </View>
       </View>
 
-      {/* Row 2: Hero Content & (RESTORED SUBTITLE) */}
+      {/* Row 2: Hero Content & Target Harian */}
       <View style={{ marginTop: 2 }}>
         {hasBudgets ? (
           <>
@@ -1526,7 +1524,7 @@ const Slide3 = ({
                 marginBottom: 2,
               }}
             >
-              Sisa Plafon Anggaran
+              Sisa Anggaran
             </Text>
             {isBalanceHidden ? (
               <Text
@@ -1550,7 +1548,7 @@ const Slide3 = ({
                 }}
               />
             )}
-            {/* RESTORED: Daily budget quota or overbudget alert */}
+            {/* Target Harian / Status Overbudget */}
             <Text
               style={{
                 color: isOverbudget ? G_ERROR : "rgba(255,255,255,0.75)",
@@ -1560,8 +1558,8 @@ const Slide3 = ({
               numberOfLines={1}
             >
               {isOverbudget
-                ? `Overbudget ${isBalanceHidden ? "••••••" : formatCurrency(totalSpent - totalLimit)}!`
-                : `Jatah belanja pos anggaran ~${isBalanceHidden ? "••••••" : formatCurrency(dailyBudgetQuota)}/hari`}
+                ? `Melebihi anggaran ${isBalanceHidden ? "••••••" : formatCurrency(totalSpent - totalLimit)}!`
+                : `Target: ~${isBalanceHidden ? "••••••" : formatCurrency(dailyBudgetQuota)} / hari`}
             </Text>
           </>
         ) : (
@@ -1584,13 +1582,13 @@ const Slide3 = ({
               }}
               numberOfLines={1}
             >
-              Pasang limit belanja bulanan per pos kategori
+              Pasang batas belanja bulanan per pos kategori
             </Text>
           </>
         )}
       </View>
 
-      {/* Row 3 (RESTORED PREVIOUS DETAIL): Progress Bar & Limit Summary */}
+      {/* Row 3: Progress Bar & Ringkasan */}
       <View style={{ marginTop: 2 }}>
         {hasBudgets ? (
           <>
@@ -1620,8 +1618,7 @@ const Slide3 = ({
                   fontWeight: "700",
                 }}
               >
-                {burnRatePct}% (
-                {isBalanceHidden ? "••••••" : formatCurrency(totalSpent)})
+                {burnRatePct}%
               </Text>
             </View>
             <View
@@ -1652,11 +1649,10 @@ const Slide3 = ({
               }}
             >
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
-                Limit Total:{" "}
-                {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
+                Terpakai: {isBalanceHidden ? "••••••" : formatCurrency(totalSpent)}
               </Text>
               <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
-                {budgets.length} pos aktif
+                Total: {isBalanceHidden ? "••••••" : formatCurrency(totalLimit)}
               </Text>
             </View>
           </>
@@ -1703,15 +1699,23 @@ const Slide3 = ({
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5 }}>
-          {hasBudgets
-            ? "Evaluasi batas anggaran berkala"
-            : "Disiplin finansial dimulai dari limit"}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Ionicons
+            name="calendar-outline"
+            size={10}
+            color="rgba(255,255,255,0.7)"
+            style={{ marginRight: 4 }}
+          />
+          <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 10.5 }}>
+            {hasBudgets
+              ? `${daysRemaining} hari tersisa bulan ini`
+              : "Disiplin finansial dimulai dari limit"}
+          </Text>
+        </View>
         <Text
           style={{ color: theme.accent, fontSize: 10.5, fontWeight: "700" }}
         >
-          Target Plafon
+          Anggaran Bulanan
         </Text>
       </View>
     </LuxeCardWrapper>
