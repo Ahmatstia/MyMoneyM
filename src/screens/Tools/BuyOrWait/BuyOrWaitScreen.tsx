@@ -5,7 +5,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -35,7 +34,6 @@ export const BuyOrWaitScreen: React.FC = () => {
   const balance = safeNumber(state.balance);
 
   const [price, setPrice] = useState("");
-  const [label, setLabel] = useState("");
   const [customBalance, setCustomBalance] = useState(String(balance));
   const [customDays, setCustomDays] = useState("");
 
@@ -43,7 +41,6 @@ export const BuyOrWaitScreen: React.FC = () => {
     setCustomBalance(String(balance));
     setCustomDays("");
     setPrice("");
-    setLabel("");
   };
 
   const remainingDays = daysLeftInMonth(state.paydayCutoff);
@@ -104,36 +101,13 @@ export const BuyOrWaitScreen: React.FC = () => {
             placeholder="Masukkan harga"
           />
 
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Label text="Nama Barang (Opsional)" />
-              <TextInput
-                value={label}
-                onChangeText={setLabel}
-                placeholder="Misal: Sepatu"
-                placeholderTextColor={Colors.gray500}
-                style={{
-                  backgroundColor: BG,
-                  borderRadius: 14,
-                  padding: 14,
-                  color: TP,
-                  fontSize: 15,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: BORDER,
-                }}
-              />
-            </View>
-            <View style={{ flex: 0.9 }}>
-              <Label text={`Hari (Default: ${remainingDays})`} />
-              <InputBox
-                value={customDays}
-                onChange={setCustomDays}
-                placeholder={String(remainingDays)}
-                isCurrency={false}
-              />
-            </View>
-          </View>
+          <Label text={`Hari Menuju Gajian (Default: ${remainingDays} hari)`} />
+          <InputBox
+            value={customDays}
+            onChange={setCustomDays}
+            placeholder={String(remainingDays)}
+            isCurrency={false}
+          />
 
           {itemPrice > 0 && (
             <View
@@ -215,7 +189,7 @@ export const BuyOrWaitScreen: React.FC = () => {
                     }}
                   >
                     💡 Saran: Tahan dulu! Coba sisihkan {fmt(savePerDay)}
-                    /hari. Kamu bisa beli {label || "barang ini"} dalam{" "}
+                    /hari. Kamu bisa beli barang ini dalam{" "}
                     <Text style={{ fontWeight: "800" }}>{daysToSave} hari</Text>{" "}
                     tanpa khawatir mengganggu kebutuhan harian.
                   </Text>
