@@ -16,14 +16,16 @@ export const NotificationMessages = {
     const limit = safeNumber(budget.limit);
     const spent = safeNumber(budget.spent);
     const percentage = limit > 0 ? Math.round((spent / limit) * 100) : 100;
+    const isCritical = percentage >= 90;
+    const tier = isCritical ? "90" : "80";
     return {
-      title: "⚠️ Budget Hampir Habis",
-      body: `Budget ${
+      title: isCritical ? "🚨 Anggaran Kritis (>90%)" : "⚠️ Anggaran Hampir Habis",
+      body: `Anggaran ${
         budget.category
       } sudah ${percentage}% terpakai!\nRp ${spent.toLocaleString(
         "id-ID"
       )} / Rp ${limit.toLocaleString("id-ID")}`,
-      data: { type: "BUDGET_WARNING", budgetId: budget.id },
+      data: { type: "BUDGET_WARNING", budgetId: budget.id, tier, percentage },
     };
   },
 
@@ -31,8 +33,8 @@ export const NotificationMessages = {
     const limit = safeNumber(budget.limit);
     const spent = safeNumber(budget.spent);
     return {
-      title: "🚨 Budget Melebihi Limit!",
-      body: `Budget ${budget.category} sudah melebihi limit!\nKelebihan: Rp ${(
+      title: "🚨 Anggaran Melebihi Batas!",
+      body: `Anggaran ${budget.category} telah terlampaui!\nKelebihan: Rp ${(
         spent - limit
       ).toLocaleString("id-ID")}`,
       data: { type: "BUDGET_EXCEEDED", budgetId: budget.id },

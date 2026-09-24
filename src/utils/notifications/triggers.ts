@@ -14,13 +14,17 @@ export const checkBudgetAlerts = (appState: AppState): any[] => {
   const today = getCurrentDate();
 
   try {
-    for (const budget of appState.budgets) {
+    for (const budget of appState.budgets || []) {
+      const budgetStart = (budget.startDate || "").slice(0, 10);
+      const budgetEnd = (budget.endDate || "").slice(0, 10);
+
       // Skip if budget not active today
-      if (budget.startDate > today || budget.endDate < today) continue;
+      if (budgetStart && budgetStart > today) continue;
+      if (budgetEnd && budgetEnd < today) continue;
 
       const percentage = calculateBudgetProgress(budget);
 
-      // Budget warning (80-95%)
+      // Budget warning (80-99%)
       if (percentage >= 80 && percentage < 100) {
         alerts.push(NotificationMessages.budgetWarning(budget));
       }
@@ -31,7 +35,7 @@ export const checkBudgetAlerts = (appState: AppState): any[] => {
       }
     }
   } catch (error) {
-
+    console.warn("[checkBudgetAlerts] error:", error);
   }
 
   return alerts;

@@ -62,7 +62,7 @@ export interface NotificationSettings {
 // Default settings
 export const DEFAULT_SETTINGS: NotificationSettings = {
   enabled: true,
-  quickActionsWidget: false,
+  quickActionsWidget: true, // Aktifkan default agar widget muncul di bar notifikasi
   dailyReminders: true,
   budgetAlerts: true,
   savingsProgress: true,
@@ -99,13 +99,16 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
 // Configure notification foreground handler
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
-    const isWidget = notification.request.identifier === "MYMONEY_QUICK_WIDGET";
-    const soundEnabled = Boolean(notification.request.content.sound);
+    const isWidget =
+      notification.request.identifier === "MYMONEY_QUICK_WIDGET" ||
+      notification.request.content.data?.type === "quick_widget";
+
     return {
-      shouldPlaySound: !isWidget && soundEnabled,
-      shouldSetBadge: !isWidget,
+      // shouldShowAlert is deprecated — use shouldShowBanner + shouldShowList
       shouldShowBanner: !isWidget,
-      shouldShowList: !isWidget,
+      shouldShowList: true, // WAJIB TRUE agar widget & notifikasi tetap muncul di tray
+      shouldPlaySound: !isWidget,
+      shouldSetBadge: !isWidget,
     };
   },
 });
@@ -122,15 +125,15 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
-  // Check if a notification type is on cooldown (in-memory)
-  private isOnCooldown(type: string): boolean {
-    const lastSent = this.sentAlertCooldown.get(type);
+  // Check if a notification type/entity key is on cooldown (in-memory)
+  private isOnCooldown(key: string): boolean {
+    const lastSent = this.sentAlertCooldown.get(key);
     if (!lastSent) return false;
     return Date.now() - lastSent < NotificationService.COOLDOWN_MS;
   }
 
-  private markAsSent(type: string): void {
-    this.sentAlertCooldown.set(type, Date.now());
+  private markAsSent(key: string): void {
+    this.sentAlertCooldown.set(key, Date.now());
   }
 
   private clearCooldowns(): void {
@@ -180,6 +183,10 @@ export class NotificationService {
         return {
           ...DEFAULT_SETTINGS,
           ...parsed,
+          quickActionsWidget:
+            parsed.quickActionsWidget !== undefined
+              ? parsed.quickActionsWidget
+              : true,
           advanced: loadedAdvanced,
         };
       }
@@ -329,7 +336,64 @@ export class NotificationService {
   // ==================== PERMISSION & CHANNELS ====================
 
   async registerForPushNotificationsAsync(): Promise<boolean> {
-    if (Device.isDevice) {
+    try {
+      // 1. Android Notification Channels (Wajib untuk Android 8.0+)
+      // Dibungkus per-channel agar NullPointerException pada satu channel
+      // tidak membatalkan seluruh proses registrasi.
+      if (Platform.OS === "android") {
+        // Tunggu sebentar agar ChannelManager Android selesai diinisialisasi
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Channel 1: Default (Rutin, Harian, Tips)
+        try {
+          await Notifications.setNotificationChannelAsync("default", {
+            name: "Pemberitahuan Umum",
+            description: "Pengingat harian, tips finansial, dan pengingat pencatatan",
+            importance: Notifications.AndroidImportance.HIGH,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: "#22D3EE",
+            sound: "default",
+            enableVibrate: true,
+            showBadge: true,
+          });
+        } catch (channelErr) {
+          console.warn("[Notif] Gagal membuat channel 'default':", channelErr);
+        }
+
+        // Channel 2: Urgent Alerts (Limit Anggaran, Tenggat Penting)
+        try {
+          await Notifications.setNotificationChannelAsync("urgent_alerts", {
+            name: "Peringatan Penting & Limit",
+            description: "Peringatan anggaran jebol dan tenggat waktu tabungan",
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 500, 200, 500],
+            lightColor: "#EF4444",
+            sound: "default",
+            enableVibrate: true,
+            showBadge: true,
+          });
+        } catch (channelErr) {
+          console.warn("[Notif] Gagal membuat channel 'urgent_alerts':", channelErr);
+        }
+
+        // Channel 3: Widget Layar Atas (Sticky - LOW importance agar tetap tampil di tray)
+        try {
+          await Notifications.setNotificationChannelAsync("quick_widget", {
+            name: "Widget Cepat Layar Atas",
+            description: "Status jatah belanja harian & akses catat transaksi cepat",
+            importance: Notifications.AndroidImportance.LOW,
+            sound: null,
+            enableVibrate: false,
+            showBadge: false,
+            lockscreenVisibility:
+              Notifications.AndroidNotificationVisibility.PUBLIC,
+          });
+        } catch (channelErr) {
+          console.warn("[Notif] Gagal membuat channel 'quick_widget':", channelErr);
+        }
+      }
+
+      // 2. Request permissions
       const { status: existingStatus } =
         await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -345,50 +409,7 @@ export class NotificationService {
         finalStatus = status;
       }
 
-      if (finalStatus !== "granted") {
-        return false;
-      }
-
-      // Android Notification Channels (Wajib untuk Android 8.0+)
-      if (Platform.OS === "android") {
-        // Channel 1: Default (Rutin, Harian, Tips)
-        await Notifications.setNotificationChannelAsync("default", {
-          name: "Pemberitahuan Umum",
-          description: "Pengingat harian, tips finansial, dan pengingat pencatatan",
-          importance: Notifications.AndroidImportance.HIGH,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#22D3EE",
-          sound: "default",
-          enableVibrate: true,
-          showBadge: true,
-        });
-
-        // Channel 2: Urgent Alerts (Limit Anggaran, Tenggat Penting)
-        await Notifications.setNotificationChannelAsync("urgent_alerts", {
-          name: "Peringatan Penting & Limit",
-          description: "Peringatan anggaran jebol dan tenggat waktu tabungan",
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 500, 200, 500],
-          lightColor: "#EF4444",
-          sound: "default",
-          enableVibrate: true,
-          showBadge: true,
-        });
-
-        // Channel 3: Widget Layar Atas (Cepat & Sticky - Senyap tanpa suara)
-        await Notifications.setNotificationChannelAsync("quick_widget", {
-          name: "Widget Cepat Layar Atas",
-          description: "Status jatah belanja harian & akses catat transaksi cepat",
-          importance: Notifications.AndroidImportance.MIN,
-          sound: null,
-          enableVibrate: false,
-          showBadge: false,
-          lockscreenVisibility:
-            Notifications.AndroidNotificationVisibility.PUBLIC,
-        });
-      }
-
-      // Action categories untuk widget cepat
+      // 3. Action categories untuk widget cepat
       try {
         await Notifications.setNotificationCategoryAsync("quick_widget_actions", [
           {
@@ -406,8 +427,9 @@ export class NotificationService {
         console.warn("Gagal mendaftarkan kategori notifikasi:", catErr);
       }
 
-      return true;
-    } else {
+      return finalStatus === "granted";
+    } catch (e) {
+      console.warn("Gagal register notifikasi:", e);
       return false;
     }
   }
@@ -606,17 +628,29 @@ export class NotificationService {
       }
 
       // 3. Dedup: Jangan kirim alert yang sama berulang kali dalam waktu singkat
-      if (data.type && this.isOnCooldown(data.type)) {
+      const cooldownKey = data?.budgetId
+        ? `${data.type}_${data.budgetId}_${data.tier || ""}`
+        : data?.savingsId
+          ? `${data.type}_${data.savingsId}`
+          : data?.type || "general";
+
+      if (this.isOnCooldown(cooldownKey)) {
         return;
       }
 
       // 4. Cek Jam Tenang (Quiet Hours)
+      const isUrgent =
+        urgent ||
+        data?.type === "BUDGET_EXCEEDED" ||
+        data?.tier === "90" ||
+        data?.type === "SAVINGS_DEADLINE";
+
       if (
         settings.advanced?.quietHours?.enabled &&
         this.isWithinQuietHours(settings.advanced.quietHours)
       ) {
         // Jika urgent dan ignoreUrgent aktif, perbolehkan tembus
-        if (!urgent || !settings.advanced.quietHours.ignoreUrgent) {
+        if (!isUrgent || !settings.advanced.quietHours.ignoreUrgent) {
           return;
         }
       }
@@ -628,7 +662,7 @@ export class NotificationService {
 
       const useSound =
         settings.advanced?.soundEnabled !== false ? sound : false;
-      const channelId = urgent ? "urgent_alerts" : "default";
+      const channelId = isUrgent ? "urgent_alerts" : "default";
 
       const vibrationPattern =
         settings.advanced?.vibrationPattern === "light"
@@ -649,9 +683,7 @@ export class NotificationService {
         trigger: null, // Segera tampilkan
       });
 
-      if (data.type) {
-        this.markAsSent(data.type);
-      }
+      this.markAsSent(cooldownKey);
     } catch (error) {
       console.warn("Gagal mengirim notifikasi langsung:", error);
     }
@@ -776,8 +808,10 @@ export class NotificationService {
 
       for (const alert of allAlerts) {
         // Buat ID unik untuk alert ini berdasarkan entity ID & tipe alert
+        // Sertakan tier (80/90) agar 90% tidak terblokir oleh 80% pada hari yang sama
+        const tier = alert.data?.tier ? `_${alert.data.tier}` : "";
         const alertKey = alert.data?.budgetId
-          ? `budget_${alert.data.budgetId}_${alert.data.type}`
+          ? `budget_${alert.data.budgetId}_${alert.data.type}${tier}`
           : alert.data?.savingsId
             ? `savings_${alert.data.savingsId}_${alert.data.type}`
             : alert.data?.type || "generic_alert";
@@ -788,8 +822,10 @@ export class NotificationService {
           continue; // Lewati, jangan spam pengguna setiap kali buka app
         }
 
+        // 90% kritis & melebihi batas = urgent (channel MAX importance)
         const isUrgent =
           alert.data?.type === "BUDGET_EXCEEDED" ||
+          alert.data?.tier === "90" ||
           alert.data?.type === "SAVINGS_DEADLINE";
 
         await this.sendNotification({
@@ -840,7 +876,13 @@ export class NotificationService {
   async updateNotifications(appState: AppState): Promise<void> {
     try {
       const settings = await this.loadSettings();
-      if (settings.enabled && settings.quickActionsWidget) {
+      if (!settings.enabled) return;
+
+      // Selalu evaluasi peringatan anggaran/tabungan saat ada perubahan data
+      // (dipanggil setiap addTransaction/editTransaction/addBudget, dll.)
+      await this.checkImmediateAlerts(appState);
+
+      if (settings.quickActionsWidget) {
         await this.updateQuickActionWidget(appState);
       }
     } catch (error) {
@@ -868,11 +910,11 @@ export class NotificationService {
         return;
       }
 
-      // 2. Jika widget dinonaktifkan, pastikan langsung di-dismiss dari bar notifikasi
+      // 2. Perbarui atau sembunyikan widget sesuai pengaturan baru
       if (!newSettings.quickActionsWidget) {
         await this.dismissQuickActionWidget();
-      } else if (!oldSettings.quickActionsWidget && appState) {
-        // Jika baru diaktifkan oleh pengguna, tampilkan widget secara senyap
+      } else if (appState) {
+        // Selalu refresh widget saat quickActionsWidget aktif (baik baru diaktifkan maupun sudah aktif)
         await this.updateQuickActionWidget(appState);
       }
 
@@ -880,6 +922,8 @@ export class NotificationService {
       if (appState) {
         await Notifications.cancelAllScheduledNotificationsAsync();
         await this.scheduleDailyReminders(appState);
+        // Evaluasi peringatan kritis setelah settings berubah
+        await this.checkImmediateAlerts(appState);
       }
     } catch (error) {
       console.warn("Gagal memperbarui pengaturan notifikasi:", error);

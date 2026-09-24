@@ -37,6 +37,7 @@ import {
 import tw from "twrnc";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
 import { useAppContext } from "../context/AppContext";
 import { useGamification } from "../context/GamificationContext";
 import { useTheme } from "../theme/ThemeContext";
@@ -1117,6 +1118,35 @@ const AppNavigator: React.FC = () => {
     AsyncStorage.getItem("@onboarding_completed")
       .then((value) => setIsFirstLaunch(value !== "true"))
       .catch(() => setIsFirstLaunch(true));
+  }, []);
+
+  // ── Notification Tap / Action Button Listener ────────────────────────────
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const actionId = response.actionIdentifier;
+        const data = response.notification.request.content.data as any;
+        const notifType = data?.type as string | undefined;
+
+        if (!navigationRef.isReady()) return;
+
+        if (
+          actionId === "ACTION_ADD_EXPENSE" ||
+          (actionId === Notifications.DEFAULT_ACTION_IDENTIFIER &&
+            notifType === "quick_widget")
+        ) {
+          navigationRef.navigate("AddTransaction", { type: "expense" });
+        } else if (actionId === "ACTION_ADD_INCOME") {
+          navigationRef.navigate("AddTransaction", { type: "income" });
+        } else if (
+          notifType === "BUDGET_WARNING" ||
+          notifType === "BUDGET_EXCEEDED"
+        ) {
+          navigationRef.navigate("Budget");
+        }
+      }
+    );
+    return () => subscription.remove();
   }, []);
 
   // Tema navigasi mengikuti warna tema aktif — menghindari "white flash"
