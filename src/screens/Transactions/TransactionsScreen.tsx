@@ -650,7 +650,7 @@ const TransactionsScreen: React.FC = () => {
               const isActive = walletFilterId === wallet.id;
               return (
                 <TouchableOpacity key={wallet.id} onPress={() => setWalletFilterId(wallet.id)} activeOpacity={0.7} style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 11, paddingVertical: 6, borderRadius: 20, backgroundColor: isActive ? `${wallet.color}20` : colors.surface, borderWidth: 1, borderColor: isActive ? wallet.color : CARD_BORDER }}>
-                  <Ionicons name={(wallet.icon as any) || "wallet-outline"} size={12} color={isActive ? wallet.color : colors.gray400} style={{ marginRight: 5 }} />
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: wallet.color || colors.accent, marginRight: 6 }} />
                   <Text numberOfLines={1} style={{ maxWidth: 130, fontSize: 11, fontWeight: isActive ? "700" : "500", color: isActive ? wallet.color : colors.gray400 }}>{wallet.name}</Text>
                 </TouchableOpacity>
               );

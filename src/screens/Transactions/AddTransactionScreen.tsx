@@ -21,7 +21,7 @@ import { useAppContext } from "../../context/AppContext";
 import { getCurrentDate, safeNumber, formatCurrency, DEFAULT_WALLET_ID } from "../../utils/calculations";
 import { RootStackParamList, TransactionType, SubTransaction, Wallet } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
-import { AppHeader } from "../../components/common";
+import { AppHeader, WalletSelectCard } from "../../components/common";
 import CategoryPickerModal, { DEFAULT_CATEGORIES, ALL_SYSTEM_CATEGORIES, CategoryItem } from "../../components/CategoryPickerModal";
 
 type AddTransactionScreenNavigationProp = StackNavigationProp<
@@ -568,44 +568,14 @@ const AddTransactionScreen: React.FC = () => {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
             <View style={tw`flex-row px-1`}>
-              {wallets.map((w) => {
-                const isSelected = selectedWalletId === w.id;
-                const walletColor = w.color || ACCENT_COLOR;
-                return (
-                  <TouchableOpacity
-                    key={w.id}
-                    onPress={() => setSelectedWalletId(w.id)}
-                    style={[
-                      tw`flex-row items-center px-3.5 py-2.5 rounded-2xl mr-2.5 border`,
-                      isSelected
-                        ? { backgroundColor: walletColor + "20", borderColor: walletColor }
-                        : { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        tw`w-7 h-7 rounded-xl items-center justify-center mr-2`,
-                        { backgroundColor: walletColor + "25" },
-                      ]}
-                    >
-                      <Ionicons name={(w.icon as any) || "wallet"} size={14} color={walletColor} />
-                    </View>
-                    <View>
-                      <Text
-                        style={[
-                          tw`text-xs font-bold`,
-                          { color: isSelected ? walletColor : TEXT_PRIMARY },
-                        ]}
-                      >
-                        {w.name}
-                      </Text>
-                      <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>
-                        {formatCurrency(w.balance)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+              {wallets.map((w) => (
+                <WalletSelectCard
+                  key={w.id}
+                  wallet={w}
+                  isSelected={selectedWalletId === w.id}
+                  onPress={() => setSelectedWalletId(w.id)}
+                />
+              ))}
             </View>
           </ScrollView>
         </View>
@@ -613,51 +583,21 @@ const AddTransactionScreen: React.FC = () => {
         {/* ── TRANSFER DESTINATION WALLET (TRANSFER ONLY) ── */}
         {type === "transfer" && (
           <View style={tw`mb-4`}>
-            <Text style={[tw`text-[10px] font-bold uppercase tracking-widest mb-2 ml-1`, { color: TEXT_SECONDARY }]}>
+            <Text style={[tw`text-[11px] font-bold uppercase tracking-wider mb-1.5 ml-0.5`, { color: TEXT_SECONDARY }]}>
               Ke Rekening (Tujuan)
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={tw`-mx-1`}>
               <View style={tw`flex-row px-1`}>
                 {wallets
                   .filter((w) => w.id !== selectedWalletId)
-                  .map((w) => {
-                    const isSelected = selectedToWalletId === w.id;
-                    const walletColor = w.color || ACCENT_COLOR;
-                    return (
-                      <TouchableOpacity
-                        key={w.id}
-                        onPress={() => setSelectedToWalletId(w.id)}
-                        style={[
-                          tw`flex-row items-center px-3.5 py-2.5 rounded-2xl mr-2.5 border`,
-                          isSelected
-                            ? { backgroundColor: walletColor + "20", borderColor: walletColor }
-                            : { backgroundColor: SURFACE_COLOR, borderColor: BORDER_COLOR },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            tw`w-7 h-7 rounded-xl items-center justify-center mr-2`,
-                            { backgroundColor: walletColor + "25" },
-                          ]}
-                        >
-                          <Ionicons name={(w.icon as any) || "card"} size={14} color={walletColor} />
-                        </View>
-                        <View>
-                          <Text
-                            style={[
-                              tw`text-xs font-bold`,
-                              { color: isSelected ? walletColor : TEXT_PRIMARY },
-                            ]}
-                          >
-                            {w.name}
-                          </Text>
-                          <Text style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}>
-                            {formatCurrency(w.balance)}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  .map((w) => (
+                    <WalletSelectCard
+                      key={w.id}
+                      wallet={w}
+                      isSelected={selectedToWalletId === w.id}
+                      onPress={() => setSelectedToWalletId(w.id)}
+                    />
+                  ))}
               </View>
             </ScrollView>
           </View>

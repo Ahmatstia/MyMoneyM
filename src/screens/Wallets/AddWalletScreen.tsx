@@ -315,7 +315,7 @@ export const AddWalletScreen: React.FC = () => {
                 { color: TEXT_SECONDARY },
               ]}
             >
-              {isEditMode ? "Saldo Awal (Koreksi / Rekonsiliasi)" : "Saldo Awal Saat Ini"}
+              {isEditMode ? "Saldo Awal" : "Saldo Awal Saat Ini"}
             </Text>
             <View
               style={[
@@ -352,7 +352,7 @@ export const AddWalletScreen: React.FC = () => {
                     { color: balanceSign === "-" ? "#FFFFFF" : TEXT_SECONDARY },
                   ]}
                 >
-                  - Negatif (Hutang)
+                  - Negatif
                 </Text>
               </TouchableOpacity>
             </View>
@@ -399,7 +399,7 @@ export const AddWalletScreen: React.FC = () => {
                 { color: TEXT_SECONDARY },
               ]}
             >
-              * Penyesuaian saldo awal akan memperbarui saldo total secara otomatis tanpa menghapus riwayat transaksi.
+              Penyesuaian saldo awal akan memperbarui saldo total secara otomatis tanpa menghapus riwayat transaksi.
             </Text>
           )}
           {!isEditMode && (
@@ -413,7 +413,7 @@ export const AddWalletScreen: React.FC = () => {
               { color: TEXT_SECONDARY },
             ]}
           >
-            Fungsi / Pos Dana
+            Fungsi
           </Text>
           <ScrollView
             horizontal

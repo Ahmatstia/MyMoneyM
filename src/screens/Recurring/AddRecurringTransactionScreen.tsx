@@ -19,7 +19,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppContext } from "../../context/AppContext";
 import { RecurringTransaction, RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
-import { AppHeader } from "../../components/common";
+import { AppHeader, WalletSelectCard } from "../../components/common";
 import CategoryPickerModal from "../../components/CategoryPickerModal";
 import {
   calculateInitialRunDate,
@@ -461,43 +461,15 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 Dompet / Rekening Eksekusi
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  {wallets.map((w) => {
-                    const isSelected = formWalletId === w.id;
-                    return (
-                      <TouchableOpacity
-                        key={w.id}
-                        onPress={() => setFormWalletId(w.id)}
-                        activeOpacity={0.7}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingHorizontal: 14,
-                          paddingVertical: 10,
-                          borderRadius: 12,
-                          backgroundColor: isSelected ? `${colors.accent}20` : colors.surface,
-                          borderWidth: 1,
-                          borderColor: isSelected ? colors.accent : `${colors.border}80`,
-                        }}
-                      >
-                        <Ionicons
-                          name={(w.icon as any) || "card-outline"}
-                          size={14}
-                          color={isSelected ? colors.accent : colors.textSecondary}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text
-                          style={{
-                            color: isSelected ? colors.accent : colors.textPrimary,
-                            fontSize: 12,
-                            fontWeight: "700",
-                          }}
-                        >
-                          {w.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={{ flexDirection: "row" }}>
+                  {wallets.map((w) => (
+                    <WalletSelectCard
+                      key={w.id}
+                      wallet={w}
+                      isSelected={formWalletId === w.id}
+                      onPress={() => setFormWalletId(w.id)}
+                    />
+                  ))}
                 </View>
               </ScrollView>
             </View>

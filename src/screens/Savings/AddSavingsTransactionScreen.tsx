@@ -24,7 +24,7 @@ import {
 } from "../../utils/calculations";
 import { RootStackParamList } from "../../types";
 import { useTheme } from "../../theme/ThemeContext";
-import { AppHeader } from "../../components/common";
+import { AppHeader, WalletSelectCard } from "../../components/common";
 
 type AddSavingsTransactionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -541,73 +541,16 @@ const AddSavingsTransactionScreen: React.FC = () => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8 }}
+              contentContainerStyle={{ paddingRight: 4 }}
             >
-              {(state.wallets || []).map((w) => {
-                const isSelected =
-                  (selectedWalletId || defaultWallet?.id) === w.id;
-                return (
-                  <TouchableOpacity
-                    key={w.id}
-                    onPress={() => setSelectedWalletId(w.id)}
-                    activeOpacity={0.7}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      borderRadius: 14,
-                      backgroundColor: isSelected
-                        ? `${w.color || ACCENT_COLOR}22`
-                        : SURFACE_COLOR,
-                      borderWidth: 1.5,
-                      borderColor: isSelected
-                        ? w.color || ACCENT_COLOR
-                        : `${BORDER_COLOR}60`,
-                      gap: 8,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        backgroundColor: `${w.color || ACCENT_COLOR}20`,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Ionicons
-                        name={(w.icon as any) || "wallet-outline"}
-                        size={15}
-                        color={w.color || ACCENT_COLOR}
-                      />
-                    </View>
-                    <View>
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: isSelected ? "700" : "600",
-                          color: isSelected ? TEXT_PRIMARY : TEXT_SECONDARY,
-                        }}
-                      >
-                        {w.name}
-                      </Text>
-                      <Text style={{ fontSize: 10, color: colors.gray400 }}>
-                        {formatCurrency(w.balance)}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={15}
-                        color={w.color || ACCENT_COLOR}
-                        style={{ marginLeft: 2 }}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+              {(state.wallets || []).map((w) => (
+                <WalletSelectCard
+                  key={w.id}
+                  wallet={w}
+                  isSelected={(selectedWalletId || defaultWallet?.id) === w.id}
+                  onPress={() => setSelectedWalletId(w.id)}
+                />
+              ))}
             </ScrollView>
           </View>
         )}

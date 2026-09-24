@@ -6,3 +6,4 @@ export { Button } from "./Button";
 export { Card } from "./Card";
 export { Input } from "./Input";
 export { AppFAB } from "./AppFAB";
+export { WalletSelectCard } from "./WalletSelectCard";

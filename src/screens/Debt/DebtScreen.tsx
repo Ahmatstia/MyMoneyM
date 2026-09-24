@@ -31,6 +31,7 @@ import { useAppContext } from "../../context/AppContext";
 import { Debt } from "../../types";
 import { useTheme } from '../../theme/ThemeContext';
 import { formatCurrency, safeNumber } from "../../utils/calculations";
+import { WalletSelectCard } from "../../components/common";
 
 type SafeIconName = keyof typeof Ionicons.glyphMap;
 
@@ -990,12 +991,13 @@ const DebtScreen: React.FC = () => {
             {/* Rekening Pembayaran */}
             <Text
               style={{
-                color: colors.gray400,
-                fontSize: 10,
+                color: colors.textSecondary,
+                fontSize: 11,
                 fontWeight: "700",
-                letterSpacing: 1.2,
+                letterSpacing: 0.8,
                 textTransform: "uppercase",
-                marginBottom: 8,
+                marginBottom: 6,
+                marginLeft: 2,
               }}
             >
               {payModal.debt?.type === "borrowed" ? "Bayar Dari Rekening" : "Terima Ke Rekening"}
@@ -1003,32 +1005,18 @@ const DebtScreen: React.FC = () => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8 }}
+              contentContainerStyle={{ paddingRight: 4 }}
               style={{ marginBottom: 14 }}
             >
               {(state.wallets || []).map((w) => {
                 const isSelected = (payWalletId || state.wallets?.find((x) => x.isDefault)?.id || state.wallets?.[0]?.id) === w.id;
                 return (
-                  <TouchableOpacity
+                  <WalletSelectCard
                     key={w.id}
+                    wallet={w}
+                    isSelected={isSelected}
                     onPress={() => setPayWalletId(w.id)}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: isSelected ? colors.accent : CARD_BORDER,
-                      backgroundColor: isSelected ? `${colors.accent}20` : colors.background,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: w.color || colors.accent }} />
-                    <Text style={{ fontSize: 12, fontWeight: isSelected ? "700" : "500", color: isSelected ? colors.accent : colors.textPrimary }}>
-                      {w.name}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 );
               })}
             </ScrollView>
