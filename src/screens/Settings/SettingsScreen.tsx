@@ -60,37 +60,7 @@ const DEFAULT_APP_SETTINGS = {
 const CARD_RADIUS = 20;
 const INNER_RADIUS = 14;
 const CARD_PAD = 20;
-// ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
-
-const SectionHeader = ({ title }: { title: string }) => {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}
-    >
-      <View
-        style={{
-          width: 3,
-          height: 13,
-          backgroundColor: colors.accent,
-          borderRadius: 2,
-          marginRight: 8,
-        }}
-      />
-      <Text
-        style={{
-          color: colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.2,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-    </View>
-  );
-};
+import { AppSectionHeader as SectionHeader } from "../../components/common";
 
 const SettingRow = ({
   label,

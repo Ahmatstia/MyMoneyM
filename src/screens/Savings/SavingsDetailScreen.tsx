@@ -30,61 +30,11 @@ const CARD_PAD     = 14;
 
 // ─── Komponen UI (konsisten) ──────────────────────────────────────────────────
 
+import { AppSectionHeader as SectionHeader } from "../../components/common";
+
 const Spacer = ({ size = 20 }: { size?: number }) => (
   <View style={{ height: size }} />
 );
-
-const SectionHeader = ({
-  title,
-  linkLabel,
-  onPress,
-}: {
-  title: string;
-  linkLabel?: string;
-  onPress?: () => void;
-}) => {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 14,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View
-          style={{
-            width: 3,
-            height: 13,
-            backgroundColor: colors.accent,
-            borderRadius: 2,
-            marginRight: 8,
-          }}
-        />
-        <Text
-          style={{
-            color: colors.gray400,
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-          }}
-        >
-          {title}
-        </Text>
-      </View>
-      {linkLabel && onPress && (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>
-            {linkLabel}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
 
 const ThinBar = ({
   progress,
@@ -400,7 +350,7 @@ const SavingsDetailScreen: React.FC = () => {
               onPress={() => navigation.goBack()}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+              <Ionicons name="arrow-back" size={20} color={ACCENT_COLOR} />
             </TouchableOpacity>
             <View>
               <Text

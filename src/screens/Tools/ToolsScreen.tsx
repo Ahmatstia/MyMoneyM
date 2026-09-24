@@ -21,13 +21,20 @@ import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency, safeNumber } from "../../utils/calculations";
 
-// ── Design tokens (konsisten dgn seluruh app) ────────────────────────────────
-const BG = Colors.background;
-const SURF = Colors.surface;
-const ACCENT = Colors.accent;
-const TP = Colors.textPrimary;
-const TS = Colors.textSecondary;
-const BORDER = "rgba(255,255,255,0.06)";
+// ── Design tokens & Dynamic Theme ────────────────────────────────────────────
+const useToolsTheme = () => {
+  const { colors } = useTheme();
+  return {
+    BG: colors.background,
+    SURF: colors.surface,
+    ACCENT: colors.accent,
+    TP: colors.textPrimary,
+    TS: colors.textSecondary,
+    BORDER: `${colors.border}80`,
+    colors,
+  };
+};
+
 const R = 20;
 const PAD = 20;
 
@@ -67,6 +74,7 @@ const InputBox = ({
   placeholder?: string;
   isCurrency?: boolean;
 }) => {
+  const { BG, TP, BORDER } = useToolsTheme();
   const displayValue = value
     ? isCurrency
       ? `Rp ${parseInt(value, 10).toLocaleString("id-ID")}`
@@ -103,23 +111,26 @@ const ResultRow = ({
   label: string;
   value: string;
   color?: string;
-}) => (
-  <View
-    style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: BORDER,
-    }}
-  >
-    <Text style={{ color: TS, fontSize: 13 }}>{label}</Text>
-    <Text style={{ color: color ?? ACCENT, fontSize: 14, fontWeight: "700" }}>
-      {value}
-    </Text>
-  </View>
-);
+}) => {
+  const { TS, ACCENT, BORDER } = useToolsTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: BORDER,
+      }}
+    >
+      <Text style={{ color: TS, fontSize: 13 }}>{label}</Text>
+      <Text style={{ color: color ?? ACCENT, fontSize: 14, fontWeight: "700" }}>
+        {value}
+      </Text>
+    </View>
+  );
+};
 
 // ═════════════════════════════════════════════════════════════════════════════
 // CALCULATOR MODALS
@@ -137,6 +148,7 @@ const DailyLimitCalc = ({
   balance: number;
   totalDebt: number;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   // Custom flexibility
   const [customBalance, setCustomBalance] = useState(String(balance));
   const [days, setDays] = useState("");
@@ -370,6 +382,7 @@ const SalaryCalc = ({
   visible: boolean;
   onClose: () => void;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const [salary, setSalary] = useState("");
   const [extra, setExtra] = useState("");
 
@@ -592,6 +605,7 @@ const BuyOrWaitCalc = ({
   balance: number;
   avgExpense: number;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const [price, setPrice] = useState("");
   const [label, setLabel] = useState("");
 
@@ -855,6 +869,7 @@ const RunwayCalc = ({
   balance: number;
   avgExpense: number;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const dailyAvg = avgExpense / 30;
   const isDeficit = balance <= 0;
   const runwayDays =
@@ -1085,6 +1100,7 @@ const BasicCalc = ({
   visible: boolean;
   onClose: () => void;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const [expression, setExpression] = useState("");
   const [result, setResult] = useState("");
 
@@ -1368,6 +1384,7 @@ const DualModeInput: React.FC<DualModeInputProps> = ({
   amountChips,
   placeholder,
 }) => {
+  const { BG, TP, BORDER } = useToolsTheme();
   return (
     <View style={{ marginBottom: 14 }}>
       {/* Header: Label & Mode Switcher */}
@@ -1617,6 +1634,7 @@ const SplitBillCalc = ({
   onClose: () => void;
   onRecordExpense: (amount: number, desc: string) => void;
 }) => {
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const [mode, setMode] = useState<"equal" | "itemized">("equal");
 
   // Mode 1: Bagi Rata
@@ -2493,16 +2511,9 @@ const SplitBillCalc = ({
 // MAIN SCREEN
 // ═════════════════════════════════════════════════════════════════════════════
 const ToolsScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { BG, SURF, ACCENT, TP, TS, BORDER, colors } = useToolsTheme();
   const navigation = useNavigation<any>();
   const { state } = useAppContext();
-
-  const BG = colors.background;
-  const SURF = colors.surface;
-  const ACCENT = colors.accent;
-  const TP = colors.textPrimary;
-  const TS = colors.textSecondary;
-  const BORDER = `${colors.border}80`;
 
   const [modal, setModal] = useState<
     "daily" | "salary" | "buy" | "runway" | "basic" | "splitbill" | null

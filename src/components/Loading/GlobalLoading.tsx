@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Dimensions, Modal, Text } from "react-native";
 import LottieView from "lottie-react-native";
-import { Colors } from "../../theme/theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -11,17 +11,19 @@ interface GlobalLoadingProps {
 }
 
 const GlobalLoading: React.FC<GlobalLoadingProps> = ({ visible, message = "Memuat data..." }) => {
+  const { colors } = useTheme();
+
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View style={styles.container}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.border}80` }]}>
           <LottieView
             source={require("../../../assets/lottie/task/Loading 50 _ Among Us.json")}
             autoPlay
             loop
             style={styles.lottie}
           />
-          <Text style={styles.text}>{message}</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}>{message}</Text>
         </View>
       </View>
     </Modal>
@@ -36,13 +38,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    backgroundColor: Colors.surface,
     padding: 30,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
     height: 150,
   },
   text: {
-    color: Colors.textSecondary,
     fontSize: 14,
     fontWeight: "600",
     marginTop: 10,

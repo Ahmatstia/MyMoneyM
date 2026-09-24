@@ -349,21 +349,31 @@ const AddDebtScreen: React.FC = () => {
           )}
 
           {/* Action Buttons */}
-          <TouchableOpacity
-            style={[tw`py-4 rounded-xl items-center justify-center flex-row`, { backgroundColor: isLoading ? colors.gray600 : ACCENT_COLOR }]}
-            onPress={handleSave}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <Ionicons name="sync" size={16} color={BACKGROUND_COLOR} style={tw`mr-2`} />
-            ) : (
-              <Ionicons name="checkmark-circle" size={16} color={BACKGROUND_COLOR} style={tw`mr-2`} />
-            )}
-            <Text style={{ color: BACKGROUND_COLOR, fontWeight: "800", fontSize: 14 }}>
-              {isLoading ? "Menyimpan..." : editMode ? "Simpan Perubahan" : "Simpan Catatan"}
-            </Text>
-          </TouchableOpacity>
+          <View style={tw`flex-row gap-3 mt-4`}>
+            <TouchableOpacity
+              style={[tw`flex-1 rounded-xl py-3.5 items-center`, { backgroundColor: SURFACE_COLOR }]}
+              onPress={() => navigation.goBack()}
+              disabled={isLoading}
+            >
+              <Text style={[tw`text-[13px] font-bold`, { color: TEXT_PRIMARY }]}>Batal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[tw`flex-1 rounded-xl py-3.5 items-center justify-center flex-row`, { backgroundColor: ACCENT_COLOR, opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handleSave}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <Ionicons name="sync" size={16} color="#FFFFFF" style={tw`mr-2`} />
+              ) : (
+                <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" style={tw`mr-2`} />
+              )}
+              <Text style={tw`text-white text-[13px] font-bold`}>
+                {isLoading ? "Menyimpan..." : editMode ? "Simpan" : "Tambah"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -48,32 +48,7 @@ const STATUS_LABEL: Record<Debt["status"], string> = {
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
-const SectionHeader = ({
-  title,
-  linkLabel,
-  onPress,
-}: {
-  title: string;
-  linkLabel?: string;
-  onPress?: () => void;
-}) => {
-  const { colors } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 3, height: 13, backgroundColor: colors.accent, borderRadius: 2, marginRight: 8 }} />
-        <Text style={{ color: colors.gray400, fontSize: 10, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" }}>
-          {title}
-        </Text>
-      </View>
-      {linkLabel && onPress && (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}>{linkLabel}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
+import { AppSectionHeader as SectionHeader } from "../../components/common";
 
 /** Progress bar — terima height agar bisa dipakai di summary (4px) & debt card (6px) */
 const ProgressBar = ({

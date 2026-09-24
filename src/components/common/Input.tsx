@@ -1,3 +1,4 @@
+// File: src/components/common/Input.tsx
 import React from "react";
 import {
   View,
@@ -8,6 +9,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
+import { useTheme } from "../../theme/ThemeContext";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -15,41 +17,73 @@ interface InputProps extends TextInputProps {
   containerStyle?: ViewStyle;
   prefix?: string;
   suffix?: string;
+  helperText?: string;
 }
 
-const Input: React.FC<InputProps> = ({
+export const Input: React.FC<InputProps> = ({
   label,
   error,
   containerStyle,
   prefix,
   suffix,
+  helperText,
   style,
   ...props
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={[styles.label, { color: colors.textSecondary }]}>
+          {label}
+        </Text>
+      )}
+
       <View
         style={[
           styles.inputContainer,
-          error ? styles.inputError : undefined,
-          props.editable === false ? styles.inputDisabled : undefined,
+          {
+            backgroundColor: colors.surface,
+            borderColor: error ? colors.error : `${colors.border}80`,
+          },
+          props.editable === false ? { opacity: 0.6 } : null,
         ]}
       >
-        {prefix && <Text style={styles.prefix}>{prefix}</Text>}
+        {prefix && (
+          <Text style={[styles.prefix, { color: colors.textSecondary }]}>
+            {prefix}
+          </Text>
+        )}
+
         <TextInput
           style={[
             styles.input,
-            prefix ? styles.inputWithPrefix : undefined,
-            suffix ? styles.inputWithSuffix : undefined,
+            { color: colors.textPrimary },
+            prefix ? styles.inputWithPrefix : null,
+            suffix ? styles.inputWithSuffix : null,
             style as TextStyle,
           ]}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.gray500}
           {...props}
         />
-        {suffix && <Text style={styles.suffix}>{suffix}</Text>}
+
+        {suffix && (
+          <Text style={[styles.suffix, { color: colors.textSecondary }]}>
+            {suffix}
+          </Text>
+        )}
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+
+      {error ? (
+        <Text style={[styles.error, { color: colors.error }]}>
+          {error}
+        </Text>
+      ) : helperText ? (
+        <Text style={[styles.helperText, { color: colors.gray400 }]}>
+          {helperText}
+        </Text>
+      ) : null}
     </View>
   );
 };
@@ -59,53 +93,50 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: 8,
-    color: "#374151",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+    marginBottom: 6,
+    marginLeft: 2,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    minHeight: 48,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#111827",
-    minHeight: 48,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontWeight: "600",
   },
   inputWithPrefix: {
-    paddingLeft: 4,
+    paddingLeft: 6,
   },
   inputWithSuffix: {
-    paddingRight: 4,
-  },
-  inputError: {
-    borderColor: "#DC2626",
-  },
-  inputDisabled: {
-    backgroundColor: "#F3F4F6",
-    opacity: 0.7,
-  },
-  error: {
-    fontSize: 12,
-    color: "#DC2626",
-    marginTop: 4,
+    paddingRight: 6,
   },
   prefix: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginRight: 4,
+    fontSize: 14,
+    fontWeight: "700",
   },
   suffix: {
-    fontSize: 16,
-    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  error: {
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  helperText: {
+    fontSize: 11,
+    marginTop: 4,
     marginLeft: 4,
   },
 });

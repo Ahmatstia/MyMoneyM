@@ -39,7 +39,6 @@ import {
 import { id } from "date-fns/locale";
 
 import { useAppContext } from "../../context/AppContext";
-import { Colors } from "../../theme/theme";
 import { useTheme } from "../../theme/ThemeContext";
 import { formatCurrency } from "../../utils/calculations";
 import { calculateDailyCheckInStreak } from "../../utils/dailyCheckIn";
@@ -47,28 +46,7 @@ import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorag
 
 const { width } = Dimensions.get("window");
 
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-const DEFAULT_C = {
-  bg: Colors.background,
-  surface: Colors.surface,
-  card: Colors.surfaceLight,
-  border: "rgba(255,255,255,0.06)",
-  borderAccent: "rgba(34,211,238,0.25)",
-  cyan: Colors.accent,
-  cyanDim: "rgba(34,211,238,0.12)",
-  gold: Colors.warning,
-  goldDim: "rgba(245,158,11,0.12)",
-  emerald: Colors.success,
-  emeraldDim: "rgba(16,185,129,0.12)",
-  rose: Colors.error,
-  roseDim: "rgba(244,63,94,0.12)",
-  violet: Colors.purple || "#8B5CF6",
-  violetDim: "rgba(139,92,246,0.12)",
-  text1: Colors.textPrimary,
-  text2: Colors.textSecondary,
-  text3: Colors.textTertiary,
-};
-
+// ─── DYNAMIC DESIGN TOKENS ───────────────────────────────────────────────────
 const useProfileTokens = () => {
   const { colors } = useTheme();
   return useMemo(
@@ -112,42 +90,42 @@ const ACHIEVEMENT_DEFS = [
   {
     id: "first_steps",
     icon: "footsteps",
-    color: DEFAULT_C.cyan,
+    color: "#06B6D4",
     label: "First Steps",
     desc: "Transaksi pertama",
   },
   {
     id: "week_warrior",
     icon: "flame",
-    color: DEFAULT_C.gold,
+    color: "#F59E0B",
     label: "Week Warrior",
     desc: "7 hari berturut-turut",
   },
   {
     id: "century",
     icon: "trophy",
-    color: DEFAULT_C.violet,
+    color: "#8B5CF6",
     label: "The Century",
     desc: "100 transaksi",
   },
   {
     id: "savings_king",
     icon: "diamond",
-    color: DEFAULT_C.emerald,
+    color: "#10B981",
     label: "Savings King",
     desc: "Punya tabungan aktif",
   },
   {
     id: "night_owl",
     icon: "moon",
-    color: DEFAULT_C.rose,
+    color: "#F43F5E",
     label: "Night Owl",
     desc: "Catat lewat jam 11 PM",
   },
   {
     id: "diversified",
     icon: "grid",
-    color: DEFAULT_C.violet,
+    color: "#8B5CF6",
     label: "Diversified",
     desc: "5+ kategori berbeda",
   },

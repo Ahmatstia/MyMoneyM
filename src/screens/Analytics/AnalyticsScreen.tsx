@@ -41,52 +41,11 @@ const SECTION_GAP = 20;
 
 // --- UI Components ------------------------------------------------------------
 
+import { AppSectionHeader as SectionHeader } from "../../components/common";
+
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
 );
-
-const SectionHeader = ({
-  title,
-  linkLabel,
-  onPress,
-}: {
-  title: string;
-  linkLabel?: string;
-  onPress?: () => void;
-}) => {
-  const { colors } = useTheme();
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 12,
-      }}
-    >
-      <Text
-        style={{
-          color: colors.gray400,
-          fontSize: 10,
-          fontWeight: "700",
-          letterSpacing: 1.3,
-          textTransform: "uppercase",
-        }}
-      >
-        {title}
-      </Text>
-      {linkLabel && onPress && (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text
-            style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}
-          >
-            {linkLabel}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
 
 const ThinBar = ({ progress, color }: { progress: number; color: string }) => {
   const { colors } = useTheme();

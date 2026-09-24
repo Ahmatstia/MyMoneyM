@@ -1,42 +1,50 @@
 // File: src/components/common/Card.tsx
 import React from "react";
-import { View, ViewProps } from "react-native";
-import tw from "twrnc";
+import { View, ViewProps, StyleSheet } from "react-native";
+import { useTheme } from "../../theme/ThemeContext";
 
 interface CardProps extends ViewProps {
   children: React.ReactNode;
-  elevated?: boolean;
   padding?: "none" | "small" | "medium" | "large";
+  radius?: number;
+  border?: boolean;
 }
 
-const Card: React.FC<CardProps> = ({
+export const Card: React.FC<CardProps> = ({
   children,
-  elevated = true,
   padding = "medium",
+  radius = 16,
+  border = true,
   style,
   ...props
 }) => {
+  const { colors } = useTheme();
+
   const getPadding = () => {
     switch (padding) {
       case "none":
-        return tw`p-0`;
+        return 0;
       case "small":
-        return tw`p-3`;
+        return 12;
       case "medium":
-        return tw`p-4`;
+        return 16;
       case "large":
-        return tw`p-6`;
+        return 20;
       default:
-        return tw`p-4`;
+        return 16;
     }
   };
 
   return (
     <View
       style={[
-        tw`bg-white rounded-xl`,
-        elevated && tw`shadow-sm border border-gray-100`,
-        getPadding(),
+        {
+          backgroundColor: colors.surface,
+          borderRadius: radius,
+          borderWidth: border ? 1 : 0,
+          borderColor: `${colors.border}80`,
+          padding: getPadding(),
+        },
         style,
       ]}
       {...props}

@@ -390,22 +390,30 @@ const WalletsScreen: React.FC = () => {
       >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={tw`w-8 h-8 rounded-full items-center justify-center`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={tw`w-10 h-10 rounded-full items-center justify-center`}
         >
-          <Ionicons name="arrow-back" size={20} color={TEXT_PRIMARY} />
+          <Ionicons name="arrow-back" size={22} color={TEXT_PRIMARY} />
         </TouchableOpacity>
 
-        <View style={tw`flex-1 mx-2.5`}>
+        <View style={tw`flex-1 mx-3`}>
           <Text
-            style={[
-              tw`text-sm font-black`,
-              { color: TEXT_PRIMARY, letterSpacing: -0.2 },
-            ]}
+            style={{
+              fontSize: 18,
+              fontWeight: "700",
+              color: TEXT_PRIMARY,
+              letterSpacing: -0.3,
+            }}
           >
             Dompet & Rekening
           </Text>
           <Text
-            style={[tw`text-[10px] font-medium`, { color: TEXT_SECONDARY }]}
+            style={{
+              fontSize: 11,
+              fontWeight: "500",
+              color: TEXT_SECONDARY,
+              marginTop: 1,
+            }}
           >
             {wallets.length} Akun Terdaftar
           </Text>

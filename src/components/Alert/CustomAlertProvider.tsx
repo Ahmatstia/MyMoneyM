@@ -11,21 +11,10 @@ import {
   Dimensions,
 } from "react-native";
 import LottieView from "lottie-react-native";
-import { Colors } from "../../theme/theme";
-
-// Konsisten dengan theme
-const SURFACE_COLOR = Colors.surface;
-const TEXT_PRIMARY = Colors.textPrimary;
-const TEXT_SECONDARY = Colors.textSecondary;
-const ACCENT_COLOR = Colors.accent;
-const ERROR_COLOR = Colors.error;
-const INFO_COLOR = Colors.info;
-const SUCCESS_COLOR = Colors.success;
-const WARNING_COLOR = Colors.warning;
+import { useTheme } from "../../theme/ThemeContext";
 
 const CARD_RADIUS = 20;
 const INNER_RADIUS = 12;
-const CARD_BORDER = "rgba(255,255,255,0.06)";
 
 const { width } = Dimensions.get("window");
 
@@ -40,6 +29,17 @@ interface AlertState {
 export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { colors } = useTheme();
+  const SURFACE_COLOR = colors.surface;
+  const TEXT_PRIMARY = colors.textPrimary;
+  const TEXT_SECONDARY = colors.textSecondary;
+  const ACCENT_COLOR = colors.accent;
+  const ERROR_COLOR = colors.error;
+  const INFO_COLOR = colors.info;
+  const SUCCESS_COLOR = colors.success;
+  const WARNING_COLOR = colors.warning;
+  const CARD_BORDER = `${colors.border}80`;
+
   const [alertState, setAlertState] = useState<AlertState>({
     visible: false,
     title: "",
@@ -77,7 +77,6 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
   const handlePress = (onPress?: () => void) => {
     handleClose();
     if (onPress) {
-      // Allow modal close animation to start before executing the callback
       setTimeout(() => onPress(), 50);
     }
   };
@@ -85,7 +84,6 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
   // ─── RENDER HELPER ──────────────────────────────────────────────────────────
   const { visible, title, message, buttons } = alertState;
 
-  // Tentukan tipe alert berdasarkan judul (heuristik sederhana)
   const isDelete = title.toLowerCase().includes("hapus") || title.toLowerCase().includes("wipe");
   const isError = title.toLowerCase().includes("error") || title.toLowerCase().includes("gagal") || (isDelete && title.toLowerCase().includes("data"));
   const isSuccess = title.toLowerCase().includes("sukses") || title.toLowerCase().includes("berhasil");
@@ -122,7 +120,6 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
         }}
       >
         <View style={styles.overlay}>
-          {/* Background press to dismiss (if cancelable) */}
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
@@ -133,7 +130,7 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
             }}
           />
 
-          <View style={styles.alertBox}>
+          <View style={[styles.alertBox, { backgroundColor: SURFACE_COLOR, borderColor: CARD_BORDER }]}>
             {/* Lottie Animation instead of Icon */}
             <View style={styles.lottieWrapper}>
               <LottieView
@@ -145,14 +142,13 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
             </View>
 
             {/* Content */}
-            <Text style={styles.title}>{title}</Text>
-            {message ? <Text style={styles.message}>{message}</Text> : null}
+            <Text style={[styles.title, { color: TEXT_PRIMARY }]}>{title}</Text>
+            {message ? <Text style={[styles.message, { color: colors.gray400 }]}>{message}</Text> : null}
 
             {/* Buttons Layout */}
             <View
               style={[
                 styles.buttonContainer,
-                // Jika tombol lebih dari 2, susun ke bawah
                 buttons && buttons.length > 2 ? { flexDirection: "column" } : { flexDirection: "row" },
               ]}
             >
@@ -169,7 +165,7 @@ export const CustomAlertProvider: React.FC<{ children: ReactNode }> = ({
                       {
                         marginLeft: buttons.length <= 2 && index > 0 ? 10 : 0,
                         marginTop: buttons.length > 2 && index > 0 ? 10 : 0,
-                        backgroundColor: isPrimary ? themeColor : isDestructive ? ERROR_COLOR : "rgba(255,255,255,0.06)",
+                        backgroundColor: isPrimary ? themeColor : isDestructive ? ERROR_COLOR : `${colors.border}40`,
                         borderColor: isPrimary ? themeColor : isDestructive ? ERROR_COLOR : CARD_BORDER,
                         borderWidth: 1,
                       },
@@ -206,10 +202,8 @@ const styles = StyleSheet.create({
   },
   alertBox: {
     width: "100%",
-    backgroundColor: SURFACE_COLOR,
     borderRadius: CARD_RADIUS,
     borderWidth: 1,
-    borderColor: CARD_BORDER,
     padding: 24,
     alignItems: "center",
     shadowColor: "#000",
@@ -230,7 +224,6 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   title: {
-    color: TEXT_PRIMARY,
     fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
@@ -238,7 +231,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   message: {
-    color: Colors.gray400,
     fontSize: 14,
     textAlign: "center",
     lineHeight: 22,

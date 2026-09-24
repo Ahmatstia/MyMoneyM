@@ -525,7 +525,7 @@ const AddSavingsScreen: React.FC = () => {
               onPress={() => navigation.goBack()}
               activeOpacity={0.7}
             >
-              <Ionicons name="chevron-back" size={20} color={ACCENT_COLOR} />
+              <Ionicons name="arrow-back" size={20} color={ACCENT_COLOR} />
             </TouchableOpacity>
             <Text
               style={{ color: TEXT_PRIMARY, fontSize: 18, fontWeight: "700" }}

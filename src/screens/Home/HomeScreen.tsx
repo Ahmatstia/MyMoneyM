@@ -52,66 +52,12 @@ const CARD_PAD = 20;
 const SECTION_GAP = 24;
 // --- Komponen UI\ ------------------------------------------------------------
 
+import { AppSectionHeader as SectionHeader } from "../../components/common";
+
 /** Spacer vertikal antar section */
 const Spacer = ({ size = SECTION_GAP }: { size?: number }) => (
   <View style={{ height: size }} />
 );
-
-/** Section header dengan accent bar kiri */
-const SectionHeader = ({
-  title,
-  linkLabel,
-  onPress,
-}: {
-  title: string;
-  linkLabel?: string;
-  onPress?: () => void;
-}) => {
-  const { colors } = useTheme();
-
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 14,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View
-          style={{
-            width: 3,
-            height: 13,
-            backgroundColor: colors.accent,
-            borderRadius: 2,
-            marginRight: 8,
-          }}
-        />
-        <Text
-          style={{
-            color: colors.gray400,
-            fontSize: 10,
-            fontWeight: "700",
-            letterSpacing: 1.2,
-            textTransform: "uppercase",
-          }}
-        >
-          {title}
-        </Text>
-      </View>
-      {linkLabel && onPress && (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-          <Text
-            style={{ color: colors.accent, fontSize: 11, fontWeight: "600" }}
-          >
-            {linkLabel}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
 
 /** Kartu dengan background surface dan border tipis */
 const Card = ({

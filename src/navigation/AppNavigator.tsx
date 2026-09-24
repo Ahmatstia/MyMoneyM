@@ -817,6 +817,7 @@ const MainStackNavigator = () => {
           "RecurringTransactions",
           "Wallets",
           "MoniScreen",
+          "AddSavings",
         ];
         const hasCustomHeader = screensWithCustomHeader.includes(route.name);
 
