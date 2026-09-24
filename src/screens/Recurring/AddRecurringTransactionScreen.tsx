@@ -344,35 +344,6 @@ export const AddRecurringTransactionScreen: React.FC = () => {
                 borderColor: `${colors.border}80`,
               }}
             />
-            {/* Quick Chips */}
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-              {[
-                { label: "50rb", value: 50000 },
-                { label: "100rb", value: 100000 },
-                { label: "250rb", value: 250000 },
-                { label: "500rb", value: 500000 },
-                { label: "1jt", value: 1000000 },
-                { label: "2.5jt", value: 2500000 },
-              ].map((chip) => (
-                <TouchableOpacity
-                  key={chip.label}
-                  onPress={() => setFormAmount(String(chip.value))}
-                  activeOpacity={0.7}
-                  style={{
-                    backgroundColor: colors.surface,
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: `${colors.border}80`,
-                  }}
-                >
-                  <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "600" }}>
-                    +{chip.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
 
           {/* Kategori Selector */}
