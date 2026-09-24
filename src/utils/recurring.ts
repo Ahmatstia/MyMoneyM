@@ -1,5 +1,5 @@
 // File: src/utils/recurring.ts
-import { AppState, RecurringTransaction, Transaction } from "../types";
+import { AppState, RecurringTransaction, Transaction, DailyPlan } from "../types";
 import {
   calculateTotals,
   calculateWalletBalances,
@@ -183,6 +183,7 @@ export const processRecurringTransactions = (
 
   const todayStr = getJakartaDateKey();
   const newTransactions: Transaction[] = [];
+  let currentDailyPlans: DailyPlan[] = [...(state.dailyPlans || [])];
   let hasChanges = false;
 
   const updatedRecurringList = recurringList.map((item) => {
@@ -227,6 +228,38 @@ export const processRecurringTransactions = (
 
       newTransactions.push(newTx);
 
+      if (cycleDays) {
+        const planStartDate = (newTx.date || todayStr).slice(0, 10);
+        const planEnd = new Date(`${planStartDate}T12:00:00`);
+        planEnd.setDate(planEnd.getDate() + cycleDays - 1);
+        const planEndDate = formatDateString(planEnd);
+        const targetWalletId = newTx.walletId || DEFAULT_WALLET_ID;
+        const nowIso = new Date().toISOString();
+
+        currentDailyPlans = currentDailyPlans.map((p) => {
+          if (
+            p.walletId === targetWalletId &&
+            p.isActive &&
+            p.endDate >= planStartDate &&
+            p.startDate <= planEndDate
+          ) {
+            return { ...p, isActive: false, endedAt: nowIso };
+          }
+          return p;
+        });
+
+        currentDailyPlans.push({
+          id: `daily_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          walletId: targetWalletId,
+          amount: safeNumber(newTx.amount),
+          sourceTransactionId: newTx.id,
+          startDate: planStartDate,
+          endDate: planEndDate,
+          isActive: true,
+          createdAt: nowIso,
+        });
+      }
+
       // Hitung jadwal berikutnya
       const nextDate = calculateNextRunDate(currentItem, currentItem.nextRunDate);
       currentItem = {
@@ -254,6 +287,7 @@ export const processRecurringTransactions = (
     ...state,
     transactions: combinedTransactions,
     wallets: updatedWallets,
+    dailyPlans: currentDailyPlans,
     recurringTransactions: updatedRecurringList,
     operationalBalance: partitioned.operationalBalance,
     savingsBalance: partitioned.savingsBalance,

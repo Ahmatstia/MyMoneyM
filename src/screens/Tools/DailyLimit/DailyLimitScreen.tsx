@@ -48,7 +48,7 @@ export const DailyLimitScreen: React.FC = () => {
     setReserve("");
   };
 
-  const remainingDays = daysLeftInMonth();
+  const remainingDays = daysLeftInMonth(state.paydayCutoff);
   const currentBal = safeNumber(Number(customBalance));
   const safeBalance = Math.max(
     0,

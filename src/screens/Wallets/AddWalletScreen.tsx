@@ -73,7 +73,18 @@ export const AddWalletScreen: React.FC = () => {
       ? editingWallet.role
       : ""
   );
-  const [formInitialBalance, setFormInitialBalance] = useState("");
+  const initialBalanceVal =
+    editingWallet?.initialBalance !== undefined
+      ? Math.abs(editingWallet.initialBalance).toString()
+      : "";
+  const [formInitialBalance, setFormInitialBalance] = useState(initialBalanceVal);
+  const [balanceSign, setBalanceSign] = useState<"+" | "-">(
+    editingWallet?.initialBalance !== undefined && editingWallet.initialBalance < 0
+      ? "-"
+      : editingWallet?.type === "credit"
+      ? "-"
+      : "+"
+  );
   const [formAccountNumber, setFormAccountNumber] = useState(
     editingWallet?.accountNumber || ""
   );
@@ -82,7 +93,7 @@ export const AddWalletScreen: React.FC = () => {
 
   const parseSignedBalance = (val: string): number => {
     const trimmed = val.trim();
-    const isNegative = trimmed.startsWith("-");
+    const isNegative = balanceSign === "-" || trimmed.startsWith("-");
     const digits = trimmed.replace(/[^\d.]/g, "");
     const num = parseFloat(digits) || 0;
     return isNegative ? -num : num;
@@ -115,6 +126,7 @@ export const AddWalletScreen: React.FC = () => {
           type: formType,
           role: finalRole,
           isLiquid: formIsLiquid,
+          initialBalance: formInitialBalance !== "" ? numInitial : editingWallet.initialBalance,
           accountNumber: formAccountNumber.trim() || undefined,
           color: formColor,
           icon: (editingWallet.icon as SafeIconName) || defaultIcon,
@@ -262,6 +274,9 @@ export const AddWalletScreen: React.FC = () => {
                     if (t.id === "credit") {
                       setFormRole("credit");
                       setFormIsLiquid(false);
+                      if (!formInitialBalance) {
+                        setBalanceSign("-");
+                      }
                     } else if (t.id === "investment") {
                       setFormRole("investasi");
                       setFormIsLiquid(false);
@@ -302,33 +317,83 @@ export const AddWalletScreen: React.FC = () => {
             })}
           </ScrollView>
 
-          {/* Saldo Awal (hanya saat buat baru) */}
-          {!isEditMode && (
-            <>
-              <Text
+          {/* Saldo Awal / Rekonsiliasi Saldo */}
+          <View style={[tw`flex-row mb-1.5 items-center justify-between`]}>
+            <Text
+              style={[
+                tw`text-[11px] font-bold uppercase`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
+              {isEditMode ? "Saldo Awal (Koreksi / Rekonsiliasi)" : "Saldo Awal Saat Ini"}
+            </Text>
+            <View
+              style={[
+                tw`flex-row rounded-lg p-0.5`,
+                { backgroundColor: `${colors.border}60` },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => setBalanceSign("+")}
                 style={[
-                  tw`text-[11px] font-bold uppercase mb-1.5`,
-                  { color: TEXT_SECONDARY },
+                  tw`px-2.5 py-1 rounded-md`,
+                  balanceSign === "+" ? { backgroundColor: colors.accent } : {},
                 ]}
               >
-                Saldo Awal Saat Ini
-              </Text>
-              <TextInput
-                value={formInitialBalance}
-                onChangeText={setFormInitialBalance}
-                placeholder="0 (atau minus jika paylater/hutang)"
-                placeholderTextColor={TEXT_SECONDARY}
-                keyboardType="numeric"
+                <Text
+                  style={[
+                    tw`text-[11px] font-bold`,
+                    { color: balanceSign === "+" ? colors.background : TEXT_SECONDARY },
+                  ]}
+                >
+                  + Positif
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setBalanceSign("-")}
                 style={[
-                  tw`border rounded-xl px-3.5 py-3 text-sm mb-4 font-semibold`,
-                  {
-                    color: TEXT_PRIMARY,
-                    borderColor: `${BORDER_COLOR}80`,
-                    backgroundColor: SURFACE_COLOR,
-                  },
+                  tw`px-2.5 py-1 rounded-md`,
+                  balanceSign === "-" ? { backgroundColor: colors.error } : {},
                 ]}
-              />
-            </>
+              >
+                <Text
+                  style={[
+                    tw`text-[11px] font-bold`,
+                    { color: balanceSign === "-" ? "#FFFFFF" : TEXT_SECONDARY },
+                  ]}
+                >
+                  - Negatif (Hutang)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TextInput
+            value={formInitialBalance}
+            onChangeText={setFormInitialBalance}
+            placeholder="0"
+            placeholderTextColor={TEXT_SECONDARY}
+            keyboardType="numeric"
+            style={[
+              tw`border rounded-xl px-3.5 py-3 text-sm mb-1.5 font-semibold`,
+              {
+                color: balanceSign === "-" ? colors.error : TEXT_PRIMARY,
+                borderColor: `${BORDER_COLOR}80`,
+                backgroundColor: SURFACE_COLOR,
+              },
+            ]}
+          />
+          {isEditMode && (
+            <Text
+              style={[
+                tw`text-[10px] mb-3.5`,
+                { color: TEXT_SECONDARY },
+              ]}
+            >
+              * Penyesuaian saldo awal akan memperbarui saldo total secara otomatis tanpa menghapus riwayat transaksi.
+            </Text>
+          )}
+          {!isEditMode && (
+            <View style={tw`mb-2`} />
           )}
 
           {/* Peruntukan / Pos Dana - horizontal scroll */}

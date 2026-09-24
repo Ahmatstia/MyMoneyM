@@ -87,6 +87,7 @@ const DebtScreen: React.FC = () => {
     debt: null,
   });
   const [payAmount, setPayAmount] = useState("");
+  const [payWalletId, setPayWalletId] = useState<string>("");
 
   const allDebts = state.debts || [];
 
@@ -159,7 +160,8 @@ const DebtScreen: React.FC = () => {
       Alert.alert("Error", "Nominal melebihi sisa tagihan");
       return;
     }
-    await payDebt(payModal.debt.id, amount);
+    const targetWallet = payWalletId || state.wallets?.find((w) => w.isDefault)?.id || state.wallets?.[0]?.id;
+    await payDebt(payModal.debt.id, amount, targetWallet);
     setPayModal({ visible: false, debt: null });
     setPayAmount("");
   };
@@ -842,6 +844,7 @@ const DebtScreen: React.FC = () => {
                         onPress={() => {
                           setPayModal({ visible: true, debt });
                           setPayAmount("");
+                          setPayWalletId(state.wallets?.find((w) => w.isDefault)?.id || state.wallets?.[0]?.id || "");
                         }}
                         activeOpacity={0.7}
                       >
@@ -983,6 +986,52 @@ const DebtScreen: React.FC = () => {
                 marginVertical: 16,
               }}
             />
+
+            {/* Rekening Pembayaran */}
+            <Text
+              style={{
+                color: colors.gray400,
+                fontSize: 10,
+                fontWeight: "700",
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                marginBottom: 8,
+              }}
+            >
+              {payModal.debt?.type === "borrowed" ? "Bayar Dari Rekening" : "Terima Ke Rekening"}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+              style={{ marginBottom: 14 }}
+            >
+              {(state.wallets || []).map((w) => {
+                const isSelected = (payWalletId || state.wallets?.find((x) => x.isDefault)?.id || state.wallets?.[0]?.id) === w.id;
+                return (
+                  <TouchableOpacity
+                    key={w.id}
+                    onPress={() => setPayWalletId(w.id)}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: isSelected ? colors.accent : CARD_BORDER,
+                      backgroundColor: isSelected ? `${colors.accent}20` : colors.background,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: w.color || colors.accent }} />
+                    <Text style={{ fontSize: 12, fontWeight: isSelected ? "700" : "500", color: isSelected ? colors.accent : colors.textPrimary }}>
+                      {w.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
 
             <Text
               style={{

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TextInput } from "react-native";
 import { Colors } from "../../../theme/theme";
 import { useTheme } from "../../../theme/ThemeContext";
-import { formatCurrency } from "../../../utils/calculations";
+import { formatCurrency, getMonthlyCycleRange } from "../../../utils/calculations";
 
 // ── Design tokens & Dynamic Theme ────────────────────────────────────────────
 export const useToolsTheme = () => {
@@ -24,10 +24,14 @@ export const PAD = 20;
 // ── Helpers ──────────────────────────────────────────────────────────────────
 export const fmt = (n: number) => formatCurrency(n);
 
-export function daysLeftInMonth(): number {
+export function daysLeftInMonth(paydayCutoff?: number): number {
+  if (paydayCutoff && paydayCutoff > 1) {
+    const cycleRange = getMonthlyCycleRange(paydayCutoff);
+    return Math.max(1, cycleRange.daysRemaining);
+  }
   const now = new Date();
   const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return last.getDate() - now.getDate() + 1;
+  return Math.max(1, last.getDate() - now.getDate() + 1);
 }
 
 // ── Small reusable components ────────────────────────────────────────────────

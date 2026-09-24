@@ -900,7 +900,7 @@ const SettingsScreen = () => {
                         {
                           text: "Buka Dashboard",
                           onPress: () => {
-                            navigation.navigate("MainTabs", { screen: "Home" });
+                            navigation.navigate("MainTabs", { screen: "HomeTab" });
                           },
                         },
                         { text: "Tetap di Sini", style: "cancel" },

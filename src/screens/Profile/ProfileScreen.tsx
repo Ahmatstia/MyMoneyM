@@ -40,7 +40,7 @@ import { id } from "date-fns/locale";
 
 import { useAppContext } from "../../context/AppContext";
 import { useTheme } from "../../theme/ThemeContext";
-import { formatCurrency } from "../../utils/calculations";
+import { formatCurrency, safeNumber } from "../../utils/calculations";
 import { calculateDailyCheckInStreak } from "../../utils/dailyCheckIn";
 import { persistImageAsync, deleteImageFileAsync } from "../../utils/imageStorage";
 
@@ -686,10 +686,14 @@ const ProfileScreen: React.FC = () => {
     // ── Savings Ratio bulan ini (tabungan / pemasukan * 100)
     const monthIncome = thisMonthTx
       .filter((t) => t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
-    const monthExpense = thisMonthTx
-      .filter((t) => t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
+      .reduce((s, t) => s + safeNumber(t.amount), 0);
+    const monthExpense =
+      thisMonthTx
+        .filter((t) => t.type === "expense")
+        .reduce((s, t) => s + safeNumber(t.amount), 0) +
+      thisMonthTx
+        .filter((t) => t.type === "transfer")
+        .reduce((s, t) => s + safeNumber(t.adminFee), 0);
     const savingsRatio =
       monthIncome > 0
         ? Math.max(

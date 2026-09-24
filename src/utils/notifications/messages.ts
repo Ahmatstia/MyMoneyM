@@ -1,10 +1,11 @@
 import { Budget, Savings } from "../../types";
+import { safeNumber } from "../calculations";
 
 export const NotificationMessages = {
   // DAILY MESSAGES
   dailyMorning: (balance: number) => ({
     title: "🌅 Pagi yang produktif!",
-    body: `Jangan lupa catat semua transaksi hari ini.\nSaldo saat ini: Rp ${balance.toLocaleString(
+    body: `Jangan lupa catat semua transaksi hari ini.\nSaldo saat ini: Rp ${safeNumber(balance).toLocaleString(
       "id-ID"
     )}`,
     data: { type: "DAILY_MORNING" },
@@ -12,25 +13,31 @@ export const NotificationMessages = {
 
   // BUDGET ALERTS
   budgetWarning: (budget: Budget) => {
-    const percentage = Math.round((budget.spent / budget.limit) * 100);
+    const limit = safeNumber(budget.limit);
+    const spent = safeNumber(budget.spent);
+    const percentage = limit > 0 ? Math.round((spent / limit) * 100) : 100;
     return {
       title: "⚠️ Budget Hampir Habis",
       body: `Budget ${
         budget.category
-      } sudah ${percentage}% terpakai!\nRp ${budget.spent.toLocaleString(
+      } sudah ${percentage}% terpakai!\nRp ${spent.toLocaleString(
         "id-ID"
-      )} / Rp ${budget.limit.toLocaleString("id-ID")}`,
+      )} / Rp ${limit.toLocaleString("id-ID")}`,
       data: { type: "BUDGET_WARNING", budgetId: budget.id },
     };
   },
 
-  budgetExceeded: (budget: Budget) => ({
-    title: "🚨 Budget Melebihi Limit!",
-    body: `Budget ${budget.category} sudah melebihi limit!\nKelebihan: Rp ${(
-      budget.spent - budget.limit
-    ).toLocaleString("id-ID")}`,
-    data: { type: "BUDGET_EXCEEDED", budgetId: budget.id },
-  }),
+  budgetExceeded: (budget: Budget) => {
+    const limit = safeNumber(budget.limit);
+    const spent = safeNumber(budget.spent);
+    return {
+      title: "🚨 Budget Melebihi Limit!",
+      body: `Budget ${budget.category} sudah melebihi limit!\nKelebihan: Rp ${(
+        spent - limit
+      ).toLocaleString("id-ID")}`,
+      data: { type: "BUDGET_EXCEEDED", budgetId: budget.id },
+    };
+  },
 
   // SAVINGS PROGRESS
   savingsMilestone: (savings: Savings, milestone: number) => ({

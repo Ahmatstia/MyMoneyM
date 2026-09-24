@@ -44,7 +44,7 @@ export const BuyOrWaitScreen: React.FC = () => {
     setLabel("");
   };
 
-  const remainingDays = daysLeftInMonth();
+  const remainingDays = daysLeftInMonth(state.paydayCutoff);
   const itemPrice = safeNumber(Number(price));
   const currentBal = safeNumber(Number(customBalance));
   const numDays = customDays ? Math.max(1, Number(customDays)) : remainingDays;

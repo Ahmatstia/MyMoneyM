@@ -88,14 +88,18 @@ export const calculateTransactionAnalytics = (
       } catch {}
     }
 
-    // Calculate totals with safeNumber
+    // Calculate totals with safeNumber (including transfer admin fees)
     const totalIncome = filteredTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-    const totalExpense = filteredTransactions
+    const normalExpense = filteredTransactions
       .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+    const transferAdminFees = filteredTransactions
+      .filter((t) => t.type === "transfer")
+      .reduce((sum, t) => sum + safeNumber(t.adminFee), 0);
+    const totalExpense = normalExpense + transferAdminFees;
 
     const netSavings = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
@@ -115,9 +119,13 @@ export const calculateTransactionAnalytics = (
         .filter((t) => t.type === "income")
         .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 
-      const dayExpense = dayTransactions
+      const dayNormalExpense = dayTransactions
         .filter((t) => t.type === "expense")
         .reduce((sum, t) => sum + safeNumber(t.amount), 0);
+      const dayTransferFees = dayTransactions
+        .filter((t) => t.type === "transfer")
+        .reduce((sum, t) => sum + safeNumber(t.adminFee), 0);
+      const dayExpense = dayNormalExpense + dayTransferFees;
 
       dailyTrends.push({
         date: dateStr,
@@ -128,14 +136,16 @@ export const calculateTransactionAnalytics = (
 
     // Calculate category spending
     const categorySpending: Record<string, number> = {};
-    filteredTransactions
-      .filter((t) => t.type === "expense")
-      .forEach((t) => {
-        if (t.category) {
-          categorySpending[t.category] =
-            (categorySpending[t.category] || 0) + safeNumber(t.amount);
-        }
-      });
+    filteredTransactions.forEach((t) => {
+      if (t.type === "expense" && t.category) {
+        categorySpending[t.category] =
+          (categorySpending[t.category] || 0) + safeNumber(t.amount);
+      } else if (t.type === "transfer" && safeNumber(t.adminFee) > 0) {
+        const cat = t.category || "Biaya Transfer";
+        categorySpending[cat] =
+          (categorySpending[cat] || 0) + safeNumber(t.adminFee);
+      }
+    });
 
     // Sort all used categories by spending
     const topCategories = Object.entries(categorySpending).sort(

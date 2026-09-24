@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { useAppContext } from "../../context/AppContext";
 import { RecurringTransaction, RootStackParamList } from "../../types";
@@ -81,6 +82,7 @@ export const AddRecurringTransactionScreen: React.FC = () => {
   };
   const [startDateInput, setStartDateInput] = useState(toDisplay(editingItem?.startDate || new Date().toISOString().split("T")[0]));
   const [startDateError, setStartDateError] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [formAutoCycle, setFormAutoCycle] = useState<boolean>(
     editingItem?.autoStartNewCycle ?? true
   );
@@ -671,44 +673,64 @@ export const AddRecurringTransactionScreen: React.FC = () => {
             <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
               MULAI DARI TANGGAL
             </Text>
-            <TextInput
-              value={startDateInput}
-              onChangeText={(t) => {
-                setStartDateInput(t);
-                const iso = toIso(t);
-                if (iso) {
-                  setFormStartDate(iso);
-                  setStartDateError("");
-                } else if (t.length >= 8) {
-                  setStartDateError("Format: DD/MM/YYYY (contoh: 26/01/2025)");
-                } else {
-                  setStartDateError("");
-                }
-              }}
-              keyboardType="numeric"
-              placeholder="DD/MM/YYYY — Kapan mulai?"
-              placeholderTextColor={colors.gray500}
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              activeOpacity={0.7}
               style={{
+                flexDirection: "row",
+                alignItems: "center",
                 backgroundColor: colors.surface,
                 borderRadius: 14,
                 paddingHorizontal: 14,
                 paddingVertical: 12,
-                color: colors.textPrimary,
-                fontSize: 14,
-                fontWeight: "600",
                 borderWidth: 1,
-                borderColor: startDateError ? `${colors.error}80` : `${colors.border}80`,
+                borderColor: `${colors.border}80`,
               }}
-            />
-            {startDateError ? (
-              <Text style={{ color: colors.error, fontSize: 11, marginTop: 4, marginLeft: 4 }}>
-                {startDateError}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={18}
+                color={colors.accent}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={{
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: "700",
+                  flex: 1,
+                }}
+              >
+                {formatDisplayDate(formStartDate)}
               </Text>
-            ) : (
-              <Text style={{ color: colors.gray500, fontSize: 11, marginTop: 4, marginLeft: 4 }}>
-                Tanggal kapan jadwal rutin ini pertama kali aktif / dimulai.
-              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.gray400}
+              />
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={new Date(formStartDate)}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={(_, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    const y = selectedDate.getFullYear();
+                    const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+                    const d = String(selectedDate.getDate()).padStart(2, "0");
+                    const iso = `${y}-${m}-${d}`;
+                    setFormStartDate(iso);
+                    setStartDateInput(toDisplay(iso));
+                    setStartDateError("");
+                  }
+                }}
+              />
             )}
+            <Text style={{ color: colors.gray500, fontSize: 11, marginTop: 4, marginLeft: 4 }}>
+              Tanggal kapan jadwal rutin ini pertama kali aktif / dimulai.
+            </Text>
           </View>
 
           {/* Khusus Pemasukan: Target Uang Bertahan Otomatis (Batas Hari) */}
