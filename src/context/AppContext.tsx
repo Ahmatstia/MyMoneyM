@@ -260,7 +260,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Auto-Migration: Menyelamatkan kategori yang sudah pernah digunakan pengguna pada transaksi/anggaran lama
       // agar tidak hilang dari daftar pilihan kategori kustom saat beralih ke Zero-Default.
-      const migrationCatKey = "@mymoney_legacy_categories_migrated_v1";
+      // v2: dijalankan ulang agar user lama yang sudah lewat v1 juga ter-cover (idempotent, tidak duplikasi)
+      const migrationCatKey = "@mymoney_legacy_categories_migrated_v2";
       const isCatMigrated = await AsyncStorage.getItem(migrationCatKey);
       if (!isCatMigrated) {
         const existingCatNames = new Set(
@@ -297,12 +298,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             const preset = ALL_SYSTEM_CATEGORIES.find(
               (p) =>
                 p.name.toLowerCase() === catName.toLowerCase() ||
-                (catName.toLowerCase() === "gaji" && p.id === "pemasukan")
+                p.id.toLowerCase() === catName.toLowerCase()
             );
 
             adoptedCategories.push({
               id: `cat_migrated_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-              name: catName.toLowerCase() === "gaji" ? "Pemasukan" : catName,
+              name: catName,
               icon: preset ? preset.icon : "pricetag-outline",
               color: preset ? preset.color : "#8B5CF6",
               isCustom: true,
@@ -400,7 +401,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // 3. Load the structured, validated AppState
     const appData = await storageService.loadData();
-    const completeAppData: AppState = {
+    let completeAppData: AppState = {
       ...defaultAppState,
       ...appData,
       notes: appData.notes || [],
@@ -411,11 +412,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       userProfile: appData.userProfile || defaultAppState.userProfile,
     };
 
-    // 4. Force synchronous update to React state and ref
+    // 4. Auto-adopt missing categories dari data yang diimpor.
+    //    Setiap nama kategori yang dipakai di transaksi/anggaran/rutin/hutang/tabungan
+    //    tetapi belum ada di customCategories akan otomatis dibuat,
+    //    dengan ikon & warna dari LEGACY_CATEGORIES bila cocok.
+    {
+      const existingCatNames = new Set(
+        (completeAppData.customCategories || []).map((c) => c.name.toLowerCase())
+      );
+      const usedNames = new Set<string>();
+
+      (completeAppData.transactions || []).forEach((t) => {
+        if (t.category?.trim()) usedNames.add(t.category.trim());
+      });
+      (completeAppData.budgets || []).forEach((b) => {
+        if (b.category?.trim()) usedNames.add(b.category.trim());
+      });
+      (completeAppData.recurringTransactions || []).forEach((r) => {
+        if (r.category?.trim()) usedNames.add(r.category.trim());
+      });
+      (completeAppData.debts || []).forEach((d) => {
+        if (d.category?.trim()) usedNames.add(d.category.trim());
+      });
+      (completeAppData.savings || []).forEach((s) => {
+        if (s.category?.trim()) usedNames.add(s.category.trim());
+      });
+
+      const adoptedCategories: CustomCategory[] = [
+        ...(completeAppData.customCategories || []),
+      ];
+      let didAdopt = false;
+
+      usedNames.forEach((catName) => {
+        if (existingCatNames.has(catName.toLowerCase())) return; // sudah ada
+
+        const preset = ALL_SYSTEM_CATEGORIES.find(
+          (p) =>
+            p.name.toLowerCase() === catName.toLowerCase() ||
+            p.id.toLowerCase() === catName.toLowerCase()
+        );
+
+        adoptedCategories.push({
+          id: `cat_restored_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          name: catName,
+          icon: preset ? preset.icon : "pricetag-outline",
+          color: preset ? preset.color : "#8B5CF6",
+          isCustom: true,
+          createdAt: new Date().toISOString(),
+        });
+        existingCatNames.add(catName.toLowerCase());
+        didAdopt = true;
+      });
+
+      if (didAdopt) {
+        completeAppData.customCategories = adoptedCategories;
+      }
+    }
+
+    // 5. Rekalkulasi anggaran agar 'spent' dan rollover periode langsung cocok dengan transaksi yang dipulihkan
+    if (completeAppData.budgets && completeAppData.budgets.length > 0) {
+      completeAppData.budgets = updateBudgetsFromTransactions(
+        completeAppData.transactions,
+        completeAppData.budgets,
+      );
+    }
+
+    // 6. Bersihkan URI gambar avatar/cover jika filenya tidak ada di perangkat saat ini (misal restore dari HP lain)
+    if (
+      completeAppData.userProfile.avatar &&
+      !isImageFileExisting(completeAppData.userProfile.avatar)
+    ) {
+      completeAppData.userProfile.avatar = undefined;
+    }
+    if (
+      completeAppData.userProfile.coverImage &&
+      !isImageFileExisting(completeAppData.userProfile.coverImage)
+    ) {
+      completeAppData.userProfile.coverImage = undefined;
+    }
+
+    // 7. Sinkronkan paydayCutoff key jika tersedia
+    if (completeAppData.paydayCutoff) {
+      await AsyncStorage.setItem("@mymoney_payday_cutoff", String(completeAppData.paydayCutoff));
+    }
+
+    // 8. Simpan kembali seluruh state yang telah disinkronkan & diperkaya
+    await storageService.saveData(completeAppData);
+
+    // 9. Force synchronous update to React state and ref
     stateRef.current = completeAppData;
     setState(completeAppData);
 
-    // 5. Update notifications and gamification
+    // 10. Update notifications and gamification
     await notificationService.updateNotifications(completeAppData);
     gamificationBus.emit({ type: "check_milestones" });
 

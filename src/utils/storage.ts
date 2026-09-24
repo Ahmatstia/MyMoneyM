@@ -37,17 +37,18 @@ const STORAGE_KEYS = {
 const validateSubTransaction = (obj: any): SubTransaction | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const amount = safeNumber(obj.amount);
     if (
       typeof obj.id !== "string" ||
       typeof obj.name !== "string" ||
-      typeof obj.amount !== "number"
+      isNaN(amount)
     ) {
       return null;
     }
     return {
       id: obj.id,
       name: obj.name.trim() || "Item",
-      amount: Math.max(0, obj.amount),
+      amount: Math.max(0, amount),
       qty: typeof obj.qty === "number" && obj.qty > 0 ? obj.qty : 1,
       note: obj.note || undefined,
     };
@@ -60,9 +61,10 @@ const validateTransaction = (obj: any): Transaction | null => {
   if (!obj || typeof obj !== "object") return null;
 
   try {
+    const amount = safeNumber(obj.amount);
     if (
       typeof obj.id !== "string" ||
-      typeof obj.amount !== "number" ||
+      isNaN(amount) ||
       !["income", "expense", "transfer"].includes(obj.type) ||
       typeof obj.category !== "string"
     ) {
@@ -79,13 +81,18 @@ const validateTransaction = (obj: any): Transaction | null => {
           ) as SubTransaction[])
       : undefined;
 
+    const rawDate = obj.date ? String(obj.date).slice(0, 10) : "";
+    const validDate = isValidDateString(rawDate)
+      ? rawDate
+      : new Date().toISOString().split("T")[0];
+
     return {
       id: obj.id,
-      amount: Math.max(0, obj.amount),
+      amount: Math.max(0, amount),
       type: obj.type,
       category: obj.category,
       description: obj.description || "",
-      date: obj.date || new Date().toISOString().split("T")[0],
+      date: validDate,
       createdAt: obj.createdAt || new Date().toISOString(),
       cyclePeriod:
         typeof obj.cyclePeriod === "number" ? obj.cyclePeriod : undefined,
@@ -105,10 +112,11 @@ const validateTransaction = (obj: any): Transaction | null => {
 const validateBudget = (obj: any): Budget | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const limit = safeNumber(obj.limit);
     if (
       typeof obj.id !== "string" ||
       typeof obj.category !== "string" ||
-      typeof obj.limit !== "number" ||
+      isNaN(limit) ||
       !["monthly", "weekly", "yearly", "custom"].includes(
         obj.period || "monthly",
       )
@@ -157,8 +165,8 @@ const validateBudget = (obj: any): Budget | null => {
     return {
       id: obj.id,
       category: obj.category,
-      limit: Math.max(0, obj.limit || 0),
-      spent: Math.max(0, obj.spent || 0),
+      limit: Math.max(0, limit),
+      spent: Math.max(0, safeNumber(obj.spent)),
       period: obj.period || "monthly",
       startDate,
       endDate,
@@ -178,18 +186,19 @@ const validateBudget = (obj: any): Budget | null => {
 const validateSavings = (obj: any): Savings | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const target = safeNumber(obj.target);
     if (
       typeof obj.id !== "string" ||
       typeof obj.name !== "string" ||
-      typeof obj.target !== "number"
+      isNaN(target)
     ) {
       return null;
     }
     return {
       id: obj.id,
       name: obj.name,
-      target: Math.max(0, obj.target || 0),
-      current: Math.max(0, obj.current || 0),
+      target: Math.max(0, target),
+      current: Math.max(0, safeNumber(obj.current)),
       deadline: obj.deadline,
       description: obj.description || "",
       category: obj.category || "other",
@@ -205,10 +214,11 @@ const validateSavings = (obj: any): Savings | null => {
 const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const amount = safeNumber(obj.amount);
     if (
       typeof obj.id !== "string" ||
       typeof obj.savingsId !== "string" ||
-      typeof obj.amount !== "number" ||
+      isNaN(amount) ||
       !["deposit", "withdrawal", "initial", "adjustment"].includes(
         obj.type || "deposit",
       )
@@ -219,11 +229,11 @@ const validateSavingsTransaction = (obj: any): SavingsTransaction | null => {
       id: obj.id,
       savingsId: obj.savingsId,
       type: obj.type || "deposit",
-      amount: Math.max(0, obj.amount || 0),
+      amount: Math.max(0, amount),
       date: obj.date || new Date().toISOString().split("T")[0],
       note: obj.note || "",
-      previousBalance: Math.max(0, obj.previousBalance || 0),
-      newBalance: Math.max(0, obj.newBalance || 0),
+      previousBalance: Math.max(0, safeNumber(obj.previousBalance)),
+      newBalance: Math.max(0, safeNumber(obj.newBalance)),
       createdAt: obj.createdAt || new Date().toISOString(),
     };
   } catch (error) {
@@ -291,10 +301,11 @@ const validateNote = (obj: any): Note | null => {
 const validateDebt = (obj: any): Debt | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const amount = safeNumber(obj.amount);
     if (
       typeof obj.id !== "string" ||
       typeof obj.name !== "string" ||
-      typeof obj.amount !== "number" ||
+      isNaN(amount) ||
       !["borrowed", "lent"].includes(obj.type || "borrowed")
     ) {
       return null;
@@ -302,10 +313,10 @@ const validateDebt = (obj: any): Debt | null => {
     return {
       id: obj.id,
       name: obj.name,
-      amount: Math.max(0, obj.amount || 0),
+      amount: Math.max(0, amount),
       remaining: Math.max(
         0,
-        typeof obj.remaining === "number" ? obj.remaining : obj.amount || 0,
+        typeof obj.remaining === "number" ? obj.remaining : (safeNumber(obj.remaining) || amount),
       ),
       type: obj.type || "borrowed",
       status: ["active", "partial", "paid"].includes(obj.status)
@@ -327,17 +338,15 @@ const validateCustomCategory = (obj: any): CustomCategory | null => {
   try {
     if (
       typeof obj.id !== "string" ||
-      typeof obj.name !== "string" ||
-      typeof obj.icon !== "string" ||
-      typeof obj.color !== "string"
+      typeof obj.name !== "string"
     ) {
       return null;
     }
     return {
       id: obj.id,
       name: obj.name.trim().substring(0, 30),
-      icon: obj.icon,
-      color: obj.color,
+      icon: typeof obj.icon === "string" && obj.icon.trim() ? obj.icon.trim() : "pricetag-outline",
+      color: typeof obj.color === "string" && obj.color.startsWith("#") ? obj.color : "#8B5CF6",
       isCustom: true,
       createdAt: obj.createdAt || new Date().toISOString(),
     };
@@ -349,9 +358,10 @@ const validateCustomCategory = (obj: any): CustomCategory | null => {
 const validateRecurringTransaction = (obj: any): RecurringTransaction | null => {
   if (!obj || typeof obj !== "object") return null;
   try {
+    const amount = safeNumber(obj.amount);
     if (
       typeof obj.id !== "string" ||
-      typeof obj.amount !== "number" ||
+      isNaN(amount) ||
       !["income", "expense", "transfer"].includes(obj.type) ||
       typeof obj.category !== "string" ||
       !["weekly", "monthly", "custom_days"].includes(obj.frequency) ||
@@ -363,7 +373,7 @@ const validateRecurringTransaction = (obj: any): RecurringTransaction | null => 
     return {
       id: obj.id,
       name: typeof obj.name === "string" && obj.name.trim().length > 0 ? obj.name.trim() : "Transaksi Berulang",
-      amount: Math.max(0, obj.amount),
+      amount: Math.max(0, amount),
       type: obj.type,
       category: obj.category,
       description: obj.description || "",
@@ -485,13 +495,19 @@ export const validateWallet = (obj: any): Wallet | null => {
         ? obj.role.trim()
         : "operational";
 
+    const balance = typeof obj.balance === "number" ? obj.balance : safeNumber(obj.balance);
+    const initialBalance =
+      typeof obj.initialBalance === "number"
+        ? obj.initialBalance
+        : (obj.initialBalance !== undefined ? safeNumber(obj.initialBalance) : balance);
+
     return {
       id: obj.id,
       name: obj.name.trim().substring(0, 40) || "Dompet",
       type: walletType,
       role: walletRole,
-      balance: typeof obj.balance === "number" ? obj.balance : 0,
-      initialBalance: typeof obj.initialBalance === "number" ? obj.initialBalance : 0,
+      balance,
+      initialBalance,
       color: typeof obj.color === "string" && obj.color.startsWith("#") ? obj.color : "#10B981",
       icon: typeof obj.icon === "string" ? obj.icon : "wallet",
       accountNumber: typeof obj.accountNumber === "string" ? obj.accountNumber : undefined,
@@ -588,22 +604,46 @@ const migrateOldData = async (): Promise<AppState | null> => {
                 .filter((n: Note | null): n is Note => n !== null)
             : [];
 
+          const debts: Debt[] = Array.isArray(oldData.debts)
+            ? oldData.debts
+                .map((d: any) => validateDebt(d))
+                .filter((d: Debt | null): d is Debt => d !== null)
+            : [];
+
+          const customCategories: CustomCategory[] = Array.isArray(oldData.customCategories)
+            ? oldData.customCategories
+                .map((c: any) => validateCustomCategory(c))
+                .filter((c: CustomCategory | null): c is CustomCategory => c !== null)
+            : [];
+
+          const recurringTransactions: RecurringTransaction[] = Array.isArray(oldData.recurringTransactions)
+            ? oldData.recurringTransactions
+                .map((r: any) => validateRecurringTransaction(r))
+                .filter((r: RecurringTransaction | null): r is RecurringTransaction => r !== null)
+            : [];
+
+          const dailyPlans: DailyPlan[] = Array.isArray(oldData.dailyPlans)
+            ? oldData.dailyPlans
+                .map((p: any) => validateDailyPlan(p))
+                .filter((p: DailyPlan | null): p is DailyPlan => p !== null)
+            : [];
+
           const totals = calculateTotals(transactions);
           const defaultWallet = createDefaultWallet(totals.balance);
 
           migratedData = {
             transactions,
             wallets: [defaultWallet],
-            dailyPlans: [],
+            dailyPlans,
             budgets,
             savings,
             savingsTransactions,
             notes,
-            debts: [],
-            customCategories: [],
-            dailyCheckIns: [],
-            recurringTransactions: [],
-            userProfile: { name: "MyMoney" },
+            debts,
+            customCategories,
+            dailyCheckIns: normalizeCheckIns(oldData.dailyCheckIns),
+            recurringTransactions,
+            userProfile: oldData.userProfile || { name: "MyMoney" },
             ...totals,
             operationalBalance: totals.balance,
             savingsBalance: 0,
@@ -758,11 +798,50 @@ export const storageService = {
           ? validatedWallets
           : [createDefaultWallet(legacyOpeningBalance)];
 
-      const updatedWallets = calculateWalletBalances(effectiveWallets, validatedTransactions);
+      if (!effectiveWallets.some((w) => w.isDefault)) {
+        effectiveWallets[0].isDefault = true;
+      }
+
+      // Pastikan setiap transaksi & transaksi berulang terhubung ke dompet yang valid
+      const validWalletIds = new Set(effectiveWallets.map((w) => w.id));
+      const defaultWalletId =
+        effectiveWallets.find((w) => w.isDefault)?.id ||
+        effectiveWallets[0]?.id ||
+        DEFAULT_WALLET_ID;
+
+      const sanitizedTransactions = validatedTransactions.map((tx) => {
+        const isWalletValid = Boolean(tx.walletId && validWalletIds.has(tx.walletId));
+        const isToWalletValid =
+          !tx.toWalletId || validWalletIds.has(tx.toWalletId);
+
+        if (isWalletValid && isToWalletValid) return tx;
+
+        return {
+          ...tx,
+          walletId: isWalletValid ? tx.walletId : defaultWalletId,
+          toWalletId: isToWalletValid ? tx.toWalletId : undefined,
+        };
+      });
+
+      const sanitizedRecurringTransactions = validatedRecurringTransactions.map((r) => {
+        const isWalletValid = Boolean(r.walletId && validWalletIds.has(r.walletId));
+        const isToWalletValid =
+          !r.toWalletId || validWalletIds.has(r.toWalletId);
+
+        if (isWalletValid && isToWalletValid) return r;
+
+        return {
+          ...r,
+          walletId: isWalletValid ? r.walletId : defaultWalletId,
+          toWalletId: isToWalletValid ? r.toWalletId : undefined,
+        };
+      });
+
+      const updatedWallets = calculateWalletBalances(effectiveWallets, sanitizedTransactions);
       const partitioned = calculatePartitionedBalances(updatedWallets);
 
       const appData: AppState = {
-        transactions: validatedTransactions,
+        transactions: sanitizedTransactions,
         wallets: updatedWallets,
         dailyPlans: repairedDailyPlans,
         budgets: validatedBudgets,
@@ -770,7 +849,7 @@ export const storageService = {
         savingsTransactions: validatedSavingsTransactions,
         notes: validatedNotes,
         debts: validatedDebts,
-        recurringTransactions: validatedRecurringTransactions,
+        recurringTransactions: sanitizedRecurringTransactions,
         customCategories: validatedCustomCategories,
         dailyCheckIns: normalizeCheckIns(data.dailyCheckIns),
         userProfile: data.userProfile,
@@ -949,12 +1028,46 @@ export const storageService = {
         wallets[0].isDefault = true;
       }
 
-      const updatedWallets = calculateWalletBalances(wallets, transactions);
+      const validWalletIds = new Set(wallets.map((w) => w.id));
+      const defaultWalletId =
+        wallets.find((w) => w.isDefault)?.id ||
+        wallets[0]?.id ||
+        DEFAULT_WALLET_ID;
+
+      const sanitizedTransactions = transactions.map((tx) => {
+        const isWalletValid = Boolean(tx.walletId && validWalletIds.has(tx.walletId));
+        const isToWalletValid =
+          !tx.toWalletId || validWalletIds.has(tx.toWalletId);
+
+        if (isWalletValid && isToWalletValid) return tx;
+
+        return {
+          ...tx,
+          walletId: isWalletValid ? tx.walletId : defaultWalletId,
+          toWalletId: isToWalletValid ? tx.toWalletId : undefined,
+        };
+      });
+
+      const sanitizedRecurringTransactions = recurringTransactions.map((r) => {
+        const isWalletValid = Boolean(r.walletId && validWalletIds.has(r.walletId));
+        const isToWalletValid =
+          !r.toWalletId || validWalletIds.has(r.toWalletId);
+
+        if (isWalletValid && isToWalletValid) return r;
+
+        return {
+          ...r,
+          walletId: isWalletValid ? r.walletId : defaultWalletId,
+          toWalletId: isToWalletValid ? r.toWalletId : undefined,
+        };
+      });
+
+      const updatedWallets = calculateWalletBalances(wallets, sanitizedTransactions);
       const partitioned = calculatePartitionedBalances(updatedWallets);
-      const totals = calculateTotals(transactions);
+      const totals = calculateTotals(sanitizedTransactions);
 
       const appData: AppState = {
-        transactions,
+        transactions: sanitizedTransactions,
         wallets: updatedWallets,
         dailyPlans: repairedDailyPlans,
         budgets,
@@ -962,7 +1075,7 @@ export const storageService = {
         savingsTransactions,
         notes,
         debts,
-        recurringTransactions,
+        recurringTransactions: sanitizedRecurringTransactions,
         customCategories,
         dailyCheckIns,
         userProfile: parsedData.userProfile || { name: "MyMoney" },

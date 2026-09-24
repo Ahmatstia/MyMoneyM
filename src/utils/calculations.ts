@@ -61,6 +61,7 @@ export const calculateWalletBalances = (
   wallets: Wallet[] = [],
   transactions: Transaction[] = []
 ): Wallet[] => {
+  const validWalletIds = new Set(wallets.map((w) => w.id));
   const defaultWalletId =
     wallets.find((w) => w.isDefault)?.id ||
     wallets[0]?.id ||
@@ -71,18 +72,28 @@ export const calculateWalletBalances = (
 
     for (const tx of transactions) {
       const txAmount = safeNumber(tx.amount);
-      const txWalletId = tx.walletId || defaultWalletId;
+      const txWalletId =
+        tx.walletId && validWalletIds.has(tx.walletId)
+          ? tx.walletId
+          : defaultWalletId;
 
       if (tx.type === "income" && txWalletId === wallet.id) {
         currentBalance += txAmount;
       } else if (tx.type === "expense" && txWalletId === wallet.id) {
         currentBalance -= txAmount;
       } else if (tx.type === "transfer") {
+        const hasValidDest =
+          Boolean(tx.toWalletId) &&
+          validWalletIds.has(tx.toWalletId as string) &&
+          tx.toWalletId !== txWalletId;
+
         if (txWalletId === wallet.id) {
-          currentBalance -= txAmount;
+          if (hasValidDest) {
+            currentBalance -= txAmount;
+          }
           currentBalance -= safeNumber(tx.adminFee);
         }
-        if (tx.toWalletId === wallet.id) {
+        if (tx.toWalletId === wallet.id && hasValidDest) {
           currentBalance += txAmount;
         }
       }
