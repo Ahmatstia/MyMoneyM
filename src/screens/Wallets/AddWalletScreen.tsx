@@ -238,7 +238,7 @@ export const AddWalletScreen: React.FC = () => {
             ]}
           />
 
-          {/* Jenis Rekening */}
+          {/* Jenis Rekening - horizontal scroll */}
           <Text
             style={[
               tw`text-[11px] font-bold uppercase mb-1.5`,
@@ -247,7 +247,11 @@ export const AddWalletScreen: React.FC = () => {
           >
             Jenis Akun
           </Text>
-          <View style={tw`flex-row flex-wrap gap-2 mb-4`}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ flexDirection: "row", gap: 8, marginBottom: 16 }}
+          >
             {WALLET_TYPE_OPTIONS.map((t) => {
               const active = formType === t.id;
               return (
@@ -267,7 +271,7 @@ export const AddWalletScreen: React.FC = () => {
                     }
                   }}
                   style={[
-                    tw`flex-row items-center px-3 py-2 rounded-xl border`,
+                    tw`flex-row items-center px-4 py-2.5 rounded-xl border`,
                     active
                       ? {
                           backgroundColor: `${colors.accent}20`,
@@ -281,9 +285,9 @@ export const AddWalletScreen: React.FC = () => {
                 >
                   <Ionicons
                     name={t.icon}
-                    size={15}
+                    size={16}
                     color={active ? colors.accent : TEXT_SECONDARY}
-                    style={tw`mr-1.5`}
+                    style={tw`mr-2`}
                   />
                   <Text
                     style={[
@@ -296,7 +300,7 @@ export const AddWalletScreen: React.FC = () => {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           {/* Saldo Awal (hanya saat buat baru) */}
           {!isEditMode && (
@@ -405,7 +409,7 @@ export const AddWalletScreen: React.FC = () => {
             />
           )}
 
-          {/* Toggle Likuiditas */}
+          {/* Toggle Dana Siap Pakai */}
           <TouchableOpacity
             onPress={() => setFormIsLiquid(!formIsLiquid)}
             activeOpacity={0.7}
@@ -419,15 +423,7 @@ export const AddWalletScreen: React.FC = () => {
           >
             <View style={tw`flex-1 pr-3`}>
               <Text style={[tw`text-xs font-bold`, { color: TEXT_PRIMARY }]}>
-                Aset Likuid (Dana Siap Pakai)
-              </Text>
-              <Text
-                style={[
-                  tw`text-[10px] mt-0.5 leading-tight`,
-                  { color: TEXT_SECONDARY },
-                ]}
-              >
-                Aktifkan jika dana di rekening ini mudah dicairkan untuk kebutuhan harian.
+                Uang Belanja / Uang Dingin
               </Text>
             </View>
             <View

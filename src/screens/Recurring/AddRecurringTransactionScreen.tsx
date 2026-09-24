@@ -65,6 +65,21 @@ export const AddRecurringTransactionScreen: React.FC = () => {
   const [formStartDate, setFormStartDate] = useState(
     editingItem?.startDate || new Date().toISOString().split("T")[0]
   );
+  // Display version of start date for text input (DD/MM/YYYY)
+  const toDisplay = (iso: string) => {
+    const parts = iso.split("-");
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return iso;
+  };
+  const toIso = (display: string): string | null => {
+    // Accept DD/MM/YYYY or YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(display)) return display;
+    const m = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    return null;
+  };
+  const [startDateInput, setStartDateInput] = useState(toDisplay(editingItem?.startDate || new Date().toISOString().split("T")[0]));
+  const [startDateError, setStartDateError] = useState("");
   const [formAutoCycle, setFormAutoCycle] = useState<boolean>(
     editingItem?.autoStartNewCycle ?? true
   );
@@ -649,6 +664,51 @@ export const AddRecurringTransactionScreen: React.FC = () => {
               />
             </View>
           )}
+
+          {/* Mulai Dari Tanggal */}
+          <View style={{ marginBottom: 14 }}>
+            <Text style={{ color: colors.gray400, fontSize: 11, fontWeight: "700", marginBottom: 6 }}>
+              MULAI DARI TANGGAL
+            </Text>
+            <TextInput
+              value={startDateInput}
+              onChangeText={(t) => {
+                setStartDateInput(t);
+                const iso = toIso(t);
+                if (iso) {
+                  setFormStartDate(iso);
+                  setStartDateError("");
+                } else if (t.length >= 8) {
+                  setStartDateError("Format: DD/MM/YYYY (contoh: 26/01/2025)");
+                } else {
+                  setStartDateError("");
+                }
+              }}
+              keyboardType="numeric"
+              placeholder="DD/MM/YYYY — Kapan mulai?"
+              placeholderTextColor={colors.gray500}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                color: colors.textPrimary,
+                fontSize: 14,
+                fontWeight: "600",
+                borderWidth: 1,
+                borderColor: startDateError ? `${colors.error}80` : `${colors.border}80`,
+              }}
+            />
+            {startDateError ? (
+              <Text style={{ color: colors.error, fontSize: 11, marginTop: 4, marginLeft: 4 }}>
+                {startDateError}
+              </Text>
+            ) : (
+              <Text style={{ color: colors.gray500, fontSize: 11, marginTop: 4, marginLeft: 4 }}>
+                Tanggal kapan jadwal rutin ini pertama kali aktif / dimulai.
+              </Text>
+            )}
+          </View>
 
           {/* Catatan / Keterangan */}
           <View style={{ marginBottom: 16 }}>

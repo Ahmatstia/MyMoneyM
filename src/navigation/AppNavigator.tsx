@@ -255,50 +255,44 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
         {
           name: "Home",
           label: "Beranda",
-          icon: "home-outline" as const,
+          icon: "home-outline" as const,        // ← same as bottom tab
           color: colors.accent,
         },
         {
           name: "Transactions",
           label: "Transaksi",
-          icon: "swap-horizontal-outline" as const,
+          icon: "receipt-outline" as const,     // ← same as bottom tab
           color: colors.success,
-        },
-        {
-          name: "Calendar",
-          label: "Kalender",
-          icon: "calendar-outline" as const,
-          color: colors.info,
-        },
-        {
-          name: "Analytics",
-          label: "Analitik",
-          icon: "stats-chart-outline" as const,
-          color: colors.warning,
         },
         {
           name: "Budget",
           label: "Anggaran",
-          icon: "pie-chart-outline" as const,
+          icon: "pie-chart-outline" as const,   // ← same as bottom tab & quick action
           color: colors.purple,
+        },
+        {
+          name: "Analytics",
+          label: "Analitik",
+          icon: "stats-chart-outline" as const, // ← same as home quick action
+          color: colors.warning,
         },
         {
           name: "Savings",
           label: "Tabungan",
-          icon: "wallet-outline" as const,
+          icon: "wallet-outline" as const,      // ← same as home quick action
           color: colors.accent,
-        },
-        {
-          name: "Debt",
-          label: "Hutang",
-          icon: "card-outline" as const,
-          color: colors.error,
         },
         {
           name: "Wallets",
           label: "Rekening",
-          icon: "wallet-outline" as const,
+          icon: "albums-outline" as const,      // ← unique, clear "accounts list" feel
           color: colors.success,
+        },
+        {
+          name: "Debt",
+          label: "Hutang",
+          icon: "card-outline" as const,        // ← same as home quick action
+          color: colors.error,
         },
         {
           name: "RecurringTransactions",
@@ -311,6 +305,12 @@ const CustomDrawer: React.FC<CustomDrawerProps> = React.memo(
           label: "Alat Cerdas",
           icon: "calculator-outline" as const,
           color: colors.purple,
+        },
+        {
+          name: "Calendar",
+          label: "Kalender",
+          icon: "calendar-outline" as const,
+          color: colors.info,
         },
         {
           name: "MoniScreen",
