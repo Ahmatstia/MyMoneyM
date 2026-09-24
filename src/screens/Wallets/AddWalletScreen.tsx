@@ -331,7 +331,7 @@ export const AddWalletScreen: React.FC = () => {
             </>
           )}
 
-          {/* Peruntukan / Pos Dana */}
+          {/* Peruntukan / Pos Dana - horizontal scroll */}
           <Text
             style={[
               tw`text-[11px] font-bold uppercase mb-1.5`,
@@ -340,7 +340,11 @@ export const AddWalletScreen: React.FC = () => {
           >
             Fungsi / Pos Dana
           </Text>
-          <View style={tw`flex-row flex-wrap gap-2 mb-2`}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ flexDirection: "row", gap: 8, marginBottom: 12 }}
+          >
             {[
               { id: "operational", label: "Operasional (Harian)" },
               { id: "savings", label: "Tabungan / Darurat" },
@@ -366,7 +370,7 @@ export const AddWalletScreen: React.FC = () => {
                     }
                   }}
                   style={[
-                    tw`px-3 py-1.5 rounded-xl border`,
+                    tw`px-3.5 py-2 rounded-xl border`,
                     active
                       ? {
                           backgroundColor: `${colors.accent}20`,
@@ -389,7 +393,7 @@ export const AddWalletScreen: React.FC = () => {
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           {/* Input Pos Dana Kustom */}
           {Boolean(formCustomRole) && (
@@ -409,42 +413,138 @@ export const AddWalletScreen: React.FC = () => {
             />
           )}
 
-          {/* Toggle Dana Siap Pakai */}
-          <TouchableOpacity
-            onPress={() => setFormIsLiquid(!formIsLiquid)}
-            activeOpacity={0.7}
+          {/* Kategori Aliran Dana (Pilihan: Uang Belanja vs Uang Dingin) */}
+          <Text
             style={[
-              tw`flex-row items-center justify-between p-3.5 rounded-xl border mb-4`,
-              {
-                backgroundColor: SURFACE_COLOR,
-                borderColor: `${BORDER_COLOR}80`,
-              },
+              tw`text-[11px] font-bold uppercase mb-1.5`,
+              { color: TEXT_SECONDARY },
             ]}
           >
-            <View style={tw`flex-1 pr-3`}>
-              <Text style={[tw`text-xs font-bold`, { color: TEXT_PRIMARY }]}>
-                Uang Belanja / Uang Dingin
-              </Text>
-            </View>
-            <View
+            Kategori Aliran Dana
+          </Text>
+          <View style={tw`flex-row gap-2.5 mb-4`}>
+            {/* Opsi Uang Belanja */}
+            <TouchableOpacity
+              onPress={() => setFormIsLiquid(true)}
+              activeOpacity={0.7}
               style={[
-                tw`w-6 h-6 rounded-md items-center justify-center border`,
+                tw`flex-1 p-3 rounded-xl border flex-row items-center`,
                 formIsLiquid
                   ? {
-                      backgroundColor: colors.accent,
+                      backgroundColor: `${colors.accent}18`,
                       borderColor: colors.accent,
                     }
                   : {
-                      backgroundColor: "transparent",
-                      borderColor: TEXT_SECONDARY,
+                      backgroundColor: SURFACE_COLOR,
+                      borderColor: `${BORDER_COLOR}80`,
                     },
               ]}
             >
+              <View
+                style={[
+                  tw`w-8 h-8 rounded-lg items-center justify-center mr-2.5`,
+                  {
+                    backgroundColor: formIsLiquid
+                      ? `${colors.accent}25`
+                      : `${BORDER_COLOR}30`,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="cart-outline"
+                  size={17}
+                  color={formIsLiquid ? colors.accent : TEXT_SECONDARY}
+                />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text
+                  style={[
+                    tw`text-xs font-bold`,
+                    { color: formIsLiquid ? colors.accent : TEXT_PRIMARY },
+                  ]}
+                >
+                  Uang Belanja
+                </Text>
+                <Text
+                  style={[
+                    tw`text-[10px] mt-0.5`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Dana siap pakai
+                </Text>
+              </View>
               {formIsLiquid && (
-                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.accent}
+                />
               )}
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+
+            {/* Opsi Uang Dingin */}
+            <TouchableOpacity
+              onPress={() => setFormIsLiquid(false)}
+              activeOpacity={0.7}
+              style={[
+                tw`flex-1 p-3 rounded-xl border flex-row items-center`,
+                !formIsLiquid
+                  ? {
+                      backgroundColor: `${colors.accent}18`,
+                      borderColor: colors.accent,
+                    }
+                  : {
+                      backgroundColor: SURFACE_COLOR,
+                      borderColor: `${BORDER_COLOR}80`,
+                    },
+              ]}
+            >
+              <View
+                style={[
+                  tw`w-8 h-8 rounded-lg items-center justify-center mr-2.5`,
+                  {
+                    backgroundColor: !formIsLiquid
+                      ? `${colors.accent}25`
+                      : `${BORDER_COLOR}30`,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="snow-outline"
+                  size={17}
+                  color={!formIsLiquid ? colors.accent : TEXT_SECONDARY}
+                />
+              </View>
+              <View style={tw`flex-1`}>
+                <Text
+                  style={[
+                    tw`text-xs font-bold`,
+                    { color: !formIsLiquid ? colors.accent : TEXT_PRIMARY },
+                  ]}
+                >
+                  Uang Dingin
+                </Text>
+                <Text
+                  style={[
+                    tw`text-[10px] mt-0.5`,
+                    { color: TEXT_SECONDARY },
+                  ]}
+                  numberOfLines={1}
+                >
+                  Simpanan tabungan
+                </Text>
+              </View>
+              {!formIsLiquid && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={colors.accent}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Nomor Rekening (Opsional) */}
           <Text

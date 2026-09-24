@@ -1078,7 +1078,7 @@ const SettingsScreen = () => {
       />
 
       {/* ── Tab Control ─────────────────────────────────────────────── */}
-      <View style={{ paddingHorizontal: 18, marginBottom: 20 }}>
+      <View style={{ paddingHorizontal: 18, marginTop: 16, marginBottom: 20 }}>
         <View
           style={{
             flexDirection: "row",
